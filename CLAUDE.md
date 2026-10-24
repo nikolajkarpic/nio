@@ -19,7 +19,7 @@ Read `NORTH_STAR.md` first. Any change must serve it, and ideas that don't go to
 
 ## Artifacts that NIO produces in a target project
 
-The location is not decided yet (see `ISSUES.md`). The artifacts are: onboarding notes,
+They live under `.nio/` (memory layout in `MEMORY_NORTH_STAR.md`). The artifacts are: onboarding notes,
 spec, research, contracts, bindings, personas, plan, efforts/epics/tasks, jury verdicts,
 change requests, and budget/usage.
 
