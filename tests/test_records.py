@@ -82,10 +82,39 @@ def test():
         q = records.new(root, "decision", "auth", f"Replace {t}")
         fill(q, supersedes=f'["{old}"]')
     assert any("superseded by several" in e for e in errors(root))
+    # ...unless a verdict rejected one of them; a fresh verdict must have outcome and tier chosen
+    v = records.new(root, "verdict", "auth", "Replace A ruling", by="writer / t / t")
+    errs = errors(root)
+    assert any("`outcome`" in e and v.name in e for e in errs) and any("`tier`" in e and v.name in e for e in errs), errs
+    a = next((root / ".nio/memory/auth").glob("*-replace-a.md"))
+    vbody = "## Ruling\nNo.\n## Jurors\n| a | b | c | no |\n## Reasons\nWrong.\n## What was rejected\nA.\n"
+    fill(v, body=vbody, subject=a.name[:13], outcome="rejected", tier="low")
+    assert errors(root) == [], errors(root)
     # verdicts carry `outcome`, never `status`
-    v = records.new(root, "verdict", "auth", "Sessions ruling", run="R-261024-a1b2")
     v.write_text(v.read_text().replace("outcome:", "status: approved\noutcome:", 1))
     assert any("unknown field `status`" in e and v.name in e for e in errors(root))
+    v.write_text(v.read_text().replace("status: approved\n", ""))
+    # a verdict sits in its subject's area
+    (root / ".nio/config.json").write_text(json.dumps({"memory": {"areas": ["auth", "project"]}}))
+    (root / ".nio/memory/project").mkdir()
+    moved = v.rename(root / ".nio/memory/project" / v.name)
+    assert any("subject's area" in e for e in errors(root))
+    moved.rename(v)
+    # stored jury standing is gone: `approved` is no longer a status
+    fill(p, status="approved")
+    assert any("`status`" in e for e in errors(root))
+    fill(p, status="human")
+    # a path to a new, not yet added file is fine; an ignored one is not
+    (root / "new.py").write_text("")
+    (root / ".gitignore").write_text("ignored.py\n")
+    (root / "ignored.py").write_text("")
+    fill(p, paths='["new.py"]')
+    assert errors(root) == [], errors(root)
+    fill(p, paths='["ignored.py"]')
+    assert any("ignored.py" in e for e in errors(root))
+    # runs get an R- ID and an empty promote.md
+    rid = records.new_run(root)
+    assert rid.startswith("R-") and (root / ".nio/runs" / rid / "promote.md").exists()
     print("ok")
 
 

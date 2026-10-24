@@ -2,7 +2,7 @@
 id: {id}
 type: lesson
 title: "{title}"
-status: proposed          # proposed | approved | rejected | human | recorded
+status: proposed          # proposed | human | recorded; jury standing comes from verdicts
 answers: reuse            # why | reuse | jury
 date: {date}
 by: "{by}"                # role / host / model, or human
