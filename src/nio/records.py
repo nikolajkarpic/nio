@@ -24,7 +24,8 @@ REQUIRED = {
     "lesson": COMMON + ["status", "paths", "tags"],
     "change": COMMON + ["against", "outcome"],
 }
-OPTIONAL = {"run", "serves", "task", "paths", "tags", "supersedes", "subject", "outcome", "tier", "against"}
+# `outdated_by` is added to a committed record later, pointing at what replaced or challenged it
+OPTIONAL = {"run", "serves", "task", "paths", "tags", "supersedes", "subject", "outcome", "tier", "against", "outdated_by"}
 ENUMS = {
     # how the record entered memory; jury standing is derived from verdicts whose `subject` points here
     "status": {"proposed", "human", "recorded"},
@@ -53,9 +54,9 @@ def areas(root):
     return json.loads((root / ".nio/config.json").read_text())["memory"]["areas"]
 
 
-def parse(path):
+def parse(path, text=None):
     """Return (frontmatter dict, body lines). Raises ValueError on a bad header."""
-    text = Path(path).read_text()
+    text = Path(path).read_text() if text is None else text
     if not text.startswith("---\n") or "\n---\n" not in text[4:]:
         raise ValueError("missing --- frontmatter block")
     head, body = text[4:].split("\n---\n", 1)
@@ -107,7 +108,7 @@ def check_record(path, meta, body, area_list, known_ids):
         errs.append("filename must start with the id")
     if path.parent.name not in area_list:
         errs.append(f"folder `{path.parent.name}` is not a listed area {area_list}")
-    links = list(meta.get("supersedes") or [])
+    links = list(meta.get("supersedes") or []) + list(meta.get("outdated_by") or [])
     if ID_RE.match(str(meta.get("subject", ""))):
         links.append(meta["subject"])
     errs += [f"links to unknown record `{x}`" for x in links if x not in known_ids]
@@ -126,15 +127,66 @@ def check_record(path, meta, body, area_list, known_ids):
     return errs
 
 
-def check(root):
-    """Lint every record. Returns (errors, warnings, record count) as lists of 'path: message'."""
+def added_in(root):
+    """Map record ID -> the commit that first added it. Keyed by ID so `git mv` between areas keeps it."""
+    commit, out = None, {}
+    for line in git(root, "log", "--diff-filter=A", "--format=%H", "--name-only", "--", ".nio/memory"):
+        if len(line) == 40 and "/" not in line:
+            commit = line
+        elif line:
+            out[Path(line).name[:13]] = commit  # log is newest first, so the oldest add wins
+    return out
+
+
+def renamed_since(root, commit):
+    """Map each file tracked at `commit` to its name at HEAD, following every rename since."""
+    origin = {f: f for f in git(root, "ls-tree", "-r", "--name-only", commit)}  # current name -> name at commit
+    for line in git(root, "log", "--reverse", "-M", "--diff-filter=R", "--name-status", "--format=", f"{commit}..HEAD"):
+        _, old, new = line.split("\t")
+        if old in origin:
+            origin[new] = origin.pop(old)
+    return {then: now for now, then in origin.items()}
+
+
+def touches(globs, files, renamed=None):
+    """Files the globs match now, plus files they matched when the record was committed, followed through renames."""
+    hit = {f for g in globs for f in fnmatch.filter(files, g)}
+    if renamed:
+        live = set(files)
+        hit |= {now for then, now in renamed.items() if now in live and any(fnmatch.fnmatch(then, g) for g in globs)}
+    return sorted(hit)
+
+
+def edits(root, base):
+    """Errors for committed records changed since `base` other than repointing `paths` or growing `outdated_by`."""
+    errs = []
+    for line in git(root, "diff", "--name-status", "-M", base, "--", ".nio/memory"):
+        status, *names = line.split("\t")
+        if status[0] not in "MR":
+            continue
+        try:
+            before = parse(names[0], "\n".join(git(root, "show", f"{base}:{names[0]}")) + "\n")
+            after = parse(root / names[-1])
+        except Exception:
+            continue  # a parse error is reported by the lint
+        frozen = lambda meta: {k: v for k, v in meta.items() if k not in ("paths", "outdated_by")}
+        if frozen(before[0]) != frozen(after[0]) or before[1] != after[1]:
+            errs.append(f"{names[-1]}: a committed record may only change `paths` and `outdated_by`; write a new record that supersedes it")
+        elif not set(before[0].get("outdated_by") or []) <= set(after[0].get("outdated_by") or []):
+            errs.append(f"{names[-1]}: `outdated_by` may only grow")
+    return errs
+
+
+def check(root, base="HEAD"):
+    """Lint every record, and every edit since `base`. Returns (errors, warnings, record count) as lists of 'path: message'."""
     mem = root / ".nio/memory"
     files = sorted(mem.rglob("*.md"))
     area_list = areas(root)
     # untracked but not ignored files count, so a record can describe code written in the same change
     tracked = git(root, "ls-files", "--cached", "--others", "--exclude-standard")
     committed = set(git(root, "ls-tree", "-r", "--name-only", "HEAD", ".nio/memory"))
-    errors, warnings, parsed = [], [], {}
+    commits, renames = added_in(root), {}
+    errors, warnings, parsed = edits(root, base), [], {}
     for f in files:
         rel = f.relative_to(root)
         try:
@@ -150,10 +202,13 @@ def check(root):
     for f, (meta, body) in parsed.items():
         rel = f.relative_to(root)
         errors += [f"{rel}: {e}" for e in check_record(f, meta, body, area_list, ids)]
+        commit = commits.get(str(meta.get("id")))
+        if commit not in renames:
+            renames[commit] = renamed_since(root, commit) if commit else None
         for glob in meta.get("paths") or []:
-            if not fnmatch.filter(tracked, glob):
-                # a record can never be edited, so a path that went stale later only warns
-                (warnings if str(rel) in committed else errors).append(f"{rel}: path `{glob}` matches no tracked file")
+            if not touches([glob], tracked, renames[commit]):
+                # a stale path in an old record only warns: the code moved or went away after it was written
+                (warnings if str(rel) in committed else errors).append(f"{rel}: path `{glob}` matches no tracked file, even after following renames")
         subject = ids.get(str(meta.get("subject")))
         if meta.get("type") == "verdict" and subject and subject[0].parent != f.parent:
             errors.append(f"{rel}: verdict must sit in its subject's area `{subject[0].parent.name}`")
@@ -163,7 +218,26 @@ def check(root):
     for old, new in superseded_by.items():
         if len(new) > 1:
             errors.append(f".nio/memory: `{old}` is superseded by several records {new}; a human must pick one")
+    errors += outdated_links(root, {i: (f[0], parsed[f[0]][0]) for i, f in ids.items() if f[0] in parsed})
     return errors, warnings, len(files)
+
+
+def outdated_links(root, by_id):
+    """`outdated_by` on the old record and `supersedes` / `against` on the new one must agree both ways."""
+    errs = []
+    for rid, (f, meta) in by_id.items():
+        rel = f.relative_to(root)
+        for new in meta.get("outdated_by") or []:
+            n = by_id.get(new, (None, {}))[1]
+            if rid not in (n.get("supersedes") or []) and n.get("against") != rid:
+                errs.append(f"{rel}: `outdated_by` names `{new}`, which neither supersedes this record nor is a change request against it")
+        olds = list(meta.get("supersedes") or [])
+        if meta.get("type") == "change":
+            olds.append(meta.get("against"))
+        for old in olds:
+            if old in by_id and rid not in (by_id[old][1].get("outdated_by") or []):
+                errs.append(f"{by_id[old][0].relative_to(root)}: add `outdated_by: [\"{rid}\"]`, since `{rid}` supersedes or challenges it")
+    return errs
 
 
 def new_id(rtype, known):

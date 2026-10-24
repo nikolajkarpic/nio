@@ -9,6 +9,7 @@ by: "human"
 paths: ["MEMORY_NORTH_STAR.md"]
 tags: ["lint"]
 supersedes: []
+outdated_by: ["D-261024-6tkp"]
 ---
 ## Decision
 Lint requires every `paths` glob to match a tracked file when the record is written. Afterwards, an unmatched path is a warning, not an error.

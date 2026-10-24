@@ -9,6 +9,7 @@ by: "human"
 paths: ["MEMORY_NORTH_STAR.md"]
 tags: ["layout"]
 supersedes: []
+outdated_by: ["D-261024-w4pa"]
 ---
 ## Decision
 Records live in `.nio/memory/<yyyy-mm>/`, one file per record. No folder tree that mirrors the repo, no separate decisions folder.

@@ -147,7 +147,7 @@ When this applies again, and what to copy.
 | change | implementation shows the spec or plan is wrong | `against`, `outcome` (pending, accepted, rejected) | What is wrong, Proposed change, Human decision |
 
 - **IDs:** `<type letter>-<yymmdd>-<4 random base32>`. Random suffixes cannot collide across branches; the filename starts with the ID, so `**/<id>*.md` finds any record.
-- **Never edited.** A changed decision is a new record with `supersedes`. "Superseded" is not stored: the index derives it from the newer record, so an existing file's content is never touched. Moving a file to another area with `git mv` is allowed.
+- **Meaning is never edited; addresses and flags may be.** A changed decision is a new record with `supersedes`, and in the same change the old record gets `outdated_by: [<new ID>]`, so anyone opening the old file sees it is outdated. A change request against a record flags it the same way. Once committed, a record may change only `paths` (to repoint it at code git could not follow, such as a split file) and `outdated_by` (which only grows), and moving a file to another area with `git mv` is allowed. `nio check --base <ref>` rejects any other change to a record committed at `<ref>`, and requires `outdated_by` and `supersedes` / `against` to agree both ways.
 
 ## Areas
 
@@ -159,9 +159,9 @@ Records are grouped by **area**: a part of the project such as a subsystem or mo
 - **The folder is the area.** There is no `area` field in frontmatter, so the two can never disagree.
 - **Verdicts sit next to their subject,** in the subject's area. Verdicts on a whole stage (spec, plan, tasks) go in the fixed `project/` area.
 - **Renaming an area** is one `git mv` commit; IDs and links do not change.
-- **One state field per type.** Decisions and lessons have `status`; verdicts and change requests have `outcome` instead, because nobody approves a verdict itself. A decision's full standing is its `status` plus the verdicts whose `subject` points at it, joined by the index.
+- **One state field per type.** Decisions and lessons have `status`; verdicts and change requests have `outcome` instead, because nobody approves a verdict itself. Whether a decision still holds is its `standing`, which the index derives (see Index).
 - **`status` values** say how the record entered memory: `proposed` (written by an agent), `human` (a human decided it directly), `recorded` (written after the fact by reconcile). Jury standing is never stored on the record: "approved" and "rejected" mean a verdict with that `outcome` names it as `subject`, because a record written before its verdict could never be updated.
-- **Links point backward only** (a verdict names its `subject`). The index derives reverse links, so writing a verdict never edits the decision.
+- **Links point backward,** from the newer record (a verdict names its `subject`). The only forward link is `outdated_by`; a verdict never edits the decision.
 - **`run`:** the run ID that produced the record; empty for records written by hand.
 - **Traceability chain:** requirement → AC → task → commit → decision → verdict. Every link is a frontmatter field except the commit, which the index derives as the commit that added the record (`git log --diff-filter=A`), because a record cannot hold the hash of the commit it is part of.
 - **`by`:** `role / host / model` for an agent, `human` for a decision a person made.
@@ -193,7 +193,7 @@ One configured writer owns `.nio/memory/`; every other agent only adds candidate
       "run.end":        "promote"
     },
     "promote": { "jury": "when-superseding" },
-    "index": { "store": "sqlite", "model": "bge-small-en-v1.5@<pinned>", "vectors": "int8" }
+    "index": { "store": "sqlite", "model": "BAAI/bge-small-en-v1.5", "vectors": "int8", "drift": 0.3 }
   }
 }
 ```
@@ -214,12 +214,26 @@ Each skill's instructions end with the step that fires its event (for example "e
 | Table | Holds | Built from |
 | --- | --- | --- |
 | `nodes` | records, AC and task IDs, files | frontmatter, `git ls-files` |
-| `edges` | `serves`, `task`, `subject`, `supersedes`, `commit` (derived from git), `touches` (record to file, globs expanded against `git ls-files`) | frontmatter |
+| `edges` | `serves`, `task`, `subject`, `supersedes`, `commit` (derived from git), `touches` (record to file: globs expanded against `git ls-files`, plus the files they matched when the record was committed, followed through git renames) | frontmatter |
 | `fts` | full-text over titles and bodies | SQLite FTS5 |
 | `vec` | one int8 embedding per record | `sqlite-vec` and `fastembed` with the pinned model |
 | `meta` | model and version, last indexed commit, content hash per record | indexer |
 
 - **Incremental:** content hashes decide what to re-embed; unchanged records are never touched.
+- **Standing:** each decision and lesson gets one derived `standing`, first match wins:
+
+  | Standing | When |
+  | --- | --- |
+  | `conflict` | two records that no verdict rejected supersede it |
+  | `superseded` | a record that no verdict rejected supersedes it, or an accepted change request is against it |
+  | `challenged` | a pending change request is against it |
+  | `rejected`, `escalated` | its newest verdict's outcome is `rejected` or `human` |
+  | `drifted` | `memory.index.drift` (default 30%) of the lines in its touched files changed since its commit or its newest verdict, whichever is later, following renames |
+  | `uncommitted` | not committed yet |
+  | `approved` | its newest verdict approved it |
+  | `current` | none of the above |
+
+  Verdicts and change requests have their `outcome` as standing. To clear `drifted`, recheck the decision against the code: write a verdict if it still holds, or supersede it.
 - **Never blocks git:** the git hook starts `nio index` in the background. A query during indexing uses the existing index and greps the changed files.
 - **`nio index --check`:** the lint and conflict checks (Quality and Team conflicts sections), run by the indexer and in CI.
 - **`INDEX.md`:** regenerated into `.nio/cache/` on every run; never committed.
@@ -238,7 +252,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 | Read | `nio get <id>...` | bodies, at most 5 |
 | Freshness | `nio status` | last indexed commit against `HEAD`, model, store |
 
-- Results skip `superseded` and `rejected` records unless asked, and flag records in conflict.
+- Results skip `superseded` and `rejected` records unless asked, and show `conflict`, `challenged` and `drifted` with a warning: verify a drifted decision against the code before relying on it.
 - **Fallback:** if the index is missing or stale, the skill greps the records' frontmatter in `.nio/memory/`. Lookup never fails because the index is down.
 - Never preload the whole `INDEX.md`; at 1,000 records it is about 25,000 tokens.
 
@@ -246,7 +260,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 
 A record is only useful if a new agent can act on it alone. Cheap checks come first, a model last.
 
-1. **Lint, no model.** `nio check` (also run by `nio index --check`) rejects a record with a missing required field, a folder that is not a listed area, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, a verdict outside its subject's area, more than 40 body lines, or a leftover `TODO` from the template. Promotion cannot commit a failing record. `paths` must match a tracked or untracked-but-not-ignored file when the record is written, so a record can describe code from the same change; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
+1. **Lint, no model.** `nio check` (also run by `nio index --check`) rejects a record with a missing required field, a folder that is not a listed area, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, a verdict outside its subject's area, more than 40 body lines, or a leftover `TODO` from the template. Promotion cannot commit a failing record. `paths` must match a tracked or untracked-but-not-ignored file when the record is written, so a record can describe code from the same change; later, a path is followed through git renames, and one that still matches nothing (the code was deleted, or split in a way git cannot follow) is only a warning; the fix is to edit `paths` or supersede the record.
 2. **Admission rule.** A candidate becomes a record only if it answers one of the three memory questions, named in `answers:`.
 3. **Dedup before writing.** The writer queries the candidate's paths and text first; a close match on the same paths becomes a supersede, never a second record.
 4. **Spot-check juror.** One cheap juror reviews every record that supersedes an approved decision, plus a sample of the rest, asking: could a new agent understand why from this record alone? A fail goes back to the writer.
@@ -262,14 +276,14 @@ Agents do not reliably look things up on their own, so in v0 reading memory is n
 
 ## Team conflicts
 
-Git merges the files; `nio index --check` finds what git cannot see. It runs in the git `post-merge` hook and as a CI check on pull requests, so a conflict blocks the merge.
+Git merges the files; `nio index --check` finds what git cannot see. It runs in the git `post-merge` hook and as a CI check on pull requests (`--base origin/main`), so a conflict blocks the merge.
 
 | Conflict | Detected by | Resolution |
 | --- | --- | --- |
 | Two branches supersede the same decision | two records that no verdict rejected list it in `supersedes` | CI fails; NIO writes a change request and the human picks one |
 | Two branches add the same decision | high similarity and overlapping `paths` between two new records | CI warns; the next promotion merges them |
 
-Because records are never edited, git itself never reports a conflict inside `.nio/memory/`.
+Because a record's meaning is never edited, git reports a conflict inside `.nio/memory/` only when two branches change the same record's `paths` or `outdated_by`. Two branches flagging the same record is the supersede conflict above, so git surfaces it at merge time.
 
 Until resolved, lookup returns both records with a `conflict` flag.
 

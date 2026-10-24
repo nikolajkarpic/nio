@@ -1,7 +1,16 @@
 import argparse
 import sys
 
-from nio import records
+from nio import index, records
+
+
+def report(errors, warnings, count):
+    for w in warnings:
+        print(f"WARN  {w}")
+    for e in errors:
+        print(f"ERROR {e}")
+    print(f"{count} records, {len(errors)} errors, {len(warnings)} warnings")
+    sys.exit(1 if errors else 0)
 
 
 def main():
@@ -13,7 +22,11 @@ def main():
     n.add_argument("--title", required=True)
     n.add_argument("--by", default="human", help="role / host / model, or human")
     n.add_argument("--run", default="", help="run ID, e.g. R-261024-a1b2; empty when written by hand")
-    sub.add_parser("check", help="lint every record under .nio/memory")
+    c = sub.add_parser("check", help="lint every record under .nio/memory")
+    c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
+    i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
+    i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
+    i.add_argument("--base", default="HEAD", help="ref committed records are compared with, as in nio check")
     sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
     a = p.parse_args()
 
@@ -26,10 +39,9 @@ def main():
     elif a.cmd == "run":
         print(records.new_run(root))
     elif a.cmd == "check":
-        errors, warnings, count = records.check(root)
-        for w in warnings:
-            print(f"WARN  {w}")
-        for e in errors:
-            print(f"ERROR {e}")
-        print(f"{count} records, {len(errors)} errors, {len(warnings)} warnings")
-        sys.exit(1 if errors else 0)
+        report(*records.check(root, a.base))
+    elif a.cmd == "index":
+        count, embedded = index.build(root)
+        print(f"indexed {count} records, embedded {embedded}")
+        if a.check:
+            report(*index.check(root, a.base))

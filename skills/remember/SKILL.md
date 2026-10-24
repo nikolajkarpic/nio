@@ -40,8 +40,12 @@ candidates and use Record mode.
 
 ## Rules for every record
 
-1. **Never edit a committed record.** To change one, write a new record that lists the old
-   ID in `supersedes`. Only a file you created in this session may still be edited.
+1. **Never edit a committed record's meaning.** To change one, write a new record that lists
+   the old ID in `supersedes`, and add the new ID to the old record's `outdated_by` list in
+   the same change. Only a file you created in this session may still be edited otherwise.
+   The exceptions are `outdated_by` (only ever add to it) and `paths` (repoint them when code
+   moved in a way git cannot follow; renames are followed for you). `nio check` rejects any
+   other edit.
 2. **Pick one area** from `memory.areas`: the part of the project the record is mostly
    about. Put other areas in `tags`. If no area fits, stop and ask the human to add one;
    never create a folder yourself.
@@ -71,8 +75,9 @@ candidates and use Record mode.
    (`why`, `reuse` or `jury`). For a decision or lesson set `status`: `human` if the human
    decided it, `proposed` otherwise. Never store the jury's ruling in `status`; a verdict
    record carries it. Fill `paths`, `tags`, `supersedes`, and `serves` or `task` when known.
-   For a change request, set `against` to the spec, plan or record that is wrong, then
-   stop the work it blocks and tell the human: a change request is never fixed silently.
+   For a change request, set `against` to the spec, plan or record that is wrong; if it is a
+   record, add the change request's ID to that record's `outdated_by`. Then stop the work it
+   blocks and tell the human: a change request is never fixed silently.
 5. **Run `nio check`** and fix every error in your file. Warnings on older records are not
    yours to fix.
 
