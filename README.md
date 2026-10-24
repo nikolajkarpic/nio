@@ -104,10 +104,12 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio index [--check]` | Rebuild the index (incremental) and run cross-branch conflict checks |
 | `nio query "<question>" [--path F] [--graph ID]` | Find records by text or file, or walk links; `≈` marks a likely duplicate |
 | `nio get <ID>...` | Print records by ID |
+| `nio pack "<work>" [--path F] [--ac A] [--diff REF] [--run R]` | The memory that applies to a piece of work, for an agent to read before it starts |
+| `nio hooks` | Install git hooks: refresh the index after pulls, checkouts and rebases; run the CI check before commits and pushes |
 | `nio status` | Index freshness against `HEAD` |
 | `nio run` | Start a run and its `promote.md` |
 
-Self-checks: `uv run python tests/test_records.py` and `uv run python tests/test_index.py`.
+Self-checks: `uv run python tests/test_records.py`, `tests/test_index.py`, `tests/test_pack.py` and `tests/test_hooks.py`.
 
 ## Principles
 
