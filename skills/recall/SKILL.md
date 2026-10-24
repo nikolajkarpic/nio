@@ -31,15 +31,16 @@ Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 3. **Read** the records you need, at most 5: `nio get <ID> ...`.
 4. **Act on the standing:**
 
-   | Standing | What to do |
-   | --- | --- |
-   | `current`, `approved` | follow it; to go against it, write a change request first (`@nio:remember`) |
-   | `drifted` | its code changed a lot since it was confirmed: check it against the code before relying on it, and tell the memory writer whether it still holds |
-   | `challenged` | a change request is pending against it: ask the human before relying on it |
-   | `conflict` | two records supersede it: stop and ask the human which one holds |
-   | `escalated` | the jury passed it to the human: treat it as undecided |
-   | `uncommitted` | written in this change but not committed yet: usable, not yet reviewed |
-   | `superseded`, `rejected` | do not follow it; follow the record that replaced it |
+   | Standing | Weight | What to do |
+   | --- | --- | --- |
+   | `approved` | binding | follow it; to go against it, write a change request first (`@nio:remember`) |
+   | `current` | strong | follow it; to go against it, write a change request first (`@nio:remember`) |
+   | `drifted` | verify | its code changed a lot since it was confirmed: check it against the code before relying on it, and tell the memory writer whether it still holds |
+   | `challenged` | disputed | a change request is pending against it: ask the human before relying on it |
+   | `conflict` | blocked | two records supersede it: stop and ask the human which one holds |
+   | `escalated` | undecided | the jury passed it to the human: treat it as undecided |
+   | `uncommitted` | tentative | written in this change but not committed yet: usable, not yet reviewed |
+   | `superseded`, `rejected` | none | do not follow it; follow the record that replaced it |
 
 Stop when the question is answered or after 5 records; if memory has nothing, say so and
 carry on.

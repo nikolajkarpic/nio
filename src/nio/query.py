@@ -26,7 +26,11 @@ def search(root, text="", paths=(), limit=10, show_all=False):
         return grep(root, text, paths, limit, show_all)
     touching = {}
     for src, dst in db.execute(f"select src, dst from edges where rel = 'touches' and dst in ({','.join('?' * len(paths))})", list(paths)):
-        touching.setdefault(src, []).append(dst)
+        touching.setdefault(src, set()).add(dst)
+    if paths:  # edges only know files that exist; a file the task will create still matches a record's globs
+        for rid, (_, meta, _, _) in index.load(root).items():
+            for f in records.touches(meta.get("paths") or [], list(paths)):
+                touching.setdefault(rid, set()).add(f)
     sims, score = {}, {}
     if text:
         fts = db.execute("select id from fts where fts match ? order by rank", (fts_query(text),)).fetchall() if fts_query(text) else []
@@ -54,20 +58,20 @@ def fts_query(text):
     return " OR ".join(f'"{w}"' for w in re.findall(r"\w+", text))
 
 
-def links(db, rid):
-    """One graph hop: records that point at this one (verdicts, supersedes, change requests) or that it points at."""
+def links(db, rid, at=None):
+    """One graph hop: records that point at this one (verdicts, supersedes, change requests) or that it points at.
+    `at` overrides standings, e.g. as they stood before a diff."""
     rows = db.execute(
         """select e.rel, e.src, n.standing from edges e join nodes n on n.id = e.src where e.dst = ? and n.kind = 'record'
            union all
            select e.rel, e.dst, n.standing from edges e join nodes n on n.id = e.dst where e.src = ? and n.kind = 'record'""",
         (rid, rid),
     )
-    return [f"{rel} {other} {standing}" for rel, other, standing in rows]
+    return [f"{rel} {other} {(at or {}).get(other, standing)}" for rel, other, standing in rows]
 
 
 def grep(root, text, paths, limit, show_all):
     """Lookup without the index: word overlap and path globs over the record files. Never fails because the index is down."""
-    files = records.git(root, "ls-files", "--cached", "--others", "--exclude-standard")
     words = {w.lower() for w in re.findall(r"\w{3,}", text)}
     hits = []
     for rid, (_, meta, body, _) in index.load(root).items():
@@ -75,7 +79,7 @@ def grep(root, text, paths, limit, show_all):
         standing = "superseded" if meta.get("outdated_by") else meta.get("status") or meta.get("outcome")
         if standing in HIDDEN and not show_all:
             continue
-        shared = sorted(set(records.touches(meta.get("paths") or [], files)) & set(paths))
+        shared = records.touches(meta.get("paths") or [], list(paths))  # matches files that don't exist yet too
         found = set(re.findall(r"\w{3,}", f"{meta.get('title')} {' '.join(body)}".lower()))
         score = len(words & found) / max(len(words), 1) + len(shared)
         if score:
