@@ -1,6 +1,6 @@
 # NIO — agent instructions
 
-Read `NORTH_STAR.md` first. Any change must serve it, and ideas that don't go to `ISSUES.md`.
+Read `NORTH_STAR.md` first. Any change must serve it, and ideas that don't go to a GitHub issue (labelled `type:*` and `area:*`).
 
 ## Repo layout
 
@@ -8,7 +8,7 @@ Read `NORTH_STAR.md` first. Any change must serve it, and ideas that don't go to
 - `src/nio/`: the `nio` Python CLI (`uv run nio ...`), for what skills can't do reliably.
   Self-checks: `uv run python tests/test_records.py` and `uv run python tests/test_index.py`.
 - `.claude-plugin/plugin.json`: a thin Claude Code wrapper, added once the first skill exists.
-- `NORTH_STAR.md`: the vision. `ISSUES.md`: the backlog of deferred ideas.
+- `NORTH_STAR.md`: the vision. GitHub issues: the backlog of open decisions and deferred ideas.
 
 ## Rules for writing skills
 

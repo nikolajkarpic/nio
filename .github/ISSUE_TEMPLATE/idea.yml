@@ -1,0 +1,14 @@
+name: Idea
+description: A deferred idea that doesn't serve the current path yet
+labels: ["type:idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+    validations:
+      required: true
+  - type: textarea
+    id: why-later
+    attributes:
+      label: Why it's deferred
