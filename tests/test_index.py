@@ -1,0 +1,87 @@
+"""Self-check for nio index. Run: uv run python tests/test_index.py (downloads the model once)."""
+from test_records import GOOD_BODY, commit, fill, repo
+
+from nio import index, records
+
+
+def test():
+    root = repo()
+    a = records.new(root, "decision", "auth", "Sessions in Redis")
+    fill(a, paths='["app.py"]', serves='["AC-1"]')
+    b = records.new(root, "decision", "auth", "Keep sessions in Redis")
+    fill(b, paths='["app.py"]', body=GOOD_BODY.replace("Store", "Keep"))
+    assert index.build(root) == (2, 2)
+    assert index.build(root) == (2, 0)  # incremental: nothing changed, nothing embedded
+    assert (root / ".nio/cache/INDEX.md").read_text().count("app.py:") == 1
+    db = index.connect(root)
+    assert ("serves", "AC-1") in db.execute("select rel, dst from edges where src = ?", (a.name[:13],)).fetchall()
+    assert db.execute("select id from fts where fts match 'postgres'").fetchall()
+    # the same decision twice on the same path warns
+    assert any("same decision" in w for w in index.check(root)[1])
+    # ...unless one supersedes the other; only the two edited records are re-embedded
+    fill(b, paths='["app.py"]', body=GOOD_BODY.replace("Store", "Keep"), supersedes=f'["{a.name[:13]}"]')
+    a.write_text(a.read_text().replace("\n---\n", f'\noutdated_by: ["{b.name[:13]}"]\n---\n', 1))
+    assert index.build(root) == (2, 2)
+    errors, warnings, _ = index.check(root)
+    assert not errors and not warnings, (errors, warnings)
+    # the cache can be deleted and rebuilt
+    (root / ".nio/cache/index.db").unlink()
+    assert index.build(root) == (2, 2)
+    print("ok")
+
+
+VERDICT = "## Ruling\nOk.\n## Jurors\n| a | b | c | yes |\n## Reasons\nFine.\n## What was rejected\nNothing.\n"
+
+
+def standing(root, rid):
+    index.build(root)
+    return index.connect(root).execute("select standing from nodes where id = ?", (rid,)).fetchone()[0]
+
+
+def flag(old, new):
+    text = old.read_text()
+    if "outdated_by: [" in text:
+        old.write_text(text.replace("outdated_by: [", f'outdated_by: ["{new}", ', 1))
+    else:
+        old.write_text(text.replace("\n---\n", f'\noutdated_by: ["{new}"]\n---\n', 1))
+
+
+def test_standing():
+    root = repo()
+    (root / "app.py").write_text("".join(f"line {i}\n" for i in range(10)))
+    a = records.new(root, "decision", "auth", "Sessions in Redis")
+    fill(a, paths='["app.py"]')
+    rid = a.name[:13]
+    assert standing(root, rid) == "uncommitted"
+    commit(root)
+    assert standing(root, rid) == "current"
+    # 4 of 10 lines changed since it was written: drifted
+    (root / "app.py").write_text("".join(f"line {i}{'!' if i < 4 else ''}\n" for i in range(10)))
+    commit(root, "refactor")
+    assert standing(root, rid) == "drifted"
+    # a fresh verdict confirms it still holds and resets the drift clock
+    v = records.new(root, "verdict", "auth", "Recheck")
+    fill(v, body=VERDICT, subject=rid, outcome="approved", tier="low")
+    commit(root, "recheck")
+    assert standing(root, rid) == "approved"
+    # a pending change request challenges it
+    c = records.new(root, "change", "auth", "Redis is wrong")
+    fill(c, body="## What is wrong\nX.\n## Proposed change\nY.\n## Human decision\nPending.\n", against=rid)
+    flag(a, c.name[:13])
+    assert standing(root, rid) == "challenged"
+    # ...and a superseding decision outdates it, unless the jury rejects the replacement
+    fill(c, body="## What is wrong\nX.\n## Proposed change\nY.\n## Human decision\nNo.\n", against=rid, outcome="rejected")
+    b = records.new(root, "decision", "auth", "Sessions in Postgres")
+    fill(b, paths='["app.py"]', supersedes=f'["{rid}"]', body=GOOD_BODY.replace("Redis", "Postgres"))
+    flag(a, b.name[:13])
+    assert records.check(root)[0] == [], records.check(root)[0]
+    assert standing(root, rid) == "superseded"
+    r = records.new(root, "verdict", "auth", "Postgres ruling")
+    fill(r, body=VERDICT, subject=b.name[:13], outcome="rejected", tier="low")
+    assert standing(root, rid) == "approved" and standing(root, b.name[:13]) == "rejected"
+    print("ok")
+
+
+if __name__ == "__main__":
+    test()
+    test_standing()

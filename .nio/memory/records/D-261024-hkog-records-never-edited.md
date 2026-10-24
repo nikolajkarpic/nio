@@ -9,6 +9,7 @@ by: "human"
 paths: ["MEMORY_NORTH_STAR.md"]
 tags: ["record-format", "merge"]
 supersedes: []
+outdated_by: ["D-261024-g5lm"]
 ---
 ## Decision
 A changed decision is a new record that lists the old one in `supersedes`. The old file is never touched; the index derives that it is superseded.

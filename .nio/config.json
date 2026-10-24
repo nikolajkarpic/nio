@@ -1,5 +1,6 @@
 {
   "memory": {
-    "areas": ["records", "index", "sync", "tooling", "project"]
+    "areas": ["records", "index", "sync", "tooling", "project"],
+    "index": { "model": "BAAI/bge-small-en-v1.5", "drift": 0.3 }
   }
 }
