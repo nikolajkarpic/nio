@@ -7,8 +7,8 @@ date: {date}
 by: "{by}"                # role / host / model, or human
 run: "{run}"              # run ID; empty when written by hand
 subject: ""               # the D or T ID that was judged
-outcome: approved         # approved | rejected | human
-tier: low                 # low | medium | high
+outcome: ""               # approved | rejected | human
+tier: ""                  # low | medium | high
 paths: []
 tags: []
 supersedes: []

@@ -4,3 +4,4 @@ CLAUDE.local.md
 .nio/cache/
 .nio/runs/
 .venv/
+__pycache__/

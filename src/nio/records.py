@@ -12,7 +12,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 BASE32 = "abcdefghijklmnopqrstuvwxyz234567"
-LETTER = {"decision": "D", "verdict": "V", "lesson": "L", "change": "C"}
+LETTER = {"decision": "D", "verdict": "V", "lesson": "L", "change": "C", "run": "R"}
 ID_RE = re.compile(r"^[DVLC]-\d{6}-[a-z2-7]{4}$")
 MAX_BODY_LINES = 40
 
@@ -26,7 +26,8 @@ REQUIRED = {
 }
 OPTIONAL = {"run", "serves", "task", "paths", "tags", "supersedes", "subject", "outcome", "tier", "against"}
 ENUMS = {
-    "status": {"proposed", "approved", "rejected", "human", "recorded"},
+    # how the record entered memory; jury standing is derived from verdicts whose `subject` points here
+    "status": {"proposed", "human", "recorded"},
     "answers": {"why", "reuse", "jury"},
     "tier": {"low", "medium", "high"},
 }
@@ -130,7 +131,8 @@ def check(root):
     mem = root / ".nio/memory"
     files = sorted(mem.rglob("*.md"))
     area_list = areas(root)
-    tracked = git(root, "ls-files")
+    # untracked but not ignored files count, so a record can describe code written in the same change
+    tracked = git(root, "ls-files", "--cached", "--others", "--exclude-standard")
     committed = set(git(root, "ls-tree", "-r", "--name-only", "HEAD", ".nio/memory"))
     errors, warnings, parsed = [], [], {}
     for f in files:
@@ -143,6 +145,7 @@ def check(root):
     for f, (meta, _) in parsed.items():
         ids.setdefault(str(meta.get("id")), []).append(f)
     errors += [f"{p[1].relative_to(root)}: duplicate id `{i}`" for i, p in ids.items() if len(p) > 1]
+    rejected = {str(m.get("subject")) for m, _ in parsed.values() if m.get("type") == "verdict" and m.get("outcome") == "rejected"}
     superseded_by = {}
     for f, (meta, body) in parsed.items():
         rel = f.relative_to(root)
@@ -151,7 +154,10 @@ def check(root):
             if not fnmatch.filter(tracked, glob):
                 # a record can never be edited, so a path that went stale later only warns
                 (warnings if str(rel) in committed else errors).append(f"{rel}: path `{glob}` matches no tracked file")
-        if meta.get("status") != "rejected":
+        subject = ids.get(str(meta.get("subject")))
+        if meta.get("type") == "verdict" and subject and subject[0].parent != f.parent:
+            errors.append(f"{rel}: verdict must sit in its subject's area `{subject[0].parent.name}`")
+        if meta.get("id") not in rejected:
             for old in meta.get("supersedes") or []:
                 superseded_by.setdefault(old, []).append(meta.get("id"))
     for old, new in superseded_by.items():
@@ -183,3 +189,13 @@ def new(root, rtype, area, title, by="human", run=""):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return path
+
+
+def new_run(root):
+    """Create .nio/runs/<run>/promote.md and return the run ID."""
+    known = {p.name for p in (root / ".nio/runs").glob("R-*")}
+    rid = new_id("run", known)
+    run = root / ".nio/runs" / rid
+    run.mkdir(parents=True)
+    (run / "promote.md").write_text(f"# Memory candidates for {rid}\n")
+    return rid

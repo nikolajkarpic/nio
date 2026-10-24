@@ -94,7 +94,7 @@ flowchart TB
     checkout/
       C-261025-h2n5-spec-misses-sso.md        # change request
     project/                       # verdicts on whole stages (spec, plan, tasks)
-  runs/                            # short-term, gitignored
+  runs/                            # short-term, gitignored; `nio run` starts one
     R-261024-a1b2/
       scratch.md                   # working notes, fixed headings
       promote.md                   # candidates for long-term memory
@@ -118,7 +118,7 @@ YAML frontmatter that tools read, plus a short body that agents read. A body sta
 id: D-261024-7kq2
 type: decision            # decision | verdict | lesson | change
 title: Store sessions in Redis, not Postgres
-status: approved          # proposed | approved | rejected | human | recorded
+status: proposed          # proposed | human | recorded
 answers: why              # why | reuse | jury: which memory question it answers
 date: 2026-10-24
 by: builder / claude-code / sonnet   # role / host / model, or `human`
@@ -160,7 +160,7 @@ Records are grouped by **area**: a part of the project such as a subsystem or mo
 - **Verdicts sit next to their subject,** in the subject's area. Verdicts on a whole stage (spec, plan, tasks) go in the fixed `project/` area.
 - **Renaming an area** is one `git mv` commit; IDs and links do not change.
 - **One state field per type.** Decisions and lessons have `status`; verdicts and change requests have `outcome` instead, because nobody approves a verdict itself. A decision's full standing is its `status` plus the verdicts whose `subject` points at it, joined by the index.
-- **`status` values:** `proposed` (a candidate not yet ruled on), `approved` (the jury approved it), `rejected`, `human` (a human decided it directly, or the jury could not agree and a human ruled), `recorded` (written after the fact by reconcile).
+- **`status` values** say how the record entered memory: `proposed` (written by an agent), `human` (a human decided it directly), `recorded` (written after the fact by reconcile). Jury standing is never stored on the record: "approved" and "rejected" mean a verdict with that `outcome` names it as `subject`, because a record written before its verdict could never be updated.
 - **Links point backward only** (a verdict names its `subject`). The index derives reverse links, so writing a verdict never edits the decision.
 - **`run`:** the run ID that produced the record; empty for records written by hand.
 - **Traceability chain:** requirement → AC → task → commit → decision → verdict. Every link is a frontmatter field except the commit, which the index derives as the commit that added the record (`git log --diff-filter=A`), because a record cannot hold the hash of the commit it is part of.
@@ -246,7 +246,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 
 A record is only useful if a new agent can act on it alone. Cheap checks come first, a model last.
 
-1. **Lint, no model.** `nio check` (also run by `nio index --check`) rejects a record with a missing required field, a folder that is not a listed area, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, more than 40 body lines, or a leftover `TODO` from the template. Promotion cannot commit a failing record. `paths` must match a file in `git ls-files` when the record is written; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
+1. **Lint, no model.** `nio check` (also run by `nio index --check`) rejects a record with a missing required field, a folder that is not a listed area, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, a verdict outside its subject's area, more than 40 body lines, or a leftover `TODO` from the template. Promotion cannot commit a failing record. `paths` must match a tracked or untracked-but-not-ignored file when the record is written, so a record can describe code from the same change; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
 2. **Admission rule.** A candidate becomes a record only if it answers one of the three memory questions, named in `answers:`.
 3. **Dedup before writing.** The writer queries the candidate's paths and text first; a close match on the same paths becomes a supersede, never a second record.
 4. **Spot-check juror.** One cheap juror reviews every record that supersedes an approved decision, plus a sample of the rest, asking: could a new agent understand why from this record alone? A fail goes back to the writer.
@@ -266,7 +266,7 @@ Git merges the files; `nio index --check` finds what git cannot see. It runs in 
 
 | Conflict | Detected by | Resolution |
 | --- | --- | --- |
-| Two branches supersede the same decision | two approved records list it in `supersedes` | CI fails; NIO writes a change request and the human picks one |
+| Two branches supersede the same decision | two records that no verdict rejected list it in `supersedes` | CI fails; NIO writes a change request and the human picks one |
 | Two branches add the same decision | high similarity and overlapping `paths` between two new records | CI warns; the next promotion merges them |
 
 Because records are never edited, git itself never reports a conflict inside `.nio/memory/`.
