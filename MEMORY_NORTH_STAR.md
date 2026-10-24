@@ -249,6 +249,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 | Decisions on a file | `nio query --path <file>` | one line per hit: ID, type, status or outcome, title |
 | Why, and did the jury approve | `nio query --graph <id> --depth 2` | linked IDs: superseding records, verdicts, AC, task, files |
 | Done before? | `nio query "<question>"` | hybrid: full-text and vector results merged by rank, expanded one graph hop |
+| Is this candidate a duplicate? | `nio query "<title>. Decision: … Why: …" --path <file>...` | the same hybrid search with similarity; `≈` marks 0.85 or more, looser than the 0.92 CI warning |
 | Read | `nio get <id>...` | bodies, at most 5 |
 | Freshness | `nio status` | last indexed commit against `HEAD`, model, store |
 
