@@ -142,9 +142,9 @@ When this applies again, and what to copy.
 | Type | Written when | Extra fields | Body sections |
 | --- | --- | --- | --- |
 | decision | an agent makes a call the task did not dictate | `serves`, `task` | Decision, Why, Rejected alternatives, Reuse |
-| verdict | every jury ruling, always | `subject` (a D or T ID), `outcome`, `tier` | Ruling, Jurors (a table of lens, host, model and vote), Reasons, What was rejected |
+| verdict | every jury ruling, always | `subject` (a D or T ID), `outcome` (approved, rejected, human), `tier` (low, medium, high) | Ruling, Jurors (a table of lens, host, model and vote), Reasons, What was rejected |
 | lesson | a reusable solution is found | `paths`, `tags` | Problem, Solution, Where it applies |
-| change | implementation shows the spec or plan is wrong | `against`, `outcome` | What is wrong, Proposed change, Human decision |
+| change | implementation shows the spec or plan is wrong | `against`, `outcome` (pending, accepted, rejected) | What is wrong, Proposed change, Human decision |
 
 - **IDs:** `<type letter>-<yymmdd>-<4 random base32>`. Random suffixes cannot collide across branches; the filename starts with the ID, so `**/<id>*.md` finds any record.
 - **Never edited.** A changed decision is a new record with `supersedes`. "Superseded" is not stored: the index derives it from the newer record, so an existing file's content is never touched. Moving a file to another area with `git mv` is allowed.
@@ -159,8 +159,10 @@ Records are grouped by **area**: a part of the project such as a subsystem or mo
 - **The folder is the area.** There is no `area` field in frontmatter, so the two can never disagree.
 - **Verdicts sit next to their subject,** in the subject's area. Verdicts on a whole stage (spec, plan, tasks) go in the fixed `project/` area.
 - **Renaming an area** is one `git mv` commit; IDs and links do not change.
+- **One state field per type.** Decisions and lessons have `status`; verdicts and change requests have `outcome` instead, because nobody approves a verdict itself. A decision's full standing is its `status` plus the verdicts whose `subject` points at it, joined by the index.
 - **`status` values:** `proposed` (a candidate not yet ruled on), `approved` (the jury approved it), `rejected`, `human` (a human decided it directly, or the jury could not agree and a human ruled), `recorded` (written after the fact by reconcile).
 - **Links point backward only** (a verdict names its `subject`). The index derives reverse links, so writing a verdict never edits the decision.
+- **`run`:** the run ID that produced the record; empty for records written by hand.
 - **Traceability chain:** requirement → AC → task → commit → decision → verdict. Every link is a frontmatter field except the commit, which the index derives as the commit that added the record (`git log --diff-filter=A`), because a record cannot hold the hash of the commit it is part of.
 - **`by`:** `role / host / model` for an agent, `human` for a decision a person made.
 
@@ -230,7 +232,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 
 | Need | Command | Returns |
 | --- | --- | --- |
-| Decisions on a file | `nio query --path <file>` | one line per hit: ID, type, status, title |
+| Decisions on a file | `nio query --path <file>` | one line per hit: ID, type, status or outcome, title |
 | Why, and did the jury approve | `nio query --graph <id> --depth 2` | linked IDs: superseding records, verdicts, AC, task, files |
 | Done before? | `nio query "<question>"` | hybrid: full-text and vector results merged by rank, expanded one graph hop |
 | Read | `nio get <id>...` | bodies, at most 5 |
@@ -244,7 +246,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 
 A record is only useful if a new agent can act on it alone. Cheap checks come first, a model last.
 
-1. **Lint, no model.** `nio index --check` rejects a record with a missing required field, a folder that is not a listed area, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, or more than 40 lines. Promotion cannot commit a failing record. `paths` must match a file in `git ls-files` when the record is written; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
+1. **Lint, no model.** `nio check` (also run by `nio index --check`) rejects a record with a missing required field, a folder that is not a listed area, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, more than 40 body lines, or a leftover `TODO` from the template. Promotion cannot commit a failing record. `paths` must match a file in `git ls-files` when the record is written; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
 2. **Admission rule.** A candidate becomes a record only if it answers one of the three memory questions, named in `answers:`.
 3. **Dedup before writing.** The writer queries the candidate's paths and text first; a close match on the same paths becomes a supersede, never a second record.
 4. **Spot-check juror.** One cheap juror reviews every record that supersedes an approved decision, plus a sample of the rest, asking: could a new agent understand why from this record alone? A fail goes back to the writer.

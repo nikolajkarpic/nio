@@ -3,3 +3,4 @@ CLAUDE.local.md
 .nio/config.local.json
 .nio/cache/
 .nio/runs/
+.venv/
