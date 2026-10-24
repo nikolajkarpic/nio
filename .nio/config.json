@@ -1,0 +1,5 @@
+{
+  "memory": {
+    "areas": ["records", "index", "sync", "tooling", "project"]
+  }
+}
