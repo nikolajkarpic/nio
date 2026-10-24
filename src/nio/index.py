@@ -65,9 +65,11 @@ def load(root):
     return out
 
 
-def changed_lines(root, anchor):
-    """Map path at HEAD -> lines changed since `anchor`, following renames."""
-    out = subprocess.run(["git", "diff", "--numstat", "-z", "-M", anchor, "HEAD"], cwd=root, capture_output=True, text=True).stdout
+def changed_lines(root, anchor, until="HEAD"):
+    """Map path -> lines changed from `anchor` to `until`, following renames."""
+    if until != "HEAD" and subprocess.run(["git", "merge-base", "--is-ancestor", anchor, until], cwd=root).returncode:
+        return {}  # confirmed after `until`: nothing before `until` changed it since
+    out = subprocess.run(["git", "diff", "--numstat", "-z", "-M", anchor, until], cwd=root, capture_output=True, text=True).stdout
     toks, i, changed = out.split("\0"), 0, {}
     while i < len(toks) and toks[i]:
         added, deleted, path = toks[i].split("\t")
@@ -79,7 +81,7 @@ def changed_lines(root, anchor):
     return changed
 
 
-def standings(recs, commits, times, touched, root, threshold):
+def standings(recs, commits, times, touched, root, threshold, until="HEAD"):
     """Map record ID -> (standing, drift). The record's own status or outcome is only how it entered memory;
     this is whether it still holds, derived from newer records and from how much its code changed."""
     verdicts, superseders, changes = {}, {}, {}
@@ -103,7 +105,7 @@ def standings(recs, commits, times, touched, root, threshold):
         if rid in commits and touched.get(rid):
             anchor = max(anchors, key=lambda c: times.get(c, 0))  # drift counts from the last confirmation
             if anchor not in diffs:
-                diffs[anchor] = changed_lines(root, anchor)
+                diffs[anchor] = changed_lines(root, anchor, until)
             size = sum((root / f).read_bytes().count(b"\n") for f in touched[rid] if (root / f).is_file())
             drift = min(1.0, sum(diffs[anchor].get(f, 0) for f in touched[rid]) / max(size, 1))
         if len(live) > 1:
@@ -165,9 +167,7 @@ def build(root):
                 edges.append((rid, "commit", commit))
         db.executemany("insert into edges values (?, ?, ?)", edges)
         # commit order from history, not timestamps: commits in the same second must still sort
-        history = records.git(root, "log", "--topo-order", "--format=%H")
-        times = {c: len(history) - i for i, c in enumerate(history)}
-        for rid, (standing, drift) in standings(recs, commits, times, touched, root, threshold).items():
+        for rid, (standing, drift) in standings(recs, commits, order(root), touched, root, threshold).items():
             path, meta = recs[rid][:2]
             state = meta.get("status") or meta.get("outcome")
             db.execute("insert into nodes values (?, 'record', ?, ?, ?, ?, ?, ?)", (rid, meta.get("type"), state, standing, drift, str(meta.get("title")), path))
@@ -189,6 +189,27 @@ def build(root):
     write_index_md(root, db)
     db.close()
     return len(recs), len(todo)
+
+
+def order(root):
+    """Commit -> position in history; from history, not timestamps, so commits in the same second still sort."""
+    history = records.git(root, "log", "--topo-order", "--format=%H")
+    return {c: len(history) - i for i, c in enumerate(history)}
+
+
+def standings_at(root, until):
+    """Record ID -> standing with drift counted only up to `until`, so a juror judges a diff against memory as it
+    stood before the diff instead of seeing the diff itself as drift. Reads the graph from a built index."""
+    db = connect(root)
+    touched, commits = {}, {}
+    for src, rel, dst in db.execute("select src, rel, dst from edges where rel in ('touches', 'commit')"):
+        if rel == "touches":
+            touched.setdefault(src, []).append(dst)
+        else:
+            commits[src] = dst
+    db.close()
+    found = standings(load(root), commits, order(root), touched, root, settings(root)[1], until)
+    return {rid: standing for rid, (standing, _) in found.items()}
 
 
 def write_index_md(root, db):

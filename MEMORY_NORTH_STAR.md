@@ -271,9 +271,14 @@ A record is only useful if a new agent can act on it alone. Cheap checks come fi
 
 Agents do not reliably look things up on their own, so in v0 reading memory is not their choice.
 
-- **Context packs.** `nio pack <task>` runs `nio query --path` for every file in the task's scope and a one-hop graph walk on its AC, then adds the index lines and the full text of the top 3 records, capped at about 1,500 tokens. The worker starts with them in context.
-- **Jurors enforce it.** A juror's pack includes the approved decisions touching the diff's paths, and every juror gets one more lens: does this diff contradict an approved decision without a change request? If so, reject.
-- **Files outside the pack.** The skill tells the worker to run `nio query --path` before editing a file the pack did not cover.
+- **Context packs.** `nio pack "<description>" [--path <file>...] [--ac <AC>...] [--task <ID>] [--run <run>]` prints the memory that applies to a piece of work, and the worker starts with it in context. It is read-only and generated from the records; it does no research. Working out the scope (files, AC) comes first: a person or the main session today, a research skill later (#18). Whoever hands the work off calls it, never the worker itself.
+  - **Finding records.** Three channels: records whose `paths` cover a file in scope (including files not created yet), records serving the AC or task, and hybrid text search on the description. Path and AC hits (tier A) outrank text-only hits (tier B); within a tier, order is by relevance alone, never by standing.
+  - **Chosen by quality, not size.** Every tier A decision and lesson is printed in full. Tier B, verdicts and change requests are index lines; verdicts and change requests also show as links under the record they are about. Tier B keeps the top 10 for now, a provisional cutoff until calibrated. Nothing is cut silently: the heading states the pack's size, and any limit comes from measuring real packs.
+  - **Standings.** Every record shows its standing, warned ones included, and any may be printed in full. A superseded record gives way to the record that replaced it; a rejected one drops out. The pack ends with instructions and a map from standing to weight (`approved` binding, `current` strong, `uncommitted` tentative, `drifted` verify, `challenged` disputed, `escalated` undecided, `conflict` blocked), listing only the standings it contains.
+  - **Was it used?** The pack asks the worker to end its reply with `memory-used: <IDs>`; compared with the pack, that shows which records were useful.
+  - **Output.** Always stdout. With `--run`, also `.nio/runs/<run>/packs/<task ID or description slug>.md`, so what the agent saw can be audited. Every pack appends its IDs to `.nio/cache/usage.log`.
+- **Jurors enforce it.** `nio pack --diff <ref>` builds a juror's pack from the diff's files with the same rules, with standings as they were before the diff (the diff itself never counts as drift), plus one more lens: does this diff contradict an approved or current record without a change request? If so, reject.
+- **Files outside the pack.** The pack tells the worker to run `nio query --path` before editing a file it did not cover.
 
 ## Team conflicts
 
@@ -297,10 +302,10 @@ v0 proves that agents write good records and use them. NIO dogfoods it on this r
 2. **`@nio:remember` skill:** record a decision by hand, write a verdict, add a candidate, promote with the admission rule and dedup.
 3. **`nio index`:** SQLite graph, FTS5 and `sqlite-vec` vectors with `bge-small-en-v1.5`, incremental by content hash, `INDEX.md` generation, and `--check`.
 4. **`nio query` and `nio get`:** path, graph, hybrid text, with the grep fallback.
-5. **`nio pack`:** memory in every context pack.
+5. **`nio pack`:** memory in every context pack, juror packs (`--diff`) and the usage log included.
 6. **Juror lenses:** respects approved decisions; the spot-check juror.
 7. **Sync:** git `post-merge`, `post-checkout` and `post-rewrite` hooks running `nio index` in the background, the session-start freshness check, and the CI check.
-8. **Usage log.**
+8. **Usage log:** lookups (`nio query`, `nio get`) log their IDs too; packs already do.
 
 **Rough goals, not gates:** across about 20 real tasks on two branches, the relevant decision reaches the context pack in most tasks, almost no duplicate records survive a merge, and CI catches every cross-branch supersede conflict.
 

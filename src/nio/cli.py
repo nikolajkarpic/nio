@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from nio import index, query, records
+from nio import index, pack, query, records
 
 
 def report(errors, warnings, count):
@@ -36,6 +36,13 @@ def main():
     q.add_argument("--all", action="store_true", help="include superseded and rejected records")
     g = sub.add_parser("get", help=f"print up to {query.MAX_GET} records by ID")
     g.add_argument("ids", nargs="+")
+    k = sub.add_parser("pack", help="print the memory that applies to a piece of work, for an agent to read before it starts")
+    k.add_argument("text", help="what the work is, in a sentence or two")
+    k.add_argument("--path", action="append", default=[], help="a file in the work's scope, existing or not; repeatable")
+    k.add_argument("--ac", action="append", default=[], help="an acceptance criterion the work serves; repeatable")
+    k.add_argument("--task", default="", help="task ID; names the pack")
+    k.add_argument("--diff", metavar="REF", help="juror pack: add the files changed since REF and judge against the records")
+    k.add_argument("--run", help="also save the pack to .nio/runs/<run>/packs/")
     sub.add_parser("status", help="index freshness: indexed commit against HEAD, model, store")
     sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
     a = p.parse_args()
@@ -66,6 +73,16 @@ def main():
         try:
             for path, text in query.get(root, a.ids):
                 print(f"==> {path} <==\n{text}")
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+    elif a.cmd == "pack":
+        try:
+            text, ids = pack.build(root, a.text, a.path, a.ac, a.task, a.diff)
+            name = a.task or records.slug(a.text)
+            if a.run:
+                print(f"saved {pack.save(root, a.run, name, text).relative_to(root)}", file=sys.stderr)
+            pack.log(root, name, ids, text)
+            print(text, end="")
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":

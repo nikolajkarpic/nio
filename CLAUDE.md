@@ -6,7 +6,7 @@ Read `NORTH_STAR.md` first. Any change must serve it, and ideas that don't go to
 
 - `skills/<name>/SKILL.md`: the product. One folder per skill (`remember` writes memory, `recall` reads it).
 - `src/nio/`: the `nio` Python CLI (`uv run nio ...`), for what skills can't do reliably.
-  Self-checks: `uv run python tests/test_records.py` and `uv run python tests/test_index.py`.
+  Self-checks: `uv run python tests/test_records.py`, `uv run python tests/test_index.py` and `uv run python tests/test_pack.py` (`-v` prints each pack).
 - `.claude-plugin/plugin.json`: a thin Claude Code wrapper, added once the first skill exists.
 - `NORTH_STAR.md`: the vision. GitHub issues: the backlog of open decisions and deferred ideas.
 

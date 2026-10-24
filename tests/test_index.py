@@ -95,6 +95,9 @@ def test_query():
     assert hits[0][0] == a.name[:13] and hits[0][3] >= query.DEDUP_SIMILARITY, hits
     assert all(h[3] < query.DEDUP_SIMILARITY for h in hits[1:]), hits
     assert [h[0] for h in query.search(root, paths=["jobs.py"])] == [b.name[:13]]
+    # a file the task will create matches a record's globs too
+    fill(b, paths='["jobs*.py"]', body=b.read_text().split("\n---\n", 1)[1])
+    assert [h[0] for h in query.search(root, paths=["jobs_new.py"])] == [b.name[:13]]
     # superseded records are hidden unless asked
     c = records.new(root, "decision", "auth", "Sessions in Valkey")
     fill(c, paths='["app.py"]', supersedes=f'["{a.name[:13]}"]')
