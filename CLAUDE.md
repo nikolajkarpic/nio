@@ -5,6 +5,8 @@ Read `NORTH_STAR.md` first. Any change must serve it, and ideas that don't go to
 ## Repo layout
 
 - `skills/<name>/SKILL.md`: the product. One folder per skill.
+- `src/nio/`: the `nio` Python CLI (`uv run nio ...`), for what skills can't do reliably.
+  Self-check: `uv run python tests/test_records.py`.
 - `.claude-plugin/plugin.json`: a thin Claude Code wrapper, added once the first skill exists.
 - `NORTH_STAR.md`: the vision. `ISSUES.md`: the backlog of deferred ideas.
 
