@@ -1,0 +1,286 @@
+# Nio memory north star
+
+Last updated 2026-10-24. Owner: Nikolaj. Read with `NORTH_STAR.md`; this file is the source of truth for memory.
+
+This is the build spec for NIO's memory, its first feature. It records decisions only; the reasoning behind them is in the design doc's version history. Build v0 first (see the last sections); everything marked "later" waits until v0 proves agents write good records and use them.
+
+## What memory is for
+
+Memory answers three questions for any agent, on any host, for any teammate:
+
+1. **Why was X done this way?**
+2. **Was this done before, and can I reuse it?**
+3. **Did the jury approve it, and what did it reject?**
+
+Principles:
+
+- **Files in git are the truth.** Markdown records, committed and shared through git. No database or daemon is ever the source of truth.
+- **The index is a cache.** Graph, full-text and vector lookup live in a local index rebuilt from the files. Deleting it loses nothing.
+- **No lock-in.** Any outside tool (Cognee, a hosted database) only ever holds a copy and can be dropped with one reindex.
+- **Agent-agnostic.** Skills are plain instructions; the `nio` CLI does what instructions cannot do reliably. MCP and host hooks are optional extras.
+- **Quality and reading are enforced,** not hoped for.
+
+## Decisions
+
+| Topic | Decision |
+| --- | --- |
+| Source of truth | markdown records in `.nio/memory/`, committed to git |
+| Folder | everything under `.nio/` |
+| Layout | flat records grouped by month; no repo-mirrored tree, no separate decisions folder |
+| Record types | decision, verdict, lesson, change request |
+| Code context | not stored as memory; derived from code into the index |
+| Who writes | one configured memory-writer role; other agents only add candidates |
+| Index | built in from v0: SQLite with graph, full-text (FTS5) and vectors (`sqlite-vec`) in `.nio/cache/index.db` |
+| Embedding model | `bge-small-en-v1.5` by default, pinned in team config; swap if recall is poor |
+| Scripts | Python package `nio`, installed with `uv` (`uv tool install` or `uvx`) |
+| Team sync | git carries records; each machine re-indexes incrementally after every pull |
+| Hosted index | later, optional: Postgres with pgvector, CI as the only writer |
+| claude-mem | not used; inspiration only |
+| Cognee | not used in v0; optional backend later |
+| Google Memory Bank | rejected |
+
+## How it fits together
+
+Writes go down into git, the index is rebuilt from git, and lookups return IDs that agents resolve by opening the committed files. v0 uses NIO skills for capture and the CLI and grep for lookup; host hooks, reconcile, MCP sources and the MCP server come later.
+
+```mermaid
+flowchart TB
+  subgraph Capture
+    skills[NIO skills]
+    hooks[Host hooks - later]
+    rec[Reconcile - later]
+    mcps[MCP sources - later]
+  end
+  subgraph Write
+    cand[Candidates in promote.md]
+    writer[Memory writer]
+  end
+  subgraph Git["Git: source of truth"]
+    mem[.nio/memory/]
+    jr[.nio/journal/ - later]
+  end
+  subgraph Index["Index: rebuilt, never truth"]
+    idx[index.db: graph, full-text, vectors]
+  end
+  subgraph Lookup
+    cli[nio query CLI]
+    mcp[MCP server - later]
+    grep[grep fallback]
+  end
+  agents[Agents: orchestrator, workers, jurors, you]
+  Capture --> Write
+  Write -- commit and push --> Git
+  Git -- on pull, or CI on main --> Index
+  Index --> Lookup
+  Lookup -- record IDs --> agents
+  agents -- open the files --> Git
+```
+
+## Folder layout
+
+```
+.nio/
+  config.json                      # team config, committed (memory block below)
+  config.local.json                # personal overrides, gitignored
+  memory/                          # long-term, committed
+    INDEX.md                       # generated: one line per record, plus a by-path section
+    2026-10/
+      D-261024-7kq2-sessions-in-redis.md      # decision
+      V-261024-p9x1-sessions-in-redis.md      # jury verdict
+      L-261026-c4m8-retry-flaky-webhooks.md   # lesson
+      C-261025-h2n5-spec-misses-sso.md        # change request
+  runs/                            # short-term, gitignored
+    R-261024-a1b2/
+      scratch.md                   # working notes, fixed headings
+      promote.md                   # candidates for long-term memory
+      packs/                       # context packs
+      jury/                        # raw juror output
+  cache/                           # gitignored
+    index.db                       # graph, full-text, vectors
+    usage.log                      # which IDs each lookup returned
+  journal/                         # later: session log from host hooks
+```
+
+Specs, plans and tasks live wherever the artifact templates put them; memory points at them by ID and never copies them.
+
+## Record format
+
+YAML frontmatter that tools read, plus a short body that agents read. A body stays under 40 lines.
+
+```markdown
+---
+id: D-261024-7kq2
+type: decision            # decision | verdict | lesson | change
+title: Store sessions in Redis, not Postgres
+status: approved          # proposed | approved | rejected | human | recorded | superseded
+answers: why              # why | reuse | jury: which memory question it answers
+date: 2026-10-24
+by: builder / claude-code / sonnet
+run: R-261024-a1b2
+serves: [AC-014]
+task: T-031
+commit: 9f3c2e1
+paths: [src/session/**, src/config/redis.ts]
+tags: [sessions, caching]
+supersedes: []
+---
+## Decision
+One or two sentences.
+## Why
+The reason, and the constraint that forced it.
+## Rejected alternatives
+- Postgres sessions table: adds a write on every request.
+## Reuse
+When this applies again, and what to copy.
+```
+
+| Type | Written when | Extra fields | Body sections |
+| --- | --- | --- | --- |
+| decision | an agent makes a call the task did not dictate | `serves`, `task`, `commit` | Decision, Why, Rejected alternatives, Reuse |
+| verdict | every jury ruling, always | `subject` (a D or T ID), `outcome`, `tier` | Ruling, Jurors (a table of lens, host, model and vote), Reasons, What was rejected |
+| lesson | a reusable solution is found | `paths`, `tags` | Problem, Solution, Where it applies |
+| change | implementation shows the spec or plan is wrong | `against`, `outcome` | What is wrong, Proposed change, Human decision |
+
+- **IDs:** `<type letter>-<yymmdd>-<4 random base32>`. Random suffixes cannot collide across branches; the filename starts with the ID, so `**/<id>*.md` finds any record.
+- **Never rewritten.** A changed decision is a new record with `supersedes`; the old record's `status` becomes `superseded`, the only edit ever made to an existing file.
+- **Links point backward only** (a verdict names its `subject`). The index derives reverse links, so writing a verdict never edits the decision.
+- **Traceability chain:** requirement → AC → task → commit → decision → verdict, every link a frontmatter field.
+
+**Why markdown with YAML frontmatter:** agents read the markdown body; scripts read the frontmatter fields, which must parse exactly for the index, lint and conflict checks. It is the same format as `SKILL.md`. Config stays JSON, because it is settings for tools, validated by a JSON Schema.
+
+**Frontmatter rules:**
+
+- **Flat only:** single values and lists of plain strings, never nested objects. Anything structured (such as juror votes) goes in a body table.
+- **Small:** about 10 to 14 fields; explanations belong in the body.
+- **Strict parsing:** a schema per type, a YAML 1.2 loader, and quoted strings wherever a value could be misread (so `no` never becomes `false` and dates never change type). `nio index --check` validates every header.
+
+## Writing memory
+
+One configured writer owns `.nio/memory/`; every other agent only adds candidates. NIO pipeline events trigger writes, so it works on any host.
+
+```json
+{
+  "memory": {
+    "writer": { "role": "memory-keeper", "host": "claude-code", "model": "haiku", "effort": "low" },
+    "candidates": { "from": ["builder", "tdd", "test-writer", "adversarial-evaluator", "juror"], "maxPerTask": 5 },
+    "on": {
+      "jury.verdict":   "write",
+      "change.request": "write",
+      "task.done":      "candidate",
+      "epic.done":      "promote",
+      "stage.approved": "promote",
+      "run.end":        "promote"
+    },
+    "promote": { "jury": "when-superseding" },
+    "index": { "store": "sqlite", "model": "bge-small-en-v1.5@<pinned>", "vectors": "int8" }
+  }
+}
+```
+
+| Action | What happens | Who |
+| --- | --- | --- |
+| `write` | record written now, no promotion | writer |
+| `candidate` | what the agent decided is appended to the run's `promote.md` | acting agent |
+| `promote` | writer reads `promote.md`, applies the admission rule and dedup, writes records, reindexes | writer |
+| `off` | nothing |  |
+
+Each skill's instructions end with the step that fires its event (for example "emit `task.done`: append your candidates"), so no host hooks are needed in v0. Verdicts and change requests skip promotion because traceability needs every one.
+
+## Index
+
+`nio index` builds `.nio/cache/index.db` from the committed files. Nothing in it is the source of truth.
+
+| Table | Holds | Built from |
+| --- | --- | --- |
+| `nodes` | records, AC and task IDs, files | frontmatter, `git ls-files` |
+| `edges` | `serves`, `task`, `subject`, `supersedes`, `touches` (record to file, globs expanded against `git ls-files`) | frontmatter |
+| `fts` | full-text over titles and bodies | SQLite FTS5 |
+| `vec` | one int8 embedding per record | `sqlite-vec` and `fastembed` with the pinned model |
+| `meta` | model and version, last indexed commit, content hash per record | indexer |
+
+- **Incremental:** content hashes decide what to re-embed; unchanged records are never touched.
+- **Never blocks git:** the git hook starts `nio index` in the background. A query during indexing uses the existing index and greps the changed files.
+- **`nio index --check`:** the lint and conflict checks (Quality and Team conflicts sections), run by the indexer and in CI.
+- **`INDEX.md`:** regenerated on every run; on a merge conflict, regenerate rather than resolve.
+- **Expected cost** (measured on a 4-core sandbox with `sqlite-vec` 0.1.9): 10,000 items is about 4 MB of int8 vectors with about 10 ms queries; 100,000 items is about 41 MB with 66 ms queries. A typical pull re-indexes in about a second; a fresh clone or a model change re-embeds everything in minutes. Embedding speed was not measured.
+
+## Lookup
+
+`nio query` returns record IDs; the agent then opens the files. It works in three steps: find IDs, get graph context, read at most 5 bodies.
+
+| Need | Command | Returns |
+| --- | --- | --- |
+| Decisions on a file | `nio query --path <file>` | one line per hit: ID, type, status, title |
+| Why, and did the jury approve | `nio query --graph <id> --depth 2` | linked IDs: superseding records, verdicts, AC, task, files |
+| Done before? | `nio query "<question>"` | hybrid: full-text and vector results merged by rank, expanded one graph hop |
+| Read | `nio get <id>...` | bodies, at most 5 |
+| Freshness | `nio status` | last indexed commit against `HEAD`, model, store |
+
+- Results skip `superseded` and `rejected` records unless asked, and flag records in conflict.
+- **Fallback:** if the index is missing or stale, the skill greps `INDEX.md` and the records. Lookup never fails because the index is down.
+- Never preload the whole `INDEX.md`; at 1,000 records it is about 25,000 tokens.
+
+## Quality
+
+A record is only useful if a new agent can act on it alone. Cheap checks come first, a model last.
+
+1. **Lint, no model.** `nio index --check` rejects a record with a missing required field, an empty Why, a Why that only repeats the Decision, `paths` that match no file in `git ls-files`, a link to an ID that does not exist, or more than 40 lines. Promotion cannot commit a failing record.
+2. **Admission rule.** A candidate becomes a record only if it answers one of the three memory questions, named in `answers:`.
+3. **Dedup before writing.** The writer queries the candidate's paths and text first; a close match on the same paths becomes a supersede, never a second record.
+4. **Spot-check juror.** One cheap juror reviews every record that supersedes an approved decision, plus a sample of the rest, asking: could a new agent understand why from this record alone? A fail goes back to the writer.
+5. **Usage log.** Every lookup and context pack appends the IDs it returned to `.nio/cache/usage.log`. v0 only logs; analysis comes later.
+
+## Forced reads
+
+Agents do not reliably look things up on their own, so in v0 reading memory is not their choice.
+
+- **Context packs.** `nio pack <task>` runs `nio query --path` for every file in the task's scope and a one-hop graph walk on its AC, then adds the index lines and the full text of the top 3 records, capped at about 1,500 tokens. The worker starts with them in context.
+- **Jurors enforce it.** A juror's pack includes the approved decisions touching the diff's paths, and every juror gets one more lens: does this diff contradict an approved decision without a change request? If so, reject.
+- **Files outside the pack.** The skill tells the worker to run `nio query --path` before editing a file the pack did not cover.
+
+## Team conflicts
+
+Git merges the files; `nio index --check` finds what git cannot see. It runs in the git `post-merge` hook and as a CI check on pull requests, so a conflict blocks the merge.
+
+| Conflict | Detected by | Resolution |
+| --- | --- | --- |
+| Two branches supersede the same decision | two approved records list it in `supersedes` | CI fails; NIO writes a change request and the human picks one |
+| Two branches add the same decision | high similarity and overlapping `paths` between two new records | CI warns; the next promotion merges them |
+| Both branches edit an old record's `status` | a one-line git conflict | `superseded` wins |
+
+Until resolved, lookup returns both records with a `conflict` flag.
+
+## v0: the memory MVP
+
+v0 proves that agents write good records and use them. Build in this order:
+
+1. **Record format:** templates for the four types, the ID generator, and the `nio` Python package skeleton (`uv`).
+2. **`@nio:remember` skill:** write a verdict, add a candidate, promote with the admission rule and dedup.
+3. **`nio index`:** SQLite graph, FTS5 and `sqlite-vec` vectors with `bge-small-en-v1.5`, incremental by content hash, `INDEX.md` generation, and `--check`.
+4. **`nio query` and `nio get`:** path, graph, hybrid text, with the grep fallback.
+5. **`nio pack`:** memory in every context pack.
+6. **Juror lenses:** respects approved decisions; the spot-check juror.
+7. **Sync:** git `post-merge`, `post-checkout` and `post-rewrite` hooks running `nio index` in the background, the session-start freshness check, and the CI check.
+8. **Usage log.**
+
+**Rough goals, not gates:** across about 20 real tasks on two branches, the relevant decision reaches the context pack in most tasks, almost no duplicate records survive a merge, and CI catches every cross-branch supersede conflict.
+
+## Later
+
+In rough order, each only once v0 holds:
+
+- **Journal and host hooks.** `.nio/journal/<yyyy-mm>.md`, one short entry per stretch of work, written by `nio journal hook <host> <event>` with no LLM in the hook. Claude Code and Codex: `SessionStart`, `PostToolUse`, `Stop`, `SessionEnd`, `PreCompact`, `SubagentStop`. Antigravity (`agy`): `SessionStart`, `PostToolUse`, `Stop`. A resume pack (about 2,000 tokens) at session start.
+- **`@nio:reconcile-memory`.** Reads commits since a `reconciled:` marker, writes `status: recorded` records through promotion, and raises a change request when a commit undoes an approved decision.
+- **MCP server `nio-memory`.** Six tools over the same CLI: `memory_find`, `memory_graph`, `memory_get`, `memory_record`, `memory_promote`, `memory_status`; write tools check the caller's role.
+- **Code graph.** tree-sitter symbols, imports and calls in the same index, embedded as signature plus docstring.
+- **Postgres store.** Local, or hosted with pgvector, CI on main as the only writer, and a local SQLite overlay for unmerged records.
+- **Cognee and MCP sources.** Optional backends that only receive copies and return IDs; anything they produce is a candidate.
+
+## Open items for the builder
+
+- [ ] Check `bge-small-en-v1.5` recall on the first 30 real records; swap the model if needed.
+- [ ] Agree the AC and task ID format with the spec and task templates.
+- [ ] Decide whether to keep context packs of high-risk verdicts for replay.
+- [ ] Before building hooks: confirm `agy` hook names (taken from claude-mem's docs, not Google's).
+
+Sources: [Anthropic, Effective context engineering for AI agents](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents); [claude-mem](https://github.com/thedotmack/claude-mem); [Codex hooks](https://learn.chatgpt.com/docs/hooks); [Cognee](https://github.com/topoteretes/cognee). All read 2026-10-24.
