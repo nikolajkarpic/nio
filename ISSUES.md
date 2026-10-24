@@ -1,13 +1,8 @@
 # Issues / backlog
 
 ## Needs deep design
-- [ ] **Memory and traceability.** This is the big one. Questions to settle:
-  - What gets stored: decisions, verdicts, calibration data, replays.
-  - How agents query it cheaply.
-  - How it becomes team-shareable.
-  - Whether to use claude-mem (I've used it before; it's unclear how it fits or works
-    team-wide), plain files in git, or something else.
-  - The ID scheme for requirement → acceptance criterion → task → diff → verdict.
+- [x] **Memory and traceability.** Designed in `MEMORY_NORTH_STAR.md` (v0 scope and open
+  items there). Still open: the AC and task ID format, decided with the templates.
 - [ ] **Code context and search.** Compare codegraph, graphify, Obsidian and RAG on
   how many tokens they keep out of context. Decide what NIO ships or recommends.
 
@@ -29,7 +24,7 @@
   config. Covers `agy` install and login.
 
 ## Open decisions
-- [ ] **Artifact location.** Decide between `.nio/`, `specs/` or something else.
+- [x] **Artifact location.** `.nio/` (decided 2026-10-24).
 - [ ] **Notification channel.** Decide how "always notify" reaches the human.
 - [ ] **Templates.** Write the spec template (based on spec-kit) and the plan document
   templates, each with a required-fields checklist.

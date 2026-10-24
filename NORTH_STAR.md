@@ -125,7 +125,7 @@ the tasks, and then tests run.
 
 ## Traceability and memory
 
-This is a core pillar, and its design is still open (see `ISSUES.md`).
+This is a core pillar. Its design is in `MEMORY_NORTH_STAR.md`, which wins where the two differ.
 - **Every decision is recorded:** what was decided, by which agent, when, why, and which
   requirement or acceptance criterion it serves. Later you can go back and see why
   something was done that way.
