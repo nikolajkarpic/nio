@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from nio import index, pack, query, records
+from nio import hooks, index, pack, query, records
 
 
 def report(errors, warnings, count):
@@ -43,6 +43,7 @@ def main():
     k.add_argument("--task", default="", help="task ID; names the pack")
     k.add_argument("--diff", metavar="REF", help="juror pack: add the files changed since REF and judge against the records")
     k.add_argument("--run", help="also save the pack to .nio/runs/<run>/packs/")
+    sub.add_parser("hooks", help="install git hooks: refresh the index after pulls, checkouts and rebases; check memory before commits and pushes")
     sub.add_parser("status", help="index freshness: indexed commit against HEAD, model, store")
     sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
     a = p.parse_args()
@@ -83,6 +84,12 @@ def main():
                 print(f"saved {pack.save(root, a.run, name, text).relative_to(root)}", file=sys.stderr)
             pack.log(root, name, ids, text)
             print(text, end="")
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+    elif a.cmd == "hooks":
+        try:
+            for path in hooks.install(root):
+                print(path)
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":

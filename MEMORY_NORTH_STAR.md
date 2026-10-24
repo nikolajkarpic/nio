@@ -234,7 +234,7 @@ Each skill's instructions end with the step that fires its event (for example "e
   | `current` | none of the above |
 
   Verdicts and change requests have their `outcome` as standing. To clear `drifted`, recheck the decision against the code: write a verdict if it still holds, or supersede it.
-- **Never blocks git:** the git hook starts `nio index` in the background. A query during indexing uses the existing index and greps the changed files.
+- **Never blocks git:** `nio hooks` installs `post-merge`, `post-checkout` (branch switches only) and `post-rewrite` hooks that start `nio index` in the background; `post-merge` also prints `nio check` errors. It also installs `pre-commit` and `pre-push` hooks that run the CI check (`nio index --check`, against `HEAD` and against the remote's default branch) and stop git on errors; these are the only hooks that block, they skip when `nio` is not installed, and `--no-verify` bypasses them. Lookups rebuild the index themselves before answering, so a hook that failed never serves stale results; a query while a build holds the database falls back to grep.
 - **`nio index --check`:** the lint and conflict checks (Quality and Team conflicts sections), run by the indexer and in CI.
 - **`INDEX.md`:** regenerated into `.nio/cache/` on every run; never committed.
 - **Expected cost** (measured on a 4-core sandbox with `sqlite-vec` 0.1.9): 10,000 items is about 4 MB of int8 vectors with about 10 ms queries; 100,000 items is about 41 MB with 66 ms queries.
@@ -282,7 +282,7 @@ Agents do not reliably look things up on their own, so in v0 reading memory is n
 
 ## Team conflicts
 
-Git merges the files; `nio index --check` finds what git cannot see. It runs in the git `post-merge` hook and as a CI check on pull requests (`--base origin/main`), so a conflict blocks the merge.
+Git merges the files; `nio index --check` finds what git cannot see. It runs as a CI check on every pull request (`.github/workflows/memory.yml`, `--base` the PR's base branch), so a conflict blocks the merge. Locally, `pre-commit` and `pre-push` run the same check before anything leaves the machine, and the `post-merge` hook runs `nio check` after a merge that went through; a merge that stops on a conflict ends in `git commit`, which fires no `post-merge`, so there git's own conflict marker and CI do the work.
 
 | Conflict | Detected by | Resolution |
 | --- | --- | --- |
@@ -304,7 +304,7 @@ v0 proves that agents write good records and use them. NIO dogfoods it on this r
 4. **`nio query` and `nio get`:** path, graph, hybrid text, with the grep fallback.
 5. **`nio pack`:** memory in every context pack, juror packs (`--diff`) and the usage log included.
 6. **Juror lenses:** respects approved decisions; the spot-check juror.
-7. **Sync:** git `post-merge`, `post-checkout` and `post-rewrite` hooks running `nio index` in the background, the session-start freshness check, and the CI check.
+7. **Sync:** `nio hooks` (git `post-merge`, `post-checkout` and `post-rewrite` running `nio index` in the background; `pre-commit` and `pre-push` running the CI check) and the CI check. No separate session-start check: lookups refresh the index first, and `nio status` shows freshness.
 8. **Usage log:** lookups (`nio query`, `nio get`) log their IDs too; packs already do.
 
 **Rough goals, not gates:** across about 20 real tasks on two branches, the relevant decision reaches the context pack in most tasks, almost no duplicate records survive a merge, and CI catches every cross-branch supersede conflict.
