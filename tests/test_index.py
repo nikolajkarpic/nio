@@ -101,6 +101,30 @@ def test_query():
     flag(a, c.name[:13])
     assert a.name[:13] not in [h[0] for h in query.search(root, paths=["app.py"])]
     assert a.name[:13] in [h[0] for h in query.search(root, paths=["app.py"], show_all=True)]
+    # graph walk both ways; one-hop links on search hits
+    walk = query.graph(root, a.name[:13])
+    assert (1, "←", "supersedes", c.name[:13]) in [s[:4] for s in walk] and any(s[3] == "app.py" for s in walk), walk
+    hit = query.search(root, paths=["app.py"])[0]
+    assert hit[0] == c.name[:13] and f"supersedes {a.name[:13]} superseded" in hit[6], hit
+    # get reads files directly, at most 5
+    assert query.get(root, [a.name[:13]])[0][1] == a.read_text()
+    try:
+        query.get(root, [a.name[:13]] * 6)
+        raise AssertionError("more than 5 records returned")
+    except ValueError:
+        pass
+    # status notices records changed since the last index
+    assert "changed since last index 0" in "\n".join(query.status(root))
+    b.write_text(b.read_text() + "\n")
+    assert "changed since last index 1" in "\n".join(query.status(root))
+    # with no model, lookup falls back to grep instead of failing
+    real, index.embed = index.embed, lambda *a: (_ for _ in ()).throw(RuntimeError("offline"))
+    try:
+        hits = query.search(root, "background jobs Postgres", paths=["jobs.py"])
+        assert hits[0][0] == b.name[:13] and hits[0][4] == ["jobs.py"], hits
+        assert a.name[:13] not in [h[0] for h in query.search(root, "sessions", paths=["app.py"])]
+    finally:
+        index.embed = real
     print("ok")
 
 
