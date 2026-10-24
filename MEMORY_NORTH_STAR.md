@@ -242,19 +242,19 @@ Each skill's instructions end with the step that fires its event (for example "e
 
 ## Lookup
 
-`nio query` returns record IDs; the agent then opens the files. It works in three steps: find IDs, get graph context, read at most 5 bodies.
+`nio query` returns record IDs; the agent then opens the files. It works in three steps: find IDs, get graph context, read at most 5 bodies. The `@nio:recall` skill teaches agents these steps and what each standing means for them. `nio query` refreshes the index before it answers, so new records are always found.
 
 | Need | Command | Returns |
 | --- | --- | --- |
-| Decisions on a file | `nio query --path <file>` | one line per hit: ID, type, status or outcome, title |
-| Why, and did the jury approve | `nio query --graph <id> --depth 2` | linked IDs: superseding records, verdicts, AC, task, files |
+| Decisions on a file | `nio query --path <file>` | one line per hit: ID, type, standing, similarity, title, then its linked records |
+| Why, and did the jury approve | `nio query --graph <id> --depth 2` | linked IDs both ways: superseding records, verdicts, change requests, AC, task, files, commit; the walk stops at files and commits |
 | Done before? | `nio query "<question>"` | hybrid: full-text and vector results merged by rank, expanded one graph hop |
 | Is this candidate a duplicate? | `nio query "<title>. Decision: … Why: …" --path <file>...` | the same hybrid search with similarity; `≈` marks 0.85 or more, looser than the 0.92 CI warning |
-| Read | `nio get <id>...` | bodies, at most 5 |
-| Freshness | `nio status` | last indexed commit against `HEAD`, model, store |
+| Read | `nio get <id>...` | whole records, at most 5; found by filename, so it works without the index |
+| Freshness | `nio status` | last indexed commit against `HEAD`, records changed since, model, store |
 
 - Results skip `superseded` and `rejected` records unless asked, and show `conflict`, `challenged` and `drifted` with a warning: verify a drifted decision against the code before relying on it.
-- **Fallback:** if the index is missing or stale, the skill greps the records' frontmatter in `.nio/memory/`. Lookup never fails because the index is down.
+- **Fallback:** if the index cannot be built (for example, offline before the model is downloaded), `nio query` warns and matches words and `paths` over the record files instead; a record with `outdated_by` counts as superseded. If `nio` is not installed, `@nio:recall` greps the frontmatter. Lookup never fails because the index is down.
 - Never preload the whole `INDEX.md`; at 1,000 records it is about 25,000 tokens.
 
 ## Quality

@@ -153,6 +153,8 @@ def build(root):
                 db.execute("insert or ignore into nodes(id, kind) values (?, 'task')", (meta["task"],))
             if meta.get("subject"):
                 edges.append((rid, "subject", meta["subject"]))
+            if meta.get("type") == "change" and meta.get("against") in recs:
+                edges.append((rid, "against", meta["against"]))
             edges += [(rid, "supersedes", old) for old in meta.get("supersedes") or []]
             commit = commits.get(rid)
             if commit not in renames:
