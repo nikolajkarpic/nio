@@ -62,10 +62,13 @@ candidates and use Record mode.
 
 1. **Check it is worth keeping.** It must answer why, reuse or jury. Skip anything the code
    already says plainly, restates the task, or only matters to this session.
-2. **Look for an existing record.** Search by the files involved
-   (`grep -rl "<file>" .nio/memory`) and scan the titles in the record's area
-   (`grep -rh "^title:" .nio/memory/<area>`). Grepping the bodies for common words matches
-   almost everything; prefer `nio query` once it exists.
+2. **Look for an existing record.** Run
+   `nio query "<title>. Decision: <one sentence>. Why: <one sentence>" --path <file> ...`
+   with the candidate's own title, decision and reason, and every file it touches. Pass whole
+   sentences: a short question scores lower and never gets the duplicate mark. Read every hit
+   marked `≈` (a likely duplicate) and any hit that shares your files.
+   If `nio` is not installed, search by the files involved (`grep -rl "<file>" .nio/memory`)
+   and scan the titles in the record's area (`grep -rh "^title:" .nio/memory/<area>`).
    - Same question, same answer: stop, it is already recorded.
    - Same question, new answer: write a new record that supersedes the old one.
 3. **Create the file:**

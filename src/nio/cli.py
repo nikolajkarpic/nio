@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from nio import index, records
+from nio import index, query, records
 
 
 def report(errors, warnings, count):
@@ -27,6 +27,11 @@ def main():
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
     i.add_argument("--base", default="HEAD", help="ref committed records are compared with, as in nio check")
+    q = sub.add_parser("query", help="find records by text and/or the files they touch; ≈ marks a likely duplicate")
+    q.add_argument("text", nargs="?", default="", help="question or candidate text")
+    q.add_argument("--path", action="append", default=[], help="a file the records should touch; repeatable")
+    q.add_argument("--limit", type=int, default=10)
+    q.add_argument("--all", action="store_true", help="include superseded and rejected records")
     sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
     a = p.parse_args()
 
@@ -40,6 +45,11 @@ def main():
         print(records.new_run(root))
     elif a.cmd == "check":
         report(*records.check(root, a.base))
+    elif a.cmd == "query":
+        if not a.text and not a.path:
+            sys.exit("error: give a question, --path, or both")
+        for hit in query.search(root, a.text, a.path, a.limit, a.all):
+            print(query.format_hit(*hit))
     elif a.cmd == "index":
         count, embedded = index.build(root)
         print(f"indexed {count} records, embedded {embedded}")

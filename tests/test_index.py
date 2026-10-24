@@ -1,7 +1,7 @@
 """Self-check for nio index. Run: uv run python tests/test_index.py (downloads the model once)."""
 from test_records import GOOD_BODY, commit, fill, repo
 
-from nio import index, records
+from nio import index, query, records
 
 
 def test():
@@ -82,6 +82,29 @@ def test_standing():
     print("ok")
 
 
+def test_query():
+    root = repo()
+    (root / "jobs.py").write_text("")
+    a = records.new(root, "decision", "auth", "Sessions in Redis")
+    fill(a, paths='["app.py"]')
+    b = records.new(root, "decision", "auth", "Jobs in a Postgres table")
+    fill(b, paths='["jobs.py"]', body=GOOD_BODY.replace("Store sessions in Redis", "Queue background jobs in a Postgres table")
+         .replace("A Postgres sessions table adds a write on every request", "We already run Postgres and need jobs in the same transaction"))
+    commit(root)
+    hits = query.search(root, "Sessions in Redis. Decision: keep user sessions in Redis. Why: a sessions table in Postgres writes on every request.")
+    assert hits[0][0] == a.name[:13] and hits[0][3] >= query.DEDUP_SIMILARITY, hits
+    assert all(h[3] < query.DEDUP_SIMILARITY for h in hits[1:]), hits
+    assert [h[0] for h in query.search(root, paths=["jobs.py"])] == [b.name[:13]]
+    # superseded records are hidden unless asked
+    c = records.new(root, "decision", "auth", "Sessions in Valkey")
+    fill(c, paths='["app.py"]', supersedes=f'["{a.name[:13]}"]')
+    flag(a, c.name[:13])
+    assert a.name[:13] not in [h[0] for h in query.search(root, paths=["app.py"])]
+    assert a.name[:13] in [h[0] for h in query.search(root, paths=["app.py"], show_all=True)]
+    print("ok")
+
+
 if __name__ == "__main__":
     test()
     test_standing()
+    test_query()
