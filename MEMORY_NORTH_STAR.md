@@ -26,7 +26,7 @@ Principles:
 | --- | --- |
 | Source of truth | markdown records in `.nio/memory/`, committed to git |
 | Folder | everything under `.nio/` |
-| Layout | flat records grouped by month; no repo-mirrored tree, no separate decisions folder |
+| Layout | one folder per area of the project, areas listed in team config; no date folders, no type folders, no repo-mirrored tree |
 | Record types | decision, verdict, lesson, change request |
 | Code context | not stored as memory; derived from code into the index |
 | Who writes | one configured memory-writer role; other agents only add candidates |
@@ -87,11 +87,13 @@ flowchart TB
   config.json                      # team config, committed (memory block below)
   config.local.json                # personal overrides, gitignored
   memory/                          # long-term, committed
-    2026-10/
+    auth/                          # one folder per area
       D-261024-7kq2-sessions-in-redis.md      # decision
-      V-261024-p9x1-sessions-in-redis.md      # jury verdict
+      V-261024-p9x1-sessions-in-redis.md      # jury verdict on it
       L-261026-c4m8-retry-flaky-webhooks.md   # lesson
+    checkout/
       C-261025-h2n5-spec-misses-sso.md        # change request
+    project/                       # verdicts on whole stages (spec, plan, tasks)
   runs/                            # short-term, gitignored
     R-261024-a1b2/
       scratch.md                   # working notes, fixed headings
@@ -145,7 +147,18 @@ When this applies again, and what to copy.
 | change | implementation shows the spec or plan is wrong | `against`, `outcome` | What is wrong, Proposed change, Human decision |
 
 - **IDs:** `<type letter>-<yymmdd>-<4 random base32>`. Random suffixes cannot collide across branches; the filename starts with the ID, so `**/<id>*.md` finds any record.
-- **Never edited.** A changed decision is a new record with `supersedes`. "Superseded" is not stored: the index derives it from the newer record, so an existing file is never touched.
+- **Never edited.** A changed decision is a new record with `supersedes`. "Superseded" is not stored: the index derives it from the newer record, so an existing file's content is never touched. Moving a file to another area with `git mv` is allowed.
+
+## Areas
+
+Records are grouped by **area**: a part of the project such as a subsystem or module (`auth/`, `payments/`; for NIO itself, `records/`, `index/`, `jury/`). The folder is for people browsing; agents find records through the index and `paths`, never through folders.
+
+- **The list is in team config** (`memory.areas`). `nio check` rejects a record in a folder that is not on the list.
+- **New areas need the human.** The writer proposes a name when nothing fits; it never creates a folder on its own. This stops `host/`, `hosts/` and `cross-host/` all appearing.
+- **One area per record.** A record that spans areas goes in its main one; the others become tags.
+- **The folder is the area.** There is no `area` field in frontmatter, so the two can never disagree.
+- **Verdicts sit next to their subject,** in the subject's area. Verdicts on a whole stage (spec, plan, tasks) go in the fixed `project/` area.
+- **Renaming an area** is one `git mv` commit; IDs and links do not change.
 - **`status` values:** `proposed` (a candidate not yet ruled on), `approved` (the jury approved it), `rejected`, `human` (a human decided it directly, or the jury could not agree and a human ruled), `recorded` (written after the fact by reconcile).
 - **Links point backward only** (a verdict names its `subject`). The index derives reverse links, so writing a verdict never edits the decision.
 - **Traceability chain:** requirement → AC → task → commit → decision → verdict. Every link is a frontmatter field except the commit, which the index derives as the commit that added the record (`git log --diff-filter=A`), because a record cannot hold the hash of the commit it is part of.
@@ -166,6 +179,7 @@ One configured writer owns `.nio/memory/`; every other agent only adds candidate
 ```json
 {
   "memory": {
+    "areas": ["auth", "payments", "checkout", "project"],
     "writer": { "role": "memory-keeper", "host": "claude-code", "model": "haiku", "effort": "low" },
     "candidates": { "from": ["builder", "tdd", "test-writer", "adversarial-evaluator", "juror"], "maxPerTask": 5 },
     "on": {
@@ -230,7 +244,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 
 A record is only useful if a new agent can act on it alone. Cheap checks come first, a model last.
 
-1. **Lint, no model.** `nio index --check` rejects a record with a missing required field, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, or more than 40 lines. Promotion cannot commit a failing record. `paths` must match a file in `git ls-files` when the record is written; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
+1. **Lint, no model.** `nio index --check` rejects a record with a missing required field, a folder that is not a listed area, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, or more than 40 lines. Promotion cannot commit a failing record. `paths` must match a file in `git ls-files` when the record is written; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
 2. **Admission rule.** A candidate becomes a record only if it answers one of the three memory questions, named in `answers:`.
 3. **Dedup before writing.** The writer queries the candidate's paths and text first; a close match on the same paths becomes a supersede, never a second record.
 4. **Spot-check juror.** One cheap juror reviews every record that supersedes an approved decision, plus a sample of the rest, asking: could a new agent understand why from this record alone? A fail goes back to the writer.
