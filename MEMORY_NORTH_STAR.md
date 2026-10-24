@@ -38,6 +38,10 @@ Principles:
 | claude-mem | not used; inspiration only |
 | Cognee | not used in v0; optional backend later |
 | Google Memory Bank | rejected |
+| Dogfooding | NIO keeps its own memory in this repo's `.nio/memory/` from step 0 |
+| Entry point | `@nio:remember` works by hand in any session, so memory does not wait for the pipeline |
+| AC and task IDs | optional free-form strings until the spec and task templates fix the format |
+| `INDEX.md` | generated into `.nio/cache/`, gitignored, so it never conflicts in a merge |
 
 ## How it fits together
 
@@ -83,7 +87,6 @@ flowchart TB
   config.json                      # team config, committed (memory block below)
   config.local.json                # personal overrides, gitignored
   memory/                          # long-term, committed
-    INDEX.md                       # generated: one line per record, plus a by-path section
     2026-10/
       D-261024-7kq2-sessions-in-redis.md      # decision
       V-261024-p9x1-sessions-in-redis.md      # jury verdict
@@ -96,6 +99,7 @@ flowchart TB
       packs/                       # context packs
       jury/                        # raw juror output
   cache/                           # gitignored
+    INDEX.md                       # generated: one line per record, plus a by-path section
     index.db                       # graph, full-text, vectors
     usage.log                      # which IDs each lookup returned
   journal/                         # later: session log from host hooks
@@ -112,14 +116,13 @@ YAML frontmatter that tools read, plus a short body that agents read. A body sta
 id: D-261024-7kq2
 type: decision            # decision | verdict | lesson | change
 title: Store sessions in Redis, not Postgres
-status: approved          # proposed | approved | rejected | human | recorded | superseded
+status: approved          # proposed | approved | rejected | human | recorded
 answers: why              # why | reuse | jury: which memory question it answers
 date: 2026-10-24
-by: builder / claude-code / sonnet
+by: builder / claude-code / sonnet   # role / host / model, or `human`
 run: R-261024-a1b2
 serves: [AC-014]
 task: T-031
-commit: 9f3c2e1
 paths: [src/session/**, src/config/redis.ts]
 tags: [sessions, caching]
 supersedes: []
@@ -136,15 +139,17 @@ When this applies again, and what to copy.
 
 | Type | Written when | Extra fields | Body sections |
 | --- | --- | --- | --- |
-| decision | an agent makes a call the task did not dictate | `serves`, `task`, `commit` | Decision, Why, Rejected alternatives, Reuse |
+| decision | an agent makes a call the task did not dictate | `serves`, `task` | Decision, Why, Rejected alternatives, Reuse |
 | verdict | every jury ruling, always | `subject` (a D or T ID), `outcome`, `tier` | Ruling, Jurors (a table of lens, host, model and vote), Reasons, What was rejected |
 | lesson | a reusable solution is found | `paths`, `tags` | Problem, Solution, Where it applies |
 | change | implementation shows the spec or plan is wrong | `against`, `outcome` | What is wrong, Proposed change, Human decision |
 
 - **IDs:** `<type letter>-<yymmdd>-<4 random base32>`. Random suffixes cannot collide across branches; the filename starts with the ID, so `**/<id>*.md` finds any record.
-- **Never rewritten.** A changed decision is a new record with `supersedes`; the old record's `status` becomes `superseded`, the only edit ever made to an existing file.
+- **Never edited.** A changed decision is a new record with `supersedes`. "Superseded" is not stored: the index derives it from the newer record, so an existing file is never touched.
+- **`status` values:** `proposed` (a candidate not yet ruled on), `approved` (the jury approved it), `rejected`, `human` (a human decided it directly, or the jury could not agree and a human ruled), `recorded` (written after the fact by reconcile).
 - **Links point backward only** (a verdict names its `subject`). The index derives reverse links, so writing a verdict never edits the decision.
-- **Traceability chain:** requirement → AC → task → commit → decision → verdict, every link a frontmatter field.
+- **Traceability chain:** requirement → AC → task → commit → decision → verdict. Every link is a frontmatter field except the commit, which the index derives as the commit that added the record (`git log --diff-filter=A`), because a record cannot hold the hash of the commit it is part of.
+- **`by`:** `role / host / model` for an agent, `human` for a decision a person made.
 
 **Why markdown with YAML frontmatter:** agents read the markdown body; scripts read the frontmatter fields, which must parse exactly for the index, lint and conflict checks. It is the same format as `SKILL.md`. Config stays JSON, because it is settings for tools, validated by a JSON Schema.
 
@@ -193,7 +198,7 @@ Each skill's instructions end with the step that fires its event (for example "e
 | Table | Holds | Built from |
 | --- | --- | --- |
 | `nodes` | records, AC and task IDs, files | frontmatter, `git ls-files` |
-| `edges` | `serves`, `task`, `subject`, `supersedes`, `touches` (record to file, globs expanded against `git ls-files`) | frontmatter |
+| `edges` | `serves`, `task`, `subject`, `supersedes`, `commit` (derived from git), `touches` (record to file, globs expanded against `git ls-files`) | frontmatter |
 | `fts` | full-text over titles and bodies | SQLite FTS5 |
 | `vec` | one int8 embedding per record | `sqlite-vec` and `fastembed` with the pinned model |
 | `meta` | model and version, last indexed commit, content hash per record | indexer |
@@ -201,8 +206,9 @@ Each skill's instructions end with the step that fires its event (for example "e
 - **Incremental:** content hashes decide what to re-embed; unchanged records are never touched.
 - **Never blocks git:** the git hook starts `nio index` in the background. A query during indexing uses the existing index and greps the changed files.
 - **`nio index --check`:** the lint and conflict checks (Quality and Team conflicts sections), run by the indexer and in CI.
-- **`INDEX.md`:** regenerated on every run; on a merge conflict, regenerate rather than resolve.
-- **Expected cost** (measured on a 4-core sandbox with `sqlite-vec` 0.1.9): 10,000 items is about 4 MB of int8 vectors with about 10 ms queries; 100,000 items is about 41 MB with 66 ms queries. A typical pull re-indexes in about a second; a fresh clone or a model change re-embeds everything in minutes. Embedding speed was not measured.
+- **`INDEX.md`:** regenerated into `.nio/cache/` on every run; never committed.
+- **Expected cost** (measured on a 4-core sandbox with `sqlite-vec` 0.1.9): 10,000 items is about 4 MB of int8 vectors with about 10 ms queries; 100,000 items is about 41 MB with 66 ms queries.
+- **Embedding speed** (measured 2026-10-24, `fastembed` on a 12-core CPU, records of about 100 words): about 40 ms per record, so 1,000 records take about 40 s. The model is a 65 MB download, once per machine, and takes a few seconds to load. A typical pull re-embeds a handful of records, so model load dominates; a fresh clone or a model change re-embeds everything in a minute or two.
 
 ## Lookup
 
@@ -217,14 +223,14 @@ Each skill's instructions end with the step that fires its event (for example "e
 | Freshness | `nio status` | last indexed commit against `HEAD`, model, store |
 
 - Results skip `superseded` and `rejected` records unless asked, and flag records in conflict.
-- **Fallback:** if the index is missing or stale, the skill greps `INDEX.md` and the records. Lookup never fails because the index is down.
+- **Fallback:** if the index is missing or stale, the skill greps the records' frontmatter in `.nio/memory/`. Lookup never fails because the index is down.
 - Never preload the whole `INDEX.md`; at 1,000 records it is about 25,000 tokens.
 
 ## Quality
 
 A record is only useful if a new agent can act on it alone. Cheap checks come first, a model last.
 
-1. **Lint, no model.** `nio index --check` rejects a record with a missing required field, an empty Why, a Why that only repeats the Decision, `paths` that match no file in `git ls-files`, a link to an ID that does not exist, or more than 40 lines. Promotion cannot commit a failing record.
+1. **Lint, no model.** `nio index --check` rejects a record with a missing required field, an empty Why, a Why that only repeats the Decision, a link to an ID that does not exist, or more than 40 lines. Promotion cannot commit a failing record. `paths` must match a file in `git ls-files` when the record is written; later, once files are renamed or deleted, an unmatched path is only a warning, because a record can never be edited to fix it.
 2. **Admission rule.** A candidate becomes a record only if it answers one of the three memory questions, named in `answers:`.
 3. **Dedup before writing.** The writer queries the candidate's paths and text first; a close match on the same paths becomes a supersede, never a second record.
 4. **Spot-check juror.** One cheap juror reviews every record that supersedes an approved decision, plus a sample of the rest, asking: could a new agent understand why from this record alone? A fail goes back to the writer.
@@ -246,16 +252,18 @@ Git merges the files; `nio index --check` finds what git cannot see. It runs in 
 | --- | --- | --- |
 | Two branches supersede the same decision | two approved records list it in `supersedes` | CI fails; NIO writes a change request and the human picks one |
 | Two branches add the same decision | high similarity and overlapping `paths` between two new records | CI warns; the next promotion merges them |
-| Both branches edit an old record's `status` | a one-line git conflict | `superseded` wins |
+
+Because records are never edited, git itself never reports a conflict inside `.nio/memory/`.
 
 Until resolved, lookup returns both records with a `conflict` flag.
 
 ## v0: the memory MVP
 
-v0 proves that agents write good records and use them. Build in this order:
+v0 proves that agents write good records and use them. NIO dogfoods it on this repo. Build in this order:
 
-1. **Record format:** templates for the four types, the ID generator, and the `nio` Python package skeleton (`uv`).
-2. **`@nio:remember` skill:** write a verdict, add a candidate, promote with the admission rule and dedup.
+0. **Hand-written records:** the decisions above, written as records in `.nio/memory/`, to test the format before any code exists.
+1. **Record format:** templates for the four types, the ID generator, `nio check`, and the `nio` Python package skeleton (`uv`).
+2. **`@nio:remember` skill:** record a decision by hand, write a verdict, add a candidate, promote with the admission rule and dedup.
 3. **`nio index`:** SQLite graph, FTS5 and `sqlite-vec` vectors with `bge-small-en-v1.5`, incremental by content hash, `INDEX.md` generation, and `--check`.
 4. **`nio query` and `nio get`:** path, graph, hybrid text, with the grep fallback.
 5. **`nio pack`:** memory in every context pack.
@@ -279,7 +287,7 @@ In rough order, each only once v0 holds:
 ## Open items for the builder
 
 - [ ] Check `bge-small-en-v1.5` recall on the first 30 real records; swap the model if needed.
-- [ ] Agree the AC and task ID format with the spec and task templates.
+- [ ] Agree the AC and task ID format with the spec and task templates (free-form strings until then).
 - [ ] Decide whether to keep context packs of high-risk verdicts for replay.
 - [ ] Before building hooks: confirm `agy` hook names (taken from claude-mem's docs, not Google's).
 
