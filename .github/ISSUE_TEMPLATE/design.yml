@@ -1,0 +1,20 @@
+name: Design
+description: Something that needs deep design before it can be built
+labels: ["type:design"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What needs designing
+      description: The question and why it matters to the North Star.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: What the design must define
+      description: A list of the parts the design has to settle.
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes and constraints

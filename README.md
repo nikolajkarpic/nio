@@ -28,5 +28,5 @@ skills that make agent-built software trustworthy and cheaper to build.
 ## Docs
 
 - [NORTH_STAR.md](NORTH_STAR.md): the vision, principles and design.
-- [ISSUES.md](ISSUES.md): open decisions and the backlog.
+- [GitHub issues](https://github.com/nikolajkarpic/nio/issues): open decisions and the backlog.
 - [CLAUDE.md](CLAUDE.md): instructions for agents working in this repo.

@@ -224,4 +224,4 @@ is a nice-to-have, since it's mainly useful with API pricing.
 - A NIO run fits within the $100 Claude and $20 Antigravity plans.
 - Specs and tasks rarely need rework after implementation starts.
 
-See `ISSUES.md` for open decisions and deferred ideas.
+See the GitHub issues for open decisions and deferred ideas.
