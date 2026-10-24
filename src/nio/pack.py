@@ -1,6 +1,4 @@
 """Context packs: the memory that applies to a piece of work, as markdown an agent reads before it starts."""
-import datetime
-
 from nio import index, query, records
 
 # ponytail: provisional cap on text-only lines; calibrate on the first ~30 real records
@@ -113,11 +111,3 @@ def save(root, run, name, text):
     path.parent.mkdir(exist_ok=True)
     path.write_text(text)
     return path
-
-
-def log(root, name, ids, text):
-    """Append the IDs a pack returned to .nio/cache/usage.log: time, kind, name, approximate tokens, IDs."""
-    path = root / ".nio/cache/usage.log"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a") as f:
-        f.write(f"{datetime.datetime.now().isoformat(timespec='seconds')}\tpack\t{name}\t{len(text) // 4}\t{','.join(ids)}\n")

@@ -61,28 +61,34 @@ def main():
     elif a.cmd == "query":
         try:
             if a.graph:
-                for step in query.graph(root, a.graph, a.depth):
-                    print(query.format_step(*step))
+                steps = query.graph(root, a.graph, a.depth)
+                out, ids = [query.format_step(*s) for s in steps], [s[3] for s in steps if s[4] == "record"]
+                kind, asked = "graph", a.graph
             elif a.text or a.path:
-                for hit in query.search(root, a.text, a.path, a.limit, a.all):
-                    print(query.format_hit(*hit))
+                hits = query.search(root, a.text, a.path, a.limit, a.all)
+                out, ids = [query.format_hit(*h) for h in hits], [h[0] for h in hits]
+                kind, asked = "query", " ".join([a.text, *a.path])
             else:
                 sys.exit("error: give a question, --path, or --graph")
         except ValueError as e:
             sys.exit(f"error: {e}")
+        text = "".join(f"{line}\n" for line in out)
+        query.log(root, kind, asked, ids, text)
+        print(text, end="")
     elif a.cmd == "get":
         try:
-            for path, text in query.get(root, a.ids):
-                print(f"==> {path} <==\n{text}")
+            text = "".join(f"==> {path} <==\n{body}\n" for path, body in query.get(root, a.ids))
         except ValueError as e:
             sys.exit(f"error: {e}")
+        query.log(root, "get", " ".join(a.ids), a.ids, text)
+        print(text, end="")
     elif a.cmd == "pack":
         try:
             text, ids = pack.build(root, a.text, a.path, a.ac, a.task, a.diff)
             name = a.task or records.slug(a.text)
             if a.run:
                 print(f"saved {pack.save(root, a.run, name, text).relative_to(root)}", file=sys.stderr)
-            pack.log(root, name, ids, text)
+            query.log(root, "pack", name, ids, text)
             print(text, end="")
         except ValueError as e:
             sys.exit(f"error: {e}")

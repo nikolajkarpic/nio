@@ -1,4 +1,7 @@
 """Self-check for nio index. Run: uv run python tests/test_index.py (downloads the model once)."""
+import subprocess
+import sys
+
 from test_records import GOOD_BODY, commit, fill, repo
 
 from nio import index, query, records
@@ -128,6 +131,14 @@ def test_query():
         assert a.name[:13] not in [h[0] for h in query.search(root, "sessions", paths=["app.py"])]
     finally:
         index.embed = real
+    # every lookup through the CLI logs what it returned
+    cli = lambda *args: subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", *args], cwd=root, capture_output=True, text=True)
+    for args in (["query", "background jobs", "--path", "jobs.py"], ["query", "--graph", a.name[:13]], ["get", b.name[:13]]):
+        assert cli(*args).returncode == 0
+    rows = [line.split("\t") for line in (root / ".nio/cache/usage.log").read_text().splitlines()[-3:]]
+    assert [r[1:3] for r in rows] == [["query", "background jobs jobs.py"], ["graph", a.name[:13]], ["get", b.name[:13]]], rows
+    assert rows[0][4].split(",")[0] == b.name[:13] and c.name[:13] in rows[1][4] and rows[2][4] == b.name[:13], rows
+    assert all(int(r[3]) > 0 for r in rows), rows
     print("ok")
 
 
