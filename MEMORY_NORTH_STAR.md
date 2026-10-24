@@ -265,7 +265,7 @@ A record is only useful if a new agent can act on it alone. Cheap checks come fi
 2. **Admission rule.** A candidate becomes a record only if it answers one of the three memory questions, named in `answers:`.
 3. **Dedup before writing.** The writer queries the candidate's paths and text first; a close match on the same paths becomes a supersede, never a second record.
 4. **Spot-check juror.** One cheap juror reviews every record that supersedes an approved decision, plus a sample of the rest, asking: could a new agent understand why from this record alone? A fail goes back to the writer.
-5. **Usage log.** Every lookup and context pack appends the IDs it returned to `.nio/cache/usage.log`. v0 only logs; analysis comes later.
+5. **Usage log.** Every lookup (`nio query`, `nio query --graph`, `nio get`) and context pack appends one line to `.nio/cache/usage.log`: time, kind, what was asked, approximate tokens returned, IDs. v0 only logs; comparing it with workers' `memory-used` lines comes later.
 
 ## Forced reads
 
@@ -305,7 +305,7 @@ v0 proves that agents write good records and use them. NIO dogfoods it on this r
 5. **`nio pack`:** memory in every context pack, juror packs (`--diff`) and the usage log included.
 6. **Juror lenses:** respects approved decisions; the spot-check juror.
 7. **Sync:** `nio hooks` (git `post-merge`, `post-checkout` and `post-rewrite` running `nio index` in the background; `pre-commit` and `pre-push` running the CI check) and the CI check. No separate session-start check: lookups refresh the index first, and `nio status` shows freshness.
-8. **Usage log:** lookups (`nio query`, `nio get`) log their IDs too; packs already do.
+8. **Usage log:** every lookup and pack logs what it returned.
 
 **Rough goals, not gates:** across about 20 real tasks on two branches, the relevant decision reaches the context pack in most tasks, almost no duplicate records survive a merge, and CI catches every cross-branch supersede conflict.
 

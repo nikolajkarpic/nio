@@ -1,4 +1,5 @@
 """Find records: hybrid full-text and vector search, files they touch, graph walks, and the grep fallback."""
+import datetime
 import re
 import sys
 
@@ -156,3 +157,12 @@ def format_hit(rid, rtype, standing, sim, shared, title, linked):
 def format_step(depth, direction, rel, other, kind, standing, title):
     label = " ".join(str(x) for x in (kind if kind != "record" else "", standing or "", title or "") if x)
     return f"{'  ' * depth}{direction} {rel} {other}  {label}".rstrip()
+
+
+def log(root, kind, asked, ids, text):
+    """Append one line to .nio/cache/usage.log: time, kind, what was asked, approximate tokens returned, IDs.
+    v0 only logs; comparing it with workers' `memory-used` lines comes later."""
+    path = root / ".nio/cache/usage.log"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as f:
+        f.write(f"{datetime.datetime.now().isoformat(timespec='seconds')}\t{kind}\t{' '.join(asked.split())}\t{len(text) // 4}\t{','.join(ids)}\n")
