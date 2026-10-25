@@ -126,7 +126,8 @@ it and read `grill.md`: an `Asked` entry with no answer after it is the question
 
 When the human delegates, the agent answers each question the way it would recommend, tags the answer `[agent]`, and
 logs its reason. It still stops at permissions, irreversible operations, money, deletion and breaking changes: those
-wait for the human. It confirms the finish gate itself, and the notes show the human every `[agent]` answer.
+wait for the human. It confirms the finish gate itself, and the notes show the human every `[agent]` answer. It may settle a deferred
+point, but never closes its jury finding: `--by grill` means the human answered.
 
 ## When to stop
 

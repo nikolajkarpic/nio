@@ -198,6 +198,11 @@ def test_deferred_points_need_the_human():
         raise AssertionError("a spec-fix closed a deferred point still in ## Deferred")
     except ValueError as e:
         assert "DF-1 is still in `## Deferred`" in str(e), e
+    try:  # the human's own spec-fix waits for the DF line to go too
+        jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "human", "kept FR-2")
+        raise AssertionError("a human spec-fix closed a deferred point still in ## Deferred")
+    except ValueError as e:
+        assert "DF-1 is still in `## Deferred`" in str(e), e
     spec = root / ".nio/specs/refunds/spec.md"
     spec.write_text(spec.read_text().replace("- **DF-1** (from FR-2; contradiction) FR-1 and FR-2 disagree on shipped orders.\n", ""))
     jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2 in a second session")

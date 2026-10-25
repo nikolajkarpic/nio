@@ -188,6 +188,10 @@ def test_grill_provenance():
         (lambda t: settled(t).replace("retired: [OP-1]", "retired: []") + deferred, "comes from OP-1, which must move to `retired:`"),
         (lambda t: settled(t) + "\n## Deferred\n- **DF-2** (from FR-2; contradiction) FR-2 and FR-1 disagree.\n", "whose line must end with [deferred: DF-2]"),
         (lambda t: settled(t).replace("the refund request. [human]", "the refund request. [deferred: DF-3]"), "points at DF-3"),
+        # an unknown tag, a missing one, or an empty argument is no provenance
+        (lambda t: settled(t).replace("the refund request. [human]", "the refund request. [guess]"), "its line must end with [human]"),
+        (lambda t: settled(t).replace("the refund request. [human]", "the refund request."), "its line must end with [human]"),
+        (lambda t: settled(t).replace("the refund request. [human]", "the refund request. [research: ]"), "its line must end with [human]"),
         # a table row's Src is checked too, and a proposal can't be a source
         (lambda t: settled(t).replace("| paid | - | full | [human] |", "| paid | - | full | [derived: FR-9] |"), "is derived from FR-9, which isn't defined"),
         (lambda t: t.replace("then it is rejected. [human]", "then it is rejected. [derived: FR-1]").replace(
