@@ -5,7 +5,7 @@ epic: ""                         # "<epic slug>/R-<n>" when this is a slice of a
 risk: []                         # auth | pii | money | external-input | data-deletion | migration | multi-party | public-api
 retired: []                      # IDs removed from this spec; never reused
 ---
-<!-- Spec template (#20). WHAT and WHY only, never HOW. Every item ends with its provenance: [human] (the grill
+<!-- Spec template. WHAT and WHY only, never HOW. Every item ends with its provenance: [human] (the grill
 confirmed it), [research: RF-n] (a finding in research.md) or [default] (your proposal; the grill must confirm it).
 IDs are permanent: number new items after the highest ever used, never renumber, list removed IDs in `retired`.
 Remove a section that doesn't apply; never write N/A. `nio check spec <slug>` checks all of this. -->
@@ -65,7 +65,9 @@ Remove a section that doesn't apply; never write N/A. `nio check spec <slug>` ch
 - <risk or evidence against building it this way> (RF-n). [research: RF-1]
 
 ## Decisions
+<!-- Leave this section out of a fresh draft; the grill fills it, and it is required at the gate. -->
 - <decision>: <D- record ID> (<grill or research>, <date>).
 
 ## Open points
-- <OP-n: question still open; drafting only, empty at the gate>
+- **OP-1** (<fact | decision>; <ID or section it belongs to>) <question>?
+<!-- fact: research looks it up. decision: the grill asks you. Resolved points move to `retired:`. Empty at the gate. -->

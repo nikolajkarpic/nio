@@ -4,7 +4,7 @@ route: lite
 risk: []                         # auth | pii | money | external-input | data-deletion | migration | multi-party | public-api
 retired: []
 ---
-<!-- Bugfix spec (#20, Kiro's three sections). Unchanged behaviour is never empty: it is the regression guard.
+<!-- Bugfix spec (Kiro's three sections). Unchanged behaviour is never empty: it is the regression guard.
 Each EB-n has an AC that is the test written first (it fails before the fix); each UB-n has a regression AC. -->
 # <title>
 
