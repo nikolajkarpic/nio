@@ -36,7 +36,7 @@ it and read the last entry of `grill.md`; if that entry is a question with no an
 | `[agent]` | an agent decided it: below the bar (step 4), or the session is delegated |
 | `[research: RF-n]` | a fact you looked up, recorded as `RF-n` in research.md |
 | `[derived: AC-3, RF-2]` | it follows from those items or findings, each answered, researched or an agent call; never from a proposal, a deferred point or another derived item |
-| `[deferred: DF-n]` | the session ended before it was settled (step 9) |
+| `[deferred: DF-n]` | the session ended before it was settled (step 10) |
 
 ## Steps
 
@@ -46,7 +46,7 @@ it and read the last entry of `grill.md`; if that entry is a question with no an
    up. Use a subagent for anything broad, and don't wait: only questions that depend on that fact hold. Record what you
    found in research.md as `- **RF-n** <finding>. Source: <file:line or URL>: "<excerpt of at most 25 words>"`, patch
    the item with `[research: RF-n]`, and move the OP's ID to `retired:`. A fact that exists but can't be found is not a
-   decision; defer it (step 9) unless the human wants to decide it anyway.
+   decision; defer it (step 10) unless the human wants to decide it anyway.
 3. **Order what's left.** Contradictions come first, always. Then, for each goal the spec states, its core facets:
    meaning, actors and permissions, effect on data and state, failure and conflict, the change from today, and
    verification. Then everything else, most impact first. A question whose answer depends on another open question
@@ -56,13 +56,19 @@ it and read the last entry of `grill.md`; if that entry is a question with no an
    and log it. Permissions, irreversible operations, money, deletion and breaking changes are never below the bar.
 5. **Settle what follows.** When an answer makes another point certain, write that point in as `[derived: <sources>]`
    instead of asking it. Never derive permissions, irreversible operations, money, deletion or new states.
-6. **Ask one question**, never a batch:
+6. **Ask one question** (or a round, see below):
    - the question in full, ending in `?`;
    - one line on why it matters;
    - the verified facts it rests on (from research.md, the spec or the code);
    - 3 options, or 1–2 when no real alternative exists (never filler), exactly one marked **Recommended** with its
      reason, worded so that "yes" accepts it;
    - room for a free-form answer. If the host has a question tool, use it; plain text works anywhere.
+
+   **Rounds mode.** If `grill.mode` is `rounds` in the config (`~/.nio/config.json`, `.nio/config.json` or
+   `.nio/config.local.json`, later files win), or the human asks for rounds, ask the whole frontier at once: every
+   question whose prerequisites are settled, numbered, each in the format above, so the human can answer by number
+   ("1 yes, 2 the second, 3 …"). Never put two questions in one round when one's answer could change the other. Record
+   each answer separately (step 7), then work out the next round from scratch.
 7. **Record the answer before the next question:**
    - patch every spec item it settles and tag it `[human]` (`[agent]` when delegated);
    - move a resolved `OP-n` to `retired:`;
@@ -81,20 +87,32 @@ it and read the last entry of `grill.md`; if that entry is a question with no an
 
    If a free-form answer can't be written as a testable item, ask one follow-up on the same point, with options built
    from their words. If it's still vague, record it as an open decision point instead of guessing.
-8. **Contradictions.** When an answer contradicts an earlier answer, the spec or the code, don't overwrite anything.
+8. **Words.** When a term settles, write it into the spec's `## Glossary` straight away: `- **Term**: what it is, in
+   one or two sentences. Never "<synonym>", "<synonym>".` The glossary holds vocabulary only, never decisions or
+   implementation detail. When the human uses a word the glossary defines differently, or two words for one thing,
+   stop and ask which they mean. `nio check spec` rejects a banned synonym anywhere else in the spec, except in
+   `## Decisions`, which may record a rename.
+9. **Contradictions.** When an answer contradicts an earlier answer, the spec or the code, don't overwrite anything.
    Show both sides, with the code's file:line when it's the code, and make resolving it the next question. Hold every
    question that depends on it.
-9. **Every 15 questions**, pause and offer: continue, delegate the rest to an agent, or end early. At the first pause,
-   if more than 15 points are still open, also suggest splitting the spec into an epic with slices.
-   - **Ending early** never assumes an answer. Each unsettled open point moves to `## Deferred` as
-     `- **DF-n** (from OP-n) <what is unsettled>. Deferred: <why>`, with the OP moved to `retired:`. Each unsettled
-     `[default]` item gets `(from <its ID>)`, or `(from <its section>)` when it has no ID (a table row, a non-goal), and
-     its own tag becomes `[deferred: DF-n]`.
-   - An open contradiction is deferred as `(from <ID>; contradiction)`, quoting both sides. The jury treats it as a
-     blocker.
-10. **Finish gate.** When `nio check spec <slug> --gate` passes, show the human its notes: the agent calls, the derived
-    items and any deferred points, so they can overturn any of them. Then ask: finish, explore further, or stop with
-    concerns. The grill is done only when they choose finish.
+10. **Every 15 questions**, pause and offer: continue, delegate the rest to an agent, or end early. At the first pause,
+    if more than 15 points are still open, also suggest splitting the spec into an epic with slices.
+    - **Ending early** never assumes an answer. Each unsettled open point moves to `## Deferred` as
+      `- **DF-n** (from OP-n) <what is unsettled>. Deferred: <why>`, with the OP moved to `retired:`. Each unsettled
+      `[default]` item gets `(from <its ID>)`, or `(from <its section>)` when it has no ID (a table row, a
+      non-goal), and its own tag becomes `[deferred: DF-n]`.
+    - An open contradiction is deferred as `(from <ID>; contradiction)`, quoting both sides. The jury treats it as a
+      blocker.
+11. **Finish gate.** When `nio check spec <slug> --gate` passes:
+    - **Fidelity.** Re-read every item this session patched against its answer in `grill.md`. Numbers, negatives
+      ("never", "only", "not") and orderings must say exactly what was answered; precise answers soften into vaguer
+      prose easily. Fix any that drifted, and log the fix.
+    - **Passivity.** Count the recommendations the human accepted as-is (their answers only; skip this in a
+      delegated session). If they accepted every one of more than three, say so, and ask which decision they would
+      push back on before finishing.
+    - Show the notes of `--gate`: the agent calls, the derived items and any deferred points, so they can overturn any
+      of them. Then ask: finish, explore further, or stop with concerns. The grill is done only when they choose
+      finish.
 
 ## Delegated sessions
 
