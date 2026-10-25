@@ -100,7 +100,9 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | Command | Does |
 | --- | --- |
 | `nio new <type> --area A --title T` | Create a record from its template |
+| `nio new spec <slug> [--route full\|lite\|epic] [--epic E/R-n]` | Create `.nio/specs/<slug>/spec.md` from the slice, bugfix or epic template |
 | `nio check` | Lint every record; only `paths` may change on committed ones |
+| `nio check spec <slug> [--gate]` | A spec's mechanical checks: sections, permanent IDs, provenance, AC coverage, SHALL, complete tables; prints the lenses its risk flags trigger |
 | `nio index [--check]` | Rebuild the index (incremental) and run cross-branch conflict checks |
 | `nio query "<question>" [--path F] [--graph ID]` | Find records by text or file, or walk links; `≈` marks a likely duplicate |
 | `nio get <ID>...` | Print records by ID |
@@ -114,7 +116,7 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio status` | Index freshness against `HEAD` |
 | `nio run` | Start a run and its `promote.md` |
 
-Self-checks: `uv run python tests/test_records.py`, `tests/test_index.py`, `tests/test_pack.py`, `tests/test_hooks.py`, `tests/test_agents.py` and `tests/test_jury.py`.
+Self-checks: `uv run python tests/test_records.py`, `tests/test_index.py`, `tests/test_pack.py`, `tests/test_hooks.py`, `tests/test_agents.py`, `tests/test_jury.py` and `tests/test_spec.py`.
 
 ## Principles
 
