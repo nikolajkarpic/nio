@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from nio import agents, hooks, index, pack, query, records
+from nio import agents, hooks, index, jury, pack, query, records
 
 
 def report(errors, warnings, count):
@@ -51,6 +51,22 @@ def main():
     agsub.add_parser("sync", help="render the shipped, personal and team cards as .claude/agents and .codex/agents files")
     v = agsub.add_parser("verify", help="compare the model each recent Claude run of a nio-* agent used with its tier's model")
     v.add_argument("--limit", type=int, default=20)
+    j = sub.add_parser("jury", help="jury gates: collect lens outputs into the findings ledger, dispose of findings, compose the outcome")
+    jsub = j.add_subparsers(dest="jury_cmd", required=True)
+    jc = jsub.add_parser("collect", help="merge the run's lens outputs (and the refuter's, if present) into .nio/specs/<slug>/jury/<gate>")
+    jc.add_argument("--run", required=True)
+    jc.add_argument("--expect", action="append", default=[], help="a lens that must report; repeatable")
+    jc.add_argument("--tier", choices=["low", "medium", "high"], help="the ladder rung triage picked")
+    jd = jsub.add_parser("dispose", help="set a finding's disposition; accepted-risk and out-of-scope need --by human")
+    jd.add_argument("id")
+    jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS))
+    jd.add_argument("--by", required=True, choices=sorted(jury.BY))
+    jd.add_argument("--note", required=True)
+    jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
+    jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
+    for s in (jc, jd, jk):
+        s.add_argument("slug")
+        s.add_argument("gate", choices=sorted(jury.GATES))
     a = p.parse_args()
 
     root = records.repo_root()
@@ -112,6 +128,19 @@ def main():
             out, bad = agents.verify(root, a.limit)
             print("\n".join(out))
             sys.exit(1 if bad else 0)
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+    elif a.cmd == "jury":
+        try:
+            if a.jury_cmd == "collect":
+                print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
+            elif a.jury_cmd == "dispose":
+                jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note)
+                print(f"{a.id}: {a.disposition} by {a.by}")
+            else:
+                outcome, lines = jury.check(root, a.slug, a.gate, a.record)
+                print("\n".join(lines))
+                sys.exit({"approved": 0, "rejected": 1, "human": 3}.get(outcome, 2))
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":

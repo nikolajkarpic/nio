@@ -58,8 +58,8 @@ def test_sync():
     (team / "triage.md").write_text((team / "triage.md").read_text().replace("Does one thing.", "Does one thing 🚀."))
     out, errors = agents.sync(root)
     assert not errors, errors
-    for toml in (root / ".codex/agents").glob("*.toml"):  # the hand-built TOML parses, emoji and all
-        assert tomllib.loads(toml.read_text())["description"].startswith("Does one thing") or "logic" in toml.name
+    parsed = {p.stem: tomllib.loads(p.read_text()) for p in (root / ".codex/agents").glob("*.toml")}  # hand-built TOML parses
+    assert parsed["nio-triage"]["description"] == "Does one thing 🚀." and parsed["nio-logic"]["developer_instructions"], parsed
     logic = (root / ".claude/agents/nio-logic.md").read_text()
     assert 'model: "opus"' in logic and 'effort: "high"' in logic and 'tools: "Read, Grep, Glob"' in logic, logic
     assert logic.rstrip().endswith("Also check the glossary."), logic
