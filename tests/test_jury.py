@@ -95,13 +95,20 @@ def test_gate():
     jury.dispose(root, "refunds", "spec", "J-2", "spec-fix", "agent", "AC-1 now says the order ends in `refunded`")
     jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2; FR-1 no longer lists shipped")
     (root / ".nio/specs/refunds/spec.md").write_text(SPEC.replace("paid or shipped", "paid"))
-    lens(root, "R-2", "logic")  # only the blocking lens re-runs, and finds nothing
+    outcome, lines = jury.check(root, "refunds", "spec")  # every finding disposed, but no juror saw the fixed spec yet
+    assert outcome == "rerun" and any("changed since round" in line for line in lines), lines
+    lens(root, "R-2", "logic")  # only the blocking lenses re-run (both raised J-1), and find nothing
+    lens(root, "R-2", "testability")
     out = jury.collect(root, "refunds", "spec", "R-2")
     assert any(line.startswith("fixed   J-1") for line in out), out
+    assert jury.load(root, "refunds", "spec")["findings"][3]["status"] == "disposed"  # J-4, out of scope: not "fixed"
     outcome, lines = jury.check(root, "refunds", "spec", record=True)
     assert outcome == "approved" and any("J-2 spec-fix" in line for line in lines), lines  # the agent's call, shown
     assert any(line.startswith("recorded") for line in lines), lines
     assert not any(line.startswith("recorded") for line in jury.check(root, "refunds", "spec", record=True)[1])  # once
+    # the human can close a gate themselves: recorded as outcome human with their reason, never approved
+    outcome, lines = jury.check(root, "refunds", "spec", human="good enough for now")
+    assert outcome == "human" and "the human closed the gate: good enough for now" in " ".join(lines), lines
     errors = [e for e in records.check(root)[0] if "project/" in e]
     assert not errors, errors
     ledger = (root / ".nio/specs/refunds/jury/spec.md").read_text()
@@ -112,6 +119,9 @@ def test_gate():
 def test_persisting_finding_goes_to_the_human():
     root = setup()
     for r in (1, 2, 3):
+        if r > 1:  # a fix attempt that doesn't fix it: the spec changes, the finding stays
+            spec_md = root / ".nio/specs/refunds/spec.md"
+            spec_md.write_text(spec_md.read_text() + f"- FR-{r + 2}: An attempt {r}.\n")
         lens(root, f"R-{r}", "logic", CONTRADICTION.format(n=1))
         jury.collect(root, "refunds", "spec", f"R-{r}")
         if r == 1:
@@ -121,6 +131,22 @@ def test_persisting_finding_goes_to_the_human():
     assert led["findings"][0]["rounds"] == 2 and led["findings"][0]["baseline"] == "unchanged", led["findings"][0]
     outcome, lines = jury.check(root, "refunds", "spec")
     assert outcome == "human" and any("J-1 failed 2 rounds" in line for line in lines), lines
+    print("ok")
+
+
+def test_escalation_is_not_a_fix():
+    """Extra jurors judging the same version neither fix nor fail what the first juror found, and two findings with
+    the same IDs but different labelled targets stay apart."""
+    root = setup()
+    table = CONTRADICTION.format(n=1).replace("FR-1, FR-2", "FR-1, FR-2, state table row paid")
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1).replace("FR-1, FR-2", "FR-1, FR-2, the non-goal on refunds"))
+    lens(root, "R-1", "scope", table.replace("Shipped orders are both", "The table and FR-1 disagree"), lens_name="scope")
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert len(jury.load(root, "refunds", "spec")["findings"]) == 2  # a label pointing elsewhere: a second problem
+    lens(root, "R-1", "logic-2", lens_name="logic")  # escalation juror, same spec version, finds nothing
+    out = jury.collect(root, "refunds", "spec", "R-1")
+    f = jury.load(root, "refunds", "spec")["findings"][0]
+    assert f["status"] == "open" and f["rounds"] == 0 and not any(line.startswith("fixed") for line in out), (f, out)
     print("ok")
 
 
@@ -167,7 +193,170 @@ def test_deferred_points_need_the_human():
         pass
     jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2 in a second session")
     jury.dispose(root, "refunds", "spec", "J-2", "accepted-risk", "human", "30 days, revisit after launch")
-    assert jury.check(root, "refunds", "spec")[0] == "approved"
+    outcome, lines = jury.check(root, "refunds", "spec")  # disposed as fixed, but the spec still reads the same
+    assert outcome == "rejected" and "- spec-fix without a change to the spec: J-1" in lines, lines
+    spec = root / ".nio/specs/refunds/spec.md"
+    spec.write_text(spec.read_text().replace("- **DF-1** (from FR-2; contradiction) FR-1 and FR-2 disagree on shipped orders.\n", ""))
+    assert jury.check(root, "refunds", "spec")[0] == "rerun"  # the fix is in: the lenses judge it next
+    print("ok")
+
+
+def test_plan_and_changed():
+    """The lens plan comes from the gate, the risk flags and the FR count; a re-review knows what a fix changed."""
+    from pathlib import Path
+    root = setup()
+    fixture = (Path(__file__).parent / "fixtures/spec/spec-bugfix.md").read_text()
+    path = root / ".nio/specs/refund-double-charge/spec.md"
+    path.parent.mkdir(parents=True)
+    path.write_text(fixture)
+    lines, ok = jury.plan(root, "refund-double-charge", "spec")
+    assert ok and lines[0] == "tier: high (money)" and "adversary (risk: money)" in lines[1] and lines[2] == "runs: 3 of 6", lines
+    lines, ok = jury.plan(root, "refund-double-charge", "spec", ["consistency:D-1 approved", "nosuch:a reason"])
+    assert not ok and "missing cards: nosuch" in lines[-1] and "consistency (D-1 approved)" in lines[1], lines
+    assert [jury.rung(r) for r in ([], ["pii"], ["pii", "auth"])] == ["low", "medium", "high"]
+    path.write_text(fixture.replace("[human]", "[default]", 1))  # not settled: no lens may run
+    assert jury.plan(root, "refund-double-charge", "spec") == (["`nio check spec refund-double-charge --gate` fails (1 errors): finish the grill first"], False)
+    # a round records the judged spec; a fix to EB-1 re-runs the lens that blocked on it
+    path.write_text(fixture)
+    finding = CONTRADICTION.format(n=1).replace("FR-1, FR-2", "EB-1").replace('- quote: "Shipped orders can never be refunded"\n', "").replace(
+        '"allowed while the order is paid or shipped"', '"create exactly one refund"')
+    run = root / ".nio/runs/R-1/jury/spec-logic.md"
+    run.parent.mkdir(parents=True)
+    run.write_text(f"---\nlens: logic\ngate: spec\nsubject: refund-double-charge\nby: juror / claude / sonnet\ncontext: sufficient\n---\n"
+                   f"## Reasoning\nChecked.\n\n## Findings\n{finding}")
+    jury.collect(root, "refund-double-charge", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text("### J-1\n- result: confirmed\n- reason: yes\n")
+    jury.collect(root, "refund-double-charge", "spec", "R-1")
+    path.write_text(fixture.replace("create exactly one refund", "create exactly one refund per order"))
+    assert jury.changed(root, "refund-double-charge", "spec") == (["EB-1"], ["logic"])
+    print("ok")
+
+
+def test_answers_for_scope():
+    root = setup()
+    (root / ".nio/specs/refunds/grill.md").write_text("""# Grill log
+## Q1 · OP-3 · 2026-10-25
+Question: When does it end?
+Options: 1. Green and you confirm (recommended) 2. Green is enough
+3. You decide
+Answer: 1 [human]
+Patched: FR-17
+
+## Call · US-1 · 2026-10-25
+Below the bar. [agent]
+
+## Q2 · FR-3 · 2026-10-25
+Question: Which to adopt?
+Options (several allowed): 1. Glossary 2. Fidelity 3. Rounds
+Answer: 1 and 3 [human]
+
+## Q3 · OP-4 · 2026-10-25
+Question: Where do deferred points go?
+Answer: free form: in their own section [human]
+
+## Q4 · J-16 · 2026-10-25
+Question: What if a lookup finds nothing?
+Answer: 1. Show it, then you choose: decide now or defer; conflicting
+sources are a contradiction [human]
+Patched: FR-34
+""")
+    assert jury.answers(root, "refunds") == [
+        "## Q1 · OP-3 · 2026-10-25", "Question: When does it end?", "Answer: Green and you confirm [human]", "",
+        "## Q2 · FR-3 · 2026-10-25", "Question: Which to adopt?", "Answer: Glossary; Rounds [human]", "",
+        "## Q3 · OP-4 · 2026-10-25", "Question: Where do deferred points go?", "Answer: free form: in their own section [human]", "",
+        "## Q4 · J-16 · 2026-10-25", "Question: What if a lookup finds nothing?",
+        "Answer: 1. Show it, then you choose: decide now or defer; conflicting sources are a contradiction [human]", ""], jury.answers(root, "refunds")
+    print("ok")
+
+
+def test_cli_dispose_order():
+    """The documented order is `nio jury dispose <slug> <gate> <J-n> <disposition>`; the tests above call Python."""
+    import contextlib, io, os, sys
+    from nio import cli
+    root = setup()
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1).replace("blocker", "minor"))
+    jury.collect(root, "refunds", "spec", "R-1")
+    here, argv = os.getcwd(), sys.argv
+    try:
+        os.chdir(root)
+        sys.argv = ["nio", "jury", "dispose", "refunds", "spec", "J-1", "spec-fix", "--by", "agent", "--note", "wording"]
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            cli.main()
+        assert out.getvalue().strip() == "J-1: spec-fix by agent", out.getvalue()
+    finally:
+        os.chdir(here)
+        sys.argv = argv
+    print("ok")
+
+
+def test_review_scenarios():
+    """The independent review's reproductions: version-aware fixes and failed rounds per finding, no approval of what
+    nothing judged, whole-artefact versions for the plan gate, and grounding that ignores grill log headers."""
+    root = setup()
+    spec_md = root / ".nio/specs/refunds/spec.md"
+    blocker = CONTRADICTION.format(n=1)
+    confirm = lambda run: (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text("### J-1\n- result: confirmed\n- reason: yes\n")
+    # 3: nothing collected is never approved
+    assert jury.check(root, "refunds", "spec")[0] == "rerun"
+    # 1: testability raised J-1 on v1; the spec changed; logic re-ran alone; testability judges v2 later and is clean
+    lens(root, "R-1", "testability", blocker)
+    lens(root, "R-1", "logic")
+    jury.collect(root, "refunds", "spec", "R-1")
+    confirm("R-1")
+    jury.collect(root, "refunds", "spec", "R-1")
+    spec_md.write_text(spec_md.read_text().replace("paid or shipped", "paid"))
+    lens(root, "R-2", "logic")
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.load(root, "refunds", "spec")["findings"][0]["status"] == "open"  # testability hasn't judged v2 yet
+    lens(root, "R-3", "testability")
+    out = jury.collect(root, "refunds", "spec", "R-3")
+    assert any(line.startswith("fixed   J-1") for line in out), out
+    # 2: raised again after it was marked fixed: reopened, and a failed round (v1 -> v2 didn't fix it)
+    lens(root, "R-4", "logic", blocker.replace("blocker", "major"))
+    jury.collect(root, "refunds", "spec", "R-4")
+    f = jury.load(root, "refunds", "spec")["findings"][0]
+    assert f["status"] == "open" and f["rounds"] == 1, f
+    # 5: a retired ID in a grill log header, or a rejected option, doesn't ground a finding
+    (root / ".nio/specs/refunds/grill.md").write_text("## Q1 · FR-9 · 2026-10-25\nQuestion: Keep it?\n"
+                                                    "Options: 1. Keep it (recommended) 2. Drop the refund rule\nAnswer: 1 [human]\n")
+    stray = CONTRADICTION.format(n=1).replace("FR-1, FR-2", "FR-9").replace('- quote: "Shipped orders can never be refunded"\n', "").replace(
+        '"allowed while the order is paid or shipped"', '"Drop the refund rule"').replace("contradiction", "gap")
+    lens(root, "R-5", "scope", stray)
+    out = jury.collect(root, "refunds", "spec", "R-5")
+    assert any("dropped" in line and "(ungrounded)" in line for line in out), out
+    print("ok")
+
+
+def test_plan_gate_versions():
+    """4: the plan gate's version covers all four plan files, without plan.md too."""
+    root = setup()
+    contracts = root / ".nio/specs/refunds/contracts.md"
+    contracts.write_text("- **FR-1** THE SYSTEM SHALL expose POST /refunds. [human]\n")
+    path = root / ".nio/runs/R-1/jury/plan-logic.md"
+    path.parent.mkdir(parents=True)
+    path.write_text("---\nlens: logic\ngate: plan\nsubject: refunds\nby: juror / claude / sonnet\ncontext: sufficient\n---\n"
+                    "## Reasoning\nChecked.\n\n## Findings\nnone\n")
+    jury.collect(root, "refunds", "plan", "R-1")  # no plan.md: no crash
+    assert jury.check(root, "refunds", "plan")[0] == "approved"
+    contracts.write_text(contracts.read_text().replace("POST", "PUT"))
+    assert jury.check(root, "refunds", "plan")[0] == "rerun"  # an edit to contracts.md is an unjudged version
+    assert jury.changed(root, "refunds", "plan")[0] == ["FR-1"]
+    print("ok")
+
+
+def test_needs_more_doesnt_fix():
+    """6: a juror whose pack was too thin judged nothing, so its silence doesn't mark its finding fixed."""
+    root = setup()
+    spec_md = root / ".nio/specs/refunds/spec.md"
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1).replace("blocker", "minor"))
+    jury.collect(root, "refunds", "spec", "R-1")
+    spec_md.write_text(spec_md.read_text() + "- FR-3: Another rule.\n")
+    lens(root, "R-2", "logic", context="needs-more")
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.load(root, "refunds", "spec")["findings"][0]["status"] == "open"
+    lens(root, "R-3", "logic")
+    out = jury.collect(root, "refunds", "spec", "R-3")
+    assert any(line.startswith("fixed   J-1") for line in out), out
     print("ok")
 
 
@@ -178,12 +367,117 @@ def test_format_template_parses():
     path.write_text(resources.files("nio").joinpath("templates/lens-output.md").read_text())
     meta, findings, errors = jury.parse_lens(path, "spec", "checkout-refunds")
     assert not errors and len(findings) == 1 and findings[0]["quotes"][1] == "allowed while the order is paid or shipped", errors
+    assert findings[0]["cites"] == ["FR-1", "FR-2"] and findings[0]["kind"] == "contradiction", findings  # comments stripped
+    print("ok")
+
+
+def test_versions_decide_fixed():
+    """Regressions from the second independent review: what a re-run on a new version may and may not settle."""
+    def edit(root, extra):
+        spec = root / ".nio/specs/refunds/spec.md"
+        spec.write_text(spec.read_text() + extra)
+    led = lambda root: jury.load(root, "refunds", "spec")
+    confirm = "### J-{n}\n- result: confirmed\n- reason: yes\n"
+
+    # fixed only once every source juror judged a newer version, even across rounds
+    root = setup()
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1))
+    lens(root, "R-1", "logic-2", CONTRADICTION.format(n=1), lens_name="logic")
+    jury.collect(root, "refunds", "spec", "R-1")
+    edit(root, "- FR-3: new.\n")
+    lens(root, "R-2", "logic")
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert led(root)["findings"][0]["status"] == "open"
+    lens(root, "R-3", "logic-2", lens_name="logic")
+    jury.collect(root, "refunds", "spec", "R-3")
+    assert led(root)["findings"][0]["status"] == "fixed" and jury.check(root, "refunds", "spec")[0] == "approved"
+
+    # attempts count per version: one invalid output on a new version is retried, not sent to the human
+    root = setup()
+    lens(root, "R-1", "logic")
+    jury.collect(root, "refunds", "spec", "R-1")
+    edit(root, "- FR-3: new.\n")
+    lens(root, "R-2", "logic", reasoning="")
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.check(root, "refunds", "spec")[0] == "rerun"
+
+    # an overruled finding the majority raises on a newer version reopens
+    root = setup()
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1))
+    lens(root, "R-1", "logic-2", lens_name="logic")
+    lens(root, "R-1", "logic-3", lens_name="logic")
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(confirm.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert jury.check(root, "refunds", "spec")[0] == "approved" and led(root)["findings"][0]["status"] == "overruled"
+    edit(root, "- FR-3: new.\n")
+    for name in ("logic", "logic-2", "logic-3"):
+        lens(root, "R-2", name, CONTRADICTION.format(n=1), lens_name="logic")
+    jury.collect(root, "refunds", "spec", "R-2")
+    found = led(root)["findings"]
+    assert len(found) == 1 and found[0]["status"] == "open", found
+    assert jury.check(root, "refunds", "spec")[0] == "rejected"
+
+    # a retry under another file name supersedes the invalid output
+    root = setup()
+    lens(root, "R-1", "logic")
+    lens(root, "R-1", "testability", reasoning="")
+    jury.collect(root, "refunds", "spec", "R-1", expect=["logic", "testability"])
+    lens(root, "R-2", "testability-2", lens_name="testability")
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.check(root, "refunds", "spec")[0] == "approved"
+
+    # an emptied artefact is a new version
+    root = setup()
+    lens(root, "R-1", "logic")
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/specs/refunds/spec.md").write_text("")
+    assert jury.check(root, "refunds", "spec")[0] == "rerun"
+
+    # two lenses re-raising one finding count one failed round, not two
+    root = setup()
+    for rnd, extra in (("R-1", ""), ("R-2", "- FR-3: new.\n")):
+        edit(root, extra)
+        lens(root, rnd, "logic", CONTRADICTION.format(n=1))
+        lens(root, rnd, "testability", CONTRADICTION.format(n=1))
+        jury.collect(root, "refunds", "spec", rnd)
+    found = led(root)["findings"]
+    assert len(found) == 1 and found[0]["rounds"] == 1, found
+
+    # a lens citing a deferred point doesn't stand in for the deferred finding
+    root = setup()
+    edit(root, "\n## Deferred\n- **DF-1** (from FR-2; contradiction) whether shipped orders refund\n")
+    minor = CONTRADICTION.format(n=1).replace("FR-1, FR-2", "DF-1").replace("blocker", "minor").replace("contradiction\n", "ambiguity\n")
+    lens(root, "R-1", "logic", minor)
+    jury.collect(root, "refunds", "spec", "R-1")
+    found = led(root)["findings"]
+    assert [f["kind"] for f in found] == ["ambiguity", "contradiction"], found
+    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "agent", "reworded")
+    assert jury.check(root, "refunds", "spec")[0] == "rejected"
+
+    # the refuter can't merge a finding into a dropped one
+    root = setup()
+    ungrounded = CONTRADICTION.format(n=2).replace("FR-1, FR-2", "FR-9").replace("contradiction\n", "gap\n")
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1) + ungrounded)
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text("### J-1\n- same-as: J-2\n")
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert [f["status"] for f in led(root)["findings"]] == ["open", "dropped"]
+    assert jury.check(root, "refunds", "spec")[0] == "pending"
     print("ok")
 
 
 if __name__ == "__main__":
+    test_review_scenarios()
+    test_plan_gate_versions()
+    test_needs_more_doesnt_fix()
+    test_cli_dispose_order()
+    test_escalation_is_not_a_fix()
+    test_answers_for_scope()
+    test_plan_and_changed()
     test_deferred_points_need_the_human()
     test_format_template_parses()
     test_gate()
     test_persisting_finding_goes_to_the_human()
     test_majority_overrules_one_juror()
+    test_versions_decide_fixed()

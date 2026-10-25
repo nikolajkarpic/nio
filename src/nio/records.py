@@ -269,7 +269,8 @@ def new_id(rtype, known):
 
 
 def slug(title):
-    return "-".join(re.sub(r"[^a-z0-9 ]", "", title.lower()).split()[:6])
+    # dashes, slashes and underscores separate words ("refund-double-charge"); other punctuation just goes ("don't")
+    return "-".join(re.sub(r"[^a-z0-9 ]", "", re.sub(r"[-/_]", " ", title.lower())).split()[:6])
 
 
 def new(root, rtype, area, title, by="human", run=""):

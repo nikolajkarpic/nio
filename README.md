@@ -43,7 +43,7 @@ flowchart LR
   classDef built fill:#7c3aed,stroke:#a78bfa,color:#fff
   classDef planned fill:#1e293b,stroke:#475569,color:#94a3b8,stroke-dasharray:4 3
 
-  onboard --> spec --> plan["research · contracts<br>personas · plan"] --> tasks["effort · epics<br>tasks"] --> evaluate --> implement --> test
+  onboard --> spec --> plan["contracts · tests<br>plan"] --> tasks["effort · epics<br>tasks"] --> evaluate --> implement --> test
   jury{{"⚖️ jury"}} -. gates .-> spec & plan & tasks & implement
   memory[("🧠 remember / recall")] -. every stage .-> jury
 
@@ -64,12 +64,12 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | [`@nio:recall`](skills/recall/SKILL.md) | ✅ built | Looks memory up in three steps (find IDs, follow links, read at most 5 records) and tells the agent how to act on each record's standing: follow it, verify it, or ask the human. |
 | `@nio:install` | 🗺️ planned | Asks which subscriptions you have, checks each host CLI and writes the config. |
 | `@nio:onboard` | 🗺️ planned | Captures what the project is and what you want before any other stage runs. |
-| [`@nio:spec`](skills/spec/SKILL.md) | 🚧 draft stage built | Records your words verbatim, then the spec-drafter agent (Opus) writes a first spec that never guesses: what you didn't say becomes a `[default]` proposal or an open point, and every sentence you wrote is traced to spec IDs. Research and the grill come next. |
+| [`@nio:spec`](skills/spec/SKILL.md) | 🚧 draft stage built | Records your words verbatim, then the spec-drafter agent (Opus) writes a first spec that never guesses: what you didn't say becomes a `[default]` proposal or an open point, and every sentence you wrote is traced to spec IDs. The grill settles it next. |
 | [`@nio:grill`](skills/grill/SKILL.md) | ✅ built | Settles a draft spec one question at a time: looks facts up, asks only decisions (3 options, one recommended), writes in what follows, makes the small calls as `[agent]` for you to review, and stops when `nio check spec --gate` passes and you confirm. You can delegate a session to an agent. |
 | `@nio:plan` | 🗺️ planned | Contracts, bindings and a concrete test per acceptance criterion, then the plan. |
 | `@nio:tasks` | 🗺️ planned | Breaks the plan into effort → epics → tasks, rates difficulty and estimates usage. |
 | `@nio:implement` | 🗺️ planned | NIO's workers (TDD, builder, adversarial tester, swarm) build epic by epic. |
-| `@nio:jury` | 🗺️ planned | Triage, then 1 → 3 independent jurors; 2 of 3 decide, disagreement goes to you. |
+| [`@nio:jury`](skills/jury/SKILL.md) | ✅ built (spec gate) | Takes a settled spec to a verdict: picks lenses from the risk flags and size, runs each as an independent agent with a fresh pack, validates findings with the refuter, escalates a confirmed blocker to 3 jurors, fixes what it may and sends behaviour changes back through the grill, then records the verdict. |
 | `@nio:lite` | 🗺️ planned | Repro, failing test, fix, jury: for small fixes. |
 
 <sub>Planned names follow NORTH_STAR.md and may change; open decisions live in GitHub issues.</sub>
@@ -111,9 +111,13 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio hooks` | Install git hooks: refresh the index and agent files after pulls, checkouts and rebases; run the CI check before commits and pushes |
 | `nio agents sync` | Render the agent cards (shipped, `~/.nio/agents/`, `.nio/agents/`) as `.claude/agents/nio-*` and `.codex/agents/nio-*`, with each tier's model from config |
 | `nio agents verify` | Check that recent Claude runs of `nio-*` agents used the model their tier maps to |
+| `nio jury plan <slug> <gate> [--add lens:reason]` | The lenses a gate needs and why, the risk tier, the run budget; fails if the spec isn't gated or a card is missing |
+| `nio jury changed <slug> <gate>` | After a fix: the IDs that changed since the judged version, and the lenses to re-run |
+| `nio jury template` | Print the lens output format, for a juror's pack |
+| `nio jury answers <slug>` | The human's grill answers (each question and the answer chosen), for the scope lens's pack |
 | `nio jury collect <slug> <gate> --run R` | Merge the run's lens outputs into the findings ledger (grounded, deduped, matched to earlier rounds) and print the refuter batch; run again once the refuter has answered |
 | `nio jury dispose <slug> <gate> J-n <disposition> --by agent\|grill\|human --note N` | Close a finding: spec-fix, open-question, accepted-risk or out-of-scope (the last two only by the human) |
-| `nio jury check <slug> <gate> [--record]` | The gate outcome (approved, rejected, human, or rerun/pending), with the verdict record written to memory on `--record` |
+| `nio jury check <slug> <gate> [--record] [--human REASON]` | The gate outcome (approved, rejected, human, or rerun/pending), with the verdict record written to memory on `--record`; `--human` is the human closing the gate themselves |
 | `nio status` | Index freshness against `HEAD` |
 | `nio run` | Start a run and its `promote.md` |
 

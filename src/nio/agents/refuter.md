@@ -16,7 +16,9 @@ add findings or re-judge severity.
 
 - the refuter batch printed by `nio jury collect`: one `### J-<n>` block per finding, with its cites, quotes,
   situations and suggested fix;
-- the artefact those findings are about (`spec.md`, or the plan or task files), to read in full around each cite.
+- the artefact those findings are about (`spec.md`, or the plan or task files), to read in full around each cite;
+- the gate's ledger, to mark a finding as the same as one outside the batch;
+- the human's grill answers, to judge findings about what was or wasn't asked for.
 
 ## At jury
 

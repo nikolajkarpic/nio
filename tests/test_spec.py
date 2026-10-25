@@ -145,6 +145,14 @@ def test_edge_cases():
     has(errors(root, slug), "says \"chargeback\"")
     slug = put(root, "spec.md", lambda t: t.replace("(grill, 2026-10-25).", "(grill, 2026-10-25); renamed from reimbursement."))
     assert errors(root, slug) == [], errors(root, slug)  # Decisions may record a rename
+    # an item outside its home section
+    slug = put(root, "spec.md", lambda t: t.replace("- **FR-2** IF the order", "- **NFR-9** placeholder-free line. [human]\n- **FR-2** IF the order").replace(
+        "## Non-functional requirements\n", "## Non-functional requirements\n- **FR-9** WHEN x THE SYSTEM SHALL y. [human]\n"))
+    has(errors(root, slug), "FR-9 is under `## Non-functional requirements`; FR items belong in `## Functional requirements`")
+    has(errors(root, slug), "NFR-9 is under `## Functional requirements`")
+    # a wrapped non-goal carries its tag on its last line
+    slug = put(root, "spec.md", lambda t: t.replace("- Refunds to a different payment method. [default]", "- Refunds to a different\n  payment method. [default]"))
+    assert errors(root, slug) == [], errors(root, slug)
     # a table row's Src cell counts
     slug = put(root, "spec.md", lambda t: t.replace("| paid | → shipped | → refunded | [human] |", "| paid | → shipped | → refunded | [default] |"))
     has(errors(root, slug, gate=True), "`| paid | → shipped | → refunded | [default] |` is still [default]")

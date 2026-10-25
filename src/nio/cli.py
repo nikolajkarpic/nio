@@ -1,5 +1,6 @@
 import argparse
 import sys
+from importlib import resources
 
 from nio import agents, hooks, index, jury, pack, query, records, spec
 
@@ -59,18 +60,27 @@ def main():
     v.add_argument("--limit", type=int, default=20)
     j = sub.add_parser("jury", help="jury gates: collect lens outputs into the findings ledger, dispose of findings, compose the outcome")
     jsub = j.add_subparsers(dest="jury_cmd", required=True)
+    jsub.add_parser("template", help="print the lens output format, for a juror's context pack")
+    ja = jsub.add_parser("answers", help="the human's grill answers (question and answer chosen), for the scope lens's pack")
+    ja.add_argument("slug")
+    jp = jsub.add_parser("plan", help="the lens runs a gate needs, why each runs, the tier and the run budget; fails on a missing card")
+    jp.add_argument("--add", action="append", default=[], help="lens:reason, a lens the skill's own triggers add; repeatable")
+    jg = jsub.add_parser("changed", help="IDs changed since the version the last round judged, and the lenses to re-run")
     jc = jsub.add_parser("collect", help="merge the run's lens outputs (and the refuter's, if present) into .nio/specs/<slug>/jury/<gate>")
     jc.add_argument("--run", required=True)
     jc.add_argument("--expect", action="append", default=[], help="a lens that must report; repeatable")
     jc.add_argument("--tier", choices=["low", "medium", "high"], help="the ladder rung triage picked")
     jd = jsub.add_parser("dispose", help="set a finding's disposition; accepted-risk and out-of-scope need --by human")
+    jd.add_argument("slug")
+    jd.add_argument("gate", choices=sorted(jury.GATES))
     jd.add_argument("id")
     jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS))
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
     jd.add_argument("--note", required=True)
     jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
     jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
-    for s in (jc, jd, jk):
+    jk.add_argument("--human", default="", metavar="REASON", help="the human closes the gate themselves: outcome human, with their reason")
+    for s in (jp, jg, jc, jk):  # dispose takes them first, before the finding
         s.add_argument("slug")
         s.add_argument("gate", choices=sorted(jury.GATES))
     a = p.parse_args()
@@ -154,13 +164,24 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "jury":
         try:
-            if a.jury_cmd == "collect":
+            if a.jury_cmd == "answers":
+                print("\n".join(jury.answers(root, a.slug)))
+            elif a.jury_cmd == "template":
+                print(resources.files("nio").joinpath("templates/lens-output.md").read_text(), end="")
+            elif a.jury_cmd == "plan":
+                lines, ok = jury.plan(root, a.slug, a.gate, a.add)
+                print("\n".join(lines))
+                sys.exit(0 if ok else 1)
+            elif a.jury_cmd == "changed":
+                ids, rerun = jury.changed(root, a.slug, a.gate)
+                print(f"changed: {', '.join(ids) or 'nothing'}\nre-run: {', '.join(rerun) or 'nothing'}")
+            elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
             elif a.jury_cmd == "dispose":
                 jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note)
                 print(f"{a.id}: {a.disposition} by {a.by}")
             else:
-                outcome, lines = jury.check(root, a.slug, a.gate, a.record)
+                outcome, lines = jury.check(root, a.slug, a.gate, a.record, a.human)
                 print("\n".join(lines))
                 sys.exit({"approved": 0, "rejected": 1, "human": 3}.get(outcome, 2))
         except ValueError as e:
