@@ -65,7 +65,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | `@nio:install` | 🗺️ planned | Asks which subscriptions you have, checks each host CLI and writes the config. |
 | `@nio:onboard` | 🗺️ planned | Captures what the project is and what you want before any other stage runs. |
 | [`@nio:spec`](skills/spec/SKILL.md) | 🚧 draft stage built | Records your words verbatim, then the spec-drafter agent (Opus) writes a first spec that never guesses: what you didn't say becomes a `[default]` proposal or an open point, and every sentence you wrote is traced to spec IDs. The grill settles it next. |
-| [`@nio:grill`](skills/grill/SKILL.md) | ✅ built | Settles a draft spec one question at a time: looks facts up, asks only decisions (3 options, one recommended), writes in what follows, makes the small calls as `[agent]` for you to review, and stops when `nio check spec --gate` passes and you confirm. You can delegate a session to an agent. |
+| [`@nio:grill`](skills/grill/SKILL.md) | ✅ built | Settles a draft spec one question at a time: looks facts up, asks only decisions (3 options, one recommended), writes in what follows, makes the small calls as `[agent]` for you to review, and stops when `nio check spec --gate` passes and you confirm. You can delegate a session to an agent. Ending early defers what's unsettled to `## Deferred`; the jury turns each deferred point into a finding only you close. |
 | `@nio:plan` | 🗺️ planned | Contracts, bindings and a concrete test per acceptance criterion, then the plan. |
 | `@nio:tasks` | 🗺️ planned | Breaks the plan into effort → epics → tasks, rates difficulty and estimates usage. |
 | `@nio:implement` | 🗺️ planned | NIO's workers (TDD, builder, adversarial tester, swarm) build epic by epic. |
@@ -103,7 +103,7 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio new <type> --area A --title T` | Create a record from its template |
 | `nio new spec <slug> [--route full\|lite\|epic] [--epic E/R-n]` | Create `.nio/specs/<slug>/spec.md` from the slice, bugfix or epic template |
 | `nio check` | Lint every record; only `paths` may change on committed ones |
-| `nio check spec <slug> [--gate]` | A spec's mechanical checks: sections, permanent IDs, provenance, AC coverage, SHALL, complete tables; prints the lenses its risk flags trigger |
+| `nio check spec <slug> [--gate]` | A spec's mechanical checks: sections, permanent IDs, provenance, AC coverage, SHALL, complete tables, the glossary's banned synonyms. Accepts the grill's `[agent]`, `[derived: …]` (only from answered, agent-decided or researched points) and `[deferred: DF-n]` (with its `## Deferred` entry); `--gate` lists the agent calls, derived items and deferred points, and prints the lenses its risk flags trigger |
 | `nio index [--check]` | Rebuild the index (incremental) and run cross-branch conflict checks |
 | `nio query "<question>" [--path F] [--graph ID]` | Find records by text or file, or walk links; `≈` marks a likely duplicate |
 | `nio get <ID>...` | Print records by ID |
@@ -115,8 +115,8 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio jury changed <slug> <gate>` | After a fix: the IDs that changed since the judged version, and the lenses to re-run |
 | `nio jury template` | Print the lens output format, for a juror's pack |
 | `nio jury answers <slug>` | The human's grill answers (each question and the answer chosen), for the scope lens's pack |
-| `nio jury collect <slug> <gate> --run R` | Merge the run's lens outputs into the findings ledger (grounded, deduped, matched to earlier rounds) and print the refuter batch; run again once the refuter has answered |
-| `nio jury dispose <slug> <gate> J-n <disposition> --by agent\|grill\|human --note N` | Close a finding: spec-fix, open-question, accepted-risk or out-of-scope (the last two only by the human) |
+| `nio jury collect <slug> <gate> --run R` | Merge the run's lens outputs into the findings ledger (grounded, deduped, matched to earlier rounds) and print the refuter batch; at the spec gate it also adds one finding per deferred point (a contradiction is a blocker). Run again once the refuter has answered |
+| `nio jury dispose <slug> <gate> J-n <disposition> --by agent\|grill\|human --note N` | Close a finding: spec-fix, open-question, accepted-risk or out-of-scope (the last two only by the human). A deferred finding never closes `--by agent`, and a spec-fix on it waits until its DF line is gone; `--by grill` means the human answered the settling question |
 | `nio jury check <slug> <gate> [--record] [--human REASON]` | The gate outcome (approved, rejected, human, or rerun/pending), with the verdict record written to memory on `--record`; `--human` is the human closing the gate themselves |
 | `nio status` | Index freshness against `HEAD` |
 | `nio run` | Start a run and its `promote.md` |
