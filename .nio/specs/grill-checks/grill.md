@@ -77,3 +77,52 @@ consequence of an answer already given); taken as written. The gate notes list t
 Fidelity: re-read FR-14, FR-15, FR-16, FR-20, AC-22, both closing-table rows, the non-goal and Decisions against Q1-Q5; no drift.
 Passivity: the human accepted all 5 recommendations; asked which they would push back on (OP-2 named as weakest): none.
 Answer: finish [human]
+
+## Session 2 · 2026-10-25 · jury round 1 (V-261025-wrsv), the human answers
+
+## Q6 · J-3 · 2026-10-25
+Question: FR-16 refuses an agent but lets a grill session close a deferred finding, and the grill is an agent (A-2). Who may pass `--by grill`?
+Options: 1. --by grill = you answered (recommended) 2. Enforce it via the [human] tag 3. Drop --by grill for deferred
+Answer: 1. --by grill = you answered: reword FR-16 and A-2: `--by grill` means a session where you answered the question that settled the point. A delegated session never closes a deferred finding; it settles the point and leaves the finding for you. The rule lives in the spec and in the grill and jury skills, honour system like the rest of `--by`. No code change. [human]
+Patched: FR-16, closing table rows grill and agent, Decisions; skills/grill/SKILL.md (Delegated sessions), skills/jury/SKILL.md
+
+## Q7 · J-7 · 2026-10-25
+Question: FR-10 and FR-11 (a deferred point's links and format) are agent calls nobody asked for. Keep them?
+Options: 1. Keep both, as an extension (recommended) 2. Keep FR-11, drop FR-10 3. Drop both, keep FR-9
+Answer: 1. Keep both, as an extension: confirm FR-10 and FR-11 as yours (`[human]`) and log them as a deliberate extension. FR-11 is what guarantees every deferred point becomes a finding. FR-10 stops a point from being both open and deferred. No code change. [human]
+Patched: FR-10, FR-11 [human]; Decisions
+
+## Q8 · J-8, J-12 · 2026-10-25
+Question: FR-2 counts lines without an ID that carry [agent] or [derived]; nobody asked for it and no AC observes it. Keep it?
+Options: 1. Keep the count, add its AC (recommended) 2. List those lines instead 3. Drop the count
+Answer: 1. Keep the count, add its AC: confirm the count as yours and add an AC whose Observable is the exact notes text (closes J-12 too). The notes stay one line, and the count tells you there's more to look at than the IDs shown. [human]
+Patched: FR-2 [human]; new AC-24
+
+## Session 3 · 2026-10-25 · jury round 2, the human answers
+
+## Q9 · J-22 · 2026-10-25
+Question: Five checks (FR-4, FR-5, FR-6, FR-9, FR-19) are agent calls nobody asked for. Keep them?
+Options: 1. Confirm all five as yours (recommended) 2. Leave them as agent calls 3. Cut FR-6 and FR-19's details
+Answer: 1. Confirm all five as yours: retag FR-4, FR-5, FR-6, FR-9 and FR-19 as `[human]`, log them as a deliberate extension (as with FR-10 and FR-11), and close J-22. No code change. [human]
+Patched: FR-4, FR-5, FR-6, FR-9, FR-19 [human]; Decisions. Shown with it: FR-16 reworded for J-16 (only `--by agent` is enforced; the Q6 honour rule moved to a non-goal); no objection.
+
+## Session 4 · 2026-10-25 · jury round 3, the human answers
+
+## Q10 · J-33 · 2026-10-25
+Question: FR-17 (no approved verdict while a deferred finding is open) is still an agent call. Confirm it?
+Options: 1. Confirm FR-17 as yours (recommended) 2. Leave it an agent call 3. Drop FR-17
+Answer: 1. Confirm FR-17 as yours: retag FR-17 `[human]` and log it with the other extensions. It's what gives deferred findings any force, and it's already how every open finding behaves. No code change. [human]
+Patched: FR-17 [human]; Decisions
+
+## Session 5 · 2026-10-26 · jury round 4, the human answers
+
+## Q11 · Round 4 · 2026-10-25
+Question: Round 4 found 3 majors (SC-1 wording, FR-6 AC, J-38 again) and 10 minors, all wording or ACs over existing code. How do we end?
+Options: 1. Fix all, then close it yourself (recommended) 2. Fix all, then round 5 3. Close now, findings as risk
+Answer: 1. Fix all, then close it yourself: run the refuter on the majors, apply every fix, then the human closes the gate with `--human` and a reason; open an issue on jury convergence. [human]
+
+## Q12 · J-48 · 2026-10-26
+Question: FR-16 lets the human close a deferred finding as a spec fix directly (`--by human`). Keep it?
+Options: 1. Confirm it as yours (recommended) 2. Drop it 3. Accept J-48 as risk
+Answer: 1. Confirm it as yours: keep `--by human` spec fix, log it as a deliberate extension. The code and tests already do this. [human]
+Patched: Decisions

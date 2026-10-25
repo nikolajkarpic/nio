@@ -1,0 +1,2058 @@
+{
+  "gate": "spec",
+  "subject": "grill-checks",
+  "round": 4,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261025-hapd/spec-consistency.md": "77f071809c056e3ae2f23362c8bfd5ad016c43104334baf42437da980ce38a40",
+    "R-261025-hapd/spec-logic.md": "871f2c32655ba3af8041d77cecf7262f80dbe721f8bd613b3857ac17686ab362",
+    "R-261025-hapd/spec-scope.md": "17ddffe2c7f3ce8cd9578cb76eaeaf9e49a7ac7103d467b046bfa6a6d7181731",
+    "R-261025-hapd/spec-testability.md": "e931b44910df6e6199373cfac140660a4688453354032238b7dd4ffdbcd7d5fd",
+    "R-261025-hapd/spec-refuter.md": "41e1f971c65708c511383ed67a5b8f6c706367984c163950461c455549166427",
+    "R-261025-rudx/spec-consistency.md": "c3f1f6164eefa2bbba280913aaadd6a342bfa11779a9eab3c0fafd22788806bc",
+    "R-261025-rudx/spec-logic.md": "6b9531a08a88b70bf60d1ae9770159a38c82209e8e2b6cb8f5b342c091cebc40",
+    "R-261025-rudx/spec-scope.md": "d5df29f7abbe9b2bf97c285f9ee24936032f0cc7c33100671cd0b405b946fad5",
+    "R-261025-rudx/spec-testability.md": "8c69a3d2689bcd27de45b38c8505735334c7a4ade8c4198f4e76420f6f67763d",
+    "R-261025-rudx/spec-refuter.md": "64e943868c742b0a551b947d07b8bfdc7376d08db365e773442d39ef9f18463d",
+    "R-261025-xvha/spec-consistency.md": "fd9329c17d65ac0ece59387c6ce25f4eca48a44e0597bd6c2d03112076322724",
+    "R-261025-xvha/spec-logic.md": "0e4096079292372069f2ccf74561d1ee5d89232335faa7121677ef0c4ddb2401",
+    "R-261025-xvha/spec-scope.md": "1b9fc24f6caf124a2fbb157c2df015fa5553dcf8bdab595db67aec5451eb7bd3",
+    "R-261025-xvha/spec-testability.md": "4ea5be85f53a4ff00e19d1fba3539473476cbbf0256e58463302e7d85c9f35fb",
+    "R-261025-xvha/spec-refuter.md": "6a25ab74452e2449548a9d1586185d75388c3187596c642f576304017d3efc17",
+    "R-261025-pgsb/spec-consistency.md": "1fbbf720ed53bf65ab6176adeef93a66848f7eee7082e705fe3da5bdc982758e",
+    "R-261025-pgsb/spec-logic.md": "23af364a11228ce53fdcfbde210038ab795f5c8d824db0a4bb9404623619e99d",
+    "R-261025-pgsb/spec-scope.md": "b4fc8cd7e95fd6665042dbd28811a210ef789ffa41604cc11ba05b680fbcdf44",
+    "R-261025-pgsb/spec-testability.md": "a8d3a00312bdf4f9b39a5b6afde045ce8b2c0e1d1c25ec6c511b9dff2419b949",
+    "R-261025-pgsb/spec-refuter.md": "875f5a3e1d586fe86affee5ce7d4f67ba1eea27fad8d692cecff95cdcf627884"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "3dcced08da86dfcb6a3e07165a1180ad7061fe5d",
+      "judged": 4
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "3dcced08da86dfcb6a3e07165a1180ad7061fe5d",
+      "judged": 4
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "3dcced08da86dfcb6a3e07165a1180ad7061fe5d",
+      "judged": 4
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "3dcced08da86dfcb6a3e07165a1180ad7061fe5d",
+      "judged": 4
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Dedup rule is wider than what the code does",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-15",
+        "AC-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a finding already cites a deferred point THEN THE SYSTEM SHALL NOT add another for it on a later collect.",
+        "Given the ledger already has a finding citing DF-1"
+      ],
+      "fix": "say \"a deferred finding already cites it\" in FR-15 and AC-15, or widen the code's `known` set to every finding. Pick one.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-15 and AC-15 say any finding that cites DF-1 stops a new deferred finding. In `jury.deferred()` the `known` set holds only the cites of findings whose source lens is `deferred`. Say a lens juror raises a finding that cites DF-1, and there is no deferred finding yet. By the spec's wording `nio jury collect` adds nothing, and the DF never gets its finding that only the human can close. The code would add one.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-15 and AC-15 now say a deferred finding, as the code does",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-2",
+      "title": "Severity table sets the finding's kind, but the requirements do not",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "FR-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a deferred point is marked contradiction THEN THE SYSTEM SHALL make its finding a blocker.",
+        "IF a deferred point is not marked contradiction THEN THE SYSTEM SHALL make its finding major."
+      ],
+      "fix": "add \"of kind contradiction\" to FR-13 and \"of kind gap\" to FR-14, so the FRs carry what the table and AC-14 check.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "The requirements fix only the severity. The decision table \"a deferred finding's severity\" also fixes the kind (contradiction or gap), and AC-14 tests the kind. A reader who goes by the FRs alone does not see that requirement. The code does set the kind, `contradiction` or `gap`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13 and FR-14 name the kind (contradiction, gap) the table already set",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-3",
+      "title": "A grill-closed finding is both refused (agent) and allowed (grill), though the grill is an agent",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "AC-22",
+        "AC-16",
+        "A-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "SHALL refuse a disposition recorded by an agent",
+        "disposed as a spec fix `--by grill`",
+        "**A-2 Grill agent**"
+      ],
+      "fix": "say who `--by grill` is (for example, a human-attended grill session) and how that differs from an agent. Alternatively require the human's confirmation for the `grill` disposition, and reword FR-16 so the \"recorded by an agent\" refusal covers `grill` or explicitly excludes it.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the grill agent (A-2) settles DF-1 in a delegated session, removes it from `## Deferred`, and records the disposition `--by grill`. FR-16 refuses it because an agent recorded it. AC-22 and the closing table accept it, since `grill` is a distinct value from `agent`. A plain agent that passes `--by grill` after deleting the DF line also gets through. The same actor gets two outcomes, and the spec never says how `grill` is told apart from `agent`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-16 allows closing \"through a grill session\" yet refuses \"a disposition recorded by an agent\", and A-2 says the grill is an agent. The closing table separates `grill` from `agent` only by the `--by` value. Nothing in the spec says who may pass `--by grill`, so a plain agent can pass it after deleting the DF line. Q1's answer (\"Agents can never close one\") doesn't settle this either.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "the human: --by grill means the human answered; a delegated session leaves the finding for the human (FR-16)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "a4559170c570ce51bfbc602f64e4c33c7ea415df"
+    },
+    {
+      "id": "J-4",
+      "title": "\"Whole word\" and \"reimbursement-free\" cannot both hold",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-19",
+        "AC-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "match a banned word as a whole word",
+        "the capitalised use fails and the hyphenated word doesn't"
+      ],
+      "fix": "define the boundary in FR-19 (for example, \"delimited by whitespace or punctuation other than a hyphen\"), or drop the hyphenated example from AC-21.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the glossary bans \"reimbursement\" and an AC contains `reimbursement-free`. A hyphen is an ordinary word boundary, so `reimbursement` is a whole word inside `reimbursement-free`. FR-19 then makes the check reject it, and AC-21 says it must not. The spec gives no definition of \"whole word\" that separates the two.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a standard word-boundary match treats `reimbursement-free` as containing the whole word `reimbursement`. AC-21 expects it to pass, but FR-19 says nothing about hyphens. An implementer following FR-19 literally would fail AC-21, and the test would show it. The AC adds behaviour that the FR it is derived from does not state.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-19 says \"whole word\" with no hyphen rule, and a hyphen is an ordinary boundary, so `reimbursement` is a whole word in `reimbursement-free`. AC-21 still requires that case to pass. Nothing else in the spec (glossary, Decisions, Non-goals, Q5) defines the boundary.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-19 says a hyphen joins words, as AC-21 and the code (spec.py:353) already do",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-5",
+      "title": "The closing table has no outcome for a human who disposes as a spec fix",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "FR-20",
+        "AC-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "closed with accepted risk or out of scope",
+        "IF a deferred finding is disposed as a spec fix while its DF is still in `## Deferred`"
+      ],
+      "fix": "add a spec-fix outcome to the `human` row, or state that a spec fix is reachable only through `grill`.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the human edits the spec, removes DF-1 and runs a spec-fix disposition `--by human`. FR-20 speaks of any spec-fix disposition. The table's `human` row allows only accepted risk or out of scope, and the `grill` row is the only spec-fix route. The outcome of a human spec fix is undefined. It may be refused, or it may close the finding.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "the closing table's human row adds a spec fix once the DF is gone, as FR-20 already implies",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-6",
+      "title": "A reused DF number would be silently skipped on the next collect",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-15",
+        "FR-20"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a finding already cites a deferred point THEN THE SYSTEM SHALL NOT add another for it on a later collect.",
+        "A deferred point counts as settled only once its DF line is gone from `## Deferred`"
+      ],
+      "fix": "make DF IDs permanent, or key the FR-15 duplicate check on the DF ID plus its line text.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "DF-1 is spec-fixed and its finding is closed. A later grill defers a different point and numbers it DF-1 again, because `retired:` and the permanent-ID rule cover only the other IDs, not DFs. FR-15 sees a finding that already cites DF-1 and adds none, so the new deferred point has no finding and the jury never sees it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Deferred point entity states DF IDs are permanent and settled ones move to retired:; the removed-ID check already enforces it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-7",
+      "title": "Deferred-point bookkeeping validators go beyond the ask",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-10",
+        "FR-11",
+        "AC-10",
+        "AC-11",
+        "AC-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "or from an item whose line doesn't end with `[deferred: <that DF>]`",
+        "IF a deferred point is outside `## Deferred` or isn't written as"
+      ],
+      "fix": "keep FR-9 if needed (a DF must exist), and drop FR-10 and FR-11 with AC-10 to AC-12. Alternatively, have the human confirm them as an explicit scope extension, replacing the `[agent]` tag with `[human]`.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake (FR-28, Q3) asks only that the gate pass while listing deferred points and that the jury turn each into a finding. FR-10 and FR-11 add cross-validation of `retired:`, of the source item's trailing tag and of the exact DF line grammar. Without them the human still gets everything asked for. A malformed DF line fails only in a way nobody requested, and the grill agent that writes these lines is the slice `grill`, not this one.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-10 and FR-11 are tagged `[agent]`, and none of the five grill answers asks for retired-OP cross-checks, source-line tag checks or the exact DF line grammar. The human-confirmed FR-7, FR-8 and FR-12 to FR-15 work without them, and only FR-9 is needed for a DF to exist.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "the human confirmed FR-10 and FR-11 as a deliberate extension",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "06aa60129c5e32651db90ee87270191d1c0671bc"
+    },
+    {
+      "id": "J-8",
+      "title": "Counting untagged lines in the notes is unrequested",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and count the lines without an ID that carry those tags"
+      ],
+      "fix": "restrict FR-2 to listing tagged items by ID, or have the human confirm the line count.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake asks for the jury to see which decisions an agent made and for deferred points to be listed. Counting lines without an ID adds output nobody asked for. A line can carry a tag with no ID to cite, and the count is not part of the intake or of any grill answer.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "the human confirmed FR-2's count",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b431c47a88afd6d1b80d2e5c4c8ad835d789429"
+    },
+    {
+      "id": "J-9",
+      "title": "Banned-synonym enforcement is a separate feature under a provenance title",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "US-4",
+        "FR-18",
+        "FR-19"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "# Provenance checks: what `nio check spec` and the jury enforce about what the grill writes",
+        "### US-4 Banned synonyms stay out of the spec (P2) [agent]"
+      ],
+      "fix": "either split US-4 into its own slice or keep it and retitle the spec. Mark FR-19's code-span rule as a confirmed extension.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake does carry AC-28 over, so US-4 is asked for. But glossary discipline shares nothing with provenance tags or the jury. The slice is 20 FRs, and a failure in the P2 synonym check could hold up the P1 provenance work at the gate. FR-19 (code-span skipping) also goes beyond Q5's \"exact whole word only\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "retitled to 'Provenance and glossary checks'; US-4 was carried over by the intake (AC-28), so it stays",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-10",
+      "title": "Hyphen handling is not in the whole-word rule",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-19",
+        "AC-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "match a banned word as a whole word, ignoring case, and skip text inside code spans",
+        "the capitalised use fails and the hyphenated word doesn't"
+      ],
+      "fix": "add the hyphen rule to FR-19 (for example, a hyphen joins words so a hyphenated compound is not a whole-word match), or drop the hyphenated case from AC-21.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a standard word-boundary match treats `reimbursement-free` as containing the whole word `reimbursement`. AC-21 expects it to pass, but FR-19 says nothing about hyphens. An implementer following FR-19 literally would fail AC-21, and the test would show it. The AC adds behaviour that the FR it is derived from does not state.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-4",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "No AC for an RF-n source in the research",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "or an RF-n in the spec's research",
+        "accept when the spec's research has it"
+      ],
+      "fix": "add two ACs, one with an RF-n present in the research (passes) and one with it missing (fails, naming RF-n).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a spec has `[derived: RF-9]` but research.md has no RF-9, or has it. AC-4 only tests the undefined `FR-99`. The decision table row for RF-n and the Decisions entry (the check was tightened) have no AC. If the RF-n lookup were removed, every AC would still pass.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-3 and the decision table's RF-n row (\"accept when the spec's research has it\") are backed by no AC. AC-4 covers only the undefined `FR-99`, and AC-1 to AC-7 never use an RF-n source. The Decisions entry and the answer to Q2 ask for a test of this, so the RF-n lookup could be removed with every AC still passing.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-23 covers an RF-n source present and missing in research.md",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-12",
+      "title": "The count of lines without an ID is never observed",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-2",
+        "AC-1",
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "count the lines without an ID that carry those tags",
+        "a notes line `agent calls: FR-4`"
+      ],
+      "fix": "add an AC whose Observable is the exact notes text for lines without an ID, for both agent and derived.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a spec has three untagged-ID lines ending `[agent]`. The notes should end with `3 lines without an ID`. No AC observes this count, so a check that drops or miscounts it still passes AC-1 and AC-2. The count is what lets the jury and the human see which points were never asked.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-24 observes the count's notes text",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b431c47a88afd6d1b80d2e5c4c8ad835d789429"
+    },
+    {
+      "id": "J-13",
+      "title": "`[derived: …]` is tested only in a table Src cell",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-5",
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "on an item, in a table's Src cell, or on a line without an ID",
+        "Given a state table row whose Src cell is `[derived: FR-99]` and no FR-99"
+      ],
+      "fix": "add an AC for a bad derived tag on a line without an ID. Also say whether the item case is covered by AC-3 and AC-4.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-5 names three places where the tag must be checked. Only the table cell has an AC. A bad `[derived: FR-99]` on a line without an ID, such as a bullet in Actors, could go unchecked and all ACs would still pass. A tag that launders a guess into the spec is the harm US-1 names.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-25 covers a bad derived tag on a line without an ID",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-14",
+      "title": "AC-18 observable names a verdict the FR doesn't define",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-17",
+        "AC-18"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THE SYSTEM SHALL NOT approve the spec's jury verdict",
+        "the outcome is rejected, naming the finding as unresolved"
+      ],
+      "fix": "state the allowed verdict value in FR-17, or make AC-18's Observable \"the outcome is not approved and the finding is named as unresolved\".",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-17 only forbids approval, but AC-18 requires the outcome `rejected`. If the verdict has another non-approved value (for example, escalated to the human), the AC fails a correct implementation. If `rejected` is the only other value, the FR is looser than its test.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-18 observes 'not approved', as FR-17 says",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "d1f7d069008967524da47067b437c9052e7d98f4"
+    },
+    {
+      "id": "J-15",
+      "title": "Who may close a deferred finding as a spec fix differs between FR-16, the table and the Decisions",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "FR-20",
+        "AC-17",
+        "AC-22",
+        "closing a deferred finding table row `human`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "either directly as accepted risk or out of scope, or through a grill session in which the human answered the question that settles the point, as a spec fix (`--by grill`)",
+        "closed with accepted risk or out of scope, or as a spec fix once the DF is gone from `## Deferred`"
+      ],
+      "fix": "pick one rule. Either drop the spec fix from the `human` row, or add it to FR-16 and give it an AC.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the human runs `dispose --by human` as a spec fix after the DF has left `## Deferred`. FR-16 allows a spec fix only through `--by grill`. The table's `human` row allows it. No AC covers `human` plus spec fix, so the rows can't both be implemented as written.",
+          "severity": "minor",
+          "round": 2
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A delegated grill session settles DF-1 and removes it from `## Deferred`, as the Decisions say it may. The finding stays open for the human. The human runs `dispose --by human` as a spec fix. The table row `human` closes it. FR-16 offers the human only accepted risk or out of scope directly, and allows a spec fix only through `--by grill`, so it does not allow this. The only direct option left is accepted risk or out of scope, and that misrecords a point that was in fact settled.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-16 gives the human a direct close only for accepted risk or out of scope, and allows a spec fix only through `--by grill`. The `human` row of \"Decision table: closing a deferred finding\" allows a spec fix once the DF is gone. The Decisions line (\"a delegated session settles the point but leaves the finding for the human\") leaves a human with no FR-16 route to record that spec fix. No AC covers `--by human` as a spec fix: AC-17 covers accepted risk or out of scope, and AC-22 covers only `--by grill`.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-16 now lists --by human spec-fix, as the table and the code allow; AC-26 covers it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-16",
+      "title": "The \"agent-answered grill session\" refusal in FR-16 has no AC",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "AC-16",
+        "closing a deferred finding table row `agent`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and SHALL refuse a disposition recorded by an agent, including a grill session an agent answered",
+        "when it is disposed `--by agent`, then the disposition is refused and the finding stays open"
+      ],
+      "fix": "add an AC for a delegated or agent-answered `--by grill` being refused, and state the Observable that tells the two apart.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a delegated grill session settles DF-1 and the disposition arrives as `--by grill`. FR-16 and the table say refuse it, and Decision J-3 says the finding is left for the human. AC-16 only tests the literal `--by agent`, and AC-22 only tests the human-answered `--by grill` path. The spec doesn't say how `dispose` tells a human-answered grill from an agent-answered one, so the clause can't be checked.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A grill session answered by an agent has removed DF-1, and the finding is disposed `--by grill`. The table row `grill` closes it. The row `agent` and FR-16 refuse it. The table's input has only three values (human, grill, agent), so an agent-answered grill session has no value of its own and cannot be separated from the human one. AC-16 covers only `--by agent`, and no AC covers an agent-answered grill session. FR-16's refusal clause therefore cannot be tested, and an agent can close a deferred finding by saying `--by grill`.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "A delegated grill session records `--by grill` after answering the settling question itself. The system cannot tell who answered, so it cannot refuse. The human chose an honour-system rule in the spec and skills (Q6), not a runtime refusal. AC-16 only tests `--by agent`, so the \"agent-answered grill session\" part of FR-16 has no AC and cannot be built as written.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a delegated grill session answers the settling question, removes DF-1 and records `--by grill`. FR-16 says this must be refused. No AC covers it, and the spec never says what the command sees that tells a human-answered session from an agent-answered one. A test can only assert the `--by agent` case, so an implementation that accepts any `--by grill` once the DF is gone passes every AC while breaking FR-16.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-16 and table row `agent` say to refuse \"a grill session an agent answered\", but the input has only human/grill/agent values. AC-16 tests only `--by agent` and AC-22 only the human-answered path, so the clause has no observable and no AC. The Decisions line (honour system, J-3) is not reflected in FR-16's SHALL.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-16 enforces only --by agent; telling who answered a grill session is a non-goal, the human's honour rule from Q6",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-17",
+      "title": "The Deferred point entity says a settled DF moves to `retired:`, which no requirement states or checks",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "Deferred point key entity",
+        "FR-10",
+        "FR-11",
+        "FR-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Its ID is permanent: once settled, it leaves `## Deferred` and moves to `retired:`. [derived: FR-11]",
+        "IF a deferred point comes from an open point that is not in `retired:`"
+      ],
+      "fix": "add a requirement and AC that a removed DF must appear in `retired:`, or drop the retirement claim and re-source the entity.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-11 only constrains where and how a DF line is written. FR-10 requires the source OP, not the DF, to be in `retired:`. FR-20 only checks that the DF has left `## Deferred`. When DF-1 is settled and removed without being listed in `retired:`, no FR or AC fails. The new DF-3 could then reuse the ID, even though the entity calls the ID permanent and the frontmatter says retired IDs are \"never reused\". The `[derived: FR-11]` source also doesn't support the retirement claim.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "the entity's retirement claim now cites the general removed-ID check and is tagged [agent]",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-18",
+      "title": "A human cannot close a delegated-session spec fix, though the table allows it",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "FR-20",
+        "AC-22",
+        "Decision table: closing a deferred finding row `human`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "either directly as accepted risk or out of scope, or through a grill session in which the human answered the question that settles the point, as a spec fix (`--by grill`)",
+        "closed with accepted risk or out of scope, or as a spec fix once the DF is gone from `## Deferred`"
+      ],
+      "fix": "make FR-16 and the table agree. If a human may dispose a spec fix directly once the DF is gone, say so in FR-16 and add an AC. Otherwise drop that clause from the `human` row.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A delegated grill session settles DF-1 and removes it from `## Deferred`, as the Decisions say it may. The finding stays open for the human. The human runs `dispose --by human` as a spec fix. The table row `human` closes it. FR-16 offers the human only accepted risk or out of scope directly, and allows a spec fix only through `--by grill`, so it does not allow this. The only direct option left is accepted risk or out of scope, and that misrecords a point that was in fact settled.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-15",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-19",
+      "title": "`--by grill` is both closed and refused, with no way to tell the cases apart",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "AC-16",
+        "Decision table: closing a deferred finding rows `grill` and `agent`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and SHALL refuse a disposition recorded by an agent, including a grill session an agent answered",
+        "the human answered: closed as a spec fix, only when the DF is gone from `## Deferred`"
+      ],
+      "fix": "say what input the system uses to tell who answered, for example a recorded answerer on the grill session. Add that value to the table's input. Add an AC for the agent-answered grill refusal.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A grill session answered by an agent has removed DF-1, and the finding is disposed `--by grill`. The table row `grill` closes it. The row `agent` and FR-16 refuse it. The table's input has only three values (human, grill, agent), so an agent-answered grill session has no value of its own and cannot be separated from the human one. AC-16 covers only `--by agent`, and no AC covers an agent-answered grill session. FR-16's refusal clause therefore cannot be tested, and an agent can close a deferred finding by saying `--by grill`.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-16",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-20",
+      "title": "FR-16 promises enforcement the human ruled out",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "AC-16",
+        "AC-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "SHALL refuse a disposition recorded by an agent, including a grill session an agent answered",
+        "honour system like the rest of `--by`. No code change."
+      ],
+      "fix": "split FR-16. Keep the enforced part (refuse `--by agent`). Reword the grill-session part as a rule for the skills, not a SHALL the tool refuses.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "A delegated grill session records `--by grill` after answering the settling question itself. The system cannot tell who answered, so it cannot refuse. The human chose an honour-system rule in the spec and skills (Q6), not a runtime refusal. AC-16 only tests `--by agent`, so the \"agent-answered grill session\" part of FR-16 has no AC and cannot be built as written.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-16",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-21",
+      "title": "FR-17 verdict block is derived from an FR that does not say it",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-17",
+        "FR-16"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHILE a deferred finding is open THE SYSTEM SHALL NOT approve the spec's jury verdict. [derived: FR-16]",
+        "the jury SHALL turn each into a finding that needs the human's disposition"
+      ],
+      "fix": "tag FR-17 `[agent]`, or get the human to confirm it. SC-1 follows from it, so re-tag SC-1 too.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "FR-16 says only who may close a deferred finding. Blocking an approved verdict while one is open is a separate behaviour. Neither the intake nor any grill answer states it. The `[derived]` tag presents it as a consequence of FR-16 instead of a new requirement.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-17 tagged [agent]; SC-1 and AC-18 derive from it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-22",
+      "title": "Unasked checker details are agent extensions",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-4",
+        "FR-5",
+        "FR-6",
+        "FR-9",
+        "FR-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL match a banned word as a whole word, where a hyphen joins words (so `reimbursement-free` doesn't match), ignoring case, and skip text inside code spans."
+      ],
+      "fix": "keep them only if the human confirms them at the gate, as was done for FR-10 and FR-11. Otherwise cut them.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "The intake asks only that a banned synonym be rejected outside the glossary and Decisions. Whole-word, hyphen, case and code-span matching, and the checks in FR-4, FR-5, FR-6 and FR-9, come from the agent. They are honestly tagged `[agent]`, but they are scope the human did not ask for. If any is dropped, nothing the human asked for is lost.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "the human confirmed FR-4, FR-5, FR-6, FR-9 and FR-19 as a deliberate extension",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "dcc0cfbe1bea38feb38474b0083618e11194366e"
+    },
+    {
+      "id": "J-23",
+      "title": "\"Grill session an agent answered\" has no test and no observable signal",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "AC-16",
+        "state table row `grill`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and SHALL refuse a disposition recorded by an agent, including a grill session an agent answered",
+        "when it is disposed `--by agent`, then the disposition is refused"
+      ],
+      "fix": "say what marks a session as agent-answered (a flag, a recorded actor, or a ledger field) and add an AC with that observable, or drop the clause from FR-16.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a delegated grill session answers the settling question, removes DF-1 and records `--by grill`. FR-16 says this must be refused. No AC covers it, and the spec never says what the command sees that tells a human-answered session from an agent-answered one. A test can only assert the `--by agent` case, so an implementation that accepts any `--by grill` once the DF is gone passes every AC while breaking FR-16.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-16",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-24",
+      "title": "FR-20 is tested only for `--by grill`, not for the human path the table also allows",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-20",
+        "AC-22",
+        "decision table row `human`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a deferred finding is disposed as a spec fix while its DF is still in `## Deferred` THEN THE SYSTEM SHALL refuse the disposition",
+        "when it is disposed as a spec fix `--by grill`, then the disposition is refused"
+      ],
+      "fix": "add an AC for a spec fix `--by human` with the DF still present (refused) and with the DF removed (closed).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the human runs `dispose --by human` as a spec fix while DF-1 is still in `## Deferred`. FR-20 requires a refusal, and the table's `human` row allows a spec fix only \"once the DF is gone\". An implementation that checks the section only for `--by grill` passes AC-22 and lets a human close the finding while the DF stays listed.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-20 refuses any spec-fix disposition while the DF is listed, and the `human` row allows a spec fix once the DF is gone. AC-22 tests only `--by grill`, so an implementation that checks `--by grill` alone passes every AC.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-26 covers FR-20 on the --by human path; tests/test_jury.py asserts it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-25",
+      "title": "FR-15 does not say whether a closed finding counts as \"already cites\"",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-15",
+        "AC-15"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a deferred finding already cites a deferred point THEN THE SYSTEM SHALL NOT add another for it on a later collect.",
+        "Given the ledger already has a deferred finding citing DF-1"
+      ],
+      "fix": "state that a disposed finding still counts, and add an AC with a closed finding and a second collect.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the human accepts the risk on DF-1's finding, and the finding is closed. DF-1 stays in `## Deferred`, since only a spec fix removes it. The next `nio jury collect` runs. FR-15 can be read as \"no new finding\", so the closed one stays closed. It can also be read as \"open findings only\", so a new open finding appears and blocks approval forever, against FR-17 and SC-1. AC-15 only uses a finding of unstated status, so either behaviour passes.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-15 says \"a deferred finding already cites\" the DF without saying whether a closed one counts. AC-15 gives the existing finding no status, and DF-1 stays in `## Deferred` after an accepted-risk close. The plain reading probably counts it, but the spec doesn't say so and no AC pins it, so the risk of a re-opened finding blocking approval (FR-17, SC-1) is not excluded.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-15 says open or closed, as the code (jury.py:262) does; AC-15 uses a disposed finding",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-26",
+      "title": "FR-11's DF grammar is checked only by its missing-piece cases",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-11",
+        "AC-12",
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "isn't written as `**DF-n** (from <OP, item ID or section>[; contradiction]) <what is unsettled>`",
+        "Given a DF line without `(from <source>)`, or one placed outside `## Deferred`"
+      ],
+      "fix": "add ACs for each accepted source form, the exact contradiction separator, and an undefined or duplicate source.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "no AC covers `**DF-3** (from FR-99; contradiction) …` (an undefined item), a section source, a `(from FR-5, contradiction)` comma form, or a duplicate DF-1. An implementation that only checks for a \"(from\" prefix passes AC-12, and a mis-parsed contradiction marker is then silently skipped by `jury collect`. That would turn a blocker into a major or drop it.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-27 covers a wrong contradiction separator and an unknown section source",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-27",
+      "title": "FR-19's whole-word rule is vague at its edges",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-19",
+        "FR-18",
+        "AC-21"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "match a banned word as a whole word, where a hyphen joins words (so `reimbursement-free` doesn't match), ignoring case, and skip text inside code spans"
+      ],
+      "fix": "list the word-joining characters (apostrophe, underscore, slash) and say how several banned words in one entry are written. Add one AC row for each.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the text says `reimbursement's`, `reimbursement_id`, `reimbursement/refund` or `reimbursement.`. Only the hyphen is defined. FR-18 also gives only the `Never \"…\"` form, so an entry like `Never \"a\" or \"b\"`, or one with two `Never` clauses, is undefined. AC-21 tests only two cases, so two implementations can both pass it and disagree on everything else.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-19 lists the joining characters the code uses; FR-18 says every quoted word after Never is banned",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "5d05351d151ad52c931a1529b9a975cf0c9a6e9e"
+    },
+    {
+      "id": "J-28",
+      "title": "\"Only the human closes\" and SC-1 contradict the `--by grill` closing path",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "FR-17",
+        "SC-1",
+        "US-3",
+        "key entity Deferred finding"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "No spec reaches an approved jury verdict while one of its deferred points has no human disposition.",
+        "closed only by the human",
+        "or `--by grill` (a grill session the human answered) as a spec fix"
+      ],
+      "fix": "Reword SC-1, the Deferred finding entity and the US-3 title to name the `--by grill` spec-fix path. For example, \"no human disposition, or a grill spec fix the human answered\". Alternatively, tighten FR-17 and SC-1 to match whichever rule the human intends.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "A deferred finding is disposed as a spec fix `--by grill` once DF-1 has left `## Deferred`. The disposition is not `by: human`, FR-16 allows it, and the finding is no longer open, so FR-17 lets the jury approve. SC-1 says that spec must not reach an approved verdict, because its deferred point has no human disposition. The key entity and US-3 still say \"closed only by the human\". Meanwhile the Decisions say `--by` is \"the caller's word\" and the spec does not check that the human answered, so the one path an agent could abuse is the one SC-1 appears to forbid.",
+          "severity": "major",
+          "round": 3
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A delegated agent removes the DF line and its tag from the spec, then disposes the open finding as a spec fix `--by grill`. FR-20 is satisfied, the finding closes, and FR-17 no longer blocks, so the verdict can be approved with no human disposition. SC-1 says this cannot happen. The non-goal admits that `--by` is only the caller's word, so the same bypass exists with `--by human`.",
+          "severity": "major",
+          "round": 3
+        },
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "A finding is closed `--by grill` as a spec fix, and the DF is removed from `## Deferred`. The finding is now disposed, but not by `--by human`. SC-1 reads \"no human disposition\", so a reader could count this case as a failure of the criterion. FR-17 only blocks approval while a finding is open. It says nothing about a DF whose finding was never collected.",
+          "severity": "minor",
+          "round": 3
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a finding is disposed `--by grill` as a spec fix. A grill session closes it, with no `by: human` disposition, and FR-17 then lets the verdict be approved. SC-1 says a point with no human disposition must not reach approval, so SC-1's success test fails while every FR and AC passes. A finding can also be open after its DF has been removed from `## Deferred`, and no AC says what the verdict does then. No AC checks the approved side at all, meaning a verdict that is approved once all deferred findings are closed.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SC-1 (\"no human disposition\"), the Deferred finding entity and US-3 (\"closed only by the human\") never mention the `--by grill` spec-fix path that FR-16, AC-22 and the closing table allow, and AC-22 records `by: grill`. The Decisions line says `--by grill` means the human answered, but SC-1 and the entity do not say so, so a reader cannot tell whether a `by: grill` record meets SC-1.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "SC-1, the Deferred finding entity and US-3 name both closing routes; AC-28 covers the approved side",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-29",
+      "title": "Success criterion promises a human disposition the system cannot verify",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "SC-1",
+        "FR-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "No spec reaches an approved jury verdict while one of its deferred points has no human disposition.",
+        "`--by` is the caller's word"
+      ],
+      "fix": "Reword SC-1 and FR-16 to say what is enforced: no disposition `--by agent`, and a spec fix only once the DF is gone. Say plainly that the human-only guarantee rests on the grill and jury skills and not on the CLI.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A delegated agent removes the DF line and its tag from the spec, then disposes the open finding as a spec fix `--by grill`. FR-20 is satisfied, the finding closes, and FR-17 no longer blocks, so the verdict can be approved with no human disposition. SC-1 says this cannot happen. The non-goal admits that `--by` is only the caller's word, so the same bypass exists with `--by human`.",
+          "severity": "major",
+          "round": 3
+        },
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "A finding is closed `--by grill` as a spec fix, and the DF is removed from `## Deferred`. The finding is now disposed, but not by `--by human`. SC-1 reads \"no human disposition\", so a reader could count this case as a failure of the criterion. FR-17 only blocks approval while a finding is open. It says nothing about a DF whose finding was never collected.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-28",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-30",
+      "title": "Collect rule says \"one open finding per deferred point\" without an exception for existing findings",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-12",
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "add one open finding per deferred point in the spec",
+        "THEN THE SYSTEM SHALL NOT add another for it on a later collect"
+      ],
+      "fix": "Word FR-12 as \"for each deferred point in the spec that no deferred finding cites yet\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "DF-1 is in the spec and its finding is disposed as accepted risk. On the next collect, FR-12 read alone requires an open finding for DF-1, and FR-15 forbids one. The reading that FR-15 overrides FR-12 comes only from AC-15.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-12 adds a finding only for a DF no deferred finding cites yet",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-31",
+      "title": "Accepted-tag list in FR-6 is narrower than the sources FR-3 allows",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-6",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`[derived: <IDs>]`",
+        "an ID in the spec, or an RF-n in the spec's research"
+      ],
+      "fix": "Write `[derived: <IDs or RF-n>]` in FR-6.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-6 lists `[derived: <IDs>]` as the accepted form. A tag `[derived: RF-2]` is accepted by FR-3 and AC-23, but the list FR-6 tells the user (\"list the accepted tags\") reads as if only spec IDs are allowed.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-6 lists [derived: <IDs or RF-n>]",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-32",
+      "title": "A contradiction finding is a blocker, but the human can close it as easily as a gap",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "FR-16",
+        "AC-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THEN THE SYSTEM SHALL make its finding a blocker of kind contradiction",
+        "`--by human` as accepted risk, out of scope or a spec fix"
+      ],
+      "fix": "State whether a blocker finding may be closed as accepted risk. If it may, say that blocker only affects how it is shown.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "DF-2 is marked contradiction and its finding is a blocker. The human disposes it as accepted risk and it closes exactly like a major gap. Both severities block approval only while open (FR-17), so the spec never says what \"blocker\" adds. If the jury skill already forbids accepting a blocker as risk, FR-16 contradicts it.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13: a blocker closes only as FR-16 says; severity orders triage (the code and Q3)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-33",
+      "title": "Verdict-blocking rule is an agent call nobody confirmed",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-17",
+        "AC-18",
+        "SC-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHILE a deferred finding is open THE SYSTEM SHALL NOT approve the spec's jury verdict. [agent]"
+      ],
+      "fix": "Ask the human to confirm FR-17 as an extension and record it in Decisions, or tie it to the intake's \"needs the human's disposition\" and retag it `[human]`.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "The intake asks only that each deferred point become a finding \"that needs the human's disposition\". Nothing asked that the verdict composer change. FR-17 is the only FR in this slice that changes how the jury composes a verdict. It still carries `[agent]`, and Decisions confirms every other extension (FR-10, FR-11, FR-4, FR-5, FR-6, FR-9, FR-19) as the human's. If it is not built, the human still gets the finding. AC-18 and SC-1 are `[derived]` from FR-17, so they stand or fall with it.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "the human confirmed FR-17 as a deliberate extension",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "3dcced08da86dfcb6a3e07165a1180ad7061fe5d"
+    },
+    {
+      "id": "J-34",
+      "title": "Key entity adds a retirement rule that no requirement states",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-10",
+        "FR-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "once settled, it leaves `## Deferred` and moves to `retired:`"
+      ],
+      "fix": "Reword the entity to say that ID permanence is already enforced by `nio check spec` and add no new rule. Alternatively, add an FR and AC with human provenance.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "FR-10 only requires that an OP source be in `retired:`. No FR or AC requires a settled DF-n to be moved to `retired:`. The entity sentence is the only place the rule appears, and it is tagged `[agent]`. Whether to build it is unclear. If it is a new check, it is scope nobody asked for. If it only restates the existing ID-permanence check, it should say so and not read as a requirement.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "the entity says this slice adds no check for DF retirement",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-35",
+      "title": "AC-27 gives the wrong reason for one of its two failures, and \"section\" is undefined",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-27",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the source is neither an ID nor a section",
+        "item ID or section>[; contradiction]"
+      ],
+      "fix": "split AC-27 into two ACs. One covers the wrong separator, with an expected error naming the form. The other covers an unknown source, with a defined rule for what a section reference looks like, for example an exact `##` heading present in the spec.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "`**DF-3** (from FR-5, contradiction) …` has a valid ID source, FR-5. It only breaks FR-11's `; contradiction` separator, because it uses a comma. AC-27 says it fails because the source is \"neither an ID nor a section\", and its observable asks for the error to quote \"its source\". An implementation could reject the line for the comma and quote `FR-5, contradiction`, or treat `FR-5, contradiction` as a free-text source and accept it. A test can't tell which behaviour is correct. Nothing says what counts as a valid \"section\", for example whether `Glossary`, `## Glossary` or `Actors and journeys` qualify. So the `Somewhere` case has no stated boundary.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-27 says `(from FR-5, contradiction)` fails because the source is \"neither an ID nor a section\". FR-5 is a valid ID, so the real fault is FR-11's `; contradiction` separator. FR-11 also uses \"section\" without defining what counts, so the `Somewhere` case has no stated boundary.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-11 defines a section; AC-27 says a comma is read as part of the source, as the code does",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-36",
+      "title": "SC-1 promises more than FR-16 and FR-17 deliver, and no AC covers it",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "SC-1",
+        "FR-16",
+        "FR-17",
+        "AC-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "No spec reaches an approved jury verdict while one of its deferred points has no human disposition.",
+        "WHILE a deferred finding is open THE SYSTEM SHALL NOT approve the spec's jury verdict."
+      ],
+      "fix": "reword SC-1 to match \"no open deferred finding\" or \"no disposition by anyone but the human or a human-answered grill session\". Add an AC where all deferred findings are closed and the verdict can be approved.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a finding is disposed `--by grill` as a spec fix. A grill session closes it, with no `by: human` disposition, and FR-17 then lets the verdict be approved. SC-1 says a point with no human disposition must not reach approval, so SC-1's success test fails while every FR and AC passes. A finding can also be open after its DF has been removed from `## Deferred`, and no AC says what the verdict does then. No AC checks the approved side at all, meaning a verdict that is approved once all deferred findings are closed.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-28",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-37",
+      "title": "No test stops `--by grill` from closing a deferred finding as accepted risk or out of scope",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "AC-17",
+        "AC-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`--by grill` (a grill session the human answered) as a spec fix",
+        "closed as a spec fix, only when the DF is gone from `## Deferred`"
+      ],
+      "fix": "add an AC where a deferred finding disposed `--by grill` as accepted risk or out of scope is refused and stays open, with the error text as the observable.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the only grill ACs are AC-22 (spec fix refused while the DF is present, then accepted). AC-17 covers only `--by human`. A `dispose --by grill --as accepted-risk` call is unspecified by any AC. If the implementation accepts it, a delegated session can accept risk on the human's behalf. That is the loophole the Decisions section says \"stays the human's direct call\". Every existing test still passes.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The closing table's `grill` row and FR-16 allow only \"closed as a spec fix, only when the DF is gone\", but no AC covers `--by grill` as accepted risk or out of scope. AC-17 covers only `--by human`, AC-22 only the grill spec fix, and AC-16 only `--by agent`, so an implementation that accepts `--by grill` for accepted risk passes every AC.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-29: --by grill as accepted risk is refused (jury.py:393)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-38",
+      "title": "FR-15's suppression is tested only for a disposed finding, and \"deferred finding\" is not identified",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-15",
+        "AC-15"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a deferred finding, open or closed, already cites a deferred point THEN THE SYSTEM SHALL NOT add another for it on a later collect.",
+        "disposed as accepted risk while DF-1 stays in `## Deferred`"
+      ],
+      "fix": "add an AC for the open case. State how a deferred finding is recognised, for example by its kind or origin field, so lens findings that cite a DF don't count.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a lens finding already cites DF-1 and no deferred finding exists. If collect treats the lens finding as the deferred one and adds nothing, DF-1 never gets its human-only finding, and the verdict can be approved with the point unclosed. AC-15 only uses a ledger that already holds a deferred finding. Nothing fails this. It also covers only accepted risk, not out of scope or a removed DF.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-15 now defines a deferred finding as \"one that collect made from a DF, not a lens finding that cites it\", and AC-15 covers the case \"either still open or disposed as accepted risk\", so the open case is tested and the recognition rule is stated. What's left is that no AC has a lens finding citing a DF, which is J-44's point.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 3,
+      "last_round": 4,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-39",
+      "title": "AC-18's observable cannot be checked as written",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-18",
+        "FR-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the outcome is not approved, and it names the finding as unresolved."
+      ],
+      "fix": "name the expected outcome value or values, and the exact place and form in which the unresolved finding is listed. Add a second case with a blocker-severity deferred finding.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the spec never says what the outcome is instead of approved, or where or how the finding is named. A test can assert only that the outcome is not the string \"approved\". A verdict of \"rejected\", \"blocked\" or \"pending\" would all pass, and so would an output that mentions the finding anywhere. Since FR-13 makes a contradictory deferred finding a blocker, the outcome probably differs between the major and blocker cases, and AC-18 doesn't distinguish them.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-18 names the rejected outcome and its unresolved line",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "1962999a03e0472cf61090ce3819bf5e5d88d1af"
+    },
+    {
+      "id": "J-40",
+      "title": "SC-1 says the human can only close a deferred finding as a spec fix",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "SC-1",
+        "FR-16",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "none closes except `--by human` or `--by grill` as a spec fix once its DF is gone",
+        "when the human disposes it as accepted risk or out of scope with a note, then it is closed with that disposition"
+      ],
+      "fix": "reword SC-1 to match FR-16: \"none closes except `--by human` (accepted risk, out of scope, or a spec fix once its DF is gone) or `--by grill` as a spec fix once its DF is gone\".",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the human accepts the risk on DF-1 while DF-1 is still in `## Deferred`. FR-16 and AC-17 close the finding. SC-1 reads as if that closure breaks the success criterion, because only a spec fix after the DF is gone is allowed.",
+          "severity": "major",
+          "round": 4
+        },
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human accepts the risk for DF-1 while DF-1 is still in `## Deferred`. AC-17 closes the finding. SC-1 can be read as allowing only spec fixes once the DF is gone, so the success criterion either fails a behaviour the human asked for (Q1) or means something looser than it says.",
+          "severity": "minor",
+          "round": 4
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the human accepts DF-1's risk with `--by human` while DF-1 is still in `## Deferred`. AC-17 and FR-16 close it. SC-1 says only a spec fix with the DF gone may close it. A test written from SC-1 fails the behaviour AC-17 requires, and the reverse holds too.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SC-1 reads \"none closes except `--by human` or `--by grill` as a spec fix once its DF is gone\", and \"as a spec fix once its DF is gone\" can attach to both branches. FR-16, AC-17 and the closing table's human row allow accepted risk or out of scope with the DF still listed, and nothing else in the spec settles which reading SC-1 means.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "SC-1 states each branch: --by human (accepted risk, out of scope, or a spec fix once the DF is gone) and --by grill (a spec fix once the DF is gone)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-41",
+      "title": "Deferred-finding ACs sit under the wrong user story",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-26",
+        "AC-27",
+        "AC-28",
+        "AC-29",
+        "US-1",
+        "US-2",
+        "US-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "### US-1 Agent and derived provenance pass the check only when honest (P1) [agent]",
+        "Given every deferred finding is closed and every lens approved, when the jury composes its verdict, then the outcome is approved."
+      ],
+      "fix": "move AC-26, AC-28 and AC-29 to US-3 and AC-27 to US-2, keeping their IDs.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "AC-26, AC-28 and AC-29 are about disposing deferred findings and the jury verdict (FR-16, FR-17, FR-20), and AC-27 is about a DF line's source (FR-11). They sit under US-1, so US-3's independent test names \"the right severity, an agent can't close it, the human can, and the verdict isn't approved\". Someone running US-3's test, or a task cut from US-3, misses the AC-26, AC-28 and AC-29 cases. The AC-22 versus AC-26 pair (grill versus human, same rule) is split across two stories.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-26, AC-28, AC-29 moved to US-3 and AC-27 to US-2, IDs kept",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-42",
+      "title": "SC-1 can be read to forbid the closure AC-17 requires",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "SC-1",
+        "AC-17",
+        "FR-16"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "none closes except `--by human` or `--by grill` as a spec fix once its DF is gone",
+        "when the human disposes it as accepted risk or out of scope with a note, then it is closed with that disposition"
+      ],
+      "fix": "split SC-1 into the two branches. For example: \"none closes except `--by human` (any disposition; a spec fix only once its DF is gone) or `--by grill` as a spec fix once its DF is gone\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "DF-1 is still in `## Deferred` and the human runs `--by human` as accepted risk. AC-17 and FR-16 close the finding. If SC-1's \"once its DF is gone\" also covers the `--by human` branch, SC-1 says it must not close. If the clause covers only the `--by grill` branch, SC-1 matches AC-17.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "same SC-1 rewording as J-40",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-43",
+      "title": "The closing table has one input but the outcome depends on three",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "FR-20",
+        "AC-29"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "closed as a spec fix, only when the DF is gone from `## Deferred`",
+        "when it is disposed `--by grill` as accepted risk or out of scope, then the disposition is refused"
+      ],
+      "fix": "add disposition and DF-in-Deferred as table inputs, or reword the grill row to \"spec fix once the DF is gone; otherwise refused\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "Decision table \"closing a deferred finding\", row `grill`. The table's only input is who disposes. The outcome also depends on the disposition kind (accepted risk, out of scope, spec fix) and on whether the DF is still in `## Deferred`. For `--by grill` with accepted risk, the row doesn't say \"refused\". It says only \"closed as a spec fix, only when…\". For `--by grill` with a spec fix while the DF is present, the row doesn't say what happens. The prose (AC-29, AC-22) gives refusal for both, so the table is incomplete as an authority. The `human` row packs three outcomes into one cell.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "the closing table gives an outcome per disposition and per DF state",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-44",
+      "title": "FR-15 and FR-12 depend on telling a deferred finding from a lens finding, but nothing says how",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-12",
+        "FR-15",
+        "AC-15"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a deferred finding (one that collect made from a DF, not a lens finding that cites it), open or closed, already cites a deferred point",
+        "Given the ledger already has a deferred finding citing DF-1"
+      ],
+      "fix": "say how origin is recognised (for example \"a finding whose by is collect\"), and add a case to AC-15 where a lens finding cites DF-1 and collect still adds its own.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a lens finding cites DF-1 (a juror cites a DF line) and collect has not yet made its own finding. The two rules separate the cases only by origin, and the spec defines no marker for that origin. If the implementation checks \"any finding citing DF-1\", collect adds no finding and the human never gets the one that needs their disposition. If it checks \"a finding made by collect\", the lens finding is correctly ignored. AC-15 doesn't cover this case.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-15 names the marker (source lens deferred); AC-30 covers a lens finding citing DF-1 (test_jury already has it)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-45",
+      "title": "A `[derived: DF-n]` source is covered by neither FR-4 nor the source table",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-3",
+        "FR-4",
+        "AC-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a `[derived: …]` source is a `[default]` proposal or a deferred point THEN THE SYSTEM SHALL reject it",
+        "(an ID in the spec, or an RF-n in the spec's research)"
+      ],
+      "fix": "add a decision-table row and an AC for a source that is a DF ID (reject, as an unsettled point).",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-9 pr FR-6 says `[derived: FR-9]` and FR-9 is fine, but `[derived: DF-1]` names the DF line itself. A DF line carries no provenance tag, and the source table and AC-5 cover only an item tagged `[deferred: DF-n]`. FR-3 counts \"an ID in the spec\" as a valid source and DF-1 is an ID in the spec. FR-4's \"a deferred point\" says reject. The table's \"deferred item\" row does not obviously cover a bare DF. The outcome rests on how an implementation reads \"deferred point\" versus \"deferred item\".",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "source table row and AC-31 for [derived: DF-n], rejected as untagged as the code does",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-46",
+      "title": "The \"only the human closes\" invariant is stated as enforced but is spoofable by design",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "SC-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "SHALL let only the human close a deferred finding",
+        "`--by` is the caller's word"
+      ],
+      "fix": "word FR-16 and SC-1 as \"accept only a `--by human` or `--by grill` disposition, and refuse `--by agent`\", and name the non-goal as the residual hole, instead of claiming the system lets only the human close it.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "an agent that can edit spec.md deletes the DF line itself and runs `--by grill` as a spec fix. Both FR-20 and FR-16 are satisfied, the finding closes with no human involved, and SC-1's verdict guarantee holds only nominally. The non-goal acknowledges that `--by` can't be verified, and the Decisions rely on the skills to prevent this. So FR-16, US-3's title and SC-1 state as a property of the system what is really a convention.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-16 and SC-1 say what the CLI enforces and that the --by value rests on the skills (non-goal)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-47",
+      "title": "SC-1 states the closing rule more narrowly than FR-16 and AC-17",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "SC-1",
+        "FR-16",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "none closes except `--by human` or `--by grill` as a spec fix once its DF is gone",
+        "when the human disposes it as accepted risk or out of scope with a note, then it is closed with that disposition"
+      ],
+      "fix": "reword SC-1 to \"none closes except `--by human`, or `--by grill` as a spec fix once its DF is gone\".",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human accepts the risk for DF-1 while DF-1 is still in `## Deferred`. AC-17 closes the finding. SC-1 can be read as allowing only spec fixes once the DF is gone, so the success criterion either fails a behaviour the human asked for (Q1) or means something looser than it says.",
+          "severity": "minor",
+          "round": 4
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the human accepts DF-1's risk with `--by human` while DF-1 is still in `## Deferred`. AC-17 and FR-16 close it. SC-1 says only a spec fix with the DF gone may close it. A test written from SC-1 fails the behaviour AC-17 requires, and the reverse holds too.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-40",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4
+    },
+    {
+      "id": "J-48",
+      "title": "FR-16 lets the human close a deferred finding as a spec fix with `--by human`, which no answer asked for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`--by human` as accepted risk, out of scope or a spec fix"
+      ],
+      "fix": "either label the human spec fix as a confirmed extension in Decisions, or drop it from FR-16, AC-26 and the closing decision table.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "Q1 and the Decisions section give the human accepted risk and out of scope, and give the grill a spec fix. A human-closed spec fix is a third path that FR-20 and AC-26 then have to guard. If it isn't built, the human loses nothing they asked for, because they can use `--by grill` after answering.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "the human confirmed the --by human spec fix as a deliberate extension",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "602e649b0d932b6f7cbdcf82ed515f1317f8e440"
+    },
+    {
+      "id": "J-49",
+      "title": "FR-6's main case, an unknown or malformed tag, has no AC",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-6",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THEN THE SYSTEM SHALL reject it and list the accepted tags",
+        "Given an item ending with `[derived: ]` or `[derived: FR-2 and FR-3]`"
+      ],
+      "fix": "add an AC with an item ending in an unlisted tag (`[guess]`) and one with no tag, and an empty `[research: ]` or `[deferred: ]`. Each should be rejected with the accepted tags listed.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "an FR ends with `[guess]`, `[human` or no tag at all, or carries `[research: ]` or `[deferred: ]` with no argument. AC-7 only exercises two malformed `[derived: …]` forms. An implementation that rejects those two and accepts any other unknown tag passes every AC, yet FR-6 is broken.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-6 rejects any provenance outside the six listed tags, but the only AC for it is AC-7, which uses two malformed `[derived: …]` forms. No AC has an unlisted tag such as `[guess]`, a missing tag, or an empty `[research: ]` or `[deferred: ]`, so an implementation that rejects only the two derived forms passes every AC.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-32 covers an unknown tag, a missing tag and an empty research tag; tests/test_spec.py now asserts all three",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-50",
+      "title": "AC-18's Observable has two possible outcomes",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-18",
+        "AC-28",
+        "FR-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when nothing else holds the verdict back it is rejected, with a line `- unresolved: <the finding's ID>`"
+      ],
+      "fix": "split it into a fixed fixture. One deferred finding is open and all lenses are approved, so the outcome is exactly `rejected` with `- unresolved: <ID>`. State separately whether the unresolved line is also expected when another lens objects.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the test's fixture decides whether the outcome is \"rejected\" or some other not-approved value, and whether the unresolved line appears. If another lens holds the verdict back, the AC states no outcome for that case. A test can pass with only \"not approved\" asserted, without ever checking the unresolved line.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-18 has a fixed fixture: exactly rejected with the unresolved line",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    },
+    {
+      "id": "J-51",
+      "title": "FR-13's closure clause is untestable and a blocker deferred finding's closure is untested",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "AC-14",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "its severity orders the human's triage",
+        "the finding for DF-2 has severity blocker and kind contradiction"
+      ],
+      "fix": "drop the triage clause, or name its observable, for example collect lists blockers first. Add an AC where the human closes DF-2's blocker as accepted risk and `--by agent` is refused.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "\"orders the human's triage\" names no output a test can check. The changed claim that a blocker contradiction \"closes only as FR-16 says\" also has no AC. An implementation could refuse `--by human` accepted risk on a blocker, or let it close another way, and AC-14 and AC-17 would both still pass. AC-17 does not use a blocker finding.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13 drops the triage clause; AC-33 covers a blocker refused for the agent and closed as accepted risk by the human",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "fixed_in": "dd025e652b4d4d999b4d8974a788072dfaabb14c"
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      3,
+      "rejected"
+    ],
+    [
+      4,
+      "rejected"
+    ],
+    [
+      4,
+      "human"
+    ]
+  ],
+  "versions": {
+    "1": "e5c698b962cf691d16b03b0e41c1d5915c668d19",
+    "2": "1b431c47a88afd6d1b80d2e5c4c8ad835d789429",
+    "3": "dcc0cfbe1bea38feb38474b0083618e11194366e",
+    "4": "3dcced08da86dfcb6a3e07165a1180ad7061fe5d"
+  }
+}
