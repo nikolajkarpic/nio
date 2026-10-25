@@ -64,8 +64,8 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | [`@nio:recall`](skills/recall/SKILL.md) | ✅ built | Looks memory up in three steps (find IDs, follow links, read at most 5 records) and tells the agent how to act on each record's standing: follow it, verify it, or ask the human. |
 | `@nio:install` | 🗺️ planned | Asks which subscriptions you have, checks each host CLI and writes the config. |
 | `@nio:onboard` | 🗺️ planned | Captures what the project is and what you want before any other stage runs. |
-| `@nio:spec` | 🗺️ planned | Grills you into a spec with user stories, edge cases and *given / when / then*. |
-| `@nio:plan` | 🗺️ planned | Research, requirements, personas, contracts and bindings, then the plan. |
+| [`@nio:spec`](skills/spec/SKILL.md) | 🚧 draft stage built | Records your words verbatim, then the spec-drafter agent (Opus) writes a first spec that never guesses: what you didn't say becomes a `[default]` proposal or an open point, and every sentence you wrote is traced to spec IDs. Research and the grill come next. |
+| `@nio:plan` | 🗺️ planned | Contracts, bindings and a concrete test per acceptance criterion, then the plan. |
 | `@nio:tasks` | 🗺️ planned | Breaks the plan into effort → epics → tasks, rates difficulty and estimates usage. |
 | `@nio:implement` | 🗺️ planned | NIO's workers (TDD, builder, adversarial tester, swarm) build epic by epic. |
 | `@nio:jury` | 🗺️ planned | Triage, then 1 → 3 independent jurors; 2 of 3 decide, disagreement goes to you. |

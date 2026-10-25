@@ -4,7 +4,7 @@ route: epic
 risk: []                         # auth | pii | money | external-input | data-deletion | migration | multi-party | public-api
 retired: []
 ---
-<!-- Epic spec (#20): a feature too large for one spec. Each roadmap slice gets its own full spec
+<!-- Epic spec: a feature too large for one spec. Each roadmap slice gets its own full spec
 (`nio new spec <slice-slug> --epic <slug>/R-n`), which inherits this glossary and these actors. -->
 # <title>
 

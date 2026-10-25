@@ -33,8 +33,13 @@ def test_examples_pass():
         assert errors(root, slug) == [], (name, errors(root, slug))
     # the slice example still has an open point and a [default]: fine while drafting, not at the gate
     has(errors(root, "checkout-refunds", gate=True), "Open points")
-    has(errors(root, "checkout-refunds", gate=True), "OP-1: Can sup` is still [default]")
+    has(errors(root, "checkout-refunds", gate=True), "`- Refunds to a different payment method. [default]` is still [default]")
     assert errors(root, "refund-double-charge", gate=True) == []
+    # Decisions can wait for the grill, but not past the gate
+    put(root, "spec.md", lambda t: t.split("## Decisions")[0] + "## Open points" + t.split("## Open points")[1])
+    assert errors(root, "checkout-refunds") == [], errors(root, "checkout-refunds")
+    has(errors(root, "checkout-refunds", gate=True), "`## Decisions` is missing")
+    put(root, "spec.md")
     assert spec.check(root, "checkout-refunds")[1] == ["lenses: testability, logic, adversary"]
     print("ok")
 
@@ -71,6 +76,8 @@ def test_broken_specs():
             "## Key entities\n- **Refund**: amount, order, created at, by (customer or support). [human]", "## Key entities\nN/A"), ["Key entities` says N/A"]),
         (lambda t: t.replace("- **NFR-1**", "- **CB-1**"), ["`CB` IDs don't belong in a full spec"]),
         (lambda t: t.replace("## Non-goals\n", "## Non-goals\n- Gift cards.\n"), ["non-goal `Gift cards.…` must end"]),
+        (lambda t: t.replace("(decision; FR-1)", "(guess; FR-1)"), ["OP-1: write it as"]),
+        (lambda t: t.replace("(decision; FR-1)", "(fact; FR-7)"), ["OP-1: its target `FR-7`"]),
         # a bolded memory record ID in Decisions is not a spec item
         (lambda t: t.replace("D-261025-k2m4", "**D-261025-k2m4**").replace("- **NFR-1**", "- **CB-1**"), ["`CB` IDs"]),
     ]
@@ -84,6 +91,10 @@ def test_broken_specs():
         "- **UB-1** WHEN a customer requests one refund on a paid order THE SYSTEM SHALL CONTINUE TO refund the full amount. [human]\n", ""))
     has(errors(root, slug), "`## Unchanged behaviour` is missing or empty")
     has(errors(root, slug), "AC-2 cites UB-1, which isn't defined")
+    # an open point may target a section that isn't written yet
+    slug = put(root, "spec.md", lambda t: t.replace("(decision; FR-1)", "(decision; Glossary)").replace(
+        "## Glossary\n- **Refund**: money returned to the original payment method. Never \"reimbursement\" or \"chargeback\".\n\n", ""))
+    assert "## Glossary" not in spec.path(root, slug).read_text() and errors(root, slug) == [], errors(root, slug)
     print("ok")
 
 
@@ -107,7 +118,35 @@ def test_ids_are_permanent():
     print("ok")
 
 
+def test_edge_cases():
+    root = repo()
+    # guidance comments neither count as a [default] at the gate nor fill a section
+    slug = put(root, "spec-bugfix.md", lambda t: t.replace("# Double refund", "<!-- tag items [human] or [default] -->\n# Double refund"))
+    assert errors(root, slug, gate=True) == [], errors(root, slug, gate=True)
+    slug = put(root, "spec.md", lambda t: t.replace("- Full refunds only for paid orders: D-261025-k2m4 (grill, 2026-10-25).",
+                                                    "<!-- the grill fills this -->"))
+    has(errors(root, slug, gate=True), "`## Decisions` is missing or empty")
+    cases = [
+        (lambda t: t.replace("retired: []", 'retired: "FR-12"'), "`retired` must be a list of IDs"),
+        (lambda t: t.replace("route: full", "route: [full]"), "`route` must be one of"),
+        (lambda t: t.replace("risk: [money, external-input]", "risk: [{money: yes}]"), "`risk` must be a list"),
+        (lambda t: t.replace("| shipped | ignore |", "| paid | → shipped | → refunded | [human] |\n| shipped | ignore |"), "`paid` has more than one row"),
+    ]
+    for edit, wanted in cases:
+        has(errors(root, put(root, "spec.md", edit)), wanted)
+    # the values are in the last parentheses of a condition header
+    slug = put(root, "spec.md", lambda t: t.replace("items returned (all, some)", "items returned (count) (all, some)"))
+    assert errors(root, slug) == [], errors(root, slug)
+    try:
+        spec.new(root, "x", epic='a"b')
+        raise AssertionError("a malformed --epic was accepted")
+    except ValueError:
+        pass
+    print("ok")
+
+
 if __name__ == "__main__":
+    test_edge_cases()
     test_examples_pass()
     test_templates_need_filling()
     test_broken_specs()

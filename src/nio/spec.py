@@ -7,7 +7,7 @@ from importlib import resources
 from nio import records
 
 ROUTES = {
-    "full": {"mandatory": ["Summary", "Actors and journeys", "User stories", "Functional requirements", "Non-goals", "Decisions"],
+    "full": {"mandatory": ["Summary", "Actors and journeys", "User stories", "Functional requirements", "Non-goals"],
              "ids": {"A", "UJ", "US", "AC", "FR", "NFR", "SC"}, "template": "spec"},
     "lite": {"mandatory": ["Summary", "Current behaviour", "Expected behaviour", "Unchanged behaviour", "Acceptance criteria"],
              "ids": {"CB", "EB", "UB", "AC"}, "template": "spec-bugfix"},
@@ -37,6 +37,8 @@ def new(root, slug, route="full", epic=""):
     """Create the spec from its route's template and return the path."""
     if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", slug):
         raise ValueError("slug must be lowercase words joined by dashes")
+    if epic and not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*/R-\d+", epic):
+        raise ValueError("--epic must look like <epic slug>/R-<n>")
     out = path(root, slug)
     if out.exists():
         raise ValueError(f"{out.relative_to(root)} already exists")
@@ -97,6 +99,7 @@ def check_state(name, rows):
     if len(rows) < 2 or rows[0][0].lower() != "state" or rows[0][-1] != "Src":
         return [f"state table {title}: the first column is `State` and the last is `Src`"]
     events, states = rows[0][1:-1], {r[0] for r in rows[1:]}
+    errs += [f"state table {title}: `{s}` has more than one row" for s in sorted(states) if [r[0] for r in rows[1:]].count(s) > 1]
     errs += [f"state table {title}: `{s}` is not a row" for s in {start} | finals if s not in states]
     edges = {}
     for r in rows[1:]:
@@ -131,7 +134,7 @@ def check_decision(title, rows):
     for i, h in enumerate(rows[0][:-1]):
         if h.startswith("→") or h.startswith("->"):
             outs.append(i)
-        elif m := re.fullmatch(r"(.+?)\s*\((.+)\)", h):
+        elif m := re.fullmatch(r"(.+?)\s*\(([^()]+)\)", h):  # the values are in the last parentheses
             conds.append((i, m[1], [v.strip() for v in m[2].split(",")]))
         else:
             errs.append(f"decision table {title}: condition `{h}` must list its values, e.g. `{h} (a, b)`")
@@ -182,21 +185,27 @@ def check(root, slug, gate=False, base="HEAD"):
         meta, body = records.parse(p)
     except ValueError as e:
         return [f"{rel}: {e}"], []
+    # guidance comments are not content: they neither fill a section nor count as a [default] or a placeholder
+    body = re.sub(r"<!--.*?-->", "", "\n".join(body), flags=re.S).splitlines()
     errs = []
     route = meta.get("route")
-    if route not in ROUTES:
+    if not isinstance(route, str) or route not in ROUTES:
         return [f"{rel}: `route` must be one of {sorted(ROUTES)}"], []
     if meta.get("slug") != slug:
         errs.append(f"`slug` must be `{slug}`, the folder name")
     risk = meta.get("risk")
-    if not isinstance(risk, list) or any(r not in RISKS for r in risk):
+    if not isinstance(risk, list) or any(not isinstance(r, str) or r not in RISKS for r in risk):
         errs.append(f"`risk` must be a list from {sorted(RISKS)}, or []")
-        risk = [r for r in risk or [] if r in RISKS] if isinstance(risk, list) else []
+        risk = [r for r in risk if isinstance(r, str) and r in RISKS] if isinstance(risk, list) else []
     retired = meta.get("retired") or []
+    if not isinstance(retired, list) or any(not isinstance(r, str) or not re.fullmatch(r"[A-Z]+-\d+", r) for r in retired):
+        errs.append("`retired` must be a list of IDs, e.g. [FR-3, OP-1]")
+        retired = [r for r in retired if isinstance(r, str)] if isinstance(retired, list) else []
     secs = sections(body)
     allowed = ROUTES[route]["mandatory"] + OPTIONAL
     errs += [f"section `## {s}` is not part of a {route} spec" for s in secs if s not in allowed]
-    for s in ROUTES[route]["mandatory"]:
+    # a fresh draft has no decisions yet; after the grill it always has some (#40)
+    for s in ROUTES[route]["mandatory"] + ["Decisions"] * (gate and route == "full"):
         if not "\n".join(secs.get(s, [])).strip():
             errs.append(f"section `## {s}` is missing or empty")
     for s, lines in secs.items():
@@ -216,7 +225,7 @@ def check(root, slug, gate=False, base="HEAD"):
         prefix = iid.split("-")[0]
         if len(defs) > 1:
             errs.append(f"{iid} is defined {len(defs)} times")
-        if prefix not in ROUTES[route]["ids"]:
+        if prefix not in ROUTES[route]["ids"] | {"OP"}:
             errs.append(f"{iid}: `{prefix}` IDs don't belong in a {route} spec ({', '.join(sorted(ROUTES[route]['ids']))})")
         if iid in retired:
             errs.append(f"{iid} is retired and can't be used again")
@@ -232,6 +241,8 @@ def check(root, slug, gate=False, base="HEAD"):
             errs += [f"{iid}: needs `{k}`" for k in ("Why this priority", "Independent test") if k not in text]
         if prefix == "AC":
             errs += check_ac(iid, block, found, route)
+        if prefix == "OP":
+            errs += check_op(iid, block[0], s, found, allowed)
     for line in secs.get("Non-goals", []):
         if line.startswith("- ") and not TAG.search(line):
             errs.append(f"non-goal `{line[2:40]}…` must end with [human], [default] or [research: RF-n]")
@@ -270,6 +281,19 @@ def cites(line):
     return [c.strip() for c in m[1].split(",")] if m else []
 
 
+def check_op(iid, line, section, found, sections_allowed):
+    """`**OP-1** (fact|decision; <ID or section>) <question>` in Open points: research takes facts, the grill decisions."""
+    rest = DEF.sub("", line, count=1).strip()
+    m = re.match(r"^\((fact|decision);\s*([^)]+)\)\s*\S", rest)
+    if section != "Open points":
+        return [f"{iid}: open points belong in `## Open points`"]
+    if not m:
+        return [f"{iid}: write it as `**{iid}** (fact|decision; <ID or section>) <question>`"]
+    target = m[2].strip()
+    # a section that isn't written yet is a fine target: "(decision; Rules)" before any table exists
+    return [] if target in found or target in sections_allowed else [f"{iid}: its target `{target}` is neither an ID nor a section"]
+
+
 def check_ac(iid, block, found, route):
     errs, text, refs = [], "\n".join(block), cites(block[0])
     want = {"full": {"FR"}, "lite": {"EB", "UB"}}.get(route, set())
@@ -302,7 +326,8 @@ def history(root, rel, found, retired, base):
     old, now = defined(old_text), defined(path(root, rel.parent.name).read_text())
     errs = [f"{iid} was removed without being retired; add it to `retired:` (IDs are never reused)"
             for iid in old if iid not in now and iid not in retired]
-    errs += [f"{iid} was retired at {base} and can't be brought back" for iid in old_meta.get("retired") or [] if iid in now]
+    errs += [f"{iid} was retired at {base} and can't be brought back" for iid in old_meta.get("retired") or []
+             if iid in now and iid not in retired]  # still listed: the current-file check already says so
     errs += [f"{other} now has {iid}'s text from {base}: renumbered? IDs are permanent" for iid, text in old.items()
              for other, t in now.items() if other != iid and text and t == text and now.get(iid) != text]
     return errs

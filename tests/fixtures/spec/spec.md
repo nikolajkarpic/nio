@@ -61,7 +61,7 @@ What this delivers and why, for whom, in 3–5 lines. WHAT and WHY only, never H
 
 ## Non-goals
 - Partial refunds of paid (not returned) orders. [human]
-- Refunds to a different payment method. [human]
+- Refunds to a different payment method. [default]
 
 ## Glossary
 - **Refund**: money returned to the original payment method. Never "reimbursement" or "chargeback".
@@ -73,4 +73,4 @@ What this delivers and why, for whom, in 3–5 lines. WHAT and WHY only, never H
 - Full refunds only for paid orders: D-261025-k2m4 (grill, 2026-10-25).
 
 ## Open points
-- (drafting only; empty at the gate) OP-1: Can support refund after 30 days? [default]
+- **OP-1** (decision; FR-1) Can support refund an order after 30 days?
