@@ -41,6 +41,8 @@ def errors(root):
 
 
 def test():
+    assert records.slug("Spec gate for refund-double-charge: approved") == "spec-gate-for-refund-double-charge"
+    assert records.slug("Don't store it/keep it") == "dont-store-it-keep-it"
     root = repo()
     # a fresh template fails until filled in
     p = records.new(root, "decision", "auth", 'Sessions in "Redis"')

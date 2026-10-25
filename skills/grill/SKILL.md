@@ -26,7 +26,7 @@ Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
 What is still open is whatever `nio check spec <slug> --gate` lists: every `[default]` item and every open point
 `OP-n`. Re-run it whenever you need the current picture; never keep a separate list. To resume an earlier session, run
-it and read the last entry of `grill.md`; if that entry is a question with no answer, ask it again first.
+it and read `grill.md`: an `Asked` entry with no answer after it is the question to ask first.
 
 ## Provenance you write
 
@@ -45,21 +45,26 @@ it and read the last entry of `grill.md`; if that entry is a question with no an
 2. **Facts first.** For each `OP-n (fact; …)`, and any item the code, memory (`nio query`) or docs can settle, look it
    up. Use a subagent for anything broad, and don't wait: only questions that depend on that fact hold. Record what you
    found in research.md as `- **RF-n** <finding>. Source: <file:line or URL>: "<excerpt of at most 25 words>"`, patch
-   the item with `[research: RF-n]`, and move the OP's ID to `retired:`. A fact that exists but can't be found is not a
-   decision; defer it (step 10) unless the human wants to decide it anyway.
+   the item with `[research: RF-n]`, and move the OP's ID to `retired:`. When a lookup finds nothing, never guess: show
+   the human what you searched and found, and let them decide it now (`[human]`) or defer it (step 10). When sources
+   disagree, raise it as a contradiction (step 9).
 3. **Order what's left.** Contradictions come first, always. Then, for each goal the spec states, its core facets:
    meaning, actors and permissions, effect on data and state, failure and conflict, the change from today, and
    verification. Then everything else, most impact first. A question whose answer depends on another open question
    waits until that one is answered.
-4. **The bar.** Once a goal's core facets are covered, ask a point only if its alternatives differ in what a user can do
-   or see, in permissions, in data or in cost. Below the bar, take the recommended answer yourself, tag it `[agent]`,
-   and log it. Permissions, irreversible operations, money, deletion and breaking changes are never below the bar.
+4. **The bar.** A goal's core facet is covered once `grill.md` logs a question or a fact lookup for that goal tagged
+   with the facet (`Facet: data`); a below-the-bar call never counts. Once all six are covered, ask a point only if one
+   of its alternatives changes (1) what a user can do, (2) what a user sees, (3) who may do it, (4) what data is kept or
+   changed, or (5) what it costs. Any yes means ask. Below the bar, take the recommended answer yourself, tag it
+   `[agent]`, and log the call with its five no's. Permissions, irreversible operations, money, deletion and breaking
+   changes are never below the bar.
 5. **Settle what follows.** When an answer makes another point certain, write that point in as `[derived: <sources>]`
    instead of asking it. Never derive permissions, irreversible operations, money, deletion or new states.
 6. **Ask one question** (or a round, see below):
+   Before showing it, append `## Asked · Q7 · <ID> · <date>` with the question and its options to `grill.md`.
    - the question in full, ending in `?`;
    - one line on why it matters;
-   - the verified facts it rests on (from research.md, the spec or the code);
+   - the verified facts it rests on, each naming its source (an `RF-n`, a file:line or a spec ID);
    - 3 options, or 1–2 when no real alternative exists (never filler), exactly one marked **Recommended** with its
      reason, worded so that "yes" accepts it;
    - room for a free-form answer. If the host has a question tool, use it; plain text works anywhere.
@@ -77,10 +82,12 @@ it and read the last entry of `grill.md`; if that entry is a question with no an
      ## Q7 · OP-5 · 2026-10-25
      Question: <the question>
      Options: 1. <…> (recommended) 2. <…> 3. <…>
-     Answer: 1 [human]
+     Answer: 1. <the chosen option's full text, description included> [human]
      Patched: FR-15, AC-13; retired OP-5
      ```
-     Log below-the-bar calls and derived items the same way, as `## Call · FR-24` and `## Derived · AC-21`;
+     The answer line carries the chosen option's whole text, not just its number: the scope lens judges what was asked
+     for from these lines alone. Log below-the-bar calls and derived items the same way, as `## Call · FR-24` and
+     `## Derived · AC-21`;
    - add a line to `## Decisions`. For a weighty decision (costly to reverse, surprising, or a real trade-off), also
      write a decision record with `@nio:remember`, citing the spec IDs it serves, and put its D- ID on that line;
    - run `nio check spec <slug>`. It must still pass.
@@ -112,7 +119,8 @@ it and read the last entry of `grill.md`; if that entry is a question with no an
       push back on before finishing.
     - Show the notes of `--gate`: the agent calls, the derived items and any deferred points, so they can overturn any
       of them. Then ask: finish, explore further, or stop with concerns. The grill is done only when they choose
-      finish.
+      finish. Explore further goes back to asking; stop with concerns is an early end that defers the concerns
+      (step 10).
 
 ## Delegated sessions
 

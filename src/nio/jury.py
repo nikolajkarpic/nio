@@ -5,8 +5,9 @@ import collections
 import hashlib
 import json
 import re
+import subprocess
 
-from nio import records, spec
+from nio import agents, records, spec
 
 GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "architecture.md"], "tasks": ["tasks.md"]}
 KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "inconsistency"}
@@ -19,6 +20,9 @@ BY = {"agent", "grill", "human"}  # grill: the human answered a grill question
 MAX_FINDINGS = 5
 FIELDS = ["cites", "kind", "severity", "evidence", "quote", "situation", "fix"]
 CLOSED = {"refuted", "dropped", "merged", "overruled"}  # never need a disposition
+CORE = {"spec": ["testability", "logic"]}  # #47; the plan and tasks gates come with their stages
+HIGH_RISK = {"auth", "money", "data-deletion", "migration"}
+MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
 
 
 def folder(root, slug):
@@ -40,7 +44,8 @@ def blocks(lines):
         if line.startswith("### "):
             out.append((line[4:].strip(), {}))
         elif out and (m := re.match(r"^- ([a-z-]+):\s*(.*)$", line.strip())):
-            out[-1][1].setdefault(m[1], []).append(m[2].strip())
+            # a guidance comment after two spaces, as in the template; a value's own "#22" stays
+            out[-1][1].setdefault(m[1], []).append(re.sub(r"\s{2,}#\s.*$", "", m[2]).strip())
     return out
 
 
@@ -71,8 +76,10 @@ def parse_lens(path, gate, slug):
         one = {k: f[k][0] for k in FIELDS if k != "quote"}
         one.update(ref=m[1], title=m[2], quotes=[q.strip('"') for q in f["quote"]],
                    cites=[c.strip() for c in one["cites"].split(",") if c.strip()])
-        if one["kind"] not in KINDS or one["severity"] not in SEVERITY or one["evidence"] not in EVIDENCE:
-            errs.append(f"{m[1]}: kind, severity or evidence is not an allowed value")
+        bad = [f"{k} `{one[k]}` must be one of {', '.join(sorted(allowed))}" for k, allowed in
+               (("kind", KINDS), ("severity", SEVERITY), ("evidence", EVIDENCE)) if one[k] not in allowed]
+        if bad:
+            errs.append(f"{m[1]}: " + "; ".join(bad))
             continue
         if one["evidence"] == "inferred" and one["severity"] == "blocker":
             one["severity"] = "major"  # an inferred finding can't block on its own
@@ -87,17 +94,119 @@ def parse_lens(path, gate, slug):
 ID = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")  # FR-1, AC-12, SC-3; anything else in `cites` is a label, e.g. a table row
 
 
-def grounded(finding, text):
-    """Every cited ID and every quote appears in the gate's artefacts (whitespace-insensitive for quotes).
-    Labels aren't checked: the quotes ground them, and every finding has at least one."""
-    flat = " ".join(text.split())
+def grounded(finding, text, human=""):
+    """Every cited ID is in the gate's artefacts, and every quote is in them or in the human's own words (the intake and
+    their grill answers, which the scope lens quotes). Whitespace-insensitive for quotes. Labels aren't checked: the
+    quotes ground them, and every finding has at least one."""
+    flat = " ".join(text.split()) + "\n" + " ".join(human.split())
     ids = [c for c in finding["cites"] if ID.match(c)]
     return all(re.search(rf"(?<![\w-]){re.escape(c)}(?![\w-])", text) for c in ids) and all(
         " ".join(q.split()) in flat for q in finding["quotes"])
 
 
+def artefact(root, slug, gate):
+    """The gate's artefacts as one text, in a fixed order; empty when none exists."""
+    return "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in GATES[gate]) if p.exists())
+
+
+def blob(root, text, write=False):
+    """The git blob hash of `text`, stored in git's objects when `write` (the version a round judged, #27 FR-23)."""
+    args = ["git", "hash-object", "--stdin"] + ["-w"] * write
+    return subprocess.run(args, cwd=root, input=text, capture_output=True, text=True).stdout.strip()
+
+
+def human_words(root, slug):
+    """The intake and the human's grill answers (questions and answers only: no headers, options or calls)."""
+    intake = root / ".nio/specs" / slug / "intake.md"
+    lines = [line for line in answers(root, slug) if line.startswith(("Question: ", "Answer: "))]
+    return (intake.read_text() if intake.exists() else "") + "\n" + "\n".join(lines)
+
+
+def version(led, rnd):
+    return led.get("versions", {}).get(str(rnd))
+
+
 def worst(*levels):
     return max(levels, key=SEVERITY.index)
+
+
+def rung(risk):
+    """The gate's risk tier from the spec's risk flags (#27 FR-3): none low, any medium, the costly ones high."""
+    return "low" if not risk else "high" if set(risk) & HIGH_RISK else "medium"
+
+
+def plan(root, slug, gate, extra=()):
+    """(lines, ok): the lens runs this gate needs, why each runs, the tier, and the run budget. Not ok when the spec
+    hasn't passed the gate or a lens has no card; over the cap is reported for the human to choose, not refused."""
+    if gate not in CORE:
+        raise ValueError(f"only the {', '.join(CORE)} gate is built so far")
+    errors, _ = spec.check(root, slug, gate=True)
+    if errors:
+        return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
+    meta, body = records.parse(spec.path(root, slug))
+    risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
+    lenses = {lens: "core" for lens in CORE[gate]}
+    for lens, flags in spec.LENSES.items():
+        if "(plan gate)" not in lens and flags & set(risk):
+            lenses.setdefault(lens, "risk: " + ", ".join(sorted(flags & set(risk))))
+    frs = sum(1 for line in body if re.match(r"^(?:- )?\*\*FR-\d+\b", line))
+    if frs > spec.SCOPE_FRS:
+        lenses.setdefault("scope", f"{frs} FRs, more than {spec.SCOPE_FRS}")
+    for item in extra:  # the skill's own triggers (#27 FR-27), each with its reason
+        lens, _, why = item.partition(":")
+        if not why.strip():
+            raise ValueError(f"--add {item}: give the reason, as lens:reason")
+        lenses.setdefault(lens.strip(), why.strip())
+    cards = agents.load(root)
+    missing = [lens for lens in lenses if lens not in cards]
+    cap = records.config(root).get("jury", {}).get("max_runs", MAX_RUNS)
+    tier = rung(risk)
+    out = [f"tier: {tier}" + (f" ({', '.join(sorted(set(risk) & HIGH_RISK) or risk)})" if risk else ""),
+           "lenses: " + ", ".join(f"{lens} ({why})" for lens, why in lenses.items()),
+           f"runs: {len(lenses)} of {cap}" + (" — over the cap: the human chooses what runs" if len(lenses) > cap else "")]
+    if missing:
+        out.append(f"missing cards: {', '.join(missing)} — the gate is blocked until they exist")
+    return out, not missing
+
+
+def changed(root, slug, gate):
+    """IDs whose text changed since the spec version the last round judged (#27 FR-19, FR-23), and the lenses to
+    re-run: every lens that blocked, plus any lens with a finding citing a changed ID."""
+    led = load(root, slug, gate)
+    versions = led.get("versions", {})
+    if not versions:
+        raise ValueError(f"no round of the {gate} jury has been collected for {slug}")
+    old = "\n".join(records.git(root, "cat-file", "-p", versions[max(versions, key=int)]))
+    if not old:
+        raise ValueError(f"the judged {gate} version isn't in this clone's git objects; re-run every lens")
+    before, after = spec.defined(old), spec.defined(artefact(root, slug, gate))
+    ids = sorted({i for i in before.keys() | after.keys() if before.get(i) != after.get(i)})
+    rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
+    rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] != "deferred"}
+    return ids, sorted(rerun)
+
+
+def answers(root, slug):
+    """The human's answers from grill.md, for the scope lens (#27 FR-24): each question and the answer chosen, with
+    option numbers resolved to their text. Options not chosen, reasoning, agent calls and derived items are left out."""
+    log = root / ".nio/specs" / slug / "grill.md"
+    if not log.exists():
+        return []
+    out = []
+    for entry in re.split(r"\n(?=## )", log.read_text()):
+        q = re.search(r"^Question: .*", entry, re.M)
+        start = entry.find("\nAnswer: ")
+        # an answer may wrap onto the lines after it, up to the Patched line; only the human's answers count
+        answer = entry[start + len("\nAnswer: "):].split("\nPatched:")[0] if start >= 0 else ""
+        if not (q and "[human]" in answer):
+            continue
+        given = " ".join(answer.split("[human]")[0].split())
+        opts = re.search(r"^Options[^:]*: (.*(?:\n(?!Answer:|Patched:).*)*)", entry, re.M)
+        labels = dict(re.findall(r"(\d+)\. (.+?)(?= \d+\. |$)", " ".join(opts[1].split()))) if opts else {}
+        if re.fullmatch(r"[\d,\s]+|\d+(?:, \d+)* and \d+", given):  # "1", "1, 2 and 4": options picked by number
+            given = "; ".join(labels.get(n, n).replace(" (recommended)", "") for n in re.findall(r"\d+", given))
+        out += [entry.splitlines()[0], q[0], f"Answer: {given} [human]", ""]
+    return out
 
 
 def collect(root, slug, gate, run, expect=(), tier=None):
@@ -108,10 +217,10 @@ def collect(root, slug, gate, run, expect=(), tier=None):
     led = load(root, slug, gate)
     led["expect"] = sorted(set(led["expect"]) | set(expect))
     led["tier"] = tier or led["tier"]
-    texts = [(root / ".nio/specs" / slug / name) for name in GATES[gate]]
-    text = "\n".join(p.read_text() for p in texts if p.exists())
+    text = artefact(root, slug, gate)
     if not text:
         raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
+    human = human_words(root, slug)
     jury = root / ".nio/runs" / run / "jury"
     out, new = [], []
     for path in sorted(jury.glob(f"{gate}-*.md")):
@@ -121,7 +230,13 @@ def collect(root, slug, gate, run, expect=(), tier=None):
             new.append(path)
     if new:
         led["round"] += 1
-        out += merge(led, new, gate, slug, text)
+        # the artefact this round judges, kept in git's object store so a later round can tell what changed (FR-23)
+        led.setdefault("versions", {})[str(led["round"])] = blob(root, text, write=True)
+        out += merge(led, new, gate, slug, text, human)
+    for f in led["findings"]:  # what the grounding sources now hold may ground a finding dropped earlier
+        if f["status"] == "dropped" and grounded(f, text, human):
+            f.update(status="open", reason="", validation="pending" if f["severity"] != "minor" else "grounded")
+            out.append(f"revived {f['id']} {f['title']} (now grounded)")
     if gate == "spec":
         out += deferred(led, root, slug)
     refuter = jury / f"{gate}-refuter.md"
@@ -144,7 +259,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
 def deferred(led, root, slug):
     """Points the grill deferred (#22) become findings only the human can close: a contradiction blocks, anything else is major."""
     out, body = [], spec.sections(spec.path(root, slug).read_text().splitlines()).get("Deferred", [])
-    known = {c for f in led["findings"] for c in f["cites"]}
+    known = {c for f in led["findings"] if any(s["lens"] == "deferred" for s in f["sources"]) for c in f["cites"]}
     for did, block in spec.items(body):
         if did in known:
             continue
@@ -164,22 +279,31 @@ def deferred(led, root, slug):
     return out
 
 
-def merge(led, paths, gate, slug, text):
+def merge(led, paths, gate, slug, text, human=""):
     out, rnd, rerun = [], led["round"], set()
     for path in paths:
         meta, findings, errs = parse_lens(path, gate, slug)
         juror = led["jurors"].setdefault(path.stem, {"attempts": 0})
+        if juror.get("version") != version(led, rnd):  # attempts count per version: a new version earns a fresh retry
+            juror["attempts"] = 0
         juror.update(lens=meta.get("lens", path.stem.split("-", 1)[1]), by=meta.get("by", ""), context=meta.get("context", ""),
-                     valid=not errs, errors=errs, round=rnd, attempts=juror["attempts"] + 1)
+                     valid=not errs, errors=errs, round=rnd, attempts=juror["attempts"] + 1, version=version(led, rnd))
         if errs:
             out += [f"INVALID {path.name}: {e}" for e in errs]
             continue
-        if juror["context"] != "needs-more":  # only a lens that could judge marks its old findings fixed
-            rerun.add(juror["lens"])
+        if juror["context"] != "needs-more":  # the last round this juror actually judged
+            juror["judged"] = rnd
         for f in findings:
-            out.append(add(led, f, path.stem, juror["lens"], rnd, text))
-    for f in led["findings"]:  # a lens that re-ran and no longer reports a finding: fixed
-        if f["last_round"] < rnd and f["status"] in ("open", "disposed") and rerun & {s["lens"] for s in f["sources"]}:
+            out.append(add(led, f, path.stem, juror["lens"], rnd, text, human))
+    # fixed: every juror that raised it has since judged a different version without raising it again, in this round or
+    # an earlier one. A risk the human accepted, or ruled out of scope, stays as they ruled: silence isn't a fix.
+    for f in led["findings"]:
+        if f["disposition"] in HUMAN_ONLY or f["status"] not in ("open", "disposed") or f["last_round"] >= rnd:
+            continue
+        raised_on = version(led, f["last_round"])
+        judges = [led["jurors"].get(s["juror"], {}) for s in f["sources"]]
+        if raised_on and judges and all(j.get("judged", 0) > f["last_round"] and version(led, j["judged"]) != raised_on
+                                        for j in judges):
             f.update(baseline="absent", status="fixed")
             out.append(f"fixed   {f['id']} {f['title']}")
     return out
@@ -190,14 +314,21 @@ def key(f):
     return f["kind"], ids or frozenset(f["cites"])
 
 
-def add(led, f, juror, lens, rnd, text):
-    source = {"juror": juror, "lens": lens, "situation": f["situation"], "severity": f["severity"]}
+def same(g, f):
+    """Same kind and cited IDs, and labels that don't point elsewhere: `state table row asking` and `the non-goal …`
+    are two problems even when both cite FR-3. A side without labels matches either way."""
+    labels = lambda x: {c.lower() for c in x["cites"] if not ID.match(c)}
+    return key(g) == key(f) and (not labels(g) or not labels(f) or bool(labels(g) & labels(f)))
+
+
+def add(led, f, juror, lens, rnd, text, human=""):
+    source = {"juror": juror, "lens": lens, "situation": f["situation"], "severity": f["severity"], "round": rnd}
     # same kind and the same cited IDs; near-duplicates are the refuter's `same-as`. One juror's findings in one round
     # are distinct problems by construction, so they never merge with each other.
-    match = next((g for g in led["findings"] if g["status"] != "merged" and key(g) == key(f)
-                  and not (g["last_round"] == rnd and any(s["juror"] == juror for s in g["sources"]))), None)
+    match = next((g for g in led["findings"] if g["status"] != "merged" and same(g, f)
+                  and not any(s["juror"] == juror and s.get("round") == rnd for s in g["sources"])), None)
     if not match:
-        ok = grounded(f, text)
+        ok = grounded(f, text, human)
         g = {"id": f"J-{len(led['findings']) + 1}", **{k: f[k] for k in ("title", "kind", "severity", "cites", "evidence", "quotes", "fix")},
              "sources": [source], "validation": ("pending" if f["severity"] != "minor" else "grounded") if ok else "ungrounded",
              "reason": "" if ok else "a cited ID or quote is not in the artefact", "status": "open" if ok else "dropped",
@@ -205,15 +336,18 @@ def add(led, f, juror, lens, rnd, text):
         led["findings"].append(g)
         return f"{'new    ' if ok else 'dropped'} {g['id']} [{g['severity']}/{g['kind']}] {g['title']}" + ("" if ok else " (ungrounded)")
     if match["status"] == "dropped":  # reported again: it stays dropped unless the artefact now grounds it
-        if not grounded(f, text):
+        if not grounded(f, text, human):
             match["last_round"] = rnd
             return f"dropped {match['id']} {match['title']} (still ungrounded)"
         match.update({k: f[k] for k in ("cites", "quotes")}, status="open", reason="",
                      validation="pending" if f["severity"] != "minor" else "grounded")
-    if match["last_round"] < rnd:  # seen in an earlier round and reported again
+    # reported again on a newer version than it was last raised on: the fix didn't take, a failed round
+    if match["last_round"] < rnd and version(led, match["last_round"]) not in (None, version(led, rnd)):
         match["baseline"] = "unchanged"
-        if match["status"] == "fixed" or match["status"] == "open" or match["disposition"] in ("spec-fix", "open-question"):
+        if match["status"] in ("fixed", "open", "overruled") or match["disposition"] in ("spec-fix", "open-question"):
             match.update(status="open", rounds=match["rounds"] + 1, disposition="", by="", note="")
+    elif match["status"] == "fixed":  # raised again on the very version it was marked fixed on: it isn't fixed
+        match.update(status="open", baseline="unchanged")
     match["last_round"] = rnd
     match["sources"] = [s for s in match["sources"] if s["juror"] != juror] + [source]
     raised = worst(match["severity"], f["severity"])
@@ -231,9 +365,12 @@ def refute(led, path):
         if not g or g["validation"] != "pending":
             continue
         target = by_id.get((f.get("same-as") or [""])[0])
-        if target and target is not g:
+        if target and target is not g and target["status"] in ("open", "disposed"):  # never into a closed finding
             target["sources"] += [s for s in g["sources"] if s["juror"] not in {t["juror"] for t in target["sources"]}]
-            target["severity"] = worst(target["severity"], g["severity"])
+            raised = worst(target["severity"], g["severity"])
+            if raised != target["severity"] and target["validation"] == "grounded":
+                target["validation"] = "pending"
+            target["severity"] = raised
             g.update(status="merged", validation="merged", reason=f"same as {target['id']}")
             out.append(f"merged  {fid} into {target['id']}")
             continue
@@ -260,26 +397,40 @@ def dispose(root, slug, gate, fid, disposition, by, note):
     if f["status"] != "open" and not (by == "human" and f["status"] == "disposed"):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
     f.update(status="disposed", disposition=disposition, by=by, note=note)
+    if disposition == "spec-fix":  # the version the fix produced: a spec-fix that changed nothing can't count
+        f["fixed_in"] = blob(root, artefact(root, slug, gate))
     save(root, led)
 
 
 def votes(led):
     """{lens: [(juror, vote)]}; a juror blocks on any confirmed blocker or major it raised."""
     out = {}
+    judged = lambda j: j["valid"] and j["context"] != "needs-more"
     for name, j in sorted(led["jurors"].items()):
+        # a failed juror whose lens has since judged under another file name no longer counts
+        if not judged(j) and any(judged(k) and k["lens"] == j["lens"] and k["round"] >= j["round"] for k in led["jurors"].values()):
+            continue
         if not j["valid"] or j["context"] == "needs-more":
             vote = "invalid" if not j["valid"] else "needs-more"
         else:
-            mine = [f for f in led["findings"] if f["status"] in ("open", "disposed") and any(s["juror"] == name for s in f["sources"])]
+            # a finding the human accepted as risk, or ruled out of scope, needs no validation to count as settled
+            mine = [f for f in led["findings"] if f["status"] in ("open", "disposed") and f["disposition"] not in HUMAN_ONLY
+                    and any(s["juror"] == name for s in f["sources"])]
             vote = "pending" if any(f["validation"] == "pending" for f in mine) else (
                 "block" if any(f["validation"] == "confirmed" and f["severity"] != "minor" for f in mine) else "approve")
         out.setdefault(j["lens"], []).append((name, vote))
     return out
 
 
-def compose(led):
-    """(outcome, reasons). Fail-closed: rerun | pending | human | rejected | approved, in that order."""
+def compose(led, current=None):
+    """(outcome, reasons). Fail-closed: rerun | pending | human | rejected | approved, in that order. `current` is the
+    artefact's version now: a version no juror has judged is never approved, whatever the dispositions say."""
     lenses, reasons = votes(led), []
+    judged = version(led, led["round"])
+    if not judged:
+        return "rerun", ["no lens output has been collected yet: run the lenses"]
+    if current and judged and current != judged:
+        return "rerun", [f"the {led['gate']} changed since round {led['round']} judged it: re-review what changed (`nio jury changed`)"]
     retry = [f"{n}: {v}" for js in lenses.values() for n, v in js if v in ("invalid", "needs-more") and led["jurors"][n]["attempts"] < 2]
     stuck = [f"{n}: {v} after {led['jurors'][n]['attempts']} attempts" for js in lenses.values() for n, v in js
              if v in ("invalid", "needs-more") and led["jurors"][n]["attempts"] >= 2]
@@ -301,6 +452,9 @@ def compose(led):
                     if f["status"] == "open" and {s["juror"] for s in f["sources"]} <= {n for n, v in js if v == "block"}:
                         f.update(status="overruled", reason=f"{lens}: {ok} of {len(counted)} jurors approved ({', '.join(sorted(majority))})")
     stale = [f"{f['id']} failed {f['rounds']} rounds" for f in led["findings"] if f["status"] == "open" and f["rounds"] >= 2]
+    unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f.get("fixed_in") == judged]
+    if unapplied:  # disposed as a spec-fix while the spec still reads as the jurors judged it
+        return "rejected", [f"spec-fix without a change to the {led['gate']}: {', '.join(unapplied)}"]
     if stuck or split or stale:
         return "human", stuck + split + stale
     unresolved = [f["id"] for f in led["findings"] if f["status"] == "open"]
@@ -309,11 +463,15 @@ def compose(led):
     return "approved", []
 
 
-def check(root, slug, gate, record=False):
+def check(root, slug, gate, record=False, human=""):
     """Compose the outcome, save it, and with `record` write the verdict record once per round and outcome.
+    `human` is the human closing the gate themselves, with their reason: the outcome is `human`, never `approved`.
     Returns (outcome, lines to print)."""
     led = load(root, slug, gate)
-    outcome, reasons = compose(led)
+    current = blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
+    outcome, reasons = compose(led, current)
+    if human.strip():
+        outcome, reasons = "human", [f"the human closed the gate: {human.strip()}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
     led["outcome"] = outcome
     unresolved = sum(f["status"] == "open" for f in led["findings"])
     lines = [f"outcome: {outcome}", f"round: {led['round']}", f"unresolved: {unresolved}", *[f"- {r}" for r in reasons]]

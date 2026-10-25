@@ -22,6 +22,11 @@ LENSES = {"adversary": {"external-input", "multi-party", "public-api", "money"},
 SCOPE_FRS = 8  # more FRs than this triggers the scope lens (#47)
 TAGGED = {"A", "UJ", "US", "AC", "FR", "NFR", "SC", "CB", "EB", "UB"}  # items that must carry provenance
 SHALL = {"FR", "EB", "UB"}
+# where each kind of item lives; one placed elsewhere is easy to miss for readers and lenses alike
+HOME = {"A": ["Actors and journeys"], "UJ": ["Actors and journeys"], "US": ["User stories"],
+        "AC": ["User stories", "Acceptance criteria"], "FR": ["Functional requirements"], "NFR": ["Non-functional requirements"],
+        "SC": ["Success criteria"], "CB": ["Current behaviour"], "EB": ["Expected behaviour"], "UB": ["Unchanged behaviour"],
+        "R": ["Roadmap"], "OP": ["Open points"], "DF": ["Deferred"]}
 LEVELS = {"unit", "integration", "e2e"}
 # provenance (#20, #22): the human said it; the agent proposed it; an agent decided it (delegated, or below the grill's
 # bar); research backs it; it follows from other items; or the grill deferred it
@@ -234,6 +239,8 @@ def check(root, slug, gate=False, base="HEAD"):
         if iid in retired:
             errs.append(f"{iid} is retired and can't be used again")
         s, block = defs[0]
+        if prefix in HOME and s not in HOME[prefix] and prefix not in ("OP", "DF"):  # those two say so themselves
+            errs.append(f"{iid} is under `## {s}`; {prefix} items belong in `## {' or '.join(HOME[prefix])}`")
         if prefix in TAGGED and not TAG.search(block[0]):
             errs.append(f"{iid}: its line must end with {TAGS}")
         if prefix in SHALL and "SHALL" not in block[0]:
@@ -250,9 +257,9 @@ def check(root, slug, gate=False, base="HEAD"):
         if prefix == "DF":
             errs += check_df(iid, block[0], s, found, retired, allowed)
     errs += check_tags(body, found)
-    for line in secs.get("Non-goals", []):
-        if line.startswith("- ") and not TAG.search(line):
-            errs.append(f"non-goal `{line[2:40]}…` must end with {TAGS}")
+    for goal in joined(secs.get("Non-goals", [])):
+        if not TAG.search(goal):
+            errs.append(f"non-goal `{goal[2:40]}…` must end with {TAGS}")
     targets = {"full": ["FR"], "lite": ["EB", "UB"]}.get(route, [])
     cited = {c for iid, defs in found.items() if iid.startswith("AC-") for c in cites(defs[0][1][0])}
     errs += [f"{iid} has no AC" for iid in found if iid.split("-")[0] in targets and iid not in cited]
@@ -314,17 +321,22 @@ def check_op(iid, line, section, found, sections_allowed):
     return [] if target in found or target in sections_allowed else [f"{iid}: its target `{target}` is neither an ID nor a section"]
 
 
+def joined(lines):
+    """`- ` bullets with their indented wrapped lines joined, one string per bullet."""
+    out = []
+    for line in lines:
+        if line.startswith("- "):
+            out.append(line)
+        elif out and line.startswith("  "):
+            out[-1] += " " + line.strip()
+    return out
+
+
 def check_glossary(secs):
     """A glossary entry `- **Term**: … Never "x", "y".` bans its synonyms everywhere else in the spec, so the words
     don't drift. Code spans are skipped; the glossary may name the words it bans, and Decisions may record a rename."""
-    entries = []  # one string per entry, its wrapped lines joined
-    for line in secs.get("Glossary", []):
-        if line.startswith("- "):
-            entries.append(line)
-        elif entries and line.startswith("  "):
-            entries[-1] += " " + line.strip()
     banned = {}
-    for entry in entries:
+    for entry in joined(secs.get("Glossary", [])):
         m = re.match(r"^- \*\*([^*]+)\*\*:", entry)
         if m and "Never" in entry:
             for word in re.findall(r'"([^"]+)"', entry.split("Never", 1)[1]):

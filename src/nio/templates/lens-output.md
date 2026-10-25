@@ -11,7 +11,7 @@ What you checked and how, in your own words. Write this before the findings.
 ## Findings
 ### F1 Shipped orders are both refundable and not
 - cites: FR-1, FR-2               # IDs, which must exist; a table row is cited as a label (state table row `shipped`) and quoted
-- kind: contradiction
+- kind: contradiction              # contradiction | gap | ambiguity | untestable | risk | scope | inconsistency
 - severity: blocker
 - evidence: observed
 - quote: "Shipped orders can never be refunded"

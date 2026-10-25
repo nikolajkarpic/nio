@@ -39,7 +39,9 @@ The context pack from the jury skill, and nothing else:
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each cites the
 requirement, AC or table row it is about, quotes the artefact word for word, and shows the concrete situation that
-breaks (the inputs, the two outcomes). A finding whose quote isn't in the artefact is dropped, so quote exactly. A
+breaks (the inputs, the two outcomes). Use only these values: `kind` one of contradiction, gap, ambiguity, untestable,
+risk, scope or inconsistency; `severity` one of blocker, major or minor; `evidence` observed or inferred. Any other
+value makes your whole output invalid. A finding whose quote isn't in the artefact is dropped, so quote exactly. A
 finding you inferred rather than saw can't be a blocker. If nothing qualifies, the Findings section is `none`.
 
 ## Stop when
