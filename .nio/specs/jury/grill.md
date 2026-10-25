@@ -52,3 +52,16 @@ Patched: FR-28, AC-29, Decisions; retired OP-8
 
 ## Finish · 2026-10-25
 `nio check spec jury --gate` passes with 0 errors. The human chose finish at the finish gate. Next: implement the jury skill and the five lens cards.
+
+## Derived · UJ-1 step 2, AC-2, AC-7, FR-7, glossary Rung · 2026-10-25 (implementation review)
+Consequences of Q1 (OP-5: no triage agent; the risk flags set the rung) that the grill missed: five lines still named
+triage. Now derived from FR-3 and FR-27. Also moved FR-23 to FR-28 into `## Functional requirements` (they had landed
+after the decision tables).
+
+## Session 2 · 2026-10-25 · from the first real jury run (the grill spec)
+
+## Q6 · FR-24 · 2026-10-25
+Question: The scope lens judged the grill spec against the intake alone, so it flagged your own grill answers as 'not asked for'. What should the scope lens see?
+Options: 1. Intake + your grill answers (recommended) 2. Intake only, as decided 3. Whole grill.md
+Answer: 1 [human]
+Patched: FR-24, AC-25, Decisions
