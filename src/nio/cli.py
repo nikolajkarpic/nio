@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from nio import agents, hooks, index, jury, pack, query, records
+from nio import agents, hooks, index, jury, pack, query, records, spec
 
 
 def report(errors, warnings, count):
@@ -16,13 +16,19 @@ def report(errors, warnings, count):
 def main():
     p = argparse.ArgumentParser(prog="nio", description="NIO memory CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
-    n = sub.add_parser("new", help="create a record from its template and print its path")
-    n.add_argument("type", choices=sorted(set(records.REQUIRED)))
-    n.add_argument("--area", required=True)
-    n.add_argument("--title", required=True)
+    n = sub.add_parser("new", help="create a record (or `new spec <slug>`, a spec) from its template and print its path")
+    n.add_argument("type", choices=sorted(set(records.REQUIRED) | {"spec"}))
+    n.add_argument("slug", nargs="?", help="spec only: the spec's folder name under .nio/specs/")
+    n.add_argument("--area", help="records: the area folder")
+    n.add_argument("--title", help="records: the title")
+    n.add_argument("--route", choices=sorted(spec.ROUTES), default="full", help="spec only: full, lite (bugfix) or epic")
+    n.add_argument("--epic", default="", help="spec only: the epic slice it belongs to, e.g. checkout/R-2")
     n.add_argument("--by", default="human", help="role / host / model, or human")
     n.add_argument("--run", default="", help="run ID, e.g. R-261024-a1b2; empty when written by hand")
-    c = sub.add_parser("check", help="lint every record under .nio/memory")
+    c = sub.add_parser("check", help="lint every record under .nio/memory, or `check spec <slug>`: a spec's mechanical checks")
+    c.add_argument("what", nargs="?", choices=["spec"])
+    c.add_argument("slug", nargs="?")
+    c.add_argument("--gate", action="store_true", help="spec only: also require no [default] and no open points")
     c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
@@ -72,11 +78,27 @@ def main():
     root = records.repo_root()
     if a.cmd == "new":
         try:
-            print(records.new(root, a.type, a.area, a.title, a.by, a.run).relative_to(root))
+            if a.type == "spec":
+                if not a.slug:
+                    sys.exit("error: give the spec's slug: nio new spec <slug>")
+                print(spec.new(root, a.slug, a.route, a.epic).relative_to(root))
+            elif not (a.area and a.title):
+                sys.exit("error: a record needs --area and --title")
+            else:
+                print(records.new(root, a.type, a.area, a.title, a.by, a.run).relative_to(root))
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "run":
         print(records.new_run(root))
+    elif a.cmd == "check" and a.what == "spec":
+        if not a.slug:
+            sys.exit("error: give the spec's slug: nio check spec <slug>")
+        try:
+            errors, notes = spec.check(root, a.slug, a.gate, a.base)
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+        print("\n".join([f"ERROR {e}" for e in errors] + notes + [f"{len(errors)} errors"]))
+        sys.exit(1 if errors else 0)
     elif a.cmd == "check":
         report(*records.check(root, a.base))
     elif a.cmd == "query":
