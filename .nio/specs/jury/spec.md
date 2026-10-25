@@ -26,7 +26,7 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
 
 **UJ-1 Run the spec jury to a verdict** (A-1, A-2, A-3, A-4) [research: RF-1]
 1. The jury agent confirms the spec passes `nio check spec <slug> --gate` and reads the lenses it lists.
-2. Triage picks the rung; the agent builds one pack per lens and runs the jurors.
+2. The risk flags set the rung; the agent builds one pack per lens and runs the jurors.
 3. The agent collects their outputs into the ledger, runs the refuter on the batch, and collects again.
 4. The agent disposes what it may, sends behaviour changes to the grill and the rest to the human.
 5. `nio jury check` composes the outcome; the human is told the verdict and what the agent decided.
@@ -51,8 +51,8 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
 
 - **AC-1** (FR-1) Given a spec that fails `nio check spec <slug> --gate`, when the jury starts, then no lens runs and the human is told to finish the grill first. [derived: FR-1]
   Observable: no file under `.nio/runs/<run>/jury/`; the message names the gate errors. Level: integration.
-- **AC-2** (FR-2) Given a settled spec with `risk: [pii]` and 5 FRs, when the jury picks lenses, then it runs testability, logic and security, and no others unless triage added one with a reason. [human]
-  Observable: the lens outputs in the run are exactly `spec-testability`, `spec-logic` and `spec-security` (plus any lens triage named with its reason). Level: integration.
+- **AC-2** (FR-2) Given a settled spec with `risk: [pii]` and 5 FRs, when the jury picks lenses, then it runs testability, logic and security, and no others unless the jury's own triggers (FR-27) added one with its reason. [derived: FR-2, FR-27]
+  Observable: the lens outputs in the run are exactly `spec-testability`, `spec-logic` and `spec-security` (plus any lens FR-27 triggered, with its reason). Level: integration.
 - **AC-3** (FR-3) Given a spec flagged `auth`, when the jury starts, then the rung is high; given a spec with no flags, the rung is low. [human]
   Observable: the ledger and the verdict record carry tier high and low respectively. Level: integration.
 - **AC-4** (FR-4) Given the logic lens is about to run, when its pack is built, then the pack holds the spec, the card's `## At spec` section, the `nio check spec` output and the lens output template, and nothing from the grill log, the conversation or another juror. [human]
@@ -61,8 +61,8 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
   Observable: the `by:` field of each lens output names a model other than the drafter's, or the human was told why not. Level: integration.
 - **AC-6** (FR-6) Given a juror finishes, when its output is written, then it is at `.nio/runs/<run>/jury/spec-<lens>.md` (`-<n>` for a second or third juror) in the lens output format. [human]
   Observable: `nio jury collect` reports the file as valid. Level: integration.
-- **AC-25** (FR-24) Given the scope and consistency lenses are triggered, when their packs are built, then scope's pack holds `intake.md` and consistency's holds the memory pack, and no other lens gets either. [research: RF-10]
-  Observable: the two packs contain those files; the other packs don't. Level: integration.
+- **AC-25** (FR-24) Given the scope and consistency lenses are triggered, when their packs are built, then scope's pack holds `intake.md` and the human's grill answers (no options, reasoning or calls), consistency's holds the memory pack, and no other lens gets any of them. [human]
+  Observable: the scope pack has the intake and only `Question:`/`Answer: … [human]` lines; the other packs have none of these files. Level: integration.
 - **AC-27** (FR-26) Given the security lens is triggered and has no card, when the jury starts, then no lens runs and the human is told the security card is missing. [human]
   Observable: no output in the run's jury folder; the message names the missing card. Level: integration.
 - **AC-28** (FR-27) Given `nio pack` for the spec returns an approved decision, and FR-4 maps to no intake sentence, when the jury picks lenses, then consistency and scope both run and their reasons are shown. [human]
@@ -76,8 +76,8 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
 - **Independent test:** feed a run with one blocker, one minor and one invalid output; the invalid lens re-runs once,
   the refuter sees only the blocker, and the minor is never sent to it.
 
-- **AC-7** (FR-7) Given every planned lens output of a round exists, when the agent collects, then it runs `nio jury collect <slug> spec --run <run>` with one `--expect` per planned lens and the rung triage picked. [human]
-  Observable: the ledger's `expect` lists every planned lens and its `tier` is the triage rung. Level: integration.
+- **AC-7** (FR-7) Given every planned lens output of a round exists, when the agent collects, then it runs `nio jury collect <slug> spec --run <run>` with one `--expect` per planned lens and the rung from the risk flags. [derived: FR-3]
+  Observable: the ledger's `expect` lists every planned lens and its `tier` is the rung from the risk flags. Level: integration.
 - **AC-8** (FR-8) Given collect prints a refuter batch with 3 findings, when the agent validates, then one refuter run covers all 3, writes `spec-refuter.md`, and the agent collects again. [human]
   Observable: one refuter output per round; after the second collect no finding is `pending`. Level: integration.
 - **AC-9** (FR-9) Given a lens output is invalid, missing or `context: needs-more`, when the outcome is `rerun`, then the agent re-runs that lens once under the same file name, and a second failure goes to the human. [human]
@@ -146,7 +146,7 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
 - **FR-4** WHEN a juror runs THE SYSTEM SHALL give it a fresh context pack holding only the spec, its card's `## At spec` section, the `nio check spec` output and the lens output template, never the author's reasoning or another juror's output. [human]
 - **FR-5** THE SYSTEM SHALL run each juror on a different model from the spec's author where the host offers one. [human]
 - **FR-6** WHEN a juror finishes THE SYSTEM SHALL have its output at `.nio/runs/<run>/jury/spec-<lens>[-<n>].md` in the lens output format. [human]
-- **FR-7** WHEN every planned output of a round exists THE SYSTEM SHALL run `nio jury collect` with each planned lens as `--expect` and the triage rung as `--tier`. [human]
+- **FR-7** WHEN every planned output of a round exists THE SYSTEM SHALL run `nio jury collect` with each planned lens as `--expect` and the rung from FR-3 as `--tier`. [derived: FR-3]
 - **FR-8** WHEN collect prints a refuter batch THE SYSTEM SHALL run the refuter once on the whole batch and collect again. [human]
 - **FR-9** IF a lens output is missing, invalid or `needs-more` THEN THE SYSTEM SHALL re-run that lens once under the same file name and send a second failure to the human. [human]
 - **FR-10** THE SYSTEM SHALL show refuted findings to the human with the refuter's reason, never hide them. [human]
@@ -162,6 +162,12 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
 - **FR-20** IF a finding has failed 2 rounds THEN THE SYSTEM SHALL send it to the human instead of re-running its lens. [human]
 - **FR-21** WHEN the refuter confirms a blocker finding THE SYSTEM SHALL re-run the lens that raised it with 3 independent jurors, and 2 of 3 decide; majors and refuted blockers never escalate. [human]
 - **FR-22** IF the planned lens runs for a gate exceed the configured cap (default 6, each juror counted) THEN THE SYSTEM SHALL show the planned runs and their cost and let the human run all, drop the lowest-hit-rate lenses, or pick, skipping nothing silently. [human]
+- **FR-23** WHEN the jury collects a round THE SYSTEM SHALL record the version of the spec it judged, so the next round can tell which IDs a fix changed. [agent]
+- **FR-24** WHEN the scope or consistency lens runs THE SYSTEM SHALL add `intake.md` and the human's answers from `grill.md` (the question and answer lines of `[human]` answers only) to the scope lens's pack, and the memory pack to the consistency lens's pack, and to no other lens's. [human]
+- **FR-25** THE SYSTEM SHALL let the agent judge whether a fix changes behaviour, and list every such judgement for the human at the gate. [research: RF-7]
+- **FR-26** IF a lens the gate needs has no agent card THEN THE SYSTEM SHALL block the gate before any lens runs and name the missing card. [human]
+- **FR-27** WHEN the jury picks lenses THE SYSTEM SHALL also run the consistency lens IF `nio pack` for the spec returns an approved or current decision, and the scope lens IF the spec names a new dependency or an FR that no intake sentence maps to, showing the human each trigger's reason. [human]
+- **FR-28** IF the host has no subagents THEN THE SYSTEM SHALL NOT play a lens in the jury agent's own session; it SHALL write each juror's pack to the run folder, ask the human to run it in a fresh session, and record the manual run on the verdict. [human]
 
 ## Rules
 
@@ -192,13 +198,7 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
 - **Refuter batch**: the blocker and major findings `nio jury collect` prints for validation. [human]
 - **Ledger**: `.nio/specs/<slug>/jury/spec.md` (and its `.json`), written only by `nio jury`, committed. [human]
 - **Verdict record**: the `V-*` record `nio jury check --record` writes to memory, pointing at the ledger. [human]
-- **Rung**: low, medium or high, picked by triage; recorded as the ledger's tier. [human]
-- **FR-23** WHEN the jury collects a round THE SYSTEM SHALL record the version of the spec it judged, so the next round can tell which IDs a fix changed. [agent]
-- **FR-24** WHEN the scope or consistency lens runs THE SYSTEM SHALL add `intake.md` to the scope lens's pack and the memory pack to the consistency lens's pack, and to no other lens's. [research: RF-10]
-- **FR-25** THE SYSTEM SHALL let the agent judge whether a fix changes behaviour, and list every such judgement for the human at the gate. [research: RF-7]
-- **FR-26** IF a lens the gate needs has no agent card THEN THE SYSTEM SHALL block the gate before any lens runs and name the missing card. [human]
-- **FR-27** WHEN the jury picks lenses THE SYSTEM SHALL also run the consistency lens IF `nio pack` for the spec returns an approved or current decision, and the scope lens IF the spec names a new dependency or an FR that no intake sentence maps to, showing the human each trigger's reason. [human]
-- **FR-28** IF the host has no subagents THEN THE SYSTEM SHALL NOT play a lens in the jury agent's own session; it SHALL write each juror's pack to the run folder, ask the human to run it in a fresh session, and record the manual run on the verdict. [human]
+- **Rung**: low, medium or high, set from the risk flags (FR-3); recorded as the ledger's tier. [derived: FR-3]
 
 ## Non-functional requirements
 - **NFR-1** THE SYSTEM SHALL run at most the configured number of lens runs per gate (default 6, each juror counted) without the human's choice. [human]
@@ -231,6 +231,7 @@ packs, left out of #27. It covers the spec gate; the plan and tasks gates come w
 - A juror on the drafter's model prefers text it recognises as its own (Panickssery 2024). [human]
 
 ## Decisions
+- The scope lens also gets the human's grill answers, so an answer given in the grill counts as asked for (jury dogfood, 2026-10-25).
 - Without subagents, a lens runs in a fresh session started by the human, never in the jury agent's own (grill, 2026-10-25).
 - The skill triggers consistency (approved or current memory in `nio pack`) and the non-count scope triggers (a new dependency, an FR missing from the intake), with reasons shown (grill, 2026-10-25).
 - The jury ships with the five missing v1 lens cards (testability, adversary, security, scope, consistency); from then on a triggered lens without a card blocks the gate (grill, 2026-10-25).

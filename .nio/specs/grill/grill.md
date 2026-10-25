@@ -116,3 +116,72 @@ Patched: FR-3, AC-3; added FR-31, FR-32, FR-33, AC-28, AC-29, AC-30; Decisions
 ## Derived · UJ-1 misuse, US-1 why, AC-28 · 2026-10-25 (review)
 Rounds mode (FR-3) allows independent questions together, so the misuse is mixing dependent ones; Decisions may name a
 renamed term.
+
+## Session 4 · 2026-10-25 · fixes from the spec jury (V-261025-qmmq, rejected)
+
+## Jury fix · J-1, J-3 · state table
+The contradiction state now asks the resolution question (ask next → contradiction) and its answer resolves it
+(answer → idle); asking waits for a question or a whole round (FR-3, FR-13). No behaviour change. [agent]
+
+## Jury fix · J-4, J-7 · non-goals
+"Several questions in one message" is now "by default; rounds mode is opt-in (FR-3)"; "guessing" now excepts the
+below-the-bar `[agent]` calls (FR-16). They had gone stale after Q13 and Q8. [agent]
+
+## Jury fix · J-13 · AC-10
+The Observable is checkable: every decision point `--gate` listed ends `[human]`, `[agent]`, `[derived]` or `[deferred]`. [agent]
+
+## Q14 · J-2, J-5, J-6, J-9, J-12, J-17 · 2026-10-25
+Question: The jury found four behaviours in the grill spec that no logged answer of yours names. Which do you keep?
+Options (several allowed): 1. Money + breaking changes always asked: permissions, irreversible operations, money,
+deletion and breaking changes are never below the bar and always wait for the human, even when delegated (recommended)
+2. Configurable 15 + epic suggestion: the interval is configurable (default 15), and the first pause suggests an epic
+when more than 15 points are open (recommended) 3. Passivity only above 3 answers (recommended) 4. Facts carry their
+source: each verified fact in a question names its RF-n, file:line or spec ID (recommended)
+Answer: 1. Money + breaking changes always asked; 2. Configurable 15 + epic suggestion; 4. Facts carry their source [human]
+Patched: FR-12, decision table header, FR-33 (no threshold), FR-4, AC-4, Decisions; added AC-31, AC-32, AC-33 (J-15)
+
+## Q15 · J-14 · 2026-10-25
+Question: How does the grill decide that a goal's core facet is 'covered', and that a point is below the bar?
+Options: 1. Logged checklist: a facet is covered when grill.md logs a question or call for that goal tagged with it; the
+bar is a fixed yes/no list (can a user do, see, who may, data, cost), any yes means ask, recorded per call (recommended)
+2. Facets as spec sections 3. Leave it to judgement
+Answer: 1. Logged checklist: a facet is covered when grill.md logs a question or call tagged with it; the bar is the
+five-question yes/no list, any yes means ask, recorded per call [human]
+Patched: FR-9, FR-10, AC-14, AC-15, Decisions; and FR-4 (J-17, which hadn't applied)
+
+## Q16 · J-16 · 2026-10-25
+Question: What does the grill do when a fact lookup finds nothing, or finds conflicting answers?
+Options: 1. Show it, then you choose: show what was searched and found; the human decides it now ([human]) or defers it
+(DF-n); a conflict between sources is a contradiction (recommended) 2. Always defer 3. Always ask you
+Answer: 1. Show it, then you choose: show what was searched and found; decide now ([human]) or defer (DF-n); conflicting
+sources are a contradiction [human]
+Patched: FR-34, AC-34, Decisions
+
+## Q17 · J-10 · 2026-10-25
+Question: Should the grill spec split its `nio check spec` changes into a slice of their own?
+Options: 1. Out of scope: it's built (recommended) 2. Accept the risk 3. Split it: an epic with two slices (the grill
+loop, the checker changes), each re-drafted and juried
+Answer: 3. Split it: an epic with two slices, the grill loop and the checker changes, each juried [human]
+Patched: epic "grilling/R-1"; retired FR-27, FR-28, FR-29 (to the grill-checks slice); AC-12, AC-16, AC-25, AC-27, AC-28,
+FR-30, UJ-2 trimmed to the grill's own behaviour; Decisions
+
+## Q18 · J-20 · 2026-10-25
+Question: How does the append-only grill.md record a question you haven't answered yet, so a crashed session can resume it?
+Options: 1. Two entries: asked, then answered: an `Asked · Qn` entry when asking, the answer entry when answering; on
+resume an Asked entry with no answer is asked first (recommended) 2. Drop AC-21, re-derive 3. Pending file
+Answer: 1. Two entries: an Asked entry when asking, then the answer entry; on resume an Asked entry with no answer is
+asked first [human]
+Patched: FR-19, FR-20, AC-19, AC-21, Decisions
+
+## Jury fix · J-18, J-19, J-22, J-29 · round 2
+The decision table gains "lookup settles it" (an unfindable fact goes to the human, FR-34) and "core facets covered"
+(the bar applies only after them, FR-9); FR-9 and AC-15 count only questions and fact lookups toward coverage; the
+contradiction state holds until resolved and flags a second one; AC-17 and AC-26 cover the full always-human list. [agent]
+
+## Q19 · J-31 to J-35 · 2026-10-25
+Question: The logic lens found 5 new issues in round 3. How do we close the grill spec's jury?
+Options: 1. Fix wording, accept the rest: fix J-33 and J-35, accept J-31, J-32 and J-34 as risk in #51, record the verdict
+without another lens round, and open an issue for a jury convergence rule (recommended) 2. One more fix round 3. Decide
+all five yourself now
+Answer: 1. Fix wording, accept the rest, record the verdict without another lens round [human]
+Patched: AC-11 (only finish ends as done), AC-15 (the facet order applies among settled prerequisites)
