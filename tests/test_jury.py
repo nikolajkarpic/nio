@@ -94,6 +94,8 @@ def test_gate():
         pass
     jury.dispose(root, "refunds", "spec", "J-2", "spec-fix", "agent", "AC-1 now says the order ends in `refunded`")
     jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2; FR-1 no longer lists shipped")
+    outcome, lines = jury.check(root, "refunds", "spec")  # disposed as fixed, but the spec still reads the same
+    assert outcome == "rejected" and "- spec-fix without a change to the spec: J-1, J-2" in lines, lines
     (root / ".nio/specs/refunds/spec.md").write_text(SPEC.replace("paid or shipped", "paid"))
     outcome, lines = jury.check(root, "refunds", "spec")  # every finding disposed, but no juror saw the fixed spec yet
     assert outcome == "rerun" and any("changed since round" in line for line in lines), lines
@@ -191,12 +193,15 @@ def test_deferred_points_need_the_human():
         raise AssertionError("an agent closed a deferred point")
     except ValueError:
         pass
-    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2 in a second session")
-    jury.dispose(root, "refunds", "spec", "J-2", "accepted-risk", "human", "30 days, revisit after launch")
-    outcome, lines = jury.check(root, "refunds", "spec")  # disposed as fixed, but the spec still reads the same
-    assert outcome == "rejected" and "- spec-fix without a change to the spec: J-1" in lines, lines
+    try:
+        jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2 in a second session")
+        raise AssertionError("a spec-fix closed a deferred point still in ## Deferred")
+    except ValueError as e:
+        assert "DF-1 is still in `## Deferred`" in str(e), e
     spec = root / ".nio/specs/refunds/spec.md"
     spec.write_text(spec.read_text().replace("- **DF-1** (from FR-2; contradiction) FR-1 and FR-2 disagree on shipped orders.\n", ""))
+    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2 in a second session")
+    jury.dispose(root, "refunds", "spec", "J-2", "accepted-risk", "human", "30 days, revisit after launch")
     assert jury.check(root, "refunds", "spec")[0] == "rerun"  # the fix is in: the lenses judge it next
     print("ok")
 
