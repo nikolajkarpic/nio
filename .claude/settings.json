@@ -1,0 +1,9 @@
+{
+  "remoteControlAtStartup": true,
+  "includeCoAuthoredBy": false,
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  }
+}
