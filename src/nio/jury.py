@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 
-from nio import records
+from nio import records, spec
 
 GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "architecture.md"], "tasks": ["tasks.md"]}
 KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "inconsistency"}
@@ -122,6 +122,8 @@ def collect(root, slug, gate, run, expect=(), tier=None):
     if new:
         led["round"] += 1
         out += merge(led, new, gate, slug, text)
+    if gate == "spec":
+        out += deferred(led, root, slug)
     refuter = jury / f"{gate}-refuter.md"
     if refuter.exists():
         sha = hashlib.sha256(refuter.read_bytes()).hexdigest()
@@ -136,6 +138,29 @@ def collect(root, slug, gate, run, expect=(), tier=None):
             out += [f"### {f['id']} {f['title']}", f"- kind: {f['kind']}, severity: {f['severity']}, cites: {', '.join(f['cites'])}"]
             out += [f'- quote: "{q}"' for q in f["quotes"]]
             out += [f"- situation ({s['lens']}): {s['situation']}" for s in f["sources"]] + [f"- fix: {f['fix']}", ""]
+    return out
+
+
+def deferred(led, root, slug):
+    """Points the grill deferred (#22) become findings only the human can close: a contradiction blocks, anything else is major."""
+    out, body = [], spec.sections(spec.path(root, slug).read_text().splitlines()).get("Deferred", [])
+    known = {c for f in led["findings"] for c in f["cites"]}
+    for did, block in spec.items(body):
+        if did in known:
+            continue
+        line = block[0]
+        m = re.match(r"^\(from ([^;)]+?)(;\s*contradiction)?\)\s*(.+)$", spec.DEF.sub("", line, count=1).strip())
+        if not m:
+            continue  # `nio check spec` reports the malformed line
+        conflict = bool(m[2])
+        f = {"id": f"J-{len(led['findings']) + 1}", "title": f"Deferred by the grill: {m[3][:80]}", "kind": "contradiction" if conflict else "gap",
+             "severity": "blocker" if conflict else "major", "cites": [did, m[1]], "evidence": "observed", "quotes": [line.strip()],
+             "fix": "settle it in a grill session, or accept the risk or rule it out of scope",
+             "sources": [{"juror": "grill", "lens": "deferred", "situation": m[3], "severity": "blocker" if conflict else "major"}],
+             "validation": "confirmed", "reason": "deferred by the grill; only the human can close it", "status": "open",
+             "disposition": "", "by": "", "note": "", "baseline": "new", "rounds": 0, "first_round": led["round"], "last_round": led["round"]}
+        led["findings"].append(f)
+        out.append(f"new     {f['id']} [{f['severity']}/{f['kind']}] {f['title']} (deferred)")
     return out
 
 
@@ -230,6 +255,8 @@ def dispose(root, slug, gate, fid, disposition, by, note):
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
     if disposition in HUMAN_ONLY and by != "human":
         raise ValueError(f"{disposition} is the human's call (--by human)")
+    if any(s["lens"] == "deferred" for s in f["sources"]) and by == "agent":
+        raise ValueError(f"{fid} was deferred by the grill; only the human closes it (--by human, or --by grill once a session settles it)")
     if f["status"] != "open" and not (by == "human" and f["status"] == "disposed"):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
     f.update(status="disposed", disposition=disposition, by=by, note=note)

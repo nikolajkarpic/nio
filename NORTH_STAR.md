@@ -31,8 +31,8 @@ An evaluator reads what the user asked for and routes it:
   configs and personas. NIO writes this down before any other stage runs.
 
 ### Grilling (every stage)
-- One question at a time. NIO recommends one or two answers, and the human can always
-  type their own instead.
+- One question at a time. NIO offers 3 options (fewer only when no real alternative
+  exists) with one recommended, and the human can always type their own instead.
 - **Contradictions** are flagged and must be resolved before moving on.
 - **Stop condition:** each template has a checklist of required fields. Grilling stops
   when every field is filled and nothing is vague or contradictory.

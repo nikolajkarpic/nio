@@ -14,7 +14,7 @@ ROUTES = {
     "epic": {"mandatory": ["Summary", "Actors and journeys", "Roadmap", "Non-goals"], "ids": {"A", "UJ", "R"}, "template": "spec-epic"},
 }
 OPTIONAL = ["Rules", "Key entities", "Non-functional requirements", "Success criteria", "Glossary", "Risks and evidence against",
-            "Decisions", "Open points"]
+            "Decisions", "Open points", "Deferred"]
 RISKS = {"auth", "pii", "money", "external-input", "data-deletion", "migration", "multi-party", "public-api"}
 # #47's triggers; `money` isn't in its mapping, so it brings in the adversary (abuse of payments)
 LENSES = {"adversary": {"external-input", "multi-party", "public-api", "money"}, "security": {"auth", "pii"},
@@ -23,7 +23,10 @@ SCOPE_FRS = 8  # more FRs than this triggers the scope lens (#47)
 TAGGED = {"A", "UJ", "US", "AC", "FR", "NFR", "SC", "CB", "EB", "UB"}  # items that must carry provenance
 SHALL = {"FR", "EB", "UB"}
 LEVELS = {"unit", "integration", "e2e"}
-TAG = re.compile(r"\[(human|default|research: RF-\d+)\]\s*$")
+# provenance (#20, #22): the human said it; the agent proposed it; an agent decided it (delegated, or below the grill's
+# bar); research backs it; it follows from other items; or the grill deferred it
+TAG = re.compile(r"\[(human|default|agent|research: RF-\d+|derived: [A-Z]+-\d+(?:,\s*[A-Z]+-\d+)*|deferred: DF-\d+)\]\s*$")
+TAGS = "[human], [default], [agent], [research: RF-n], [derived: <IDs>] or [deferred: DF-n]"
 # a spec ID is not followed by another dash, so a memory record ID like **D-261025-k2m4** isn't read as one
 DEF = re.compile(r"^(?:- )?\*\*([A-Z]+-\d+)(?![-\w])[^*]*\*\*|^### ([A-Z]+-\d+)(?![-\w])")
 CITE = re.compile(r"^\(([A-Z]+-\d+(?:,\s*[A-Z]+-\d+)*)\)")
@@ -107,7 +110,7 @@ def check_state(name, rows):
             errs.append(f"state table {title} row {r[0]}: {len(r)} cells, the header has {len(rows[0])}")
             continue
         if not TAG.search(r[-1]):
-            errs.append(f"state table {title} row {r[0]}: `Src` must be [human], [default] or [research: RF-n]")
+            errs.append(f"state table {title} row {r[0]}: `Src` must be {TAGS}")
         for event, cell in zip(events, r[1:-1]):
             go = re.fullmatch(r"(?:→|->)\s*(.+)", cell)
             if go:
@@ -150,7 +153,7 @@ def check_decision(title, rows):
             continue
         bad = [f"`{r[i]}` is not a value of {name}" for i, name, vals in conds if r[i] != "-" and r[i] not in vals]
         bad += [f"output `{rows[0][i]}` is empty" for i in outs if not r[i]]
-        bad += ["`Src` must be [human], [default] or [research: RF-n]"] * (not TAG.search(r[-1]))
+        bad += [f"`Src` must be {TAGS}"] * (not TAG.search(r[-1]))
         errs += [f"decision table {title} row {label}: {b}" for b in bad]
         good.append(r)
     for combo in itertools.product(*[vals for _, _, vals in conds]):
@@ -211,7 +214,8 @@ def check(root, slug, gate=False, base="HEAD"):
     for s, lines in secs.items():
         if re.fullmatch(r"(n/?a|none|tbd|-)\.?", "\n".join(lines).strip().lower()):
             errs.append(f"section `## {s}` says N/A; remove a section that doesn't apply")
-        if any(re.search(r"<[a-z][^>]*>", line) for line in lines):
+        # `<slug>` inside a code span is content (a command, a path), not a template placeholder
+        if any(re.search(r"<[a-z][^>]*>", re.sub(r"`[^`]*`", "", line)) for line in lines):
             errs.append(f"section `## {s}` still has template `<placeholders>`")
 
     found = {}
@@ -225,13 +229,13 @@ def check(root, slug, gate=False, base="HEAD"):
         prefix = iid.split("-")[0]
         if len(defs) > 1:
             errs.append(f"{iid} is defined {len(defs)} times")
-        if prefix not in ROUTES[route]["ids"] | {"OP"}:
+        if prefix not in ROUTES[route]["ids"] | {"OP", "DF"}:
             errs.append(f"{iid}: `{prefix}` IDs don't belong in a {route} spec ({', '.join(sorted(ROUTES[route]['ids']))})")
         if iid in retired:
             errs.append(f"{iid} is retired and can't be used again")
         s, block = defs[0]
         if prefix in TAGGED and not TAG.search(block[0]):
-            errs.append(f"{iid}: its line must end with [human], [default] or [research: RF-n]")
+            errs.append(f"{iid}: its line must end with {TAGS}")
         if prefix in SHALL and "SHALL" not in block[0]:
             errs.append(f"{iid}: state it with SHALL (EARS: THE SYSTEM SHALL, WHEN … THE SYSTEM SHALL, IF … THEN …)")
         if prefix == "US":
@@ -243,9 +247,12 @@ def check(root, slug, gate=False, base="HEAD"):
             errs += check_ac(iid, block, found, route)
         if prefix == "OP":
             errs += check_op(iid, block[0], s, found, allowed)
+        if prefix == "DF":
+            errs += check_df(iid, block[0], s, found, retired, allowed)
+    errs += check_tags(body, found)
     for line in secs.get("Non-goals", []):
         if line.startswith("- ") and not TAG.search(line):
-            errs.append(f"non-goal `{line[2:40]}…` must end with [human], [default] or [research: RF-n]")
+            errs.append(f"non-goal `{line[2:40]}…` must end with {TAGS}")
     targets = {"full": ["FR"], "lite": ["EB", "UB"]}.get(route, [])
     cited = {c for iid, defs in found.items() if iid.startswith("AC-") for c in cites(defs[0][1][0])}
     errs += [f"{iid} has no AC" for iid in found if iid.split("-")[0] in targets and iid not in cited]
@@ -261,7 +268,8 @@ def check(root, slug, gate=False, base="HEAD"):
 
     if gate:
         for line in body:  # name each one, so the grill can ask about it
-            if "[default]" in line:
+            # the tag at the end of a line or in a table's `Src` cell; prose that mentions `[default]` in a code span is not one
+            if re.search(r"\[default\]\s*\|?\s*$", re.sub(r"`[^`]*`", "", line)):
                 m = DEF.match(line)
                 what = (m[1] or m[2]) if m else f"`{line.strip()[:50]}`"
                 errs.append(f"{what} is still [default]; the grill must confirm it ([human]) or research must back it")
@@ -272,7 +280,17 @@ def check(root, slug, gate=False, base="HEAD"):
     lenses = ["testability", "logic"] + [lens for lens, flags in LENSES.items() if flags & set(risk)]
     if sum(i.startswith("FR-") for i in found) > SCOPE_FRS:
         lenses.append(f"scope (more than {SCOPE_FRS} FRs)")
-    return [f"{rel}: {e}" for e in errs], [f"lenses: {', '.join(lenses)}"]
+    notes = [f"lenses: {', '.join(lenses)}"]
+    # what the grill's finish gate shows the human: calls nobody asked them, consequences, and what was deferred
+    for label, kind in (("agent calls", "agent"), ("derived", "derived"), ("deferred", "deferred")):
+        ids = [i for i, defs in found.items() if (m := TAG.search(defs[0][1][0])) and m[1].startswith(kind)]
+        # table rows and lines without an ID carry the tag too; count them so the human knows they exist
+        loose = sum(1 for line in body if re.search(rf"\[{kind}\b", re.sub(r"`[^`]*`", "", line)) and not DEF.match(line))
+        more = [f"{loose} line{'s' * (loose > 1)} without an ID"] * bool(loose)
+        notes += [f"{label}: {', '.join(ids + more)}"] * bool(ids or loose)
+    dfs = [f"{i} (contradiction)" if "; contradiction)" in defs[0][1][0] else i for i, defs in found.items() if i.startswith("DF-")]
+    notes += [f"deferred points: {', '.join(dfs)}"] * bool(dfs)
+    return [f"{rel}: {e}" for e in errs], notes
 
 
 def cites(line):
@@ -292,6 +310,47 @@ def check_op(iid, line, section, found, sections_allowed):
     target = m[2].strip()
     # a section that isn't written yet is a fine target: "(decision; Rules)" before any table exists
     return [] if target in found or target in sections_allowed else [f"{iid}: its target `{target}` is neither an ID nor a section"]
+
+
+def check_tags(body, found):
+    """Wherever `[derived: …]` appears (an item, a table's Src cell, any line), its sources exist and are settled:
+    answered, researched or decided by an agent, never a proposal, a deferred point or another derived item.
+    `[deferred: DF-n]` names a point in `## Deferred`."""
+    errs = []
+    for line in body:
+        text = re.sub(r"`[^`]*`", "", line)
+        m = DEF.match(line)
+        where = (m[1] or m[2]) if m else f"`{line.strip()[:40]}`"
+        for tag in re.findall(r"\[derived: ([^\]]*)\]", text):
+            for src in [s.strip() for s in tag.split(",")]:
+                if src.startswith("RF-"):
+                    continue  # a research finding in research.md
+                t = TAG.search(found[src][0][1][0]) if src in found else None
+                if src not in found:
+                    errs.append(f"{where} is derived from {src}, which isn't defined")
+                elif not t or not t[1].startswith(("human", "agent", "research")):
+                    errs.append(f"{where} is derived from {src}, which is {t[1] if t else 'untagged'}; derive only from answers and research")
+        for did in re.findall(r"\[deferred: (DF-\d+)\]", text):
+            if did not in found:
+                errs.append(f"{where} points at {did}, which isn't in `## Deferred`")
+    return errs
+
+
+def check_df(iid, line, section, found, retired, sections_allowed):
+    """`**DF-1** (from OP-4[; contradiction]) <what is unsettled>`: a point the grill deferred when it ended early.
+    The source is an open point, an item, or the section of a line without an ID (a table row, a non-goal)."""
+    if section != "Deferred":
+        return [f"{iid}: deferred points belong in `## Deferred`"]
+    m = re.match(r"^\(from ([^;)]+?)(;\s*contradiction)?\)\s*\S", DEF.sub("", line, count=1).strip())
+    if not m:
+        return [f"{iid}: write it as `**{iid}** (from <OP, item ID or section>[; contradiction]) <what is unsettled>`"]
+    src = m[1].strip()
+    if not re.fullmatch(r"[A-Z]+-\d+", src):
+        return [] if src in sections_allowed else [f"{iid} comes from `{src}`, which is neither an ID nor a section"]
+    if src.startswith("OP-"):
+        return [] if src in retired else [f"{iid} comes from {src}, which must move to `retired:` once deferred"]
+    tag = TAG.search(found[src][0][1][0]) if src in found else None
+    return [] if tag and tag[1] == f"deferred: {iid}" else [f"{iid} comes from {src}, whose line must end with [deferred: {iid}]"]
 
 
 def check_ac(iid, block, found, route):

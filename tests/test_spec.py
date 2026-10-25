@@ -134,6 +134,15 @@ def test_edge_cases():
     ]
     for edit, wanted in cases:
         has(errors(root, put(root, "spec.md", edit)), wanted)
+    # a placeholder-looking word inside a code span is content
+    slug = put(root, "spec.md", lambda t: t.replace("refund the full order amount. [human]", "refund the full order amount via `refund <order>`. [human]"))
+    assert errors(root, slug) == [], errors(root, slug)
+    # a table row's Src cell counts
+    slug = put(root, "spec.md", lambda t: t.replace("| paid | → shipped | → refunded | [human] |", "| paid | → shipped | → refunded | [default] |"))
+    has(errors(root, slug, gate=True), "`| paid | → shipped | → refunded | [default] |` is still [default]")
+    # prose that mentions the tag is not an unsettled item
+    slug = put(root, "spec-bugfix.md", lambda t: t.replace("Repro: open", "Repro (no `[default]` here): open"))
+    assert errors(root, slug, gate=True) == [], errors(root, slug, gate=True)
     # the values are in the last parentheses of a condition header
     slug = put(root, "spec.md", lambda t: t.replace("items returned (all, some)", "items returned (count) (all, some)"))
     assert errors(root, slug) == [], errors(root, slug)
@@ -145,7 +154,46 @@ def test_edge_cases():
     print("ok")
 
 
+def test_grill_provenance():
+    """What the grill writes: agent calls, derived items and deferred points pass the gate and are listed for the human."""
+    root = repo()
+    settled = lambda t: t.replace("[default]", "[agent]").replace(
+        "- **OP-1** (decision; FR-1) Can support refund an order after 30 days?\n", "").replace("retired: []", "retired: [OP-1]")
+    deferred = "\n## Deferred\n- **DF-1** (from OP-1) Can support refund an order after 30 days? Deferred: the human ended early.\n"
+    slug = put(root, "spec.md", lambda t: settled(t).replace("refund the full order amount. [human]", "refund the full order amount. [agent]").replace(
+        "then it is rejected. [human]", "then it is rejected. [derived: FR-2]") + deferred)
+    errs, notes = spec.check(root, slug, gate=True)
+    assert errs == [], errs
+    assert "agent calls: FR-1, 1 line without an ID" in notes and "derived: AC-2" in notes and "deferred points: DF-1" in notes, notes
+    cases = [
+        (lambda t: settled(t).replace("then it is rejected. [human]", "then it is rejected. [derived: FR-9]"), "derived from FR-9, which isn't defined"),
+        (lambda t: settled(t).replace("refund the full order amount. [human]", "refund the full order amount. [derived: FR-2]").replace(
+            "the refund request. [human]", "the refund request. [derived: AC-1]"), "derived from FR-2, which is derived: AC-1"),
+        (lambda t: settled(t).replace("retired: [OP-1]", "retired: []") + deferred, "comes from OP-1, which must move to `retired:`"),
+        (lambda t: settled(t) + "\n## Deferred\n- **DF-2** (from FR-2; contradiction) FR-2 and FR-1 disagree.\n", "whose line must end with [deferred: DF-2]"),
+        (lambda t: settled(t).replace("the refund request. [human]", "the refund request. [deferred: DF-3]"), "points at DF-3"),
+        # a table row's Src is checked too, and a proposal can't be a source
+        (lambda t: settled(t).replace("| paid | - | full | [human] |", "| paid | - | full | [derived: FR-9] |"), "is derived from FR-9, which isn't defined"),
+        (lambda t: t.replace("then it is rejected. [human]", "then it is rejected. [derived: FR-1]").replace(
+            "refund the full order amount. [human]", "refund the full order amount. [default]"), "is derived from FR-1, which is default"),
+    ]
+    for edit, wanted in cases:
+        has(errors(root, put(root, "spec.md", edit)), wanted)
+    # a line without an ID is deferred from its section
+    slug = put(root, "spec.md", lambda t: settled(t).replace("| paid | - | full | [human] |", "| paid | - | full | [deferred: DF-4] |")
+               + "\n## Deferred\n- **DF-4** (from Rules) Is a paid order refunded in full?\n")
+    assert errors(root, slug, gate=True) == [], errors(root, slug, gate=True)
+    has(errors(root, put(root, "spec.md", lambda t: settled(t) + "\n## Deferred\n- **DF-5** (from Somewhere) x\n")), "comes from `Somewhere`")
+    # an item deferred with a contradiction, pointing both ways
+    slug = put(root, "spec.md", lambda t: settled(t).replace("the refund request. [human]", "the refund request. [deferred: DF-2]")
+               + "\n## Deferred\n- **DF-2** (from FR-2; contradiction) FR-2 and the state table disagree on refunded orders.\n")
+    errs, notes = spec.check(root, slug, gate=True)
+    assert errs == [] and "deferred points: DF-2 (contradiction)" in notes, (errs, notes)
+    print("ok")
+
+
 if __name__ == "__main__":
+    test_grill_provenance()
     test_edge_cases()
     test_examples_pass()
     test_templates_need_filling()
