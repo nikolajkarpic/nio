@@ -1,12 +1,13 @@
-"""Git hooks: refresh .nio/cache/index.db in the background after pulls, checkouts and rebases, and run the CI
-check before commits and pushes. Only the checks block git, and only when `nio` is installed."""
+"""Git hooks: refresh .nio/cache/index.db in the background and re-render agent cards after pulls, checkouts and
+rebases, and run the CI check before commits and pushes. Only the checks block git, and only when `nio` is installed."""
 import shutil
 from pathlib import Path
 
 from nio import records
 
 MARK = "# nio: memory hooks (installed by `nio hooks`)"
-INDEX = '[ -x "$NIO" ] && ( "$NIO" index </dev/null >/dev/null 2>&1 & )'
+# the index refresh is slow, so it runs in the background; rendering agent cards is quick
+INDEX = '[ -x "$NIO" ] && ( "$NIO" index </dev/null >/dev/null 2>&1 & )\n[ -x "$NIO" ] && "$NIO" agents sync >/dev/null 2>&1'
 def check(base):
     """The CI check; on failure print the errors and stop git."""
     return f"""if [ -x "$NIO" ]; then
@@ -21,7 +22,7 @@ fi"""
 BLOCKS = {
     # a merge can bring in a second record superseding the same decision: say so now, CI blocks the PR
     "post-merge": '[ -x "$NIO" ] && "$NIO" check | grep "^ERROR" && echo "nio: memory has errors after this merge; run nio check"\n' + INDEX,
-    "post-checkout": f'[ "${{3:-1}}" = 1 ] && {INDEX}',  # branch switches only, not checking out single files
+    "post-checkout": f'if [ "${{3:-1}}" = 1 ]; then\n{INDEX}\nfi',  # branch switches only, not checking out single files
     "post-rewrite": INDEX,
     "pre-commit": check("HEAD"),
     # the remote's default branch, like CI's PR base; CI still checks the merge result
@@ -31,7 +32,8 @@ BLOCKS = {
 
 
 def install(root, nio=None):
-    """Add the nio block to each hook, keeping whatever the hook already does. Returns the hook paths."""
+    """Add the nio block to each hook, or replace the one an older install wrote, keeping whatever else the hook
+    does. Returns the hook paths."""
     nio = nio or shutil.which("nio")
     if not nio:
         raise ValueError("`nio` is not on PATH; install it with `uv tool install` or run this through `uv run`")
@@ -41,9 +43,11 @@ def install(root, nio=None):
     for name, block in BLOCKS.items():
         path = folder / name
         text = path.read_text() if path.exists() else "#!/bin/sh\n"
-        if MARK not in text:
-            # `true`: post-checkout's status becomes git's, and a skipped step must not fail the checkout
-            path.write_text(text.rstrip("\n") + f'\n\n{MARK}\nNIO="{Path(nio).absolute()}"\n{block}\ntrue\n')
+        if MARK in text:  # the block always ends at its own `true` line
+            head, tail = text.split(MARK, 1)
+            text = head + tail.split("\ntrue\n", 1)[1] if "\ntrue\n" in tail else head
+        # `true`: post-checkout's status becomes git's, and a skipped step must not fail the checkout
+        path.write_text(text.rstrip("\n") + f'\n\n{MARK}\nNIO="{Path(nio).absolute()}"\n{block}\ntrue\n')
         path.chmod(path.stat().st_mode | 0o111)
         out.append(path)
     return out

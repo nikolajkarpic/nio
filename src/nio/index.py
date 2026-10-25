@@ -1,7 +1,6 @@
 """Build .nio/cache/index.db (graph, FTS5, int8 vectors) and INDEX.md from the committed records."""
 import hashlib
 import importlib.metadata
-import json
 import os
 import sqlite3
 import subprocess
@@ -29,7 +28,7 @@ create virtual table if not exists vec using vec0(id text primary key, embedding
 
 
 def settings(root):
-    cfg = json.loads((root / ".nio/config.json").read_text())["memory"].get("index", {})
+    cfg = records.config(root)["memory"].get("index", {})
     return cfg.get("model", DEFAULT_MODEL), cfg.get("drift", DEFAULT_DRIFT)
 
 

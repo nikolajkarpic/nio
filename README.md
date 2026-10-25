@@ -105,11 +105,13 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio query "<question>" [--path F] [--graph ID]` | Find records by text or file, or walk links; `≈` marks a likely duplicate |
 | `nio get <ID>...` | Print records by ID |
 | `nio pack "<work>" [--path F] [--ac A] [--diff REF] [--run R]` | The memory that applies to a piece of work, for an agent to read before it starts |
-| `nio hooks` | Install git hooks: refresh the index after pulls, checkouts and rebases; run the CI check before commits and pushes |
+| `nio hooks` | Install git hooks: refresh the index and agent files after pulls, checkouts and rebases; run the CI check before commits and pushes |
+| `nio agents sync` | Render the agent cards (shipped, `~/.nio/agents/`, `.nio/agents/`) as `.claude/agents/nio-*` and `.codex/agents/nio-*`, with each tier's model from config |
+| `nio agents verify` | Check that recent Claude runs of `nio-*` agents used the model their tier maps to |
 | `nio status` | Index freshness against `HEAD` |
 | `nio run` | Start a run and its `promote.md` |
 
-Self-checks: `uv run python tests/test_records.py`, `tests/test_index.py`, `tests/test_pack.py` and `tests/test_hooks.py`.
+Self-checks: `uv run python tests/test_records.py`, `tests/test_index.py`, `tests/test_pack.py`, `tests/test_hooks.py` and `tests/test_agents.py`.
 
 ## Principles
 
