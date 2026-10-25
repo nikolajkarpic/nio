@@ -257,6 +257,8 @@ def check(root, slug, gate=False, base="HEAD"):
     cited = {c for iid, defs in found.items() if iid.startswith("AC-") for c in cites(defs[0][1][0])}
     errs += [f"{iid} has no AC" for iid in found if iid.split("-")[0] in targets and iid not in cited]
 
+    errs += check_glossary(secs)
+
     for name, lines in subsections(secs.get("Rules", [])):
         rows = table(lines)
         if name.startswith("State table:"):
@@ -310,6 +312,33 @@ def check_op(iid, line, section, found, sections_allowed):
     target = m[2].strip()
     # a section that isn't written yet is a fine target: "(decision; Rules)" before any table exists
     return [] if target in found or target in sections_allowed else [f"{iid}: its target `{target}` is neither an ID nor a section"]
+
+
+def check_glossary(secs):
+    """A glossary entry `- **Term**: … Never "x", "y".` bans its synonyms everywhere else in the spec, so the words
+    don't drift. Code spans are skipped; the glossary may name the words it bans, and Decisions may record a rename."""
+    entries = []  # one string per entry, its wrapped lines joined
+    for line in secs.get("Glossary", []):
+        if line.startswith("- "):
+            entries.append(line)
+        elif entries and line.startswith("  "):
+            entries[-1] += " " + line.strip()
+    banned = {}
+    for entry in entries:
+        m = re.match(r"^- \*\*([^*]+)\*\*:", entry)
+        if m and "Never" in entry:
+            for word in re.findall(r'"([^"]+)"', entry.split("Never", 1)[1]):
+                banned[word] = m[1]
+    errs = []
+    for s, lines in secs.items():
+        if s in ("Glossary", "Decisions"):
+            continue
+        for line in lines:
+            text = re.sub(r"`[^`]*`", "", line)
+            for word, term in banned.items():
+                if re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", text, re.I):
+                    errs.append(f"`## {s}` says \"{word}\"; the glossary says {term}: `{line.strip()[:50]}`")
+    return errs
 
 
 def check_tags(body, found):

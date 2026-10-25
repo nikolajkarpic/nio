@@ -103,3 +103,16 @@ Patched: FR-24, AC-7
 ## Derived · Rules: decision table "ask, settle or wait" · 2026-10-25 (review)
 The table predated the bar: it asked every decision once prerequisites were settled, contradicting FR-10 and FR-16.
 Added the "above the bar" condition; the new row (below the bar → agent call) is derived from FR-16.
+
+## Session 3 · 2026-10-25 · review against Pocock's grilling skills (mattpocock/skills @ 5beb35b)
+
+## Q13 · FR-3 and new FR-31 to FR-33 · 2026-10-25
+Question: Which of these should go into @nio:grill (and nio check spec)?
+Options (several allowed): 1. Glossary discipline + check (recommended) 2. Answer fidelity + passivity (recommended)
+3. Don't know / prototype + no chains (recommended) 4. Optional rounds mode
+Answer: 1, 2 and 4 [human]
+Patched: FR-3, AC-3; added FR-31, FR-32, FR-33, AC-28, AC-29, AC-30; Decisions
+
+## Derived · UJ-1 misuse, US-1 why, AC-28 · 2026-10-25 (review)
+Rounds mode (FR-3) allows independent questions together, so the misuse is mixing dependent ones; Decisions may name a
+renamed term.

@@ -28,7 +28,7 @@ stopped. The same skill later runs the architecture grill with a different quest
 2. It looks up every fact, settles what follows from earlier answers, and asks the human the next decision.
 3. The human answers (accepts the recommendation, picks another option, or types their own).
 4. The agent records the answer, patches the spec, and moves to the next point until the stop rule holds.
-- Misuse: the agent asks the human a fact it could have looked up, batches questions, or guesses a decision instead
+- Misuse: the agent asks the human a fact it could have looked up, puts dependent questions in one round, or guesses a decision instead
   of asking it.
 - Evidence: issue #22.
 
@@ -48,7 +48,7 @@ stopped. The same skill later runs the architecture grill with a different quest
 
 ### US-1 Answer only the decisions, one question at a time (P1) [agent]
 - **Why this priority:** this is the grill; without it nothing moves a draft past its `[default]` items and open
-  decisions, and asking facts or batching questions wastes the human's attention.
+  decisions, and asking facts or mixing dependent questions wastes the human's attention.
 - **Independent test:** grill a draft spec with known facts and decisions; the human is asked only the decisions,
   one per message, each in the agreed format, and every answer lands in the spec.
 
@@ -56,8 +56,8 @@ stopped. The same skill later runs the architecture grill with a different quest
   Observable: every question and call in `grill.md` names an ID that `--gate` listed. Level: integration.
 - **AC-2** (FR-2) Given a candidate point that the code, memory or docs answer, when the grill reaches it, then the agent looks it up and the human is never asked it. [human]
   Observable: the point is answered in `grill.md` with its source cited, and it is not in the asked list. Level: e2e.
-- **AC-3** (FR-3) Given several askable points, when the grill asks, then each message carries exactly one question. [human]
-  Observable: each grill message to the human contains one question. Level: e2e.
+- **AC-3** (FR-3) Given several askable points, when the grill asks, then each message carries exactly one question, unless rounds mode is on, when one numbered message carries the whole frontier. [human]
+  Observable: one question per message by default; with `grill.mode: rounds`, one numbered message per round, answerable by number. Level: e2e.
 - **AC-4** (FR-4) Given a question to ask, when it is shown, then it has a full question ending in `?`, a one-line why it matters, the verified facts it rests on, 3 options (fewer only when no real third exists) with exactly one recommended and why, and a free-form input. [human]
   Observable: the message has each of those parts, 1 to 3 options, and exactly one marked recommended. Level: e2e.
 - **AC-5** (FR-5) Given a question with a recommended option, when the human replies "yes", then the recommended option is recorded as the answer. [human]
@@ -66,6 +66,8 @@ stopped. The same skill later runs the architecture grill with a different quest
   Observable: grill.md logs the answer with its provenance; spec.md shows the patched item before the next question; a weighty decision has a D- record listed in Decisions. Level: e2e.
 - **AC-7** (FR-24) Given a free-form answer that can't be written as a testable item, when the grill records it, then it asks exactly one follow-up on that point, and if the reply is still vague, the point becomes an open decision point. [human]
   Observable: one follow-up entry in `grill.md` for that point, then either a patched item or a new `OP-n`; never a second follow-up in a row. Level: e2e.
+- **AC-28** (FR-31) Given the glossary says `Refund … Never "reimbursement"`, when the human answers "issue a reimbursement", then the grill asks whether they mean a refund before patching. [human]
+  Observable: a clarifying question in `grill.md` before the patch; `nio check spec` rejects "reimbursement" anywhere outside the glossary and Decisions. Level: e2e.
 
 ### US-2 Contradictions stop the loop until resolved (P1) [agent]
 - **Why this priority:** a contradiction left in the spec is a guess the implementer makes later; it must be settled
@@ -99,6 +101,10 @@ stopped. The same skill later runs the architecture grill with a different quest
   Observable: the point is not asked; its item ends with `[agent]`; the finish gate lists it. Level: e2e.
 - **AC-15** (FR-9, FR-10) Given a stated goal whose core facets are not all covered, when the grill picks the next question, then it picks a core facet before any other taxonomy category, and only after they are covered does the bar for asking rise. [human]
   Observable: no non-core question is asked for a goal while one of its 6 core facets is uncovered. Level: e2e.
+- **AC-29** (FR-32) Given an answer "never more than 3 retries" was patched as "a few retries", when the finish gate runs, then the grill restores "never more than 3" and logs the fix. [human]
+  Observable: the patched item says "never more than 3"; `grill.md` has the fidelity fix. Level: e2e.
+- **AC-30** (FR-33) Given the human accepted all 8 recommendations as-is, when the finish gate runs, then the grill says so and asks which decision they would push back on before offering to finish. [human]
+  Observable: the finish gate message states 8 of 8 accepted and asks for a pushback first. Level: e2e.
 
 ### US-4 Settle what follows, ask what matters (P2) [agent]
 - **Why this priority:** convergence depends on not asking what earlier answers already decide, but permissions and
@@ -145,7 +151,7 @@ stopped. The same skill later runs the architecture grill with a different quest
 ## Functional requirements
 - **FR-1** WHEN the grill starts on a spec THE SYSTEM SHALL take as its candidates every open point and `[default]` item that `nio check spec --gate` lists. [derived: FR-19]
 - **FR-2** WHEN a candidate point is a fact that code, memory, docs or research can answer THE SYSTEM SHALL look it up and never ask the human. [human]
-- **FR-3** THE SYSTEM SHALL ask the human one question at a time, never a batch. [human]
+- **FR-3** THE SYSTEM SHALL ask one question at a time by default, and the whole frontier as one numbered round when the config sets `grill.mode` to `rounds` or the human asks for rounds; a round never holds two questions where one answer could change the other. [human]
 - **FR-4** THE SYSTEM SHALL show each question as a full question ending in `?`, a one-line why it matters, the verified facts it rests on, 3 options (or only 1 or 2 when no more real alternatives exist, never filler) with exactly one marked recommended and why, and one free-form input. [human]
 - **FR-5** WHEN the human replies "yes" to a question THE SYSTEM SHALL take its recommended option as the answer. [human]
 - **FR-6** WHEN a question is answered THE SYSTEM SHALL log the answer in `grill.md` with its provenance, and WHEN the decision is costly to reverse, surprising, or a real trade-off THE SYSTEM SHALL also write a memory decision record through @nio:remember and list its ID in `## Decisions`. [human]
@@ -175,6 +181,10 @@ stopped. The same skill later runs the architecture grill with a different quest
 - **FR-29** THE SYSTEM SHALL accept `[derived: <sources>]` in `nio check spec`, including at the gate, only when every source exists and none is itself derived. [human]
 
 - **FR-30** IF the grill ends early while a contradiction is open THEN THE SYSTEM SHALL defer it as a `DF-n` marked contradiction that quotes both sides, and the jury SHALL treat it as a blocker finding. [human]
+- **FR-31** WHEN a term settles THE SYSTEM SHALL write it into `## Glossary` with its rejected synonyms, and WHEN the human uses a word the glossary defines differently THE SYSTEM SHALL ask which they mean before patching. [human]
+- **FR-32** WHEN the finish gate runs THE SYSTEM SHALL re-read every item patched in the session against its logged answer and restore any number, negative or ordering that drifted, logging the fix. [human]
+- **FR-33** IF the human accepted every recommendation of more than three as-is THEN THE SYSTEM SHALL say so at the finish gate and ask which decision they would push back on before offering to finish. [human]
+
 
 ## Rules
 
@@ -234,6 +244,7 @@ stopped. The same skill later runs the architecture grill with a different quest
   constraints, terminology, completion signals, placeholders.
 
 ## Decisions
+- From Pocock's grilling and domain-modeling (2026-10-25 review): an optional rounds mode (`grill.mode: rounds`), glossary discipline with banned synonyms checked by `nio check spec`, and an answer-fidelity and passivity check at the finish gate (grill, 2026-10-25).
 - The grill ends when `--gate` passes and the human, or a delegated agent, confirms; agent answers are tagged `[agent]`, and the always-human points wait for the human (grill, 2026-10-25).
 - Unsettled points of an early end move to `## Deferred` as `DF-n`; the gate lists them and the jury turns each into a finding for the human (grill, 2026-10-25).
 - Points that follow from accepted answers are written in as `[derived: <sources>]`, never chained from another derived item, and listed at the finish gate (grill, 2026-10-25).

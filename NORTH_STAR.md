@@ -31,8 +31,9 @@ An evaluator reads what the user asked for and routes it:
   configs and personas. NIO writes this down before any other stage runs.
 
 ### Grilling (every stage)
-- One question at a time. NIO offers 3 options (fewer only when no real alternative
-  exists) with one recommended, and the human can always type their own instead.
+- One question at a time (or numbered rounds of independent questions, if configured).
+  NIO offers 3 options (fewer only when no real alternative exists) with one recommended,
+  and the human can always type their own instead.
 - **Contradictions** are flagged and must be resolved before moving on.
 - **Stop condition:** each template has a checklist of required fields. Grilling stops
   when every field is filled and nothing is vague or contradictory.
@@ -86,11 +87,10 @@ the tasks, and then tests run.
 
 ## Jury (Byzantine review)
 
-- **Triage:** a small model rates the decision's risk and complexity.
-- **Escalation ladder:**
-  - low risk: 1 cheap juror
-  - medium: 1 strong juror
-  - high risk, or jurors disagree: 3 independent jurors, and 2 of 3 decide
+- **Triage:** the spec's risk flags set the verdict's risk tier. A triage model that can add
+  lenses comes later, if hit rates show lenses missing.
+- **Escalation ladder:** each lens runs once, on its own card's model. A lens whose blocker
+  the refuter confirmed is re-run with 3 independent jurors, and 2 of 3 decide.
 - **Independence:** jurors don't see each other's reasoning and each gets a different
   lens. No single juror is trusted on its own.
 - **Minimal context:** a juror gets a context pack (the diff, the task and its acceptance

@@ -137,6 +137,14 @@ def test_edge_cases():
     # a placeholder-looking word inside a code span is content
     slug = put(root, "spec.md", lambda t: t.replace("refund the full order amount. [human]", "refund the full order amount via `refund <order>`. [human]"))
     assert errors(root, slug) == [], errors(root, slug)
+    # a synonym the glossary bans can't appear elsewhere, even when the glossary entry wraps
+    slug = put(root, "spec.md", lambda t: t.replace("the customer requests a refund again", "the customer asks for a reimbursement again"))
+    has(errors(root, slug), "says \"reimbursement\"; the glossary says Refund")
+    slug = put(root, "spec.md", lambda t: t.replace('Never "reimbursement" or "chargeback".', 'Never "reimbursement" or\n  "chargeback".').replace(
+        "the customer requests a refund again", "the customer files a chargeback again"))
+    has(errors(root, slug), "says \"chargeback\"")
+    slug = put(root, "spec.md", lambda t: t.replace("(grill, 2026-10-25).", "(grill, 2026-10-25); renamed from reimbursement."))
+    assert errors(root, slug) == [], errors(root, slug)  # Decisions may record a rename
     # a table row's Src cell counts
     slug = put(root, "spec.md", lambda t: t.replace("| paid | → shipped | → refunded | [human] |", "| paid | → shipped | → refunded | [default] |"))
     has(errors(root, slug, gate=True), "`| paid | → shipped | → refunded | [default] |` is still [default]")
