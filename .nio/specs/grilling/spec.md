@@ -26,7 +26,7 @@ provenance tags and deferred points to account. Split into two slices after the 
 | ID | Slice | Intent | Scope boundary | Depends on | Status | Spec |
 | --- | --- | --- | --- | --- | --- | --- |
 | R-1 | The grill loop | Settle a spec with the human, one question (or round) at a time | in: the `@nio:grill` skill's behaviour; deferred: what the checker and jury enforce → R-2 | — | done | grill |
-| R-2 | Provenance checks | `nio check spec` and the jury enforce what the grill writes | in: `[agent]`, `[derived]`, `[deferred]`, `## Deferred`, banned synonyms, deferred findings in the jury; deferred: nothing | — | in-progress | grill-checks |
+| R-2 | Provenance checks | `nio check spec` and the jury enforce what the grill writes | in: `[agent]`, `[derived]`, `[deferred]`, `## Deferred`, banned synonyms, deferred findings in the jury; deferred: nothing | — | done | grill-checks |
 
 ## Non-goals
 - Other question sources (the architecture grill, the user advocate walk): they come with their own stages. [human]
