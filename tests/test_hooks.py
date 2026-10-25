@@ -30,15 +30,18 @@ def test_install():
     fake.chmod(0o755)
     (root / ".git/hooks/post-merge").write_text("#!/bin/sh\necho mine >> theirs.log\n")
     hooks.install(root, str(fake))
-    hooks.install(root, str(fake))  # twice is harmless
-    merge = (root / ".git/hooks/post-merge").read_text()
-    assert merge.count(hooks.MARK) == 1 and "echo mine" in merge, merge
-    # a branch switch refreshes the index; checking out a single file does not
+    merge = root / ".git/hooks/post-merge"
+    merge.write_text(merge.read_text().replace("agents sync", "old-step"))  # a hook from an older nio
+    merge.write_text(merge.read_text() + "echo after >> theirs.log\n")
+    hooks.install(root, str(fake))  # twice replaces the block instead of adding a second
+    text = merge.read_text()
+    assert text.count(hooks.MARK) == 1 and "echo mine" in text and "echo after" in text and "old-step" not in text, text
+    # a branch switch refreshes the index and the agent files; checking out a single file does not
     assert git(root, "checkout", "-q", "-b", "other").returncode == 0
-    assert wait_for(log, 1) == ["index"], wait_for(log, 1)
+    assert sorted(wait_for(log, 2)) == ["agents sync", "index"], wait_for(log, 2)
     assert git(root, "checkout", "-q", "--", "app.py").returncode == 0
     time.sleep(0.5)
-    assert wait_for(log, 1) == ["index"]
+    assert len(wait_for(log, 2)) == 2
     # with nio gone the hooks do nothing, and git still succeeds
     fake.unlink()
     assert git(root, "checkout", "-q", "-").returncode == 0

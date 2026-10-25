@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from nio import hooks, index, pack, query, records
+from nio import agents, hooks, index, pack, query, records
 
 
 def report(errors, warnings, count):
@@ -43,9 +43,14 @@ def main():
     k.add_argument("--task", default="", help="task ID; names the pack")
     k.add_argument("--diff", metavar="REF", help="juror pack: add the files changed since REF and judge against the records")
     k.add_argument("--run", help="also save the pack to .nio/runs/<run>/packs/")
-    sub.add_parser("hooks", help="install git hooks: refresh the index after pulls, checkouts and rebases; check memory before commits and pushes")
+    sub.add_parser("hooks", help="install git hooks: refresh the index and agent files after pulls, checkouts and rebases; check memory before commits and pushes")
     sub.add_parser("status", help="index freshness: indexed commit against HEAD, model, store")
     sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
+    ag = sub.add_parser("agents", help="agent cards: render them for each host, or check which model they ran on")
+    agsub = ag.add_subparsers(dest="agents_cmd", required=True)
+    agsub.add_parser("sync", help="render the shipped, personal and team cards as .claude/agents and .codex/agents files")
+    v = agsub.add_parser("verify", help="compare the model each recent Claude run of a nio-* agent used with its tier's model")
+    v.add_argument("--limit", type=int, default=20)
     a = p.parse_args()
 
     root = records.repo_root()
@@ -96,6 +101,17 @@ def main():
         try:
             for path in hooks.install(root):
                 print(path)
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+    elif a.cmd == "agents":
+        try:
+            if a.agents_cmd == "sync":
+                out, errors = agents.sync(root)
+                print("\n".join(out + [f"ERROR {e}" for e in errors]))
+                sys.exit(1 if errors else 0)
+            out, bad = agents.verify(root, a.limit)
+            print("\n".join(out))
+            sys.exit(1 if bad else 0)
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":

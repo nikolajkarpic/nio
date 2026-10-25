@@ -3,6 +3,7 @@ import datetime
 import difflib
 import fnmatch
 import json
+import os
 import re
 import secrets
 import subprocess
@@ -49,9 +50,29 @@ def repo_root():
     return Path(git(".", "rev-parse", "--show-toplevel")[0])
 
 
+def home():
+    """~/.nio, or $NIO_HOME: global config and personal agent cards."""
+    return Path(os.environ.get("NIO_HOME") or Path.home() / ".nio")
+
+
+def merge(base, over):
+    out = dict(base)
+    for k, v in over.items():
+        out[k] = merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
+
+
+def config(root):
+    """Global, then team, then local config; later layers win, key by key."""
+    out = {}
+    for path in (home() / "config.json", root / ".nio/config.json", root / ".nio/config.local.json"):
+        if path.exists():
+            out = merge(out, json.loads(path.read_text()))
+    return out
+
+
 def areas(root):
-    # ponytail: reads team config only; merge config.local.json once the config schema exists
-    return json.loads((root / ".nio/config.json").read_text())["memory"]["areas"]
+    return config(root)["memory"]["areas"]
 
 
 def parse(path, text=None):
