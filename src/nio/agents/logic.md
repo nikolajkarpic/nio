@@ -37,9 +37,10 @@ The context pack from the jury skill, and nothing else:
 
 ## Output format
 
-Findings in the verdict schema the jury skill gives you. At most 5, each with confidence of at least 70, each citing
-the requirement, AC or table cell it is about, and showing the concrete situation that breaks (the inputs, the two
-outcomes). If nothing qualifies, return no findings and say so in one line.
+The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each cites the
+requirement, AC or table row it is about, quotes the artefact word for word, and shows the concrete situation that
+breaks (the inputs, the two outcomes). A finding whose quote isn't in the artefact is dropped, so quote exactly. A
+finding you inferred rather than saw can't be a blocker. If nothing qualifies, the Findings section is `none`.
 
 ## Stop when
 

@@ -108,10 +108,13 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio hooks` | Install git hooks: refresh the index and agent files after pulls, checkouts and rebases; run the CI check before commits and pushes |
 | `nio agents sync` | Render the agent cards (shipped, `~/.nio/agents/`, `.nio/agents/`) as `.claude/agents/nio-*` and `.codex/agents/nio-*`, with each tier's model from config |
 | `nio agents verify` | Check that recent Claude runs of `nio-*` agents used the model their tier maps to |
+| `nio jury collect <slug> <gate> --run R` | Merge the run's lens outputs into the findings ledger (grounded, deduped, matched to earlier rounds) and print the refuter batch; run again once the refuter has answered |
+| `nio jury dispose <slug> <gate> J-n <disposition> --by agent\|grill\|human --note N` | Close a finding: spec-fix, open-question, accepted-risk or out-of-scope (the last two only by the human) |
+| `nio jury check <slug> <gate> [--record]` | The gate outcome (approved, rejected, human, or rerun/pending), with the verdict record written to memory on `--record` |
 | `nio status` | Index freshness against `HEAD` |
 | `nio run` | Start a run and its `promote.md` |
 
-Self-checks: `uv run python tests/test_records.py`, `tests/test_index.py`, `tests/test_pack.py`, `tests/test_hooks.py` and `tests/test_agents.py`.
+Self-checks: `uv run python tests/test_records.py`, `tests/test_index.py`, `tests/test_pack.py`, `tests/test_hooks.py`, `tests/test_agents.py` and `tests/test_jury.py`.
 
 ## Principles
 
