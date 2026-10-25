@@ -148,6 +148,29 @@ def test_majority_overrules_one_juror():
     print("ok")
 
 
+def test_deferred_points_need_the_human():
+    root = setup()
+    (root / ".nio/specs/refunds/spec.md").write_text(SPEC + "\n## Deferred\n- **DF-1** (from FR-2; contradiction) FR-1 and FR-2 disagree on shipped orders.\n"
+                                                    "- **DF-2** (from OP-3) How long is a refund window?\n")
+    lens(root, "R-1", "logic")
+    out = jury.collect(root, "refunds", "spec", "R-1")
+    found = jury.load(root, "refunds", "spec")["findings"]
+    assert [(f["severity"], f["kind"]) for f in found] == [("blocker", "contradiction"), ("major", "gap")], found
+    assert "J-1" not in "\n".join(line for line in out if line.startswith("###")), out  # no refuter for them
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert len(jury.load(root, "refunds", "spec")["findings"]) == 2  # added once
+    assert jury.check(root, "refunds", "spec")[0] == "rejected"
+    try:
+        jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "agent", "picked FR-2")
+        raise AssertionError("an agent closed a deferred point")
+    except ValueError:
+        pass
+    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2 in a second session")
+    jury.dispose(root, "refunds", "spec", "J-2", "accepted-risk", "human", "30 days, revisit after launch")
+    assert jury.check(root, "refunds", "spec")[0] == "approved"
+    print("ok")
+
+
 def test_format_template_parses():
     """The lens output template the jury skill hands to lenses is itself a valid lens output."""
     root = setup()
@@ -159,6 +182,7 @@ def test_format_template_parses():
 
 
 if __name__ == "__main__":
+    test_deferred_points_need_the_human()
     test_format_template_parses()
     test_gate()
     test_persisting_finding_goes_to_the_human()

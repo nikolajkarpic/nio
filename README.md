@@ -65,6 +65,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | `@nio:install` | 🗺️ planned | Asks which subscriptions you have, checks each host CLI and writes the config. |
 | `@nio:onboard` | 🗺️ planned | Captures what the project is and what you want before any other stage runs. |
 | [`@nio:spec`](skills/spec/SKILL.md) | 🚧 draft stage built | Records your words verbatim, then the spec-drafter agent (Opus) writes a first spec that never guesses: what you didn't say becomes a `[default]` proposal or an open point, and every sentence you wrote is traced to spec IDs. Research and the grill come next. |
+| [`@nio:grill`](skills/grill/SKILL.md) | ✅ built | Settles a draft spec one question at a time: looks facts up, asks only decisions (3 options, one recommended), writes in what follows, makes the small calls as `[agent]` for you to review, and stops when `nio check spec --gate` passes and you confirm. You can delegate a session to an agent. |
 | `@nio:plan` | 🗺️ planned | Contracts, bindings and a concrete test per acceptance criterion, then the plan. |
 | `@nio:tasks` | 🗺️ planned | Breaks the plan into effort → epics → tasks, rates difficulty and estimates usage. |
 | `@nio:implement` | 🗺️ planned | NIO's workers (TDD, builder, adversarial tester, swarm) build epic by epic. |
