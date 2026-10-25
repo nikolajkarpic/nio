@@ -256,7 +256,9 @@ def check(root, slug, gate=False, base="HEAD"):
             errs += check_op(iid, block[0], s, found, allowed)
         if prefix == "DF":
             errs += check_df(iid, block[0], s, found, retired, allowed)
-    errs += check_tags(body, found)
+    research = p.parent / "research.md"
+    rfs = set(re.findall(r"\*\*(RF-\d+)\*\*", research.read_text())) if research.exists() else set()
+    errs += check_tags(body, found, rfs)
     for goal in joined(secs.get("Non-goals", [])):
         if not TAG.search(goal):
             errs.append(f"non-goal `{goal[2:40]}…` must end with {TAGS}")
@@ -353,7 +355,7 @@ def check_glossary(secs):
     return errs
 
 
-def check_tags(body, found):
+def check_tags(body, found, rfs):
     """Wherever `[derived: …]` appears (an item, a table's Src cell, any line), its sources exist and are settled:
     answered, researched or decided by an agent, never a proposal, a deferred point or another derived item.
     `[deferred: DF-n]` names a point in `## Deferred`."""
@@ -365,7 +367,9 @@ def check_tags(body, found):
         for tag in re.findall(r"\[derived: ([^\]]*)\]", text):
             for src in [s.strip() for s in tag.split(",")]:
                 if src.startswith("RF-"):
-                    continue  # a research finding in research.md
+                    if src not in rfs:
+                        errs.append(f"{where} is derived from {src}, which isn't in research.md")
+                    continue
                 t = TAG.search(found[src][0][1][0]) if src in found else None
                 if src not in found:
                     errs.append(f"{where} is derived from {src}, which isn't defined")

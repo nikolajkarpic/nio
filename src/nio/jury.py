@@ -394,6 +394,10 @@ def dispose(root, slug, gate, fid, disposition, by, note):
         raise ValueError(f"{disposition} is the human's call (--by human)")
     if any(s["lens"] == "deferred" for s in f["sources"]) and by == "agent":
         raise ValueError(f"{fid} was deferred by the grill; only the human closes it (--by human, or --by grill once a session settles it)")
+    if any(s["lens"] == "deferred" for s in f["sources"]) and disposition == "spec-fix":
+        still = dict(spec.items(spec.sections(spec.path(root, slug).read_text().splitlines()).get("Deferred", [])))
+        if f["cites"][0] in still:
+            raise ValueError(f"{f['cites'][0]} is still in `## Deferred`; a spec-fix settles it there first")
     if f["status"] != "open" and not (by == "human" and f["status"] == "disposed"):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
     f.update(status="disposed", disposition=disposition, by=by, note=note)

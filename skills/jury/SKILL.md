@@ -80,7 +80,9 @@ Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
    | `accepted-risk`, `out-of-scope` | the human only | `--by human`, with their words as the note |
 
    You judge whether a fix changes behaviour. `nio jury check` lists every disposition you made for the human. A
-   finding that came from a point the grill deferred is the human's, or a grill session's, never yours.
+   finding that came from a point the grill deferred is the human's, or a grill session's, never yours. A grill
+   session settles one by removing its DF line from `## Deferred` (DF-n moves to `retired:`) before `--by grill`;
+   `nio jury dispose` refuses the spec-fix while the line is still there.
 8. **Re-review.** After the fixes, `nio check spec <slug> --gate` must pass again. Run `nio jury changed <slug> spec`:
    it lists the IDs the fixes changed and the lenses to re-run (every lens that blocked, plus any lens whose findings
    cite a changed ID). Start a new run, re-run only those lenses with packs that name the changed IDs and the findings

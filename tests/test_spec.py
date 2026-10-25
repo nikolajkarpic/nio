@@ -195,6 +195,11 @@ def test_grill_provenance():
     ]
     for edit, wanted in cases:
         has(errors(root, put(root, "spec.md", edit)), wanted)
+    # a research finding as a source must be in research.md, next to the spec
+    edit = lambda t: settled(t).replace("then it is rejected. [human]", "then it is rejected. [derived: RF-1]")
+    has(errors(root, put(root, "spec.md", edit)), "derived from RF-1, which isn't in research.md")
+    (spec.path(root, slug).parent / "research.md").write_text("# Research\n\n- **RF-1** A fact. Source: x\n")
+    assert errors(root, put(root, "spec.md", edit)) == [], errors(root, put(root, "spec.md", edit))
     # a line without an ID is deferred from its section
     slug = put(root, "spec.md", lambda t: settled(t).replace("| paid | - | full | [human] |", "| paid | - | full | [deferred: DF-4] |")
                + "\n## Deferred\n- **DF-4** (from Rules) Is a paid order refunded in full?\n")
