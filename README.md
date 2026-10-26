@@ -101,7 +101,7 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | Command | Does |
 | --- | --- |
 | `nio new <type> --area A --title T` | Create a record from its template |
-| `nio new spec <slug> [--route full\|lite\|epic] [--epic E/R-n]` | Create `.nio/specs/<slug>/spec.md` from the slice, bugfix or epic template |
+| `nio new spec <name> [--route full\|lite\|epic] [--epic E/R-n]` | Create `.nio/specs/<YYYY-MM-DD>-<name>/spec.md` (the dated folder is the slug) from the slice, bugfix or epic template |
 | `nio check` | Lint every record; only `paths` may change on committed ones |
 | `nio check spec <slug> [--gate]` | A spec's mechanical checks: sections, permanent IDs, provenance, AC coverage, SHALL, complete tables, the glossary's banned synonyms. Accepts the grill's `[agent]`, `[derived: …]` (only from answered, agent-decided or researched points) and `[deferred: DF-n]` (with its `## Deferred` entry); `--gate` lists the agent calls, derived items and deferred points, and prints the lenses its risk flags trigger |
 | `nio index [--check]` | Rebuild the index (incremental) and run cross-branch conflict checks |
