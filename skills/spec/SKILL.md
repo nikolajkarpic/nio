@@ -18,20 +18,40 @@ Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 - **Outputs:** `.nio/specs/<slug>/intake.md` (their words, verbatim) and `.nio/specs/<slug>/spec.md` (the draft,
   passing `nio check spec`). The memory pack is saved in the run folder.
 
+## Talking to the human
+Every message to the human (question, report, error or hand-off):
+1. **First line: what you need from them**, in plain words: "Nothing needed", "Pick one",
+   "Run this command", "Approve or push back". A round of questions gets one such line.
+2. **Then about 3 lines:** what it is, why it matters, what it costs. Name things by what
+   they do, never by an ID or a NIO term they don't start by name; only stage names (spec,
+   grill, jury, plan) stay as they are. A fact names its source beside it in plain words.
+3. **Options** say what happens if picked, including what's lost. The recommended one goes first.
+4. **Long lists** (calls, dispositions, findings): show every item that changes what a user
+   can do or sees, who may do it, what data is kept or changed, or what it costs, however
+   many; count the rest in one line.
+5. **Commands they must run** go in the body, quoted exactly, ready to copy.
+6. **End with `Refs:`** when the message rests on anything: the IDs, files and commands it
+   rests on, never raw command output. In a question tool, `Refs:` is the question text's
+   last line, and each option's description says what happens.
+Before sending, ask: could they act on this without opening a file? If not, rewrite it.
+
 ## Steps
 
-1. **Name and route.** If the human hasn't described the work yet, ask for it; that is the only question this skill
+1. **Name and route.** If the human hasn't described the work yet, ask for it, in the shape above; that is the only question this skill
    asks. Pick a short name: 2–4 lowercase words joined by dashes. Pick a route:
    - `lite`: a bug fix with a clear defect (something works wrong today);
    - `epic`: several slices that could each ship on their own;
    - `full`: everything else.
 
-   Tell the human the name and route in one line, and let them change either. Ask nothing about the content: the
+   Tell the human, starting "Nothing needed unless you want to change the name or route", the name and the route by what it means ("a bug fix", "several
+   slices that ship on their own", "one change"), and that they can change either. The name and route values go in
+   `Refs:`. Ask nothing about the content: the
    grill does that later.
 2. **Create the spec:** `nio new spec <name> --route <route>`. It stamps today's date on the folder,
    `.nio/specs/<YYYY-MM-DD>-<name>/`, and prints the path. That dated folder name is the spec's `<slug>` from here on
-   (every later `nio` command and path uses it). If a spec with that name already exists, stop and tell the human:
-   never overwrite one. They choose another name, or continue the existing spec at its current stage.
+   (every later `nio` command and path uses it). If a spec with that name already exists, stop and never overwrite it:
+   ask the human to pick, each option saying what happens: another name, or continue the existing spec at its current
+   stage.
 3. **Record the intake** in `.nio/specs/<slug>/intake.md`: the human's words exactly as given, never paraphrased or
    summarised. For an issue or file, copy its text under a `## Source: <link or path>` heading.
 4. **Memory:** start a run with `nio run`, then `nio pack "<the intake in one sentence>" --run <run>`. The pack is
@@ -44,18 +64,19 @@ Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
    - run `nio check spec <slug>` yourself;
    - read the drafter's intake trace: every sentence of `intake.md` must be carried by spec IDs or a non-goal.
 
-   If the check fails or a sentence is unmapped, send the errors back to the drafter once. If it still fails, show the
-   human what's left.
-7. **Show the human:**
+   If the check fails or a sentence is unmapped, send the errors back to the drafter once. If it still fails, show the human in plain words what is still wrong, with the errors' IDs in
+   `Refs:`.
+7. **Show the human**, in the shape above:
    - the summary;
-   - the intake trace;
-   - the open points, split into **facts** (research looks them up next) and **decisions** (the grill will ask you);
-   - the lenses `nio check spec` says the risk flags trigger.
+   - how each of their sentences was carried into the spec, in plain words (the trace's spec IDs go in `Refs:`);
+   - the open points in plain words, split into **facts** (research looks them up next) and **decisions** (the grill
+     will ask you);
+   - the reviews the jury will run, by what each checks, as `nio check spec` lists them from the risk flags.
 
 Stop after step 7. Don't answer the open points yourself and don't start the grill: the next stage is research.
 
 ## When `nio` is missing or fails
 
 Without `nio`, copy the template from the NIO package (`src/nio/templates/spec.md`, `spec-bugfix.md` or
-`spec-epic.md`) to `.nio/specs/<YYYY-MM-DD>-<name>/spec.md` (today's date) and fill it in by hand, following the card. Tell the human the
-mechanical checks didn't run.
+`spec-epic.md`) to `.nio/specs/<YYYY-MM-DD>-<name>/spec.md` (today's date) and fill it in by hand, following the card.
+Tell the human, in the shape above, that the automatic checks didn't run.

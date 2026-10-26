@@ -146,6 +146,13 @@ def test_edge_cases():
     has(errors(root, slug), "says \"chargeback\"")
     slug = put(root, "spec.md", lambda t: t.replace("(grill, 2026-10-25).", "(grill, 2026-10-25); renamed from reimbursement."))
     assert errors(root, slug) == [], errors(root, slug)  # Decisions may record a rename
+    # the term's own uses don't trip a banned word inside it, but a banned phrase containing the term still does
+    glossary = lambda entry, line: spec.check_glossary({"Glossary": [entry], "Scope": [line]})
+    assert not glossary('- **Refund request**: x. Never "request".', "A Refund request is sent.")
+    assert glossary('- **Refund**: x. Never "refund request".', "A refund request is sent.")
+    assert not glossary('- **Run**: x. Never "re".', "We rerun it.")
+    two = lambda line: spec.check_glossary({"Glossary": ['- **Order**: x. Never "purchase".', "- **Purchase order**: y."], "Scope": [line]})
+    assert not two("Send the Purchase order.") and two("Send the purchase.")  # another term holding the word is vocabulary too
     # an item outside its home section
     slug = put(root, "spec.md", lambda t: t.replace("- **FR-2** IF the order", "- **NFR-9** placeholder-free line. [human]\n- **FR-2** IF the order").replace(
         "## Non-functional requirements\n", "## Non-functional requirements\n- **FR-9** WHEN x THE SYSTEM SHALL y. [human]\n"))

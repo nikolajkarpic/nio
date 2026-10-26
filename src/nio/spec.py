@@ -21,13 +21,14 @@ RISKS = {"auth", "pii", "money", "external-input", "data-deletion", "migration",
 LENSES = {"adversary": {"external-input", "multi-party", "public-api", "money"}, "security": {"auth", "pii"},
           "risk-rollback (plan gate)": {"migration", "data-deletion"}}
 SCOPE_FRS = 8  # more FRs than this triggers the scope lens (#47)
+SCOPE_NOTE = f"scope (more than {SCOPE_FRS} FRs)"  # `nio jury plan` reads this from the check's notes
 TAGGED = {"A", "UJ", "US", "AC", "FR", "NFR", "SC", "CB", "EB", "UB"}  # items that must carry provenance
 SHALL = {"FR", "EB", "UB"}
 # where each kind of item lives; one placed elsewhere is easy to miss for readers and lenses alike
 HOME = {"A": ["Actors and journeys"], "UJ": ["Actors and journeys"], "US": ["User stories"],
         "AC": ["User stories", "Acceptance criteria"], "FR": ["Functional requirements"], "NFR": ["Non-functional requirements"],
         "SC": ["Success criteria"], "CB": ["Current behaviour"], "EB": ["Expected behaviour"], "UB": ["Unchanged behaviour"],
-        "R": ["Roadmap"], "OP": ["Open points"], "DF": ["Deferred"]}
+        "R": ["Roadmap"]}  # OP and DF say where they belong themselves
 LEVELS = {"unit", "integration", "e2e"}
 # provenance (#20, #22): the human said it; the agent proposed it; an agent decided it (delegated, or below the grill's
 # bar); research backs it; it follows from other items; or the grill deferred it
@@ -243,7 +244,7 @@ def check(root, slug, gate=False, base="HEAD"):
         if iid in retired:
             errs.append(f"{iid} is retired and can't be used again")
         s, block = defs[0]
-        if prefix in HOME and s not in HOME[prefix] and prefix not in ("OP", "DF"):  # those two say so themselves
+        if prefix in HOME and s not in HOME[prefix]:
             errs.append(f"{iid} is under `## {s}`; {prefix} items belong in `## {' or '.join(HOME[prefix])}`")
         if prefix in TAGGED and not TAG.search(block[0]):
             errs.append(f"{iid}: its line must end with {TAGS}")
@@ -294,7 +295,7 @@ def check(root, slug, gate=False, base="HEAD"):
 
     lenses = ["testability", "logic"] + [lens for lens, flags in LENSES.items() if flags & set(risk)]
     if sum(i.startswith("FR-") for i in found) > SCOPE_FRS:
-        lenses.append(f"scope (more than {SCOPE_FRS} FRs)")
+        lenses.append(SCOPE_NOTE)
     notes = [f"lenses: {', '.join(lenses)}"]
     # what the grill's finish gate shows the human: calls nobody asked them, consequences, and what was deferred
     for label, kind in (("agent calls", "agent"), ("derived", "derived"), ("deferred", "deferred")):
@@ -341,20 +342,28 @@ def joined(lines):
 def check_glossary(secs):
     """A glossary entry `- **Term**: … Never "x", "y".` bans its synonyms everywhere else in the spec, so the words
     don't drift. Code spans are skipped; the glossary may name the words it bans, and Decisions may record a rename."""
-    banned = {}
+    banned, terms = {}, []
     for entry in joined(secs.get("Glossary", [])):
         m = re.match(r"^- \*\*([^*]+)\*\*:", entry)
+        terms += [m[1]] if m else []
         if m and "Never" in entry:
             for word in re.findall(r'"([^"]+)"', entry.split("Never", 1)[1]):
                 banned[word] = m[1]
     errs = []
+    whole = lambda w: rf"(?<![\w-]){re.escape(w)}(?![\w-])"
+    # a glossary term that contains a banned word ("Refund request", never "request") is vocabulary, not the synonym:
+    # skip its uses, but never the banned phrase itself, so "Refund", never "refund request" still catches it
+    own = {w: [whole(t) for t in terms if t.lower() != w.lower() and re.search(whole(w), t, re.I)] for w in banned}
     for s, lines in secs.items():
         if s in ("Glossary", "Decisions"):
             continue
         for line in lines:
             text = re.sub(r"`[^`]*`", "", line)
             for word, term in banned.items():
-                if re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", text, re.I):
+                rest = text
+                for t in own[word]:
+                    rest = re.sub(t, "", rest, flags=re.I)
+                if re.search(whole(word), rest, re.I):
                     errs.append(f"`## {s}` says \"{word}\"; the glossary says {term}: `{line.strip()[:50]}`")
     return errs
 
