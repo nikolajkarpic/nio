@@ -23,7 +23,7 @@ CONTRADICTION = """### F{n} Shipped orders are both refundable and not
 """
 
 
-def lens(root, run, name, findings="none", lens_name=None, reasoning="Checked every rule.", context="sufficient"):
+def lens(root, run, name, findings="none", lens_name=None, reasoning="Checked every rule.", context="sufficient", verdicts=""):
     path = root / ".nio/runs" / run / "jury" / f"spec-{name}.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"""---
@@ -35,7 +35,7 @@ context: {context}
 ---
 ## Reasoning
 {reasoning}
-
+{f"{chr(10)}## Verdicts{chr(10)}{verdicts}{chr(10)}" if verdicts else ""}
 ## Findings
 {findings}
 """)
@@ -246,7 +246,7 @@ def test_plan_and_changed():
     (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text("### J-1\n- result: confirmed\n- reason: yes\n")
     jury.collect(root, "refund-double-charge", "spec", "R-1")
     path.write_text(fixture.replace("create exactly one refund", "create exactly one refund per order"))
-    assert jury.changed(root, "refund-double-charge", "spec") == (["EB-1"], ["logic"])
+    assert jury.changed(root, "refund-double-charge", "spec")[:2] == (["EB-1"], ["logic"])
     print("ok")
 
 
@@ -525,6 +525,378 @@ def test_versions_decide_fixed():
     print("ok")
 
 
+# --- #52: the stop rule, fix verdicts and the final fix check ---
+MAJOR = CONTRADICTION.format(n=1).replace("blocker", "major")
+MINOR = """### F2 AC-1 has no observable
+- cites: AC-1
+- kind: untestable
+- severity: minor
+- evidence: observed
+- quote: "then it is refunded"
+- situation: a test can't tell refunded from pending
+- fix: name the state the order ends in
+"""
+NEW_MAJOR = """### F3 Returns have no rule
+- cites: FR-2
+- kind: gap
+- severity: major
+- evidence: observed
+- quote: "they must be returned first"
+- situation: a return arrives and no rule says what happens
+- fix: add a return rule
+"""
+NEW_BLOCKER = NEW_MAJOR.replace("F3", "F1").replace("major", "blocker")
+CONFIRM = "### J-{n}\n- result: confirmed\n- reason: yes\n"
+REFUTE = "### J-{n}\n- result: refuted\n- reason: FR-2 settles it\n"
+
+
+def first_review(findings=MAJOR + MINOR, refuter=CONFIRM.format(n=1)):
+    """A first review that the jury rejects and records, with every finding then fixed by the agent (#52)."""
+    root = setup()
+    lens(root, "R-1", "logic", findings)
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(refuter)
+    jury.collect(root, "refunds", "spec", "R-1")
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "rejected" and any(line.startswith("recorded") for line in lines), lines
+    fix(root, *[f["id"] for f in jury.load(root, "refunds", "spec")["findings"] if f["status"] == "open"])
+    return root
+
+
+def fix(root, *ids, by="agent", text="- FR-3: fixed.\n"):
+    for i in ids:
+        jury.dispose(root, "refunds", "spec", i, "spec-fix", by, f"{i} fixed")
+    spec_md = root / ".nio/specs/refunds/spec.md"
+    spec_md.write_text(spec_md.read_text() + text)
+
+
+def verdicts(**given):
+    return "\n".join(f"- {i.replace('_', '-')}: {v} — {'still there' if v == 'not fixed' else 'gone'}" for i, v in given.items())
+
+
+def test_stop_rule():
+    """AC-1, AC-2, AC-3, AC-4, AC-6, AC-7."""
+    led = lambda root: {f["id"]: f for f in jury.load(root, "refunds", "spec")["findings"]}
+    root = first_review()  # AC-1: a confirmed major in the first review is rejected, as today
+    lens(root, "R-2", "logic", NEW_MAJOR, verdicts=verdicts(J_1="not fixed", J_2="not fixed"))  # AC-2
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert any("J-3" in line and "a note only" in line for line in out), out
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "human" and "- one list for the human; fix or accept each as risk: J-1, J-2" in lines, lines
+    assert "notes (no ruling needed):" in lines and led(root)["J-3"]["status"] == "noted", lines
+    jury.dispose(root, "refunds", "spec", "J-2", "accepted-risk", "human", "fine")  # AC-6: J-1 still open
+    outcome, lines = jury.check(root, "refunds", "spec")
+    assert outcome == "human" and "- one list for the human; fix or accept each as risk: J-1" in lines, lines
+
+    root = first_review()  # AC-3: a new blocker the refuter confirms starts another round
+    lens(root, "R-2", "logic", NEW_BLOCKER, verdicts=verdicts(J_1="fixed", J_2="fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.check(root, "refunds", "spec")[0] == "pending"
+    (root / ".nio/runs/R-2/jury/spec-refuter.md").write_text(CONFIRM.format(n=3))
+    jury.collect(root, "refunds", "spec", "R-2")
+    outcome, lines = jury.check(root, "refunds", "spec")
+    assert outcome == "rejected" and "- unresolved: J-3" in lines, lines
+
+    root = first_review()  # AC-4: refuted, nothing else open: approved
+    lens(root, "R-2", "logic", NEW_BLOCKER, verdicts=verdicts(J_1="fixed", J_2="fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    (root / ".nio/runs/R-2/jury/spec-refuter.md").write_text(REFUTE.format(n=3))
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.check(root, "refunds", "spec")[0] == "approved" and led(root)["J-3"]["status"] == "refuted"
+
+    # AC-7: a blocker that failed two rounds goes to the human before another re-review
+    root = first_review(CONTRADICTION.format(n=1))
+    for rnd in ("R-2", "R-3"):
+        lens(root, rnd, "logic", verdicts=verdicts(J_1="not fixed"))
+        jury.collect(root, "refunds", "spec", rnd)
+        (root / f".nio/runs/{rnd}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+        jury.collect(root, "refunds", "spec", rnd)
+        if rnd == "R-2":
+            assert jury.check(root, "refunds", "spec", record=True)[0] == "rejected"
+            fix(root, "J-1", text="- FR-4: again.\n")
+    outcome, lines = jury.check(root, "refunds", "spec")
+    assert outcome == "human" and "- J-1 failed 2 rounds" in lines, lines
+    print("ok")
+
+
+def to_list(root, *not_fixed):
+    """A re-review that finds `not_fixed` still there and the rest fixed: the human gets one list."""
+    lens(root, "R-2", "logic", verdicts=verdicts(**{i.replace("-", "_"): "not fixed" if i in not_fixed else "fixed" for i in ("J-1", "J-2")}))
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "human"
+
+
+def test_final_check():
+    """AC-5, AC-21, AC-24, AC-25, AC-26, AC-27."""
+    root = first_review()
+    to_list(root, "J-1", "J-2")
+    fix(root, "J-1", by="human")  # AC-5, AC-25: fix one, accept the other; the final check is owed
+    jury.dispose(root, "refunds", "spec", "J-2", "accepted-risk", "human", "fine")
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "rerun" and any("final fix check" in line and "J-1" in line for line in lines), lines
+    assert "J-1" in "\n".join(jury.fixcheck(root, "refunds", "spec", "logic"))
+    lens(root, "R-3", "logic", verdicts=verdicts(J_1="fixed"))
+    jury.collect(root, "refunds", "spec", "R-3")
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "approved" and any(line.startswith("recorded") for line in lines), lines
+
+    root = first_review()  # AC-21, AC-26: the final check finds a fix didn't work; the human's second fix ends it
+    to_list(root, "J-1")
+    fix(root, "J-1", by="human")
+    lens(root, "R-3", "logic", verdicts=verdicts(J_1="not fixed"))
+    jury.collect(root, "refunds", "spec", "R-3")
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "human" and "- the final fix check flagged these; fix or accept each as risk: J-1" in lines, lines
+    fix(root, "J-1", by="human", text="- FR-4: again.\n")
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "approved" and "- fixed after the final fix check, judged by no lens: J-1" in lines, lines
+
+    root = first_review()  # AC-24: every listed finding accepted, none fixed: no final check
+    to_list(root, "J-1", "J-2")
+    for i in ("J-1", "J-2"):
+        jury.dispose(root, "refunds", "spec", i, "accepted-risk", "human", "fine")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "approved"
+
+    root = first_review()  # AC-27: a new blocker in the final check goes to the human, not another round
+    to_list(root, "J-1")
+    fix(root, "J-1", by="human")
+    lens(root, "R-3", "logic", NEW_BLOCKER, verdicts=verdicts(J_1="fixed"))
+    jury.collect(root, "refunds", "spec", "R-3")
+    (root / ".nio/runs/R-3/jury/spec-refuter.md").write_text(CONFIRM.format(n=3))
+    jury.collect(root, "refunds", "spec", "R-3")
+    outcome, lines = jury.check(root, "refunds", "spec")
+    assert outcome == "human" and "- the final fix check flagged these; fix or accept each as risk: J-3" in lines, lines
+    print("ok")
+
+
+def test_fix_verdicts():
+    """AC-10, AC-11, AC-12, AC-13, AC-20, AC-22, AC-23."""
+    led = lambda root: {f["id"]: f for f in jury.load(root, "refunds", "spec")["findings"]}
+    root = first_review()
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="fixed"))  # AC-12: J-2 has no verdict
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert any("INVALID" in line and "no verdict for J-2" in line for line in out), out
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="fixed", J_2="fixed", J_7="fixed"))  # AC-13
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert any("INVALID" in line and "J-7 is not in the fix-check pack" in line for line in out), out
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="fixed", J_2="fixed") + "\n- J-2: not fixed — on second look")  # AC-22
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert any("INVALID" in line and "J-2 has more than one verdict" in line for line in out), out
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="fixed", J_2="not fixed"))  # AC-10, AC-11, AC-23
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert led(root)["J-1"]["status"] == "fixed"
+    j2 = led(root)["J-2"]
+    assert j2["status"] == "open" and j2["rounds"] == 1, j2  # not fixed by silence, though its lens judged a new version
+
+    root = first_review(CONTRADICTION.format(n=1))  # AC-20: a not-fixed blocker the refuter refutes starts no round
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="not fixed"))
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert "### J-1 " in "\n".join(out) and jury.check(root, "refunds", "spec")[0] == "pending", out
+    (root / ".nio/runs/R-2/jury/spec-refuter.md").write_text(REFUTE.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.check(root, "refunds", "spec")[0] == "approved" and led(root)["J-1"]["status"] == "refuted"
+    print("ok")
+
+
+BOLD = """# Refunds
+## Functional requirements
+- **FR-1** A refund is allowed while the order is paid.
+- **FR-2** A refund needs a paid order (FR-1).
+- **FR-3** Returns are logged.
+## Acceptance criteria
+- **AC-3** (FR-2) Given a paid order, when a refund is requested, then it is refunded.
+  Observable: status `refunded`.
+- **AC-4** (FR-3) Given a return, then it is logged.
+"""
+
+
+def test_changed_and_fixcheck():
+    """AC-8, AC-9, AC-14: what changed, its neighbours, and the pack a lens gets."""
+    root = setup()
+    spec_md = root / ".nio/specs/refunds/spec.md"
+    spec_md.write_text(BOLD)
+    gap = NEW_MAJOR.replace("FR-2", "FR-2", 1).replace("they must be returned first", "A refund needs a paid order")
+    other = MINOR.replace("AC-1", "AC-4").replace("then it is refunded", "then it is logged")
+    lens(root, "R-1", "logic", gap.replace("F3", "F1") + other)
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "rejected"
+    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "agent", "FR-2 now says what a return does")
+    jury.dispose(root, "refunds", "spec", "J-2", "out-of-scope", "human", "logging is the next spec")
+    spec_md.write_text(BOLD.replace("needs a paid order (FR-1).", "needs a paid order (FR-1); a return refunds it.")
+                       .replace("status `refunded`.", "status `refunded`, never `pending`."))
+    ids, rerun, near, secs = jury.changed(root, "refunds", "spec")  # AC-8; AC-3's Observable line counts as a change
+    assert ids == ["AC-3", "FR-2"] and near == ["FR-1"] and rerun == ["logic"] and not secs, (ids, near, rerun, secs)
+    spec_md.write_text(spec_md.read_text().replace("never `pending`.", "never `pending`.\n- **AC-5** (FR-2) Given a return, then it refunds."))
+    assert jury.changed(root, "refunds", "spec")[2] == ["FR-1"]  # AC-5 is changed (new), not a neighbour
+    pack = "\n".join(jury.fixcheck(root, "refunds", "spec", "logic"))  # AC-9, AC-14
+    assert "### J-1 " in pack and '"A refund needs a paid order"' in pack and "- fix asked: add a return rule" in pack, pack
+    assert "Before:\n- **FR-2** A refund needs a paid order (FR-1)." in pack and "- **FR-1** A refund is allowed" in pack, pack
+    assert "After:\n- **FR-2** A refund needs a paid order (FR-1); a return refunds it." in pack, pack
+    assert "Returns are logged" not in pack and "then it is logged" not in pack, pack  # unrelated items stay out
+    assert "- J-2 " in pack and "out-of-scope" in pack and "### J-2" not in pack, pack  # named, no verdict asked
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="fixed"))  # no verdict for J-2 is valid
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert not any("INVALID" in line for line in out) and any(line.startswith("fixed   J-1") for line in out), out
+    print("ok")
+
+
+def test_phases():
+    """AC-18: the first review runs up to the first recorded rejection, escalation rounds included."""
+    root = setup()
+    lens(root, "R-1", "logic", MAJOR)
+    jury.collect(root, "refunds", "spec", "R-1")
+    lens(root, "R-1", "logic-2", MAJOR, lens_name="logic")  # an escalation juror: round 2, still the first review
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    led = jury.load(root, "refunds", "spec")
+    assert led["round"] == 2 and jury.phase(led) == "first"
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "rejected"
+    fix(root, "J-1")
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="not fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert jury.phase(jury.load(root, "refunds", "spec")) == "re-review"
+    outcome, lines = jury.check(root, "refunds", "spec")
+    assert outcome == "human" and "- one list for the human; fix or accept each as risk: J-1" in lines, lines  # not `rejected`
+    print("ok")
+
+
+def test_old_ledgers():
+    """AC-15, AC-28: ledgers written before #52 load, and replayed at their second round they stop there."""
+    from pathlib import Path
+    for name in ("grill", "grill-checks"):
+        led = json.loads((Path(__file__).parent / f"fixtures/jury/{name}.json").read_text())
+        root = setup()
+        folder = root / ".nio/specs/refunds/jury"
+        folder.mkdir(parents=True)
+        (folder / "spec.json").write_text(json.dumps(led))
+        assert jury.check(root, "refunds", "spec")[0] in ("approved", "rejected", "human", "rerun", "pending")  # AC-15
+        # AC-28: as of round 2, every round-2 major and minor found not fixed, earlier ones fixed, no blocker open
+        led.update(round=2, recorded=[[1, "rejected"]])
+        led["findings"] = [f for f in led["findings"] if f["first_round"] <= 2]
+        for f in led["findings"]:
+            if f["first_round"] == 2 and f["status"] not in ("merged", "refuted", "dropped"):
+                f.update(status="open", disposition="", validation="confirmed" if f["severity"] != "minor" else "grounded")
+            elif f["status"] not in ("merged", "refuted", "dropped"):
+                f["status"] = "fixed"
+        outcome, reasons, listed = jury.compose(led, jury.version(led, 2))
+        assert outcome == "human" and listed, (name, outcome, reasons)
+    print("ok")
+
+
+def test_skill_and_cards():
+    """AC-16, AC-17, AC-19: the skill, the lens cards and the output format describe the fix check."""
+    from pathlib import Path
+    top = Path(__file__).parent.parent
+    skill = (top / "skills/jury/SKILL.md").read_text()
+    step6, step8 = skill.split("6. **Decide.**")[1].split("7. **Dispose**")[0], skill.split("8. **Re-review.**")[1].split("## When to stop")[0]
+    assert all(p in step6 for p in ("one message", "fix", "accept as risk")), step6
+    assert all(p in step8 for p in ("fix-check pack", "not fixed", "only blockers")), step8
+    assert "re-run only those lenses with packs that name the changed IDs" not in skill
+    for card in ("adversary", "consistency", "logic", "scope", "security", "testability"):
+        text = (top / f"src/nio/agents/{card}.md").read_text()
+        section = text.split("## Re-review")[1] if "## Re-review" in text else ""
+        assert all(p in section for p in ("fix-check pack", "fixed or not fixed", "Stop")), card
+    assert "## Verdicts" in resources.files("nio").joinpath("templates/lens-output.md").read_text()
+    print("ok")
+
+
+def test_implementation_review():
+    """Regressions from the implementation jury of #52 (run R-261026-tqt4)."""
+    led = lambda root: {f["id"]: f for f in jury.load(root, "refunds", "spec")["findings"]}
+    spec_md = lambda root: root / ".nio/specs/refunds/spec.md"
+
+    # I-1: an unchanged item that cites a changed one is its neighbour
+    root = setup()
+    spec_md(root).write_text(BOLD)
+    lens(root, "R-1", "logic", NEW_MAJOR.replace("F3", "F1").replace("they must be returned first", "A refund needs a paid order"))
+    jury.collect(root, "refunds", "spec", "R-1")
+    spec_md(root).write_text(BOLD.replace("needs a paid order (FR-1).", "needs a paid order (FR-1) first."))
+    assert jury.changed(root, "refunds", "spec")[2] == ["AC-3", "FR-1"]
+
+    # I-2: in a re-review an escalation juror gets the blocker's pack, gives no verdicts, and its output is valid
+    root = first_review()
+    lens(root, "R-2", "logic", NEW_BLOCKER, verdicts=verdicts(J_1="fixed", J_2="fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    pack = "\n".join(jury.fixcheck(root, "refunds", "spec", "logic", blocker="J-3"))
+    assert "## The blocker to judge\n### J-3 " in pack and "Give no verdicts" in pack and "## Your findings" not in pack, pack
+    lens(root, "R-2", "logic-2", NEW_BLOCKER, lens_name="logic")
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert not any("INVALID" in line for line in out), out
+
+    # I-4: right after the first rejection, every lens with a fix to check re-runs, even for a minor citing nothing changed
+    root = setup()
+    lens(root, "R-1", "logic", MAJOR)
+    lens(root, "R-1", "testability", MINOR)
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "rejected"
+    fix(root, "J-1", "J-2")
+    assert jury.changed(root, "refunds", "spec")[1] == ["logic", "testability"]
+
+    # I-5: an edit after a passed final check is approved, saying no lens judged it
+    root = first_review()
+    to_list(root, "J-1")
+    fix(root, "J-1", by="human")
+    lens(root, "R-3", "logic", verdicts=verdicts(J_1="fixed"))
+    jury.collect(root, "refunds", "spec", "R-3")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "approved"
+    spec_md(root).write_text(spec_md(root).read_text() + "- FR-5: later.\n")
+    outcome, lines = jury.check(root, "refunds", "spec")
+    assert outcome == "approved" and any("no lens judged that change" in line for line in lines), lines
+
+    # I-6a: a blocker matching an earlier note leaves the note and goes to the refuter
+    root = first_review()
+    lens(root, "R-2", "logic", NEW_MAJOR, verdicts=verdicts(J_1="not fixed", J_2="fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert led(root)["J-3"]["status"] == "noted"
+    lens(root, "R-2", "testability", NEW_MAJOR.replace("major", "blocker"))
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    j3 = led(root)["J-3"]
+    assert j3["status"] == "open" and j3["validation"] == "pending" and "### J-3 " in "\n".join(out), (j3, out)
+
+    # I-6b: a `fixed` verdict can't close a finding the same output raises again as a blocker
+    root = first_review()
+    lens(root, "R-2", "logic", MAJOR.replace("major", "blocker"), verdicts=verdicts(J_1="fixed", J_2="fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    j1 = led(root)["J-1"]
+    assert j1["status"] == "open" and j1["severity"] == "blocker" and j1["validation"] == "pending", j1
+
+    # I-7: a confirmed major raised to blocker by a merge goes back to the refuter
+    root = setup()
+    lens(root, "R-1", "logic", MAJOR)
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    lens(root, "R-1", "testability", CONTRADICTION.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert led(root)["J-1"]["validation"] == "pending" and jury.check(root, "refunds", "spec")[0] == "pending"
+
+    # I-8: a finding that failed twice still goes on the one list when no blocker is open
+    root = first_review()
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="not fixed", J_2="fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    fix(root, "J-1", text="- FR-4: again.\n")  # fixed again without asking the human, so it can fail a second time
+    lens(root, "R-3", "logic", verdicts=verdicts(J_1="not fixed"))
+    jury.collect(root, "refunds", "spec", "R-3")
+    assert led(root)["J-1"]["rounds"] == 2
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "human" and "- one list for the human; fix or accept each as risk: J-1" in lines, lines
+    assert jury.load(root, "refunds", "spec")["list"]["ids"] == ["J-1"]
+
+    # FR-25 (testability F5): an escalation juror judging a later version without raising J-1 doesn't fix it
+    root = first_review(CONTRADICTION.format(n=1))
+    lens(root, "R-2", "logic", NEW_BLOCKER, verdicts=verdicts(J_1="not fixed"))
+    jury.collect(root, "refunds", "spec", "R-2")
+    lens(root, "R-2", "logic-2", lens_name="logic")
+    jury.collect(root, "refunds", "spec", "R-2")
+    assert led(root)["J-1"]["status"] == "open"
+    print("ok")
+
+
 if __name__ == "__main__":
     test_review_scenarios()
     test_plan_gate_versions()
@@ -539,3 +911,11 @@ if __name__ == "__main__":
     test_persisting_finding_goes_to_the_human()
     test_majority_overrules_one_juror()
     test_versions_decide_fixed()
+    test_stop_rule()
+    test_final_check()
+    test_fix_verdicts()
+    test_changed_and_fixcheck()
+    test_phases()
+    test_old_ledgers()
+    test_skill_and_cards()
+    test_implementation_review()

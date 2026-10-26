@@ -112,12 +112,13 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio agents sync` | Render the agent cards (shipped, `~/.nio/agents/`, `.nio/agents/`) as `.claude/agents/nio-*` and `.codex/agents/nio-*`, with each tier's model from config |
 | `nio agents verify` | Check that recent Claude runs of `nio-*` agents used the model their tier maps to |
 | `nio jury plan <slug> <gate> [--add lens:reason]` | The lenses a gate needs and why, the risk tier, the run budget; fails if the spec isn't gated or a card is missing |
-| `nio jury changed <slug> <gate>` | After a fix: the IDs that changed since the judged version, and the lenses to re-run |
+| `nio jury changed <slug> <gate>` | After a fix: the IDs and sections that changed since the judged version, their neighbours, and the lenses to re-run |
+| `nio jury fixcheck <slug> <gate> --lens L [--blocker J-n]` | After the first review: one lens's fix-check pack (its fixed findings, the changed text before and after, the neighbours); the lens answers fixed or not fixed per finding and raises only blockers. `--blocker` is an escalation juror's pack |
 | `nio jury template` | Print the lens output format, for a juror's pack |
 | `nio jury answers <slug>` | The human's grill answers (each question and the answer chosen), for the scope lens's pack |
 | `nio jury collect <slug> <gate> --run R` | Merge the run's lens outputs into the findings ledger (grounded, deduped, matched to earlier rounds) and print the refuter batch; at the spec gate it also adds one finding per deferred point (a contradiction is a blocker). Run again once the refuter has answered |
 | `nio jury dispose <slug> <gate> J-n <disposition> --by agent\|grill\|human --note N` | Close a finding: spec-fix, open-question, accepted-risk or out-of-scope (the last two only by the human). A deferred finding never closes `--by agent`, and a spec-fix on it waits until its DF line is gone; `--by grill` means the human answered the settling question |
-| `nio jury check <slug> <gate> [--record] [--human REASON]` | The gate outcome (approved, rejected, human, or rerun/pending), with the verdict record written to memory on `--record`; `--human` is the human closing the gate themselves |
+| `nio jury check <slug> <gate> [--record] [--human REASON]` | The gate outcome (approved, rejected, human, or rerun/pending), with the verdict record written to memory on `--record`; `--human` is the human closing the gate themselves. After the first review only a confirmed blocker rejects: the rest goes to the human as one list, then one final fix check |
 | `nio status` | Index freshness against `HEAD` |
 | `nio run` | Start a run and its `promote.md` |
 

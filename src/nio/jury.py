@@ -19,7 +19,8 @@ HUMAN_ONLY = {"accepted-risk", "out-of-scope"}
 BY = {"agent", "grill", "human"}  # grill: the human answered a grill question
 MAX_FINDINGS = 5
 FIELDS = ["cites", "kind", "severity", "evidence", "quote", "situation", "fix"]
-CLOSED = {"refuted", "dropped", "merged", "overruled"}  # never need a disposition
+CLOSED = {"refuted", "dropped", "merged", "overruled", "noted"}  # never need a disposition
+VERDICT = re.compile(r"^- (J-\d+):\s*(fixed|not fixed)\b\s*[—–:-]*\s*(.*)$")  # a fix verdict in a re-review (#52 FR-8)
 CORE = {"spec": ["testability", "logic"]}  # #47; the plan and tasks gates come with their stages
 HIGH_RISK = {"auth", "money", "data-deletion", "migration"}
 MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
@@ -88,6 +89,18 @@ def parse_lens(path, gate, slug):
         errs.append("`## Findings` must hold findings or the single line `none`")
     if len(findings) > MAX_FINDINGS:
         errs.append(f"{len(findings)} findings; a lens returns at most {MAX_FINDINGS}")
+    # fix verdicts, one per finding in a re-review's fix-check pack; merge checks them against the pack
+    meta["verdicts"] = {}
+    for line in secs.get("Verdicts", "").splitlines():
+        if not line.startswith("- "):
+            continue
+        m = VERDICT.match(line.strip())
+        if not m or not m[3].strip():
+            errs.append(f"verdict `{line.strip()}`: write `- J-<n>: fixed | not fixed — <reason>`")
+        elif m[1] in meta["verdicts"]:
+            errs.append(f"{m[1]} has more than one verdict")
+        else:
+            meta["verdicts"][m[1]] = (m[2], m[3].strip())
     return meta, findings, errs
 
 
@@ -174,9 +187,59 @@ def plan(root, slug, gate, extra=()):
     return out, not missing
 
 
-def changed(root, slug, gate):
-    """IDs whose text changed since the spec version the last round judged (#27 FR-19, FR-23), and the lenses to
-    re-run: every lens that blocked, plus any lens with a finding citing a changed ID."""
+def phase(led):
+    """first | re-review | final-owed | final (#52 FR-19, FR-24). The first review runs up to the first round the ledger
+    recorded `rejected`; later rounds re-review. Once the human's one list is recorded and settled with a fix, one final
+    fix check is owed, and it starts with the next collected round."""
+    rejected = [r for r, o in led["recorded"] if o == "rejected"]
+    if not rejected or led["round"] <= rejected[0]:
+        return "first"
+    lst = led.get("list")
+    if lst and lst.get("final") and led["round"] >= lst["final"]:
+        return "final"
+    return "final-owed" if fixes(led) else "re-review"
+
+
+def fixes(led):
+    """IDs on the human's list fixed as a spec-fix, once every listed finding is settled: what the final check covers."""
+    lst = led.get("list") or {}
+    listed = [f for f in led["findings"] if f["id"] in lst.get("ids", [])]
+    if not listed or any(f["status"] == "open" for f in listed):
+        return []
+    return [f["id"] for f in listed if f["disposition"] in ("spec-fix", "open-question")]
+
+
+def pack_ids(led, lens):
+    """The findings a lens gives a fix verdict on in a re-review (#52 FR-7, FR-9): its own, disposed as fixed."""
+    return [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] in ("spec-fix", "open-question")
+            and any(s["lens"] == lens for s in f["sources"])]
+
+
+CITED = re.compile(r"(?<![\w-])([A-Z]+-\d+)(?![\w-])")
+
+
+def parts(text):
+    """({id: its whole block}, {section: the text outside any item}): an item's continuation lines (an AC's Observable)
+    belong to it; tables, notes and prose belong to their section (#52 FR-14)."""
+    items, secs, cur, sec = {}, collections.defaultdict(list), None, "(front matter)"
+    for line in text.splitlines():
+        if line.startswith("## "):
+            sec, cur = line[3:].strip(), None
+        elif m := spec.DEF.match(line):
+            cur = m[1] or m[2]
+            items[cur] = [line]
+        elif cur and line.startswith(" ") and line.strip():
+            items[cur].append(line)
+        else:
+            cur = None
+            if line.strip():
+                secs[sec].append(line)
+    return {k: "\n".join(v) for k, v in items.items()}, {k: "\n".join(v) for k, v in secs.items()}
+
+
+def diff(root, slug, gate):
+    """(led, (items before, sections before), (items after, sections after), changed IDs, changed sections, neighbours)
+    since the version the last round judged."""
     led = load(root, slug, gate)
     versions = led.get("versions", {})
     if not versions:
@@ -184,11 +247,68 @@ def changed(root, slug, gate):
     old = "\n".join(records.git(root, "cat-file", "-p", versions[max(versions, key=int)]))
     if not old:
         raise ValueError(f"the judged {gate} version isn't in this clone's git objects; re-run every lens")
-    before, after = spec.defined(old), spec.defined(artefact(root, slug, gate))
-    ids = sorted({i for i in before.keys() | after.keys() if before.get(i) != after.get(i)})
-    rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
-    rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] != "deferred"}
-    return ids, sorted(rerun)
+    before, after = parts(old), parts(artefact(root, slug, gate))
+    flat = lambda t: " ".join(t.split())
+    ids = sorted(i for i in before[0].keys() | after[0].keys() if flat(before[0].get(i, "")) != flat(after[0].get(i, "")))
+    secs = [s for s in dict.fromkeys([*before[1], *after[1]]) if flat(before[1].get(s, "")) != flat(after[1].get(s, ""))]
+    near = {c for i in ids for c in CITED.findall(after[0].get(i, ""))}  # what a changed item cites...
+    near |= {i for i, t in after[0].items() if set(CITED.findall(t)) & set(ids)}  # ...and what cites it
+    near |= {c for s in secs for c in CITED.findall(after[1].get(s, ""))}  # a changed table's or note's cites
+    neighbours = sorted(near & after[0].keys() - set(ids))
+    return led, before, after, ids, secs, neighbours
+
+
+def changed(root, slug, gate):
+    """(changed IDs, lenses to re-run, neighbour IDs, changed sections) since the version the last round judged
+    (#27 FR-19, FR-23; #52 FR-14). In the first review the lenses to re-run are every lens that blocked, plus any lens
+    with a finding citing a changed ID; after it, every lens with a fix to check."""
+    led, _, _, ids, secs, neighbours = diff(root, slug, gate)
+    lenses = {s["lens"] for f in led["findings"] for s in f["sources"] if s["lens"] != "deferred"}
+    if any(o == "rejected" for _, o in led["recorded"]):  # a re-review or the final check is next
+        rerun = {lens for lens in lenses if pack_ids(led, lens)}
+    else:
+        rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
+        rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] != "deferred"}
+    return ids, sorted(rerun), neighbours, secs
+
+
+def fixcheck(root, slug, gate, lens, blocker=None):
+    """The fix-check pack for one lens in a re-review or the final fix check (#52 FR-7, FR-13, FR-15): its fixed findings,
+    the changed text before and after, the neighbours, and the findings the human ruled on. With `blocker`, the pack for
+    an escalation juror, who judges only that blocker. collect checks verdicts against the same `pack_ids`."""
+    led, before, after, ids, secs, neighbours = diff(root, slug, gate)
+    by_id = {f["id"]: f for f in led["findings"]}
+    mine = [by_id[i] for i in pack_ids(led, lens)]
+    if blocker and blocker not in by_id:
+        raise ValueError(f"no finding {blocker} in the {gate} ledger of {slug}")
+    out = [f"# Fix-check pack: {lens}, {gate} gate of {slug}", "",
+           "This is a fix check, not a review. You get your own findings from the last round, what changed since you judged "
+           "it, and the items around the changes; nothing else of the artefact. Don't open the artefact itself.", ""]
+    if blocker:
+        f = by_id[blocker]
+        out += ["You are an extra juror for one new blocker. Judge only whether it holds, from the text here. If it holds, "
+                "raise it as F1 with the same cites; if not, `## Findings` is `none`. Give no verdicts.", "",
+                "## The blocker to judge", f"### {f['id']} {f['title']}", f"- cites: {', '.join(f['cites'])}",
+                *[f'- quote: "{q}"' for q in f["quotes"]], *[f"- situation: {s['situation']}" for s in f["sources"][:1]], ""]
+    else:
+        out += ["Give exactly one verdict per finding below, in a `## Verdicts` section before `## Findings`: "
+                "`- J-<n>: fixed | not fixed — <reason>`. Raise a new finding only if it is a blocker you can show from the "
+                "text here (observed); a new major or minor is kept only as a note. Stop once every finding has a verdict.", "",
+                "## Your findings to check", *(["None: give no verdicts.", ""] if not mine else [])]
+        for f in mine:
+            out += [f"### {f['id']} {f['title']}", f"- cites: {', '.join(f['cites'])}", *[f'- quote: "{q}"' for q in f["quotes"]],
+                    *[f"- situation: {s['situation']}" for s in f["sources"] if s["lens"] == lens][:1],
+                    f"- fix asked: {f['fix']}", f"- what was done: {f['note']}", ""]
+    ruled = [f for f in led["findings"] if f["disposition"] in HUMAN_ONLY]
+    out += ["## Settled by the human: don't raise these again", *([f"- {f['id']} {f['title']} ({f['disposition']}: {f['note']})" for f in ruled] or ["None."]), ""]
+    out += ["## Changed items, before and after", ""]
+    for i in ids:
+        out += [f"### {i}", "Before:", before[0].get(i, "(new)"), "After:", after[0].get(i, "(removed)"), ""]
+    for s in secs:
+        out += [f"### Section {s}: text outside its items", "Before:", before[1].get(s, "(new)"), "After:", after[1].get(s, "(removed)"), ""]
+    out += ["## Neighbours: items that cite a changed item or that it cites (current text)", "",
+            *([after[0][i] for i in neighbours] or ["None."])]
+    return out
 
 
 def option_labels(raw):
@@ -266,10 +386,15 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         led["round"] += 1
         # the artefact this round judges, kept in git's object store so a later round can tell what changed (FR-23)
         led.setdefault("versions", {})[str(led["round"])] = blob(root, text, write=True)
+        if fixes(led) and not led["list"].get("final"):  # the round that starts the one final fix check (#52 FR-24)
+            led["list"]["final"] = led["round"]
         out += merge(led, new, gate, slug, text, human)
+    review = phase(led) in ("re-review", "final")
     for f in led["findings"]:  # what the grounding sources now hold may ground a finding dropped earlier
         if f["status"] == "dropped" and grounded(f, text, human):
             f.update(status="open", reason="", validation="pending" if f["severity"] != "minor" else "grounded")
+            if review and f["severity"] != "blocker":  # after the first review, a note (#52 FR-12)
+                f.update(status="noted", validation="grounded")
             out.append(f"revived {f['id']} {f['title']} (now grounded)")
     if gate == "spec":
         out += deferred(led, root, slug)
@@ -314,13 +439,25 @@ def deferred(led, root, slug):
 
 
 def merge(led, paths, gate, slug, text, human=""):
-    out, rnd, rerun = [], led["round"], set()
+    out, rnd = [], led["round"]
+    review = phase(led) in ("re-review", "final")
+    packs, verdicts = {}, collections.defaultdict(list)
     for path in paths:
         meta, findings, errs = parse_lens(path, gate, slug)
+        lens = meta.get("lens", path.stem.split("-", 1)[1])
+        # after the first review a lens answers a fix verdict per finding in its pack; an escalation juror
+        # (`<gate>-<lens>-2`) judges only the new blocker, and a lens asking for more context is re-run anyway
+        if review and not errs and not re.search(r"-\d+$", path.stem) and meta.get("context") != "needs-more":
+            want = packs.setdefault(lens, set(pack_ids(led, lens)))
+            errs += [f"no verdict for {i}, which is in the fix-check pack" for i in sorted(want - set(meta["verdicts"]))]
+            errs += [f"{i} is not in the fix-check pack" for i in sorted(set(meta["verdicts"]) - want)]
+            if not errs:
+                for i, (v, why) in meta["verdicts"].items():
+                    verdicts[i].append((path.stem, v, why))
         juror = led["jurors"].setdefault(path.stem, {"attempts": 0})
         if juror.get("version") != version(led, rnd):  # attempts count per version: a new version earns a fresh retry
             juror["attempts"] = 0
-        juror.update(lens=meta.get("lens", path.stem.split("-", 1)[1]), by=meta.get("by", ""), context=meta.get("context", ""),
+        juror.update(lens=lens, by=meta.get("by", ""), context=meta.get("context", ""),
                      valid=not errs, errors=errs, round=rnd, attempts=juror["attempts"] + 1, version=version(led, rnd))
         if errs:
             out += [f"INVALID {path.name}: {e}" for e in errs]
@@ -328,7 +465,9 @@ def merge(led, paths, gate, slug, text, human=""):
         if juror["context"] != "needs-more":  # the last round this juror actually judged
             juror["judged"] = rnd
         for f in findings:
-            out.append(add(led, f, path.stem, juror["lens"], rnd, text, human))
+            out.append(add(led, f, path.stem, juror["lens"], rnd, text, human, review))
+    if review:
+        return out + apply_verdicts(led, verdicts, rnd)
     # fixed: every juror that raised it has since judged a different version without raising it again, in this round or
     # an earlier one. A risk the human accepted, or ruled out of scope, stays as they ruled: silence isn't a fix.
     for f in led["findings"]:
@@ -340,6 +479,30 @@ def merge(led, paths, gate, slug, text, human=""):
                                         for j in judges):
             f.update(baseline="absent", status="fixed")
             out.append(f"fixed   {f['id']} {f['title']}")
+    return out
+
+
+def apply_verdicts(led, verdicts, rnd):
+    """After the first review only a verdict settles a fix (#52 FR-10, FR-11, FR-25): silence never marks a finding fixed.
+    One `not fixed` among a finding's verdicts reopens it, with one failed round at most per round; a blocker found not
+    fixed goes back to the refuter before it can start another round."""
+    out, by_id = [], {f["id"]: f for f in led["findings"]}
+    for i, given in sorted(verdicts.items()):
+        f = by_id[i]
+        if f["status"] == "open" and f["last_round"] == rnd:  # raised again in this very round: a `fixed` can't close it
+            out.append(f"not fixed {i} {f['title']} (raised again this round)")
+            continue
+        if any(v == "not fixed" for _, v, _ in given):
+            if f["last_round"] < rnd:
+                f["rounds"] += 1
+            f.update(status="open", baseline="unchanged", disposition="", by="", note="", last_round=rnd,
+                     reason="; ".join(f"{j}: {why}" for j, v, why in given if v == "not fixed"))
+            if f["severity"] == "blocker":
+                f["validation"] = "pending"
+            out.append(f"not fixed {i} {f['title']}")
+        else:
+            f.update(status="fixed", baseline="absent")
+            out.append(f"fixed   {i} {f['title']}")
     return out
 
 
@@ -355,7 +518,7 @@ def same(g, f):
     return key(g) == key(f) and (not labels(g) or not labels(f) or bool(labels(g) & labels(f)))
 
 
-def add(led, f, juror, lens, rnd, text, human=""):
+def add(led, f, juror, lens, rnd, text, human="", review=False):
     source = {"juror": juror, "lens": lens, "situation": f["situation"], "severity": f["severity"], "round": rnd}
     # same kind and the same cited IDs; near-duplicates are the refuter's `same-as`. One juror's findings in one round
     # are distinct problems by construction, so they never merge with each other.
@@ -367,14 +530,19 @@ def add(led, f, juror, lens, rnd, text, human=""):
              "sources": [source], "validation": ("pending" if f["severity"] != "minor" else "grounded") if ok else "ungrounded",
              "reason": "" if ok else "a cited ID or quote is not in the artefact", "status": "open" if ok else "dropped",
              "disposition": "", "by": "", "note": "", "baseline": "new", "rounds": 0, "first_round": rnd, "last_round": rnd}
+        if ok and review and f["severity"] != "blocker":  # after the first review only a blocker counts (#52 FR-12)
+            g.update(status="noted", validation="grounded", reason="raised in a re-review below blocker: a note only")
         led["findings"].append(g)
-        return f"{'new    ' if ok else 'dropped'} {g['id']} [{g['severity']}/{g['kind']}] {g['title']}" + ("" if ok else " (ungrounded)")
+        label = "new    " if g["status"] == "open" else g["status"]
+        return f"{label} {g['id']} [{g['severity']}/{g['kind']}] {g['title']}" + (" (ungrounded)" if not ok else " (a note only)" * (g["status"] == "noted"))
     if match["status"] == "dropped":  # reported again: it stays dropped unless the artefact now grounds it
         if not grounded(f, text, human):
             match["last_round"] = rnd
             return f"dropped {match['id']} {match['title']} (still ungrounded)"
         match.update({k: f[k] for k in ("cites", "quotes")}, status="open", reason="",
                      validation="pending" if f["severity"] != "minor" else "grounded")
+        if review and f["severity"] != "blocker":  # revived after the first review: a note, like a new one (#52 FR-12)
+            match.update(status="noted", validation="grounded")
     # reported again on a newer version than it was last raised on: the fix didn't take, a failed round
     if match["last_round"] < rnd and version(led, match["last_round"]) not in (None, version(led, rnd)):
         match["baseline"] = "unchanged"
@@ -385,9 +553,11 @@ def add(led, f, juror, lens, rnd, text, human=""):
     match["last_round"] = rnd
     match["sources"] = [s for s in match["sources"] if s["juror"] != juror] + [source]
     raised = worst(match["severity"], f["severity"])
-    if raised != match["severity"] and match["validation"] == "grounded":
-        match["validation"] = "pending"
+    if raised != match["severity"] and (match["validation"] == "grounded" or raised == "blocker"):
+        match["validation"] = "pending"  # a blocker claim is the refuter's to judge, whatever validated the lesser one
     match["severity"] = raised
+    if review and raised == "blocker" and match["status"] in ("open", "noted"):  # #52 FR-11, FR-13: a blocker
+        match.update(status="open", validation="pending")  # raised again after the first review goes back to the refuter
     return f"{match['baseline']:<7} {match['id']} [{match['severity']}/{match['kind']}] {match['title']} (+{lens})"
 
 
@@ -402,7 +572,7 @@ def refute(led, path):
         if target and target is not g and target["status"] in ("open", "disposed"):  # never into a closed finding
             target["sources"] += [s for s in g["sources"] if s["juror"] not in {t["juror"] for t in target["sources"]}]
             raised = worst(target["severity"], g["severity"])
-            if raised != target["severity"] and target["validation"] == "grounded":
+            if raised != target["severity"] and (target["validation"] == "grounded" or raised == "blocker"):
                 target["validation"] = "pending"
             target["severity"] = raised
             g.update(status="merged", validation="merged", reason=f"same as {target['id']}")
@@ -460,22 +630,36 @@ def votes(led):
 
 
 def compose(led, current):
-    """(outcome, reasons). Fail-closed: rerun | pending | human | rejected | approved, in that order. `current` is the
-    artefact's version now: a version no juror has judged is never approved, whatever the dispositions say."""
-    lenses, reasons = votes(led), []
+    """(outcome, reasons, listed). Fail-closed: rerun | pending | human | rejected | approved, in that order. `current`
+    is the artefact's version now: a version no juror has judged is never approved, whatever the dispositions say, with
+    one exception (#52 FR-23): what the final fix check sent to the human, once they settle it, is never checked again.
+    `listed` holds the IDs a `human` outcome hands over as one list (#52 FR-2, FR-21)."""
+    lenses, ph = votes(led), phase(led)
     judged = version(led, led["round"])
     if not judged:
-        return "rerun", ["no lens output has been collected yet: run the lenses"]
+        return "rerun", ["no lens output has been collected yet: run the lenses"], []
+    if ph == "final-owed":  # the human settled the list with a fix: one final fix check before anything else (#52 FR-22)
+        return "rerun", [f"run the final fix check on the fixes from the human's list: {', '.join(fixes(led))} (`nio jury fixcheck`)"], []
+    flagged = [f for f in led["findings"] if f["id"] in (led.get("list") or {}).get("flagged", [])]
     if current != judged:
-        return "rerun", [f"the {led['gate']} changed since round {led['round']} judged it: re-review what changed (`nio jury changed`)"]
+        if ph == "final" and flagged:
+            still = [f["id"] for f in flagged if f["status"] == "open"]
+            if still:
+                return "human", [f"the final fix check flagged these; fix or accept each as risk: {', '.join(still)}"], still
+            done = [f["id"] for f in flagged if f["disposition"] in ("spec-fix", "open-question")]
+            return "approved", [f"fixed after the final fix check, judged by no lens: {', '.join(done)}"] * bool(done), []
+        if ph == "final":  # passed, then edited: approved, saying no lens judged the edit (#52 FR-5)
+            return "approved", [f"the {led['gate']} changed after the final fix check; no lens judged that change"], []
+        return "rerun", [f"the {led['gate']} changed since round {led['round']} judged it: re-review what changed (`nio jury changed`)"], []
     retry = [f"{n}: {v}" for js in lenses.values() for n, v in js if v in ("invalid", "needs-more") and led["jurors"][n]["attempts"] < 2]
     stuck = [f"{n}: {v} after {led['jurors'][n]['attempts']} attempts" for js in lenses.values() for n, v in js
              if v in ("invalid", "needs-more") and led["jurors"][n]["attempts"] >= 2]
     missing = [lens for lens in led["expect"] if lens not in lenses]
     if retry or missing:
-        return "rerun", retry + [f"{lens}: no output" for lens in missing]
-    if any(v == "pending" for js in lenses.values() for _, v in js):
-        return "pending", ["blocker or major findings wait for the refuter"]
+        return "rerun", retry + [f"{lens}: no output" for lens in missing], []
+    if any(v == "pending" for js in lenses.values() for _, v in js) or any(
+            f["validation"] == "pending" and f["status"] == "open" for f in led["findings"]):  # a not-fixed blocker too
+        return "pending", ["blocker or major findings wait for the refuter"], []
     split = []
     for lens, js in lenses.items():
         counted = [v for _, v in js if v in ("block", "approve")]
@@ -488,19 +672,27 @@ def compose(led, current):
                 for f in led["findings"]:
                     if f["status"] == "open" and {s["juror"] for s in f["sources"]} <= {n for n, v in js if v == "block"}:
                         f.update(status="overruled", reason=f"{lens}: {ok} of {len(counted)} jurors approved ({', '.join(sorted(majority))})")
-    stale = [f"{f['id']} failed {f['rounds']} rounds" for f in led["findings"] if f["status"] == "open" and f["rounds"] >= 2]
+    blocker = any(f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" for f in led["findings"])
+    # failed twice: the human decides instead of another re-review, so only where one would start (#52 FR-16)
+    stale = [f"{f['id']} failed {f['rounds']} rounds" for f in led["findings"]
+             if f["status"] == "open" and f["rounds"] >= 2 and (ph == "first" or (ph == "re-review" and blocker))]
     # disposed as a spec-fix, yet the artefact (== judged, see above) reads as it did when the finding was raised: the
     # fix never landed, or was undone; a fix judged in a later round that skipped the finding's lens counts
     unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] == "spec-fix"
                  and version(led, f["last_round"]) == judged]
     if unapplied:
-        return "rejected", [f"spec-fix without a change to the {led['gate']}: {', '.join(unapplied)}"]
+        return "human" if ph == "final" else "rejected", [f"spec-fix without a change to the {led['gate']}: {', '.join(unapplied)}"], []
     if stuck or split or stale:
-        return "human", stuck + split + stale
-    unresolved = [f["id"] for f in led["findings"] if f["status"] == "open"]
-    if unresolved:
-        return "rejected", [f"unresolved: {', '.join(unresolved)}"]
-    return "approved", []
+        return "human", stuck + split + stale, []
+    unresolved = [f for f in led["findings"] if f["status"] == "open"]
+    ids = [f["id"] for f in unresolved]
+    if ids and (ph == "first" or (ph == "re-review" and blocker)):  # #52 FR-1, FR-6
+        return "rejected", [f"unresolved: {', '.join(ids)}"], []
+    if ids and ph == "final":  # #52 FR-21
+        return "human", [f"the final fix check flagged these; fix or accept each as risk: {', '.join(ids)}"], ids
+    if ids:  # #52 FR-2: no confirmed blocker after the first review, so one list instead of another round
+        return "human", [f"one list for the human; fix or accept each as risk: {', '.join(ids)}"], ids
+    return "approved", [], []
 
 
 def check(root, slug, gate, record=False, human=""):
@@ -509,7 +701,7 @@ def check(root, slug, gate, record=False, human=""):
     Returns (outcome, lines to print)."""
     led = load(root, slug, gate)
     current = blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
-    outcome, reasons = compose(led, current)
+    outcome, reasons, listed = compose(led, current)
     if human.strip():
         if record:  # only a recorded closure sticks; an unrecorded --human counts for this call alone
             led["closed"] = [led["round"], current, human.strip()]
@@ -522,12 +714,19 @@ def check(root, slug, gate, record=False, human=""):
     unresolved = sum(f["status"] == "open" for f in led["findings"])
     lines = [f"outcome: {outcome}", f"round: {led['round']}", f"unresolved: {unresolved}", *[f"- {r}" for r in reasons]]
     lines += [f"vote {lens}: {', '.join(f'{n}={v}' for n, v in js)}" for lens, js in votes(led).items()]
+    notes = [f for f in led["findings"] if f["status"] == "noted"]  # raised below blocker after the first review (#52 FR-12)
+    lines += ["notes (no ruling needed):"] * bool(notes) + [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}" for f in notes]
     review = [f for f in led["findings"] if f["by"] == "agent"]  # still listed once a re-run marks it fixed
     lines += ["for the human to review (set by the agent):"] * bool(review)
     lines += [f"- {f['id']} {f['disposition']}: {f['note']}" for f in review]
     if record and outcome in ("approved", "rejected", "human") and [led["round"], outcome] not in led["recorded"]:
         lines.append(f"recorded {verdict(root, led, outcome, reasons).relative_to(root)}")
         led["recorded"].append([led["round"], outcome])
+    if record and listed and not closed:  # the list the human settles, or what the final check flagged (#52 FR-24)
+        if phase(led) == "final":
+            led["list"]["flagged"] = sorted(set(led["list"]["flagged"]) | set(listed), key=lambda i: int(i[2:]))
+        elif not led.get("list"):
+            led["list"] = {"round": led["round"], "ids": listed, "final": None, "flagged": []}
     save(root, led)
     return outcome, lines
 

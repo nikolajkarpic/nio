@@ -1,0 +1,1332 @@
+{
+ "gate": "spec",
+ "subject": "grill",
+ "round": 3,
+ "tier": "low",
+ "expect": [
+  "consistency",
+  "logic",
+  "scope",
+  "testability"
+ ],
+ "collected": {},
+ "jurors": {
+  "spec-consistency": {
+   "attempts": 1,
+   "lens": "consistency",
+   "by": "juror / claude-code / haiku",
+   "context": "sufficient",
+   "valid": true,
+   "errors": [],
+   "round": 1
+  },
+  "spec-logic": {
+   "attempts": 3,
+   "lens": "logic",
+   "by": "juror / claude-code / sonnet",
+   "context": "sufficient",
+   "valid": true,
+   "errors": [],
+   "round": 3
+  },
+  "spec-scope-2": {
+   "attempts": 1,
+   "lens": "scope",
+   "by": "juror / claude-code / haiku",
+   "context": "sufficient",
+   "valid": true,
+   "errors": [],
+   "round": 1
+  },
+  "spec-scope-3": {
+   "attempts": 1,
+   "lens": "scope",
+   "by": "juror / claude-code / haiku",
+   "context": "sufficient",
+   "valid": true,
+   "errors": [],
+   "round": 1
+  },
+  "spec-scope": {
+   "attempts": 2,
+   "lens": "scope",
+   "by": "juror / claude-code / haiku",
+   "context": "sufficient",
+   "valid": true,
+   "errors": [],
+   "round": 2
+  },
+  "spec-testability": {
+   "attempts": 2,
+   "lens": "testability",
+   "by": "juror / claude-code / sonnet",
+   "context": "sufficient",
+   "valid": true,
+   "errors": [],
+   "round": 2
+  }
+ },
+ "findings": [
+  {
+   "id": "J-1",
+   "title": "The contradiction state rejects both asking and answering the resolution question",
+   "kind": "contradiction",
+   "severity": "major",
+   "cites": [
+    "AC-8",
+    "AC-9",
+    "FR-13",
+    "state table row `contradiction`"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "asks how to resolve it before any other question",
+    "reject: resolve the contradiction first",
+    "reject: the answer must resolve the contradiction"
+   ],
+   "fix": "add a resolution-question transition in `contradiction`. For example, let `ask next` ask only the resolution question, and let `answer` to that question mean \"contradiction resolved\" and lead to `idle`.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "the human's answer contradicts the code, so the session moves from `asking` to `",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "The state table row `contradiction` rejects `ask next` (\"resolve the contradiction first\") and `answer` (\"the answer must resolve the contradiction\"). AC-8 and FR-13 require a resolution question to be asked next. No event produces `contradiction resolved`, so the only exit is `human ends`.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "state table contradiction row now asks and resolves the resolution question (FR-13)",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-2",
+   "title": "The decision table lets money and breaking-change decisions fall below the bar",
+   "kind": "contradiction",
+   "severity": "major",
+   "cites": [
+    "FR-16",
+    "FR-12",
+    "FR-26",
+    "decision table row `decision | no | no | yes | no`"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "points about permissions, irreversible operations, money, deletion or breaking changes are never below the bar",
+    "take the recommended answer as an agent call; list it at the finish gate"
+   ],
+   "fix": "widen the table's second column to the FR-16/FR-26 list (permissions, irreversible, money, deletion, breaking change), or make those cases force `above the bar = yes`. Make FR-12 use the same list.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "a decision about a money rule or a breaking API change is neither a permission n",
+     "severity": "major"
+    },
+    {
+     "juror": "spec-scope-3",
+     "lens": "scope",
+     "situation": "the human said permissions and irreversible operations are always asked (intake,",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "The decision table's second column covers only permissions or irreversible, and FR-12 uses the same short list. A money or breaking-change decision therefore reaches the row `no | no | yes | no`, which takes the agent call. FR-16 says such points are never below the bar, and nothing in the table or glossary forces `above the bar = yes` for them.",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "FR-12 and the decision table now carry the full always-ask list (human confirmed, Q14)",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-3",
+   "title": "The state table forbids the rounds mode that FR-3 and AC-3 allow",
+   "kind": "contradiction",
+   "severity": "minor",
+   "cites": [
+    "FR-3",
+    "AC-3",
+    "state table row `asking`"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "the whole frontier as one numbered round",
+    "reject: one question at a time"
+   ],
+   "fix": "say in the `asking` row that a round counts as one waiting message. Leave `asking` only when every question in the round is answered, or say that partial answers keep the session in `asking`.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "with `grill.mode: rounds` the grill sends one numbered message holding several q",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "asking row waits for a question or a whole round (FR-3)",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-4",
+   "title": "Rounds mode contradicts the non-goal against asking several questions in one message",
+   "kind": "contradiction",
+   "severity": "blocker",
+   "cites": [
+    "FR-3",
+    "AC-3",
+    "the non-goal \"Asking several questions in one message.\""
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "and the whole frontier as one numbered round when the config sets `grill.mode` to `rounds`",
+    "Asking several questions in one message."
+   ],
+   "fix": "narrow the non-goal to the default path, for example \"Asking several questions in one message unless rounds mode is on\", or remove it.",
+   "sources": [
+    {
+     "juror": "spec-scope-2",
+     "lens": "scope",
+     "situation": "the human turns on `grill.mode: rounds`, and the grill sends one numbered messag",
+     "severity": "major"
+    },
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "a project sets `grill.mode: rounds`. FR-3 requires one numbered message holding ",
+     "severity": "blocker"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "FR-3 and AC-3 allow one numbered message holding the whole frontier in rounds mode. The non-goal \"Asking several questions in one message. [human]\" still bans it unconditionally. Q13 in grill.md shows the human chose \"Optional rounds mode\", so the non-goal was not updated.",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "non-goal now says one question by default, rounds mode opt-in (FR-3)",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-5",
+   "title": "The configurable 15 and the epic-split suggestion were never asked",
+   "kind": "scope",
+   "severity": "minor",
+   "cites": [
+    "FR-15",
+    "AC-13",
+    "the Decisions line \"Every 15 questions the grill pauses\""
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "WHEN every 15 asked questions (configurable) THE SYSTEM SHALL pause and offer: continue, delegate the rest to an agent, or end early",
+    "and at the first pause, IF more than 15 points are still open THEN it SHALL also suggest splitting the spec into an epic with slices."
+   ],
+   "fix": "drop \"(configurable)\" and the epic clause, or tag them [default] so the grill confirms them.",
+   "sources": [
+    {
+     "juror": "spec-scope-2",
+     "lens": "scope",
+     "situation": "the human's only answer on the pause is Q9, \"Check in every 15; offer 3 ways\", w",
+     "severity": "minor"
+    },
+    {
+     "juror": "spec-scope-3",
+     "lens": "scope",
+     "situation": "Q9 answered \"Check in every 15; offer 3 ways\", which covers the pause and the th",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "the configurable 15 and the epic suggestion confirmed (Q14)",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-6",
+   "title": "Money and breaking changes are added to the always-asked set",
+   "kind": "scope",
+   "severity": "minor",
+   "cites": [
+    "FR-26",
+    "FR-16",
+    "the intake line \"Permissions and irreversible operations are always asked.\""
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "IF a delegated agent reaches a point about permissions, an irreversible operation, money, deletion or a breaking change THEN THE SYSTEM SHALL stop and wait for the human.",
+    "points about permissions, irreversible operations, money, deletion or breaking changes are never below the bar"
+   ],
+   "fix": "remove \"money\" and \"breaking change\", or confirm them in the grill and tag them [human] with the answer.",
+   "sources": [
+    {
+     "juror": "spec-scope-2",
+     "lens": "scope",
+     "situation": "the intake and the grill answers cover permissions and irreversible operations o",
+     "severity": "minor"
+    },
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "the issue's text is \"Permissions and irreversible operations are always asked\", ",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "money, deletion and breaking changes confirmed as always asked (Q14)",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-7",
+   "title": "The guessing non-goal is contradicted by FR-16, and the non-goal was not updated",
+   "kind": "contradiction",
+   "severity": "minor",
+   "cites": [
+    "FR-16",
+    "Q8",
+    "the non-goal \"Guessing an answer to a decision the human hasn't made\""
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "WHEN a point falls below that bar THE SYSTEM SHALL take its recommended answer itself, tag it `[agent]`, and list it at the finish gate where the human can overturn it",
+    "Guessing an answer to a decision the human hasn't made"
+   ],
+   "fix": "qualify the non-goal (\"except below-the-bar points written in as [agent]\") so it matches Q8.",
+   "sources": [
+    {
+     "juror": "spec-scope-2",
+     "lens": "scope",
+     "situation": "FR-16 has the agent take its own recommended answer for below-the-bar decisions,",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "guessing non-goal now excepts below-the-bar [agent] calls (FR-16)",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-8",
+   "title": "Money and breaking changes are never asked, under a [human] tag",
+   "kind": "scope",
+   "severity": "major",
+   "cites": [
+    "FR-16",
+    "AC-14"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "points about permissions, irreversible operations, money, deletion or breaking changes are never below the bar."
+   ],
+   "fix": "remove \"money\" and \"breaking changes\" from FR-16, or ask the human to confirm them and then keep the [human] tag only if they did.",
+   "sources": [
+    {
+     "juror": "spec-scope-3",
+     "lens": "scope",
+     "situation": "the human said permissions and irreversible operations are always asked (intake,",
+     "severity": "major"
+    }
+   ],
+   "validation": "merged",
+   "reason": "same as J-2",
+   "status": "merged",
+   "disposition": "",
+   "by": "",
+   "note": "",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-9",
+   "title": "Threshold of \"more than three\" that no answer set",
+   "kind": "scope",
+   "severity": "minor",
+   "cites": [
+    "FR-33",
+    "AC-30"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "IF the human accepted every recommendation of more than three as-is THEN THE SYSTEM SHALL say so at the finish gate and ask which decision they would push back on before offering to finish."
+   ],
+   "fix": "state the threshold as a [default] and confirm it with the human, or remove the threshold and run the check on every grill.",
+   "sources": [
+    {
+     "juror": "spec-scope-3",
+     "lens": "scope",
+     "situation": "Q13 answered \"Answer fidelity + passivity\" and gave no number. The \"more than th",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "the passivity threshold is removed (Q14)",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-10",
+   "title": "One spec carrying several features, including changes to nio check spec",
+   "kind": "scope",
+   "severity": "minor",
+   "cites": [
+    "FR-27",
+    "FR-29",
+    "FR-31"
+   ],
+   "evidence": "inferred",
+   "quotes": [
+    "THE SYSTEM SHALL accept `[derived: <sources>]` in `nio check spec`, including at the gate, only when every source exists and none is itself derived."
+   ],
+   "fix": "consider splitting the `nio check spec` changes into a slice of their own, or confirm with the human that they ship together.",
+   "sources": [
+    {
+     "juror": "spec-scope-3",
+     "lens": "scope",
+     "situation": "the spec mixes the grill loop with the deferred handling, the delegation, the gl",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "human",
+   "note": "split: the nio check spec changes move to their own slice under an epic (the human, 2026-10-25)",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-11",
+   "title": "Rounds mode contradicts the non-goal against several questions in one message",
+   "kind": "contradiction",
+   "severity": "blocker",
+   "cites": [
+    "FR-3",
+    "Non-goals \"Asking several questions in one message. [human]\""
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "the whole frontier as one numbered round when the config sets `grill.mode` to `rounds` or the human asks for rounds",
+    "Asking several questions in one message. [human]"
+   ],
+   "fix": "rewrite the non-goal to exclude rounds mode, e.g. \"Asking several questions in one message by default; rounds mode is opt-in (FR-3).\"",
+   "sources": [
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "a project sets `grill.mode: rounds`. FR-3 requires one numbered message holding ",
+     "severity": "blocker"
+    }
+   ],
+   "validation": "merged",
+   "reason": "same as J-4",
+   "status": "merged",
+   "disposition": "",
+   "by": "",
+   "note": "",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-12",
+   "title": "Epic-split suggestion and configurable pause are not in the human's answers",
+   "kind": "scope",
+   "severity": "minor",
+   "cites": [
+    "FR-15"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "WHEN every 15 asked questions (configurable)",
+    "and at the first pause, IF more than 15 points are still open THEN it SHALL also suggest splitting the spec into an epic with slices."
+   ],
+   "fix": "drop \"(configurable)\" and the epic-split clause from FR-15 and its Decisions line, or record the answer that asked for them in grill.md.",
+   "sources": [
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "Q9's answer is \"Check in every 15; offer 3 ways\", with no mention of configurati",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "the configurable 15 and the epic suggestion confirmed (Q14)",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-13",
+   "title": "AC-10 cannot detect a guess",
+   "kind": "untestable",
+   "severity": "major",
+   "cites": [
+    "AC-10",
+    "FR-14"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "no decision is settled by a guess"
+   ],
+   "fix": "reduce it to something checkable, for example \"every decision point in the `--gate` list at the start appears in the asked list, or is tagged `[derived: ...]` or `[agent]` with its source\".",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "a test counts the questions and sees more than 5, so the first half of the Obser",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "The AC-10 Observable says \"no decision is settled by a guess\", and FR-14 only forbids a cap. Nothing in the spec says how to tell a guess from a legitimate `[agent]` or `[derived]` call, so a test cannot fail on a guess.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "AC-10 Observable now checkable by provenance tags",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-14",
+   "title": "\"Covered\" and \"changes nothing a user can do or see\" have no test criterion",
+   "kind": "ambiguity",
+   "severity": "major",
+   "cites": [
+    "AC-14",
+    "AC-15",
+    "FR-9",
+    "FR-10"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "no non-core question is asked for a goal while one of its 6 core facets is uncovered",
+    "an open point whose alternatives change nothing a user can do or see"
+   ],
+   "fix": "define \"covered\" by a checkable marker (for example, a spec item tagged per facet) and give the bar test as a fixed yes/no list.",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "a test fixture needs a deterministic rule for when a facet counts as covered, an",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "The Glossary lists the core facets and defines the bar in prose, but neither defines a checkable marker for \"covered\" or a yes/no test for \"changes nothing a user can do or see\". AC-14 and AC-15 therefore have no deterministic fixture rule.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "covered = logged per facet; the bar = five-question checklist recorded per call (Q15)",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-15",
+   "title": "The pause rule is tested at only one point",
+   "kind": "gap",
+   "severity": "major",
+   "cites": [
+    "AC-13",
+    "FR-15"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "WHEN every 15 asked questions (configurable) THE SYSTEM SHALL pause and offer",
+    "question 16 is not asked before the pause"
+   ],
+   "fix": "add ACs for the repeat pause, the configured interval, the boundary of 15 open points with no split suggestion, and each of the three choices.",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "AC-13 covers only the first pause with 20 points open. No AC covers the second p",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "AC-13 covers only the first pause, with 15 asked and 20 points open. FR-15 also says \"every 15\", \"(configurable)\", a split suggestion only at the first pause with more than 15 points open, and three choices. No other AC covers the repeat pause, the configured interval, the 15-point boundary or any of the three choices.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "added AC-31, AC-32, AC-33 for the repeat pause, the configured interval and boundary, and the three choices",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-16",
+   "title": "No failure case for a fact lookup that finds nothing",
+   "kind": "gap",
+   "severity": "major",
+   "cites": [
+    "FR-2",
+    "AC-2"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "look it up and never ask the human"
+   ],
+   "fix": "add an FR and an AC for the fact that cannot be found: reclassify it as a decision and ask, or defer it as a `DF-n`.",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "a candidate point is classed as a fact, but code, memory, docs and research all ",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "FR-2 forbids asking a fact, and the Glossary defines a fact as something code, memory, docs or research can answer. Classification happens before the lookup, and no FR or AC covers a lookup that returns nothing or conflicting results. The decision table has no row for it, and FR-24 and the deferral rules cover other cases.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "FR-34, AC-34: show what was searched; the human decides or defers; conflicts are contradictions (Q16)",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 1,
+   "last_round": 1
+  },
+  {
+   "id": "J-17",
+   "title": "AC-4 \"verified facts\" cannot be checked from the message",
+   "kind": "untestable",
+   "severity": "major",
+   "cites": [
+    "AC-4",
+    "FR-4"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "the verified facts it rests on"
+   ],
+   "fix": "require each fact in the message to carry a source reference, and assert one line for the why.",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "a message has a question that ends with `.`, a three-paragraph \"why it matters\",",
+     "severity": "major"
+    }
+   ],
+   "validation": "refuted",
+   "reason": "AC-4 and FR-4 already require each fact to carry a source (an RF-n, a file:line or a spec ID), and the Observable says the message \"has each of those parts\", which includes the `?` ending, the one-line why and the recommendation's reason. The filler rule is the only judgement left, and it is a stated \"never filler\" requirement, not a gap in the AC.",
+   "status": "refuted",
+   "disposition": "",
+   "by": "",
+   "note": "",
+   "baseline": "unchanged",
+   "rounds": 1,
+   "first_round": 1,
+   "last_round": 2
+  },
+  {
+   "id": "J-18",
+   "title": "A fact nobody can find is both never asked and shown to the human",
+   "kind": "contradiction",
+   "severity": "major",
+   "cites": [
+    "FR-34",
+    "FR-2",
+    "SC-2",
+    "decision table row `fact`"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "look it up; never ask",
+    "THEN THE SYSTEM SHALL show the human what it searched and found and let them decide it now",
+    "WHEN a candidate point is a fact that code, memory, docs or research can answer THE SYSTEM SHALL look it up and never ask the human."
+   ],
+   "fix": "add a row to the decision table, for example \"fact, lookup found nothing or disagrees\", with the action \"show what was searched; human decides or defers\". Narrow the `fact` row and the glossary entry for Fact to facts that are findable.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "a candidate point is a fact and the lookup finds nothing. The decision table row",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "The decision table row `fact` says \"look it up; never ask\", and FR-2 says \"never ask the human\". FR-34 and AC-34 show the unfound fact to the human to decide or defer. The table and the Glossary entry for Fact were not updated, so nothing says which wins.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "decision table: a fact the lookup can't settle goes to the human (FR-34)",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-19",
+   "title": "AC-15's observable cannot be met, and \"call\" makes facet coverage circular",
+   "kind": "contradiction",
+   "severity": "major",
+   "cites": [
+    "AC-15",
+    "FR-9",
+    "FR-10"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "no question for a goal comes before an entry tagged with each of its 6 core facets",
+    "a facet counting as covered once `grill.md` logs a question or call for that goal tagged with it"
+   ],
+   "fix": "reword AC-15 to \"no question from another coverage category comes before an entry for each of the goal's 6 core facets\". State which kinds of call count towards coverage (exclude agent below-the-bar calls). Add a \"core facets covered\" condition to the decision table so `above the bar = no` cannot auto-answer a core-facet decision.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "a goal is stated and nothing is logged yet. The first facet question is a questi",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "AC-15's Observable says \"no question for a goal comes before an entry tagged with each of its 6 core facets\". The first facet question is itself a question for the goal, so it cannot pass. FR-9 also lets a \"call\" cover a facet, and FR-10 only creates calls after the facets are covered, which is circular. Nothing says which kinds of call count.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "FR-9 and AC-15 count only questions and fact lookups toward coverage; the table requires the core facets before the bar",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-20",
+   "title": "An append-only log with one entry per answer cannot show an unanswered question",
+   "kind": "inconsistency",
+   "severity": "major",
+   "cites": [
+    "AC-19",
+    "AC-21",
+    "FR-19",
+    "FR-20",
+    "AC-1"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "`grill.md` gains one entry with the question, options, answer, provenance and the patched IDs, and no earlier entry changes",
+    "Given the previous session ended with a question asked but unanswered, when a new session starts, then that question is asked first."
+   ],
+   "fix": "say that an ask is logged as its own entry and the answer as a second entry, or drop AC-21's requirement to re-ask the same question and say the new session re-derives it from `--gate`. Align AC-19's \"one entry per answer\" with whichever is chosen.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "the session dies after a question is shown and before the reply. Under AC-19 the",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "AC-19 and FR-19 log an entry per answer and say that no earlier entry changes. AC-21 requires the question that was asked but unanswered to be asked first, yet the log holds no entry for a pending question. UJ-3 and FR-20 resume from \"the log's last entry\", which cannot name it.",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "grill",
+   "note": "two log entries per question, Asked then answered (Q18)",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-21",
+   "title": "The state table leaves out pause, delegation, finish-gate steps and partial round answers",
+   "kind": "gap",
+   "severity": "major",
+   "cites": [
+    "FR-15",
+    "FR-33",
+    "FR-3",
+    "FR-25",
+    "FR-32",
+    "state table row `asking`"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "reject: a question or round is waiting",
+    "pause and offer: continue, delegate the rest to an agent, or end early",
+    "ask which decision they would push back on before offering to finish"
+   ],
+   "fix": "add states or events for the pause, for a delegated session, and for the finish gate. Say whether an `answer` that leaves round questions open stays in `asking`.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "three cases fall outside the table.",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "The state table has no pause state or event, so after 15 questions `idle` still allows \"ask next\" despite FR-15. It also has no state for delegation (FR-25) or for the finish-gate steps (FR-32, FR-33). In the `asking` row any `answer` goes to `idle`, although FR-3 allows a round with several questions.",
+   "status": "disposed",
+   "disposition": "accepted-risk",
+   "by": "human",
+   "note": "accepted at the spec jury; tracked in https://github.com/nikolajkarpic/nio/issues/51",
+   "baseline": "unchanged",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-22",
+   "title": "AC-17 and AC-26 cover fewer always-human cases than FR-12 and FR-26",
+   "kind": "inconsistency",
+   "severity": "minor",
+   "cites": [
+    "AC-17",
+    "AC-26",
+    "FR-12",
+    "FR-26"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "Given a point about permissions or an irreversible operation that follows from accepted answers",
+    "IF a point concerns permissions, an irreversible operation, money, deletion or a breaking change THEN THE SYSTEM SHALL ask it, even when it follows from accepted answers."
+   ],
+   "fix": "widen AC-17 and AC-26 to the full list in FR-12 and FR-26, or have them point to FR-12 and FR-26 by reference.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "a point about money follows from accepted answers. FR-12 and the decision table ",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "fixed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "AC-17 and AC-26 cover the full always-human list",
+   "baseline": "absent",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-23",
+   "title": "Recording five bar answers for every unasked point is labelled as the human's decision",
+   "kind": "scope",
+   "severity": "major",
+   "cites": [
+    "FR-10",
+    "AC-14"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "recording those five answers in `grill.md` for every point it doesn't ask. [human]",
+    "Behaviour bar; minor = [agent]\" (grill-answers Q8)",
+    "the bar is a five-question checklist (can do, sees, who may, data, cost), recorded for every point not asked (grill, 2026-10-25)."
+   ],
+   "fix": "keep the bar; drop the five-answer recording from FR-10, or tag it `[default]` so the human confirms it at the finish gate.",
+   "sources": [
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "the human chose a behaviour bar and said minor points become agent calls. Nothin",
+     "severity": "major"
+    }
+   ],
+   "validation": "ungrounded",
+   "reason": "a cited ID or quote is not in the artefact",
+   "status": "dropped",
+   "disposition": "",
+   "by": "",
+   "note": "",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-24",
+   "title": "The glossary check still sits in this slice, though the split moved the checker to grill-checks",
+   "kind": "scope",
+   "severity": "major",
+   "cites": [
+    "FR-31"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "glossary discipline with banned synonyms checked by `nio check spec`",
+    "what `nio check spec` and the jury enforce moved to the `grill-checks` slice",
+    "Q17 answer: \\\"Split it: an epic with two slices, the grill loop and the checker changes, each juried\\"
+   ],
+   "fix": "move the banned-synonym check line to the grill-checks slice, and leave R-1 with FR-31's ask-on-clash behaviour only.",
+   "sources": [
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "the human split the checker changes into their own slice. A Decision in this sli",
+     "severity": "major"
+    }
+   ],
+   "validation": "ungrounded",
+   "reason": "a cited ID or quote is not in the artefact",
+   "status": "dropped",
+   "disposition": "",
+   "by": "",
+   "note": "",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-25",
+   "title": "The epic suggestion is limited to the first pause, which no answer says",
+   "kind": "inconsistency",
+   "severity": "minor",
+   "cites": [
+    "FR-15",
+    "AC-31"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "and at the first pause, IF more than 15 points are still open THEN it SHALL also suggest splitting the spec into an epic with slices. [human]",
+    "if much is still open it suggests splitting into an epic (grill, 2026-10-25).",
+    "Check in every 15; offer 3 ways\" (grill-answers Q9)"
+   ],
+   "fix": "decide whether the suggestion repeats at each pause while more than 15 points stay open; make FR-15, AC-31 and the Decision line say the same thing, and tag the choice to the human.",
+   "sources": [
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "at the second pause, with 20 points still open, FR-15 forbids the epic suggestio",
+     "severity": "minor"
+    }
+   ],
+   "validation": "ungrounded",
+   "reason": "a cited ID or quote is not in the artefact",
+   "status": "dropped",
+   "disposition": "",
+   "by": "",
+   "note": "",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-26",
+   "title": "The follow-up options are built from the human's words, which no answer asks for",
+   "kind": "scope",
+   "severity": "minor",
+   "cites": [
+    "FR-24"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "ask one follow-up on the same point, with options built from the human's words",
+    "Follow up once, then ask\" (grill-answers Q12)"
+   ],
+   "fix": "drop \"with options built from the human's words\", or tag it `[default]` for the human to confirm.",
+   "sources": [
+    {
+     "juror": "spec-scope",
+     "lens": "scope",
+     "situation": "Q12 asks only whether there is one follow-up. Nothing in the answers says the op",
+     "severity": "minor"
+    }
+   ],
+   "validation": "ungrounded",
+   "reason": "a cited ID or quote is not in the artefact",
+   "status": "dropped",
+   "disposition": "",
+   "by": "",
+   "note": "",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-27",
+   "title": "AC-32 does not say when the open points are counted, so it cannot test the \"more than 15\" boundary",
+   "kind": "ambiguity",
+   "severity": "major",
+   "cites": [
+    "AC-32",
+    "FR-15",
+    "AC-13"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "exactly 15 points are open, when 10 questions are asked",
+    "IF more than 15 points are still open"
+   ],
+   "fix": "state the count at the pause (\"when 15 points are open at the pause\") and add a paired case with 16 open that does suggest the split. Also say whether the threshold 15 is configurable like the interval.",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "AC-13 counts open points at the pause (\"asked 15 questions and 20 points are sti",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "AC-13 counts the open points at the pause, but AC-32 sets \"exactly 15 points are open\" before 10 questions are asked. Answers settle points, so the count at the pause is not stated. A `>=` build could pass AC-32 while breaking FR-15, and no AC has 16 open points.",
+   "status": "disposed",
+   "disposition": "accepted-risk",
+   "by": "human",
+   "note": "accepted at the spec jury; tracked in https://github.com/nikolajkarpic/nio/issues/51",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-28",
+   "title": "FR-34's disagreeing-sources branch has no AC",
+   "kind": "gap",
+   "severity": "major",
+   "cites": [
+    "FR-34",
+    "AC-34"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "raising disagreeing sources as a contradiction (FR-13)",
+    "Given a fact the code, memory and docs can't settle, when the grill reaches it"
+   ],
+   "fix": "add an AC: given two sources that disagree on a fact, when the grill looks it up, then it flags both sides as a contradiction and asks the resolution question before any other (Observable: the next message names both sources).",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "code says orders cancel whole, docs say partial. The grill instead silently pick",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "FR-34 says disagreeing sources are raised as a contradiction (FR-13), but AC-34 covers only a fact \"the code, memory and docs can't settle\". Its Observable has no contradiction flag. AC-8 and AC-9 cover contradictions from answers, not between sources, so a silent pick of one source breaks no AC.",
+   "status": "disposed",
+   "disposition": "accepted-risk",
+   "by": "human",
+   "note": "accepted at the spec jury; tracked in https://github.com/nikolajkarpic/nio/issues/51",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-29",
+   "title": "State table row `contradiction`: \"answer \u2192 idle\" conflicts with AC-8 and a second contradiction is dropped",
+   "kind": "inconsistency",
+   "severity": "major",
+   "cites": [
+    "state table row `contradiction`",
+    "AC-8",
+    "AC-9"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "| contradiction | \u2192 contradiction | \u2192 idle | ignore | \u2192 idle | \u2192 ended-early | reject: a contradiction is open |",
+    "no other point is asked until it is resolved"
+   ],
+   "fix": "make `answer` in `contradiction` stay in `contradiction` unless it resolves it, and queue or flag a second contradiction. Add an AC (unit) for the reject and ignore cells.",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "the grill is in `contradiction` and the human replies with something that does n",
+     "severity": "major"
+    }
+   ],
+   "validation": "confirmed",
+   "reason": "In the state table row `contradiction`, `answer` goes to `idle` without checking that the answer resolves the contradiction. `idle` allows \"ask next\", which conflicts with AC-8 (\"no other point is asked until it is resolved\"). `contradiction found` is `ignore` in this state, so a second contradiction is never flagged. No AC covers the table's reject or ignore cells.",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "the contradiction state holds until resolved and flags a second contradiction",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-30",
+   "title": "AC-15's coverage test can pass with an empty tagged entry",
+   "kind": "risk",
+   "severity": "minor",
+   "cites": [
+    "AC-15",
+    "FR-9"
+   ],
+   "evidence": "inferred",
+   "quotes": [
+    "a facet counting as covered once `grill.md` logs a question or call for that goal tagged with it",
+    "no question for a goal comes before an entry tagged with each of its 6 core facets"
+   ],
+   "fix": "define the facet tag names, and require each covering entry to cite the spec item or question it examined. Test with a seeded goal where a facet is genuinely uncovered.",
+   "sources": [
+    {
+     "juror": "spec-testability",
+     "lens": "testability",
+     "situation": "the agent logs six one-line \"call\" entries tagged `meaning`, `actors`, and so on",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "accepted-risk",
+   "by": "human",
+   "note": "accepted at the spec jury; tracked in https://github.com/nikolajkarpic/nio/issues/51",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 2,
+   "last_round": 2
+  },
+  {
+   "id": "J-31",
+   "title": "A point deferred mid-grill keeps the gate red, so done is unreachable",
+   "kind": "contradiction",
+   "severity": "major",
+   "cites": [
+    "FR-34",
+    "FR-18",
+    "AC-34"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "let them decide it now (`[human]`) or defer it (`DF-n`)",
+    "WHEN the grill ends early THE SYSTEM SHALL move each unsettled point to `## Deferred` as `DF-n`",
+    "the gate lists them and the jury turns each into a finding for the human"
+   ],
+   "fix": "say whether a `DF-n` created mid-grill counts as settled for `--gate`. If it does, FR-18 and the Decisions line must say so. If it doesn't, AC-34 must say the human can only defer by ending early.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "mid-grill, a fact lookup finds nothing and the human chooses \"defer\". FR-34 and ",
+     "severity": "major"
+    }
+   ],
+   "validation": "pending",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "accepted-risk",
+   "by": "human",
+   "note": "accepted when closing the grill jury (Q19); tracked in https://github.com/nikolajkarpic/nio/issues/51",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 3,
+   "last_round": 3
+  },
+  {
+   "id": "J-32",
+   "title": "Delegation and \"confirmed by the human\" can't both hold for tables and risk flags",
+   "kind": "contradiction",
+   "severity": "major",
+   "cites": [
+    "AC-22",
+    "FR-23",
+    "FR-25"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "when the grill finishes, then every row and every risk flag has been confirmed by the human.",
+    "THE SYSTEM SHALL let that agent answer decision points and confirm the finish, tagging each answer `[agent]`, never `[human]`."
+   ],
+   "fix": "either add rows and risk flags to the always-wait-for-the-human points of FR-26, or restrict AC-22 and FR-23 to non-delegated sessions and say who sets the flags when delegated.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "the session is delegated and the agent answers the `[default]` state-table rows ",
+     "severity": "major"
+    }
+   ],
+   "validation": "pending",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "accepted-risk",
+   "by": "human",
+   "note": "accepted when closing the grill jury (Q19); tracked in https://github.com/nikolajkarpic/nio/issues/51",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 3,
+   "last_round": 3
+  },
+  {
+   "id": "J-33",
+   "title": "AC-15 and AC-18 give opposite orders when a core-facet question is waiting on a lookup",
+   "kind": "contradiction",
+   "severity": "minor",
+   "cites": [
+    "AC-15",
+    "AC-18",
+    "FR-8",
+    "FR-9"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "then it picks a core facet before any other taxonomy category",
+    "then the waiting one is held and the others are asked."
+   ],
+   "fix": "in AC-15, say the core-facet order applies among questions whose prerequisites are settled.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "for a goal, the \"failure and conflict\" facet question is waiting on a fact looku",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "AC-15: the core-facet order applies among questions whose prerequisites are settled",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 3,
+   "last_round": 3
+  },
+  {
+   "id": "J-34",
+   "title": "A core facet that is never logged keeps the bar from rising and every decision is asked",
+   "kind": "gap",
+   "severity": "major",
+   "cites": [
+    "FR-9",
+    "FR-10",
+    "AC-15"
+   ],
+   "evidence": "inferred",
+   "quotes": [
+    "where only a question or a fact lookup counts, never a below-the-bar call",
+    "without asking it",
+    "ask (a core facet comes first)"
+   ],
+   "fix": "add an explicit way for a facet to count as covered when no point applies or when a derived write-in settles it. Drop \"or call\" from the FR-9 wording.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "take a goal with 6 facets where one facet, say \"transition from today\", has noth",
+     "severity": "major"
+    }
+   ],
+   "validation": "pending",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "accepted-risk",
+   "by": "human",
+   "note": "accepted when closing the grill jury (Q19); tracked in https://github.com/nikolajkarpic/nio/issues/51",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 3,
+   "last_round": 3
+  },
+  {
+   "id": "J-35",
+   "title": "AC-11 ends the grill as done on \"explore further\" and \"stop with concerns\"",
+   "kind": "ambiguity",
+   "severity": "minor",
+   "cites": [
+    "AC-11",
+    "FR-17",
+    "FR-18"
+   ],
+   "evidence": "observed",
+   "quotes": [
+    "when the human or the delegated agent confirms at the finish gate (finish, explore further, stop with concerns), then the grill ends as done",
+    "THE SYSTEM SHALL end the grill as done"
+   ],
+   "fix": "only \"finish\" ends as done. Say that \"explore further\" returns to idle and that \"stop with concerns\" is an early end that defers the concerns.",
+   "sources": [
+    {
+     "juror": "spec-logic",
+     "lens": "logic",
+     "situation": "`--gate` passes and the human picks \"explore further\" at the finish gate. AC-11 ",
+     "severity": "minor"
+    }
+   ],
+   "validation": "grounded",
+   "reason": "",
+   "status": "disposed",
+   "disposition": "spec-fix",
+   "by": "agent",
+   "note": "AC-11: only finish ends as done; explore further returns to asking; stop with concerns is an early end",
+   "baseline": "new",
+   "rounds": 0,
+   "first_round": 3,
+   "last_round": 3
+  }
+ ],
+ "outcome": "human",
+ "recorded": [
+  [
+   1,
+   "rejected"
+  ],
+  [
+   3,
+   "human"
+  ]
+ ],
+ "versions": {
+  "1": "a429a4e7871f5f1088f0cf2d91102651378053db",
+  "2": "3173aee5f1abd05d8504662c132f97427d788ebc",
+  "3": "484ce1a1a3cc16651a9e736e1e44c7bbbfce994f"
+ }
+}

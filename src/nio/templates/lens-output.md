@@ -8,6 +8,11 @@ context: sufficient                # sufficient | limited | needs-more: was the 
 ## Reasoning
 What you checked and how, in your own words. Write this before the findings.
 
+## Verdicts
+Only in a re-review or the final fix check: one line per finding in your fix-check pack, and no other. Leave the
+section out in a first review.
+- J-2: fixed — FR-7 now names the neighbours
+
 ## Findings
 ### F1 Shipped orders are both refundable and not
 - cites: FR-1, FR-2               # IDs, which must exist; a table row is cited as a label (state table row `shipped`) and quoted
