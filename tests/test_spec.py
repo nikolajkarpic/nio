@@ -47,10 +47,11 @@ def test_examples_pass():
 def test_templates_need_filling():
     root = repo()
     for route in spec.ROUTES:
-        spec.new(root, f"new-{route}", route)
-        has(errors(root, f"new-{route}"), "<placeholders>")
+        p = spec.new(root, f"new-{route}", route, today="2026-10-26")
+        assert p == spec.path(root, f"2026-10-26-new-{route}"), p
+        has(errors(root, f"2026-10-26-new-{route}"), "<placeholders>")
     try:
-        spec.new(root, "new-full")
+        spec.new(root, "new-full", today="2026-10-27")  # same name another day is still a duplicate
         raise AssertionError("overwrote an existing spec")
     except ValueError:
         pass

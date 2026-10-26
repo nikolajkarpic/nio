@@ -19,7 +19,7 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new", help="create a record (or `new spec <slug>`, a spec) from its template and print its path")
     n.add_argument("type", choices=sorted(set(records.REQUIRED) | {"spec"}))
-    n.add_argument("slug", nargs="?", help="spec only: the spec's folder name under .nio/specs/")
+    n.add_argument("slug", nargs="?", help="spec only: a short name; the folder is .nio/specs/<YYYY-MM-DD>-<name>/")
     n.add_argument("--area", help="records: the area folder")
     n.add_argument("--title", help="records: the title")
     n.add_argument("--route", choices=sorted(spec.ROUTES), default="full", help="spec only: full, lite (bugfix) or epic")
@@ -90,7 +90,7 @@ def main():
         try:
             if a.type == "spec":
                 if not a.slug:
-                    sys.exit("error: give the spec's slug: nio new spec <slug>")
+                    sys.exit("error: give the spec a short name: nio new spec <name>")
                 print(spec.new(root, a.slug, a.route, a.epic).relative_to(root))
             elif not (a.area and a.title):
                 sys.exit("error: a record needs --area and --title")

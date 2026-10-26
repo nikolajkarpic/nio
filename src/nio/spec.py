@@ -1,5 +1,6 @@
-"""Specs (#20): create .nio/specs/<slug>/spec.md from a template, and run the mechanical checks of #21 on it:
+"""Specs (#20): create .nio/specs/<slug>/spec.md (slug = <YYYY-MM-DD>-<name>, the day it was written) from a template, and run the mechanical checks of #21 on it:
 structure, permanent IDs, provenance, AC coverage, SHALL statements, and complete state and decision tables."""
+import datetime
 import itertools
 import re
 from importlib import resources
@@ -41,15 +42,18 @@ def path(root, slug):
     return root / ".nio/specs" / slug / "spec.md"
 
 
-def new(root, slug, route="full", epic=""):
-    """Create the spec from its route's template and return the path."""
-    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", slug):
-        raise ValueError("slug must be lowercase words joined by dashes")
+def new(root, name, route="full", epic="", today=None):
+    """Create the spec from its route's template in .nio/specs/<YYYY-MM-DD>-<name>/ and return the path.
+    The dated folder name is the spec's slug."""
+    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name):
+        raise ValueError("name must be lowercase words joined by dashes")
     if epic and not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*/R-\d+", epic):
         raise ValueError("--epic must look like <epic slug>/R-<n>")
+    taken = sorted((root / ".nio/specs").glob(f"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-{name}/spec.md"))
+    if taken or path(root, name).exists():
+        raise ValueError(f"{(taken or [path(root, name)])[0].relative_to(root)} already exists")
+    slug = f"{today or datetime.date.today().isoformat()}-{name}"
     out = path(root, slug)
-    if out.exists():
-        raise ValueError(f"{out.relative_to(root)} already exists")
     text = resources.files("nio").joinpath(f"templates/{ROUTES[route]['template']}.md").read_text()
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text.replace("<slug>", slug).replace('epic: ""', f'epic: "{epic}"'))

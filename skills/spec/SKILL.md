@@ -20,16 +20,18 @@ Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
 ## Steps
 
-1. **Slug and route.** If the human hasn't described the work yet, ask for it; that is the only question this skill
-   asks. Pick a slug: 2–4 lowercase words joined by dashes. Pick a route:
+1. **Name and route.** If the human hasn't described the work yet, ask for it; that is the only question this skill
+   asks. Pick a short name: 2–4 lowercase words joined by dashes. Pick a route:
    - `lite`: a bug fix with a clear defect (something works wrong today);
    - `epic`: several slices that could each ship on their own;
    - `full`: everything else.
 
-   Tell the human the slug and route in one line, and let them change either. Ask nothing about the content: the
+   Tell the human the name and route in one line, and let them change either. Ask nothing about the content: the
    grill does that later.
-2. **Create the spec:** `nio new spec <slug> --route <route>`. If a spec with that slug already exists, stop and tell
-   the human: never overwrite one. They choose another slug, or continue the existing spec at its current stage.
+2. **Create the spec:** `nio new spec <name> --route <route>`. It stamps today's date on the folder,
+   `.nio/specs/<YYYY-MM-DD>-<name>/`, and prints the path. That dated folder name is the spec's `<slug>` from here on
+   (every later `nio` command and path uses it). If a spec with that name already exists, stop and tell the human:
+   never overwrite one. They choose another name, or continue the existing spec at its current stage.
 3. **Record the intake** in `.nio/specs/<slug>/intake.md`: the human's words exactly as given, never paraphrased or
    summarised. For an issue or file, copy its text under a `## Source: <link or path>` heading.
 4. **Memory:** start a run with `nio run`, then `nio pack "<the intake in one sentence>" --run <run>`. The pack is
@@ -55,5 +57,5 @@ Stop after step 7. Don't answer the open points yourself and don't start the gri
 ## When `nio` is missing or fails
 
 Without `nio`, copy the template from the NIO package (`src/nio/templates/spec.md`, `spec-bugfix.md` or
-`spec-epic.md`) to `.nio/specs/<slug>/spec.md` and fill it in by hand, following the card. Tell the human the
+`spec-epic.md`) to `.nio/specs/<YYYY-MM-DD>-<name>/spec.md` (today's date) and fill it in by hand, following the card. Tell the human the
 mechanical checks didn't run.
