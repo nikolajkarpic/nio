@@ -96,6 +96,13 @@ def test_gate():
     jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "grill", "the human kept FR-2; FR-1 no longer lists shipped")
     outcome, lines = jury.check(root, "refunds", "spec")  # disposed as fixed, but the spec still reads the same
     assert outcome == "rejected" and "- spec-fix without a change to the spec: J-1, J-2" in lines, lines
+    assert jury.check(root, "refunds", "spec", human="ship it", record=True)[0] == "human"
+    assert jury.check(root, "refunds", "spec")[0] == "human"  # a later plain check keeps the human's closure
+    (root / ".nio/specs/refunds/spec.md").write_text(SPEC.replace("paid or shipped", "paid"))
+    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "human", "FR-1 no longer lists shipped")  # after the edit
+    (root / ".nio/specs/refunds/spec.md").write_text(SPEC)  # ...which is then undone: the fix isn't in the spec
+    outcome, lines = jury.check(root, "refunds", "spec")  # the closure still holds (same round and spec): the jury's word shows under it
+    assert outcome == "human" and "- (the jury said rejected: spec-fix without a change to the spec: J-1, J-2)" in lines, lines
     (root / ".nio/specs/refunds/spec.md").write_text(SPEC.replace("paid or shipped", "paid"))
     outcome, lines = jury.check(root, "refunds", "spec")  # every finding disposed, but no juror saw the fixed spec yet
     assert outcome == "rerun" and any("changed since round" in line for line in lines), lines
@@ -111,6 +118,7 @@ def test_gate():
     # the human can close a gate themselves: recorded as outcome human with their reason, never approved
     outcome, lines = jury.check(root, "refunds", "spec", human="good enough for now")
     assert outcome == "human" and "the human closed the gate: good enough for now" in " ".join(lines), lines
+    assert jury.check(root, "refunds", "spec")[0] == "approved"  # the jury's own approval outranks a closure
     errors = [e for e in records.check(root)[0] if "project/" in e]
     assert not errors, errors
     ledger = (root / ".nio/specs/refunds/jury/spec.md").read_text()
@@ -269,13 +277,34 @@ Question: What if a lookup finds nothing?
 Answer: 1. Show it, then you choose: decide now or defer; conflicting
 sources are a contradiction [human]
 Patched: FR-34
+
+## Q5 · OP-6 · 2026-10-25
+Question: Cap the retries?
+Options: 1. Cap at 5. Then stop 2. No cap
+Answer: 1 [human]
+
+## Q7 · OP-8 · 2026-10-25
+Question: Retry?
+Options:
+1. Retry up to 2. Then stop
+   at once (recommended)
+2. Never
+Answer: 1 [human]
+
+## Q6 · OP-7 · 2026-10-25
+Question: Keep it?
+Options: (pick one) 1. Keep (Recommended) 2. Drop
+Answer: 1 [human]
 """)
     assert jury.answers(root, "refunds") == [
         "## Q1 · OP-3 · 2026-10-25", "Question: When does it end?", "Answer: Green and you confirm [human]", "",
         "## Q2 · FR-3 · 2026-10-25", "Question: Which to adopt?", "Answer: Glossary; Rounds [human]", "",
         "## Q3 · OP-4 · 2026-10-25", "Question: Where do deferred points go?", "Answer: free form: in their own section [human]", "",
         "## Q4 · J-16 · 2026-10-25", "Question: What if a lookup finds nothing?",
-        "Answer: 1. Show it, then you choose: decide now or defer; conflicting sources are a contradiction [human]", ""], jury.answers(root, "refunds")
+        "Answer: 1. Show it, then you choose: decide now or defer; conflicting sources are a contradiction [human]", "",
+        "## Q5 · OP-6 · 2026-10-25", "Question: Cap the retries?", "Answer: Cap at 5. Then stop [human]", "",
+        "## Q7 · OP-8 · 2026-10-25", "Question: Retry?", "Answer: Retry up to 2. Then stop at once [human]", "",
+        "## Q6 · OP-7 · 2026-10-25", "Question: Keep it?", "Answer: Keep [human]", ""], jury.answers(root, "refunds")
     print("ok")
 
 
@@ -401,6 +430,25 @@ def test_versions_decide_fixed():
     lens(root, "R-3", "logic-2", lens_name="logic")
     jury.collect(root, "refunds", "spec", "R-3")
     assert led(root)["findings"][0]["status"] == "fixed" and jury.check(root, "refunds", "spec")[0] == "approved"
+
+    # a fix made before a round that skipped the finding's lens counts when disposed afterwards (fifth review)
+    root = setup()
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1))
+    lens(root, "R-1", "testability")
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(confirm.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    edit(root, "- FR-3: new.\n")
+    lens(root, "R-2", "testability")
+    jury.collect(root, "refunds", "spec", "R-2")
+    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "agent", "FR-3 settles it")
+    outcome, lines = jury.check(root, "refunds", "spec")
+    assert not any("spec-fix without a change" in line for line in lines), lines
+    # ...but undone and judged again, the spec reads as when the finding was raised: the fix isn't there
+    (root / ".nio/specs/refunds/spec.md").write_text(SPEC)
+    lens(root, "R-3", "testability")
+    jury.collect(root, "refunds", "spec", "R-3")
+    assert "spec-fix without a change to the spec: J-1" in " ".join(jury.check(root, "refunds", "spec")[1])
 
     # attempts count per version: one invalid output on a new version is retried, not sent to the human
     root = setup()

@@ -112,7 +112,13 @@ def artefact(root, slug, gate):
 def blob(root, text, write=False):
     """The git blob hash of `text`, stored in git's objects when `write` (the version a round judged, #27 FR-23)."""
     args = ["git", "hash-object", "--stdin"] + ["-w"] * write
-    return subprocess.run(args, cwd=root, input=text, capture_output=True, text=True).stdout.strip()
+    try:
+        r = subprocess.run(args, cwd=root, input=text, capture_output=True, text=True)
+    except FileNotFoundError:
+        raise ValueError("git is not installed (the jury needs a git repo)") from None
+    if r.returncode or not r.stdout.strip():  # without a version no round can ever be approved: say so, don't hide it
+        raise ValueError(f"git hash-object failed (the jury needs a git repo): {r.stderr.strip()}")
+    return r.stdout.strip()
 
 
 def human_words(root, slug):
@@ -140,18 +146,17 @@ def plan(root, slug, gate, extra=()):
     hasn't passed the gate or a lens has no card; over the cap is reported for the human to choose, not refused."""
     if gate not in CORE:
         raise ValueError(f"only the {', '.join(CORE)} gate is built so far")
-    errors, _ = spec.check(root, slug, gate=True)
+    errors, notes = spec.check(root, slug, gate=True)
     if errors:
         return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
-    meta, body = records.parse(spec.path(root, slug))
+    meta, _ = records.parse(spec.path(root, slug))
     risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
     lenses = {lens: "core" for lens in CORE[gate]}
     for lens, flags in spec.LENSES.items():
         if "(plan gate)" not in lens and flags & set(risk):
             lenses.setdefault(lens, "risk: " + ", ".join(sorted(flags & set(risk))))
-    frs = sum(1 for line in body if re.match(r"^(?:- )?\*\*FR-\d+\b", line))
-    if frs > spec.SCOPE_FRS:
-        lenses.setdefault("scope", f"{frs} FRs, more than {spec.SCOPE_FRS}")
+    if spec.SCOPE_NOTE in notes[0]:  # the check's own count, so the two never disagree
+        lenses.setdefault("scope", f"more than {spec.SCOPE_FRS} FRs")
     for item in extra:  # the skill's own triggers (#27 FR-27), each with its reason
         lens, _, why = item.partition(":")
         if not why.strip():
@@ -186,6 +191,35 @@ def changed(root, slug, gate):
     return ids, sorted(rerun)
 
 
+def option_labels(raw):
+    """{number: text} from an Options block. One option per line is read line by line (a wrapped line continues the
+    option above it); options run together on one line split only at the next number in sequence, so "Cap at 5. Then"
+    stays whole.
+    ponytail: on one line, an option that itself contains " 2. " still splits early; the grill logs one per line."""
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+    if lines and lines[0].startswith("1. "):
+        labels = {}
+        for line in lines:
+            if line.startswith(f"{len(labels) + 1}. "):
+                labels[str(len(labels) + 1)] = line[len(f"{len(labels) + 1}. "):]
+            else:
+                labels[str(len(labels))] += " " + line
+        if len(labels) > 1:  # else the options run together on a line: split them below
+            return labels
+    text = " ".join(raw.split())
+    labels, n = {}, 1
+    first = re.search(r"(?:^|\s)1\. ", text)  # "(pick one) 1. A 2. B" too
+    if not first:
+        return labels
+    start = first.end()
+    while True:
+        nxt = text.find(f" {n + 1}. ", start)
+        labels[str(n)] = text[start:nxt if nxt >= 0 else None].strip()
+        if nxt < 0:
+            return labels
+        start, n = nxt + len(f" {n + 1}. "), n + 1
+
+
 def answers(root, slug):
     """The human's answers from grill.md, for the scope lens (#27 FR-24): each question and the answer chosen, with
     option numbers resolved to their text. Options not chosen, reasoning, agent calls and derived items are left out."""
@@ -201,10 +235,10 @@ def answers(root, slug):
         if not (q and "[human]" in answer):
             continue
         given = " ".join(answer.split("[human]")[0].split())
-        opts = re.search(r"^Options[^:]*: (.*(?:\n(?!Answer:|Patched:).*)*)", entry, re.M)
-        labels = dict(re.findall(r"(\d+)\. (.+?)(?= \d+\. |$)", " ".join(opts[1].split()))) if opts else {}
+        opts = re.search(r"^Options[^:]*:[ \t]*(.*(?:\n(?!Answer:|Patched:).*)*)", entry, re.M)
+        labels = option_labels(opts[1]) if opts else {}
         if re.fullmatch(r"[\d,\s]+|\d+(?:, \d+)* and \d+", given):  # "1", "1, 2 and 4": options picked by number
-            given = "; ".join(labels.get(n, n).replace(" (recommended)", "") for n in re.findall(r"\d+", given))
+            given = "; ".join(re.sub(r" \(recommended\)", "", labels.get(n, n), flags=re.I) for n in re.findall(r"\d+", given))
         out += [entry.splitlines()[0], q[0], f"Answer: {given} [human]", ""]
     return out
 
@@ -379,7 +413,8 @@ def refute(led, path):
             g.update(validation=result, reason=reason, status="refuted" if result == "refuted" else g["status"])
             out.append(f"{result:<7} {fid} {g['title']}")
         else:
-            out.append(f"INVALID refuter block {fid}: needs `- result: confirmed | refuted` and `- reason:`")
+            out.append(f"INVALID refuter block {fid}: needs `- result: confirmed | refuted` and `- reason:`"
+                       + (f" (same-as {target['id']} is {target['status']}: only an open or disposed finding takes a merge)" if target else ""))
     return out
 
 
@@ -401,8 +436,6 @@ def dispose(root, slug, gate, fid, disposition, by, note):
     if f["status"] != "open" and not (by == "human" and f["status"] == "disposed"):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
     f.update(status="disposed", disposition=disposition, by=by, note=note)
-    if disposition == "spec-fix":  # the version the fix produced: a spec-fix that changed nothing can't count
-        f["fixed_in"] = blob(root, artefact(root, slug, gate))
     save(root, led)
 
 
@@ -426,14 +459,14 @@ def votes(led):
     return out
 
 
-def compose(led, current=None):
+def compose(led, current):
     """(outcome, reasons). Fail-closed: rerun | pending | human | rejected | approved, in that order. `current` is the
     artefact's version now: a version no juror has judged is never approved, whatever the dispositions say."""
     lenses, reasons = votes(led), []
     judged = version(led, led["round"])
     if not judged:
         return "rerun", ["no lens output has been collected yet: run the lenses"]
-    if current and judged and current != judged:
+    if current != judged:
         return "rerun", [f"the {led['gate']} changed since round {led['round']} judged it: re-review what changed (`nio jury changed`)"]
     retry = [f"{n}: {v}" for js in lenses.values() for n, v in js if v in ("invalid", "needs-more") and led["jurors"][n]["attempts"] < 2]
     stuck = [f"{n}: {v} after {led['jurors'][n]['attempts']} attempts" for js in lenses.values() for n, v in js
@@ -456,8 +489,11 @@ def compose(led, current=None):
                     if f["status"] == "open" and {s["juror"] for s in f["sources"]} <= {n for n, v in js if v == "block"}:
                         f.update(status="overruled", reason=f"{lens}: {ok} of {len(counted)} jurors approved ({', '.join(sorted(majority))})")
     stale = [f"{f['id']} failed {f['rounds']} rounds" for f in led["findings"] if f["status"] == "open" and f["rounds"] >= 2]
-    unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f.get("fixed_in") == judged]
-    if unapplied:  # disposed as a spec-fix while the spec still reads as the jurors judged it
+    # disposed as a spec-fix, yet the artefact (== judged, see above) reads as it did when the finding was raised: the
+    # fix never landed, or was undone; a fix judged in a later round that skipped the finding's lens counts
+    unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] == "spec-fix"
+                 and version(led, f["last_round"]) == judged]
+    if unapplied:
         return "rejected", [f"spec-fix without a change to the {led['gate']}: {', '.join(unapplied)}"]
     if stuck or split or stale:
         return "human", stuck + split + stale
@@ -475,7 +511,13 @@ def check(root, slug, gate, record=False, human=""):
     current = blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
     outcome, reasons = compose(led, current)
     if human.strip():
-        outcome, reasons = "human", [f"the human closed the gate: {human.strip()}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
+        if record:  # only a recorded closure sticks; an unrecorded --human counts for this call alone
+            led["closed"] = [led["round"], current, human.strip()]
+    elif outcome == "approved" or led.get("closed", [])[:2] != [led["round"], current]:
+        led.pop("closed", None)  # approval, a new round or a changed artefact ends a closure for good
+    closed = led.get("closed") or (human.strip() and [led["round"], current, human.strip()])
+    if closed:
+        outcome, reasons = "human", [f"the human closed the gate: {closed[2]}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
     led["outcome"] = outcome
     unresolved = sum(f["status"] == "open" for f in led["findings"])
     lines = [f"outcome: {outcome}", f"round: {led['round']}", f"unresolved: {unresolved}", *[f"- {r}" for r in reasons]]

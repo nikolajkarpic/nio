@@ -38,6 +38,23 @@ candidates and use Record mode.
 - New files in `.nio/memory/<area>/`, passing `nio check`.
 - In Candidate mode, new entries appended to `.nio/runs/<run>/promote.md`.
 
+## Talking to the human
+Every message to the human (question, report, error or hand-off):
+1. **First line: what you need from them**, in plain words: "Nothing needed", "Pick one",
+   "Run this command", "Approve or push back". A round of questions gets one such line.
+2. **Then about 3 lines:** what it is, why it matters, what it costs. Name things by what
+   they do, never by an ID or a NIO term they don't start by name; only stage names (spec,
+   grill, jury, plan) stay as they are. A fact names its source beside it in plain words.
+3. **Options** say what happens if picked, including what's lost. The recommended one goes first.
+4. **Long lists** (calls, dispositions, findings): show every item that changes what a user
+   can do or sees, who may do it, what data is kept or changed, or what it costs, however
+   many; count the rest in one line.
+5. **Commands they must run** go in the body, quoted exactly, ready to copy.
+6. **End with `Refs:`** when the message rests on anything: the IDs, files and commands it
+   rests on, never raw command output. In a question tool, `Refs:` is the question text's
+   last line, and each option's description says what happens.
+Before sending, ask: could they act on this without opening a file? If not, rewrite it.
+
 ## Rules for every record
 
 1. **Never edit a committed record's meaning.** To change one, write a new record that lists
@@ -47,8 +64,8 @@ candidates and use Record mode.
    moved in a way git cannot follow; renames are followed for you). `nio check` rejects any
    other edit.
 2. **Pick one area** from `memory.areas`: the part of the project the record is mostly
-   about. Put other areas in `tags`. If no area fits, stop and ask the human to add one;
-   never create a folder yourself.
+   about. Put other areas in `tags`. If no area fits, stop and ask the human, in the shape above, where the record should be
+   filed or whether to add a new place, each option saying what that place holds; never create a folder yourself.
 3. **Verdicts go in their subject's area.** Verdicts on a whole stage (spec, plan, tasks)
    go in `project`.
 4. **Write for a new agent.** Someone with no context must understand what was decided and
@@ -79,8 +96,8 @@ candidates and use Record mode.
    decided it, `proposed` otherwise. Never store the jury's ruling in `status`; a verdict
    record carries it. Fill `paths`, `tags`, `supersedes`, and `serves` or `task` when known.
    For a change request, set `against` to the spec, plan or record that is wrong; if it is a
-   record, add the change request's ID to that record's `outdated_by`. Then stop the work it
-   blocks and tell the human: a change request is never fixed silently.
+   record, add the change request's ID to that record's `outdated_by`. Then stop the work it blocks and tell the human in plain words what is
+   wrong and what it blocks, with the record IDs in `Refs:`: a change request is never fixed silently.
 5. **Run `nio check`** and fix every error in your file. Warnings on older records are not
    yours to fix.
 
@@ -129,8 +146,8 @@ Write nothing if you made no such call. Never write to `.nio/memory/` in this mo
 ## Stop when
 
 - `nio check` reports no errors in the files you wrote, and
-- you have told the human the IDs and paths you wrote, plus anything you dropped or
-  could not place in an area.
+- you have told the human, in the shape above, what you recorded and anything you dropped or could not place, in
+  plain words, with the IDs and paths in `Refs:`.
 
 Do not commit. The human, or the pipeline step that called you, commits memory with the work
 it explains.

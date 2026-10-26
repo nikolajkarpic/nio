@@ -26,7 +26,7 @@ For each finding:
 - Read the cited requirements and their surroundings, not only the quotes. Does other text already settle it (a
   definition, a non-goal, a decision table row, a later requirement)?
 - Walk the finding's situation through the artefact step by step. Does it really reach the bad outcome?
-- Is it the same problem as another finding in the batch, said differently? Then name that one.
+- Is it the same problem as another finding in the batch or the ledger, said differently? Then name that one.
 
 ## Output format
 
@@ -36,7 +36,7 @@ Write `.nio/runs/<run>/jury/<gate>-refuter.md` with one block per finding in the
 ### J-1
 - result: confirmed          # confirmed | refuted
 - reason: FR-2 forbids what FR-1 allows; nothing else in the spec settles which wins
-- same-as: J-3               # only when it duplicates another finding in the batch
+- same-as: J-3               # only when it duplicates another finding (batch or ledger)
 ```
 
 The reason is one or two sentences that cite what you read. Refute only with evidence from the artefact; "it seems
