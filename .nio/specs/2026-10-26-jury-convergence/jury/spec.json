@@ -1,0 +1,1101 @@
+{
+  "gate": "spec",
+  "subject": "2026-10-26-jury-convergence",
+  "round": 3,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261026-3ryb/spec-consistency.md": "7e2feddaf9e330dde4d88d297eebecab0d4b677a16bcbcd426c1e0062ed7105d",
+    "R-261026-3ryb/spec-logic.md": "d355877fe41633fb9c7e76369a4f8ead1d7c0404b4cc7678e4ed7523e53a4018",
+    "R-261026-3ryb/spec-scope.md": "3d7c80546cb53bbe7e10d07f6781be0d930bdaece077fb7798a160476d9c472c",
+    "R-261026-3ryb/spec-testability.md": "7b812ec2405df5c45062ca1ac350543b37a379cd5f75bf690c39a959a96a755e",
+    "R-261026-3ryb/spec-refuter.md": "bb76759839e016f1522cb1ff0579a6756f7a370e40068acc2517747477d56e0b",
+    "R-261026-ka5w/spec-consistency.md": "f6f2a8952e252259b49386767140f4d3030d9f856bfe0ebff01d7af07071c544",
+    "R-261026-ka5w/spec-logic.md": "91d5979513ec14973df47fb5b02325e928907cd21cc5a81768ba5d01d52618b1",
+    "R-261026-ka5w/spec-scope.md": "af3e9c62fa4f5d80ee91c3d28a5cce597e625310b67aebb0bf5c5b316428817e",
+    "R-261026-ka5w/spec-testability.md": "a62b735cb94bc542e072d2ad8dcb0579312e5ea124bf6595a3af649354379ab0",
+    "R-261026-ka5w/spec-refuter.md": "7ed2e92b7d3db0fccaa7f549ef81ba34347a64dff8bc434a856e52dcc06ade41",
+    "R-261026-byv4/spec-consistency.md": "a5e8fa349486cc816adfa44e5b2a507f4f534dfb11f4bba514a37a5de07fa130",
+    "R-261026-byv4/spec-logic.md": "db6a06406acb5c8202fd09ac1c484d91d1b9464a44651227d430740ef27fb008",
+    "R-261026-byv4/spec-testability.md": "f59224e3c951f4ac5bbb81c9552ddd44804a0def1c5b0d302c251cf70eaecba0"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "cdf67b62ea8254ba540aa596d3fc10993861c1f2",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "cdf67b62ea8254ba540aa596d3fc10993861c1f2",
+      "judged": 3
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "d3da74495fb72297387e3a292bd7bbf21ea52bad",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "cdf67b62ea8254ba540aa596d3fc10993861c1f2",
+      "judged": 3
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Final check's approval after a changed spec contradicts today's fail-closed rule without saying so",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-5",
+        "FR-6",
+        "Non-goals (\"No change to the first review",
+        "its lenses",
+        "packs or outcomes.\")"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "even if the spec changed after the last judged version",
+        "No change to the first review, its lenses, packs or outcomes."
+      ],
+      "fix": "say in FR-5 and the Non-goals whether the fail-closed `rerun` on a changed artefact still holds for the first review and the re-review, and state the final-check exception explicitly with its reason, or drop the phrase.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the code at `src/nio/jury.py:469-470` returns `rerun` when `current != judged` (\"a version no juror has judged is never approved, whatever the dispositions say\"). FR-5 has `approved` return even when the spec changed after the last judged version, and the Non-goals say the first review keeps its outcomes. A human who fixes the last majors and then edits the spec gets `approved` from the final check, while the same edit in the first review still gives `rerun`. The spec does not say which rule the first review keeps, or why the fail-closed rule is dropped for the final check only.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-5's \"approved even if the spec changed\" applies only once every finding on the FR-2 list is settled, and fixing that list necessarily changes the spec; Q1 and the Decisions section confirm this. The first review keeps its outcomes under FR-6 and the Non-goals, so the rerun rule isn't dropped for it. This is at most a wording gap.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "The spec doesn't say whether silence still marks a finding fixed",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "FR-9",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "accept for each finding in its pack exactly one verdict, fixed or not fixed, with a reason.",
+        "WHEN a re-review lens gives a finding the verdict fixed THE SYSTEM SHALL mark the finding fixed."
+      ],
+      "fix": "state in FR-10 that only a verdict marks a finding fixed, and that silence no longer does, or state that silence keeps its meaning for findings a re-review doesn't reach.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`merge` in `src/nio/jury.py:332-342` marks a finding fixed when every juror that raised it has judged a later version without raising it. FR-9 makes a missing verdict invalid, so under the new rules a lens that stays silent is invalid rather than fixed. The spec never says the silence rule is replaced, so an implementer can keep it, and then AC-10 (fixed only on a verdict) and the silence rule give different ledger states for the same output.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "new FR-25 and AC-23: in a re-review only a fixed verdict marks a finding fixed",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "The jury can be approved before the final fix check runs",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "FR-5",
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL run one final fix check on those fixes",
+        "and the final fix check, if one ran, gave every finding the verdict fixed"
+      ],
+      "fix": "make FR-5 conditional on the check having run when at least one fix was made. Without a fix, approve with no check. With a fix and no check yet, say that the outcome is neither `approved` nor `rerun`, and name it. Also say which case \"reasons naming each fix no lens judged\" covers.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a re-review returned two majors and a minor. The human fixes one and accepts the other two, so every finding on the list is \"fixed or accepted as risk\". The final fix check has not run yet, because the agent hasn't built its pack. `nio jury check` runs. Under FR-5 the clause \"if one ran\" is vacuously true and the spec changed after the last judged version, which FR-5 explicitly allows. The outcome is `approved`, with the fix listed as one \"no lens judged\". Under FR-4 the same ledger state must first get its one final fix check. FR-5's wording cannot tell \"no fix was made, so no check is owed\" from \"a check is owed and hasn't run\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-4 owes a final check once a fix is made, but FR-5's \"if one ran\" is satisfied when no check has run. Nothing in the spec stops `approved` before the check runs.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-5 now needs the final check to have run when a fix was made; new FR-22 returns rerun while it is owed; AC-25, AC-24",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "The ledger has no way to tell a final fix check from a re-review",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-19",
+        "FR-21",
+        "FR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and every later round as a re-review",
+        "human: one list, no further check"
+      ],
+      "fix": "define how `nio jury check` recognises the final check, for example a recorded marker or \"the round after a recorded `human` outcome from a re-review\". Put that definition in FR-19 and the glossary.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "round 1 is rejected, round 2 is a re-review with only majors, and the outcome is `human`. The human fixes one, and the final fix check runs as round 3. FR-19 calls round 3 a re-review, the same as round 2. A new confirmed blocker in round 3 gives `rejected` and another round under the re-review row, or `human` and no further check under the final-check row. Both rows apply to the same ledger. The decision table's first column has three values, but FR-19 only defines two.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-19 defines only first review and re-review, but the decision table has a \"final check\" row. Nothing in the spec says how the code tells round 3 after a `human` outcome from a re-review, so the re-review row and the final-check row can both apply.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "new FR-24: the first round after a recorded human outcome for the list starts the final fix check; AC-27",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "After a failed final fix check no rule can lead to `approved`",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-21",
+        "FR-5",
+        "AC-21"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THEN THE SYSTEM SHALL return the outcome `human` listing them, and run no further fix check",
+        "a fix made after it, to a finding it sent to the human, is never reviewed"
+      ],
+      "fix": "say what ends the jury after a failed final check, and state the outcome, for example \"the human's settlement of the final-check list closes the jury as `approved` or `human-closed`, naming the unreviewed fixes\". Also change FR-5, because its \"verdict fixed\" condition excludes that path.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the final check gives finding J-9 the verdict not fixed (AC-21), so the outcome is `human`. The human fixes J-9 again, or accepts it as risk. `nio jury check` runs. FR-5 needs \"the final fix check, if one ran, gave every finding the verdict fixed\", but J-9's verdict is not fixed and no further check may run. So `approved` cannot be reached. FR-21 and AC-21 give no other terminal outcome for that state, so it stays `human` forever. The only exit is the human closing the gate by hand, which the spec doesn't say is the intended path.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-5 needs the final check's verdict to be fixed, and FR-21 forbids a further check. After a not-fixed verdict and the human's resettlement, no rule produces `approved` or any other terminal outcome. AC-21 stops at `human`.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-23 and AC-26: settling what the final check flags ends the jury as approved, naming unreviewed fixes (Q6)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "The decision table sends a twice-failed blocker to `rejected`, but FR-16 and AC-7 send it to the human",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "AC-7",
+        "FR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THEN THE SYSTEM SHALL send it to the human instead of another re-review, as today",
+        "rejected: dispose, then re-review"
+      ],
+      "fix": "add the failed-round condition to the table (a column or a row that takes precedence over the confirmed-blocker rows). Say whether it applies to every severity or to blockers only.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "in a re-review, a confirmed blocker J-3 has already failed two rounds. The table row (re-review, confirmed blocker yes) gives `rejected` and asks for another re-review. FR-16 and AC-7 give `human` with the reason `J-3 failed 2 rounds`. The table claims to cover the outcome \"once every lens has judged and the refuter has validated\", but it has no column for the failed-round count. A test written from the table fails AC-7, and one written from AC-7 fails the table.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "outcome table now says a finding that failed two rounds goes to human first (FR-16)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "An escalation round in a re-review counts as the first review and as a re-review",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-13",
+        "FR-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "escalate it as in the first review before it can start another round",
+        "escalation jurors and retries of an invalid output belong to it, though each adds a round",
+        "and every later round as a re-review"
+      ],
+      "fix": "say that in a re-review, escalation and retry rounds follow re-review rules. Remove the \"belong to [the first review]\" clause from the glossary, or limit it to rounds before the first `rejected`. Also say what pack an escalation juror gets in a re-review.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "round 2 is a re-review. A lens raises a new blocker, and FR-13 escalates it with an extra juror, which is round 3. The glossary puts escalation jurors in the first review, where \"any open finding, of any severity, leads to `rejected`\" (FR-6). FR-19 counts round 3 as a re-review, where a new major goes to the list and does not reject. If the escalation juror raises a major, the two rules give `rejected` or `human`. It is also unclear what pack the escalation juror gets: a whole-spec pack, which contradicts FR-7's \"no other text of the spec\", or a fix-check pack.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Glossary puts escalation jurors and retries in the first review, while FR-19 counts every round after the first `rejected` as a re-review. FR-13 escalates inside a re-review, so those rounds get both labels. The spec doesn't say which pack an escalation juror gets.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Glossary: escalation and retries belong to the pass they run in; FR-13: an extra juror gets the lens's fix-check pack",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "FR-15 adds a \"ruled out of scope\" disposition the human never asked for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the findings the human accepted as risk or ruled out of scope",
+        "[agent]"
+      ],
+      "fix": "drop \"or ruled out of scope\" unless the human confirms that disposition. If they do, tag FR-15 [human] or label it as a scope extension.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake and answers Q1 to Q6 never mention accepted risks in a pack, so FR-15 rests on research RF-9 and not on the human's words.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q9: the human keeps FR-15; tagged [human]",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-9",
+      "title": "AC-9 never checks the \"no other text\" half of FR-7",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and no other text of the spec",
+        "the current text of every neighbour ID that `nio jury changed` printed"
+      ],
+      "fix": "add to AC-9 or a new AC an Observable that no ID outside the changed and neighbour sets appears in the pack, for example an unrelated FR whose text is absent.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the pack builder puts the whole spec into the pack, as UJ-1's misuse case describes. AC-9's Observable only asserts that the listed items are present, so it still passes. The behaviour that stops the jury looping, a pack that holds only the fixes and their neighbours, is never asserted.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-9's Observable lists only what must be present in the pack. Nothing asserts that unrelated IDs are absent, so a whole-spec pack would pass. AC-8 checks neighbours in the `nio jury changed` output, not in the pack.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-9 Observable also asserts no text of any other ID is in the pack",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "AC-4 asserts only a negative, so the outcome can be wrong and the test still passes",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-4",
+        "FR-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "outcome is not `rejected`; the blocker's status is `refuted`"
+      ],
+      "fix": "state the exact outcome, `approved`, in AC-4. In AC-20, say what the outcome is when the not-fixed verdict is refuted.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a refuted blocker with nothing else open should give `approved`, per the last row of the first decision table. If the code returned `human`, `rerun` or an error, \"not `rejected`\" would still hold. AC-20 has the same weakness.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-4's Observable is \"outcome is not `rejected`; status `refuted`\". `human`, `rerun` or an error would also pass, while the last row of the first decision table implies `approved`. AC-20 has the same weakness.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-4 and AC-20 now assert outcome approved and status refuted",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "AC-16, AC-17 and SC-2 cannot be checked by a test that fails",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-16",
+        "AC-17",
+        "SC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a dogfood session's transcript shows one message holding every listed finding, each with both options",
+        "step 8 names the fix-check pack and the two verdicts and says new findings must be blockers",
+        "fewer juror and refuter runs than the 16 the grill spec took"
+      ],
+      "fix": "",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-16 is labelled e2e but its evidence is a human reading a dogfood transcript, so no test can fail. AC-17 is labelled unit but names no check, such as strings to grep in `skills/jury/SKILL.md`. SC-2 depends on how many findings a future spec raises. Nothing else in the spec fixes this.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-16 and AC-17 name the phrases a test greps for in the skill; SC-2 retired",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "No AC for a duplicate verdict, or for a list settled entirely by accepting risk",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "FR-9",
+        "FR-4",
+        "FR-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "exactly one verdict, fixed or not fixed, with a reason",
+        "and fixed at least one"
+      ],
+      "fix": "add one AC for a duplicate verdict, which is invalid or a stated rule, and one AC for a list settled with no fixes, with the outcome `approved`.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-9 also rejects two verdicts for one finding (AC-22); AC-24 covers a list settled by accepting risk",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "It is unclear which open majors and minors reach the FR-2 list",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-2",
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "list every one of those findings together"
+      ],
+      "fix": "state in FR-2 that refuted findings are left off the list, and that unvalidated minors are listed.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-2 has a major the refuter confirmed. FR-2 does not say what happens to a major the refuter refuted, or to a minor, which the refuter never validates. A test cannot tell whether the list should include them, so the expected list in AC-2 is underdetermined.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Glossary defines open finding: refuted, merged, dropped and disposed findings are off the list; grounded minors are on it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "Decision table has no rerun row, so an owed final fix check can return approved",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-22",
+        "FR-5",
+        "Rules: Decision table: outcome once every lens has judged and the refuter has validated (row `- | no | no | approved`)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and never `approved`.",
+        "| - | no | no | approved | [agent] |"
+      ],
+      "fix": "add a table row for a final fix check that is owed and has not run, with outcome `rerun`, and limit the `approved` row to the case where no check is owed.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the human fixes the one listed major, nothing else is open, and no final fix check has run; the table's last row gives `approved` while FR-22 requires `rerun`.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-22 requires `rerun` and says \"never `approved`\" while a final check is owed. The last row of the first decision table (`- | no | no | approved`) has no owed-check condition, and nothing says FR-22 overrides the table.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "the outcome table's note now puts FR-22 (rerun while a final check is owed) before the table",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-15",
+      "title": "Evidence line says no re-review raised a confirmed blocker, but the plain-talk verdict lists a blocker",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "Summary; UJ-1 Evidence line; RF-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "in all three dogfood juries no re-review raised a new confirmed blocker"
+      ],
+      "fix": "check the plain-talk ledger for the round in which J-2 was raised and whether it was a re-review; correct the evidence line or RF-6 to match.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "memory verdict V-261026-dwva (plain-talk, round 3, outcome human) lists `J-2 [blocker/contradiction]` among its reasons, disposed spec-fix; if round 3 was a re-review, the evidence line is wrong for the third jury.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "refuted",
+      "reason": "In `/home/work/nio/.nio/specs/plain-talk/jury/spec.json`, J-2 has `first_round: 1` and was confirmed in the first review. It was re-raised in round 2, which FR-19 still counts as the first review because the first `rejected` was recorded at round 2. In round 3, the only blocker is J-20, validation `merged` (\"same as J-2\"), so the round raised no new confirmed blocker and the evidence line holds. The finding's premise, that J-2 was raised in round 3, is wrong.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-16",
+      "title": "Decisions say the jury \"records\" approved, which may conflict with D-261024-dkh4",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "Decisions (the Q-J-5 line); FR-19; AC-18"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the jury records `approved`, naming the fixes no lens judged"
+      ],
+      "fix": "state that the ledger's outcome is the jury's own record, not a memory record status, or point to D-261024-dkh4 and say how FR-19 reads the outcome.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "D-261024-dkh4 says approval and rejection are read from verdicts and never stored in a status field; the spec's round counting in FR-19 and AC-18 depends on a stored \"recorded `rejected`\" outcome, so an implementer could store it in a way the decision forbids.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-19 now says the jury ledger's recorded outcome, which is not a memory record's status",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-17",
+      "title": "A new major raised in the final check has three different outcomes",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "FR-12",
+        "FR-21",
+        "FR-5",
+        "FR-23",
+        "decision table row `final check | no | yes`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "keep it and put it on the FR-2 list rather than start another round",
+        "as a re-review (FR-7, FR-8) that may raise only blockers",
+        "human: one list, no further check"
+      ],
+      "fix": "state that FR-12 does not apply in the final check. Add the new sub-blocker finding to FR-21 and FR-23, so it goes to the human and is settled with no further check.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the final check's lens raises a new major M. FR-12 puts M on the FR-2 list, so after the human fixes M, FR-4 owes a second final check. The table row says `human` with no further check. FR-5 would return `approved` once the original list is settled, with M still open. FR-23 covers only findings sent by FR-21, and FR-21 names only not-fixed verdicts and confirmed blockers.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-4 makes the final check \"a re-review ... that may raise only blockers\". FR-12 puts a sub-blocker finding from a re-review on the FR-2 list. The table row `final check | no | yes` says `human` with no further check, and FR-21 and FR-23 name only not-fixed verdicts and confirmed blockers. The spec never says which of these applies to a new major in the final check.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q8: a new major in the final check is a note only, so it never goes on a list or owes another check (FR-12)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-18",
+      "title": "Escalation jurors given the same fix-check pack can contradict the original lens",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-13",
+        "FR-8",
+        "FR-10",
+        "FR-11",
+        "FR-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "each extra juror getting the same fix-check pack as the lens that raised it",
+        "accept for each finding in its pack exactly one verdict, fixed or not fixed, with a reason"
+      ],
+      "fix": "say that escalation jurors judge only the new blocker and give no verdicts. Alternatively, say how disagreeing verdicts on one finding combine, and that the failed-round count rises at most once per round.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "lens A gives J-2 `fixed` and raises blocker B. The escalation jurors get A's pack, so FR-8 and FR-9 require each of them to give a verdict on J-2 as well. One says `not fixed`. FR-10 marks J-2 fixed and FR-11 reopens it with a failed round, and no rule says which verdict wins. The failed-round count could also rise once per juror.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-13 gives each extra juror the same fix-check pack as the raising lens. FR-8 and FR-9 require a verdict on every finding in the pack. No rule says how disagreeing verdicts on one finding combine, or whether the failed-round count (FR-11) rises once per juror.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13: escalation jurors judge only the new blocker and give no verdicts; FR-11: failed rounds rise at most once per round",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-19",
+      "title": "\"Failed two rounds\" sends the jury to the human again, against AC-26 and FR-23",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "FR-23",
+        "AC-26",
+        "FR-11",
+        "AC-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a finding has failed two rounds THEN THE SYSTEM SHALL send it to the human instead of another re-review, as today.",
+        "when the human fixes J-9 again and `nio jury check` runs, then the jury ends without another check"
+      ],
+      "fix": "scope FR-16 so it applies only when another re-review would otherwise start. Say that FR-23 and AC-26 take precedence for findings already sent to the human by FR-21.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "major J-9 is judged not fixed in the re-review (failed count 1). The human fixes it, and the final check says not fixed (count 2). The human fixes it again. AC-26 and FR-23 return `approved`. The table note says a finding that failed two rounds \"sends the jury to `human` before this table applies\", so the same state returns `human` again and the jury never ends.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-16 and the table note send any finding that failed two rounds to `human` \"before this table applies\". AC-26 and FR-23 return `approved` for J-9 after the final check's not-fixed verdict and a second human fix. Those two verdicts make J-9's failed-round count 2, so FR-16 returns `human` again. Nothing gives FR-23 precedence over FR-16.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-16 applies only when another re-review would start, never after the final fix check; the table note says so",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-20",
+      "title": "The outcome table has no row for a final check that is owed, and its row conflicts with AC-25",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-25",
+        "FR-22",
+        "FR-25",
+        "FR-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Given the human fixed one finding on the list and no final fix check has run, when `nio jury check` runs, then the jury isn't approved.",
+        "human: one list, each fixed or accepted as risk"
+      ],
+      "fix": "add a row or column to the table for \"human-fixed finding, final check not yet run\" with the outcome `rerun`. Alternatively, state that FR-22 takes precedence over the `re-review | no | yes` row.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the human has fixed J-3 and accepted J-4. FR-25 keeps J-3 open until a `fixed` verdict, so the review is still a re-review with no confirmed blocker and J-3 open. The table row `re-review | no | yes` gives `human`, and AC-25 and FR-22 give `rerun`. The table has no row or condition that separates the two.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "same fix as J-14: FR-22 comes before the re-review row",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-21",
+      "title": "The re-review lens \"may raise only blockers\", yet AC-2 and FR-12 expect new majors and minors from it",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-2",
+        "FR-12",
+        "FR-4",
+        "FR-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "answers fixed or not fixed, and may raise only blockers",
+        "Given a re-review returns a new major and a new minor and no blocker"
+      ],
+      "fix": "say whether a sub-blocker finding from a re-review lens is valid and kept (then drop \"may raise only blockers\" as a rule and keep it as lens guidance), or invalid. Say where AC-2's new major comes from, for example a not-fixed verdict or a blocker the refuter downgraded.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a re-review lens follows its card and raises only blockers. AC-2 and the Summary's \"new majors and minors go to the human\" still expect a new major and a new minor from that same re-review. No requirement says whether such a finding is accepted or the output is invalid. FR-9 makes an output invalid only for verdict errors.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-4 and the Summary say the re-review lens \"may raise only blockers\", but FR-12 and AC-2 expect new majors and minors from a re-review. The spec doesn't say whether a sub-blocker finding from a lens is kept or invalid, and FR-9 only makes an output invalid for verdict errors.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q8: only blockers count; a new major or minor in a re-review or the final check is a note only (FR-12, AC-2, Summary)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-22",
+      "title": "The spec bundles two separable changes at 24 FRs",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-1",
+        "FR-7",
+        "FR-20",
+        "US-1",
+        "US-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "This change makes a re-review a fix check",
+        "scope (more than 8 FRs)"
+      ],
+      "fix": "split into two slices, the stop rule with its final check, and the fix-check pack with verdicts, unless the human keeps one spec.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the stop rule (outcome logic) and the fix-check packs with verdict format (changed IDs, pack, lens cards) are one spec, so a defect in either delays both.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-23",
+      "title": "FR-20 edits every shipped lens card beyond the touches list",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-20",
+        "AC-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "give each shipped lens card a re-review section",
+        "the re-review pack and lens format (fixed / not-fixed verdicts)"
+      ],
+      "fix": "state in the spec that the card edit is a scope extension, or drop it and put the re-review instruction in the pack.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake's touches list names the pack and the lens output format, but FR-20 also changes each lens card in src/nio/agents/, which nobody asked for.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q9: the human keeps FR-20; tagged [human]",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-24",
+      "title": "AC-18 gives no inputs, so its expected outcome is undefined",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-18",
+        "FR-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the outcome for round 3 follows the re-review row of the outcome table"
+      ],
+      "fix": "state the round-3 findings (for example, one new major and no blocker) and assert the concrete outcome `human` and that the table's re-review row, not the first-review row, was applied.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Given names only the ledger shape (rounds 1 and 2, `rejected` at round 2) and no round-3 findings, so a test cannot pick which outcome to assert; every outcome-table row passes this Observable, and a wrong first-review/re-review split (the FR-19 rule) can still go unnoticed.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-18's Given names only the ledger shape (rounds 1 and 2, `rejected` at round 2) and no round-3 findings. Its Observable, \"follows the re-review row\", does not say which outcome to assert, so a test cannot be written from it.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-18 now gives round 3's inputs and asserts outcome human, not rejected",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-25",
+      "title": "AC-23's \"no finding like J-2\" cannot be decided by a test",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-23",
+        "FR-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "raises no finding like J-2"
+      ],
+      "fix": "write the Given as \"the output contains a not-fixed verdict for J-2 and no other finding\", and add a case where a new finding with a different ID is raised.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a test author must decide what counts as a finding \"like\" J-2 (same cites, same quote, same title?). One author feeds a re-raised near-duplicate and expects `open`; another feeds nothing and expects `open`. The FR-25 guard (not marking a finding fixed just because a lens didn't re-raise it) is then not tested the same way each time.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-23's Given, \"raises no finding like J-2\", does not define what counts as like J-2. Test authors can pick different inputs, so the FR-25 guard is not tested the same way each time.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-23's Given is now exact: a not-fixed verdict for J-2 and no finding at all",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-26",
+      "title": "AC-19 never says how a lens card or the section is identified",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-19",
+        "FR-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "every card in `src/nio/agents/` with a lens role has the section"
+      ],
+      "fix": "name the exact heading (for example `## Re-review`), say how lens cards are identified (such as the front-matter role), and assert the three required phrases in each.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the AC names neither the section heading nor how \"a lens role\" is detected, so a test can only check that some heading exists. A card whose section lacks the \"stop once each has one\" instruction still passes, and a non-lens card may be wrongly included or excluded.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-19 names the six lens cards, the ## Re-review heading and the phrases to find",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-27",
+      "title": "AC-16's phrase check would pass with the requirement broken",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-16",
+        "FR-18",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the phrases \\\"one message\\\", \\\"fix\\\" and \\\"accept as risk\\"
+      ],
+      "fix": "require the phrases \"one message\" and \"accept as risk\" together with a pattern that ties them to each finding, or drop the bare \"fix\" and match \"fix or accept as risk\".",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "\"fix\" appears in step 6 of any jury skill, so the check passes even if step 6 tells the agent to show findings in several messages, or offers the human only one of the two options. The check does not tie the phrases to \"each, with fix and accept as risk as its options\".",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-28",
+      "title": "SC-1 has no test that replays the dogfood juries",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "SC-1",
+        "SC-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Replayed on the grill and grill-checks juries, the new rules stop each after its second round."
+      ],
+      "fix": "add an AC that replays both ledgers through `nio jury check` and asserts the outcome at round 3 is `human` or `approved`, or reword SC-1 as a manual check.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "no AC or Level covers the replay. SC-3 asks only for checks of \"the stop rule, the fix verdicts and the neighbour IDs\", and AC-15 only loads the grill-checks ledger. Nobody can tell whether SC-1 is met, and a regression can leave all ACs green while a real ledger still runs a third round.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "new AC-28 replays the grill and grill-checks ledgers at round 2 and asserts human, not rejected",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "rejected"
+    ],
+    [
+      3,
+      "human"
+    ]
+  ],
+  "versions": {
+    "1": "4a81693ea4a26bc62193e8b42e5e282fd20c0f68",
+    "2": "d3da74495fb72297387e3a292bd7bbf21ea52bad",
+    "3": "cdf67b62ea8254ba540aa596d3fc10993861c1f2"
+  },
+  "closed": [
+    3,
+    "708f4f44728b8b50f40debc8e8e394ae64fbe69a",
+    "Closed by the human (Q7, Q10), following this spec's own stop rule by hand: round 2 had no blocker; one final fix check confirmed 10 of 11 fixes and raised no blocker. Consistency said J-14 not fixed only because its pack lacked the table; logic judged the same fix (J-20) fixed. Unreviewed fixes made after the final check: an explicit 'final check owed -> rerun' row in the outcome table (J-14) and AC-28's wording (a logic note)."
+  ]
+}
