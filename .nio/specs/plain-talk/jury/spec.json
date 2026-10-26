@@ -1,0 +1,1328 @@
+{
+  "gate": "spec",
+  "subject": "plain-talk",
+  "round": 3,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261026-cquw/spec-consistency.md": "dc46de5071ee6a38d4fa4e8f876bea1bb6c5ab2dc432d1c71f8fbcdeecd63653",
+    "R-261026-cquw/spec-logic.md": "2e821b7cae8ec8a546f82104f5454e0b08908794b62a09116fdfa46eba060d81",
+    "R-261026-cquw/spec-scope.md": "7dd5402b26aaad8aeddf0108c4425bb679aedb503a6b00f1a5b0b084637c40ac",
+    "R-261026-cquw/spec-testability.md": "6769329fe858b5879c73e97c9f38e124b64410c1fae91837ce83adfe09aec19b",
+    "R-261026-cquw/spec-refuter.md": "f1612fa823933d6cd0cf4358796f1f6ec9c19b50cd31ad007e88abe7a552f1d9",
+    "R-261026-cquw/spec-consistency-2.md": "765e468348866da47949e8db385fe6c5d2abdc6f06ca3be244fcabdfb29ca69e",
+    "R-261026-cquw/spec-consistency-3.md": "2a262e0aac39c275f6f46149c53becd34bb7697d3196e4c22bc99ce8c5d7b248",
+    "R-261026-qzss/spec-consistency.md": "19472ea4d7ef7b3f260967c50628724caac0f056067937580a63af95ad47263e",
+    "R-261026-qzss/spec-logic.md": "41a3f780dbb3696859a0110fe6f48ef4f2a6e3cc289d91ceb760042c59ae73ed",
+    "R-261026-qzss/spec-scope.md": "d0d34cd30006fd262f60ec6b5f41f00e83f7972d4a385340e52a84cce8da03ef",
+    "R-261026-qzss/spec-testability.md": "cc8127bc246ef1d064f86263850c2f1a30b04ec67ff19d45de36ad9c8d5da108",
+    "R-261026-qzss/spec-refuter.md": "cfb9efa96f9a95fe843f962619deccdb37660d2f8be0b7d01e904032e02631c7"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "6c5f608b7917a3f8cbe01fef81c209b1e0c6cfde",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "6c5f608b7917a3f8cbe01fef81c209b1e0c6cfde",
+      "judged": 3
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "6c5f608b7917a3f8cbe01fef81c209b1e0c6cfde",
+      "judged": 3
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "6c5f608b7917a3f8cbe01fef81c209b1e0c6cfde",
+      "judged": 3
+    },
+    "spec-consistency-2": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "ddc1971850b4f65d90355ff28043f1653ebae1d7",
+      "judged": 2
+    },
+    "spec-consistency-3": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "ddc1971850b4f65d90355ff28043f1653ebae1d7",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The logged entry header drops the word `Asked`, which the grill's resume rule depends on",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-13",
+        "Non-goals (the lint line)",
+        "Decisions"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "under an entry header that keeps the ID (`## Q7 · J-7 · <date>`)",
+        "a lint on `## Asked` entries comes only if agents still drift"
+      ],
+      "fix": "keep an `Asked` marker in the header (for example `## Asked · Q7 · J-7 · <date>`), or add a change request against grill FR-19, FR-20 and AC-21 and make the non-goal's wording match.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a grill session starts on a spec whose `grill.md` ends with a `## Q7 · J-7 · <date>` entry that has no `Answer:` line. The approved grill FR-20 says the session must resume \"asking first any `Asked` entry that has no answer\", and this header does not match that. The entry is either skipped or the question is asked twice. The spec's own non-goal refers to `## Asked` entries, so the two parts of the spec disagree on what the header is. Either the spec must keep `Asked` in the header, or it must raise a change request against grill FR-19 and FR-20 and update the resume step in the grill skill.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-13 and AC-10 set the header to `## Q7 · J-7 · <date>`, but `skills/grill/SKILL.md` line 64 writes `## Asked · Q7 · <ID> · <date>` and line 29 resumes from \"an `Asked` entry with no answer\" (grill FR-19/FR-20). The spec's own non-goal and Risks still say `## Asked` entries, and nothing in the spec settles which header wins.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13/AC-10: the shown message is logged in the existing ## Asked · Q7 · <ID> entry before showing; resume rule unchanged",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-2",
+      "title": "Facts' sources move from the question body to `Refs:`, against an approved grill requirement",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-17",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "facts in plain words, sources in `Refs:`",
+        "the step no longer asks for facts naming their source in the question body"
+      ],
+      "fix": "state in the spec that it changes grill FR-4 and add the change request, or keep each fact's source in the body and put only the IDs in `Refs:`.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the approved grill FR-4 says each question shows \"the verified facts it rests on, each with its source (an RF-n, a file:line or a spec ID)\". Under this spec the question shows the facts without their sources, and the sources appear only at the foot of the message. A human reading the question can no longer match a given fact to its source. The spec does not raise a change request against grill FR-4, and AC-17 tests the removal as if it were the goal.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "The approved grill spec (`.nio/specs/grill/spec.md`, FR-4 and the 2026-10-25 decision \"every fact in a question carries its source\") requires each fact in a question to carry its source in the question. After this change a question shows, say, \"the export takes 3 days\" and \"the limit is 500 rows\" in the body, with RF-4 and file:line in a `Refs:` line at the bottom. The human can no longer see which source backs which fact. The spec rewrites the grill's step 6 on purpose, but it names no grill FR-4 change and no change request exists, and the memory rule requires a change request first.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "Approved grill FR-4 and AC-4 require each fact \"with its source\" in the question. The plain-talk spec moves sources to `Refs:` (FR-17, AC-17), and no decision or change request names grill FR-4. The decisions list does flag the \"at most 3 lines\" change, but not this one.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-17/AC-17: each fact names its source beside it in plain words; IDs and file:line in Refs; grill FR-4 holds",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": "725293b95acaaf3234a504f0ea99a954bbfd6aa8"
+    },
+    {
+      "id": "J-3",
+      "title": "`nio jury answers` does not keep working unchanged with the labelled lines",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-13",
+        "Decisions (the labelled-lines entry)",
+        "AC-23"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "so `nio jury answers` keeps working unchanged",
+        "`Question:` holding the shown question line, then `Context:`, `Options:` and `Refs:`"
+      ],
+      "fix": "name the change to `answers()` in the spec (stop the options span at `Refs:`), or move `Refs:` after `Answer:`, and add a test that a numbered answer comes back without the `Refs:` text.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`src/nio/jury.py`, `answers()`, reads the options with `^Options[^:]*: (.*(?:\\n(?!Answer:|Patched:).*)*)`, which keeps every line after `Options:` up to `Answer:` or `Patched:`. With the FR-13 order, the `Refs:` line falls inside that span and is appended to the last option's label. If the human answers \"3\" to an entry whose option 3 is \"Ship it\" with `Refs: J-7 · FR-10, FR-11 · jury.py:268`, the extracted answer becomes \"Ship it Refs: J-7 · FR-10, FR-11 · jury.py:268 [human]\". So the extraction no longer matches what the human chose, and AC-23 fails for numbered answers.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-13 orders an entry as `Question:`, `Context:`, `Options:`, `Refs:`, then the answer. In `src/nio/jury.py` (`answers`, line 204), the options capture is `^Options[^:]*: (.*(?:\\n(?!Answer:|Patched:).*)*)`. It stops only at `Answer:` or `Patched:`, so the new `Refs: J-7 · FR-10, FR-11 · jury.py:268` line is swallowed into the last option's text. If the human picked the last option by number (for example \"3\"), the extracted answer becomes \"<option text> Refs: J-7 · ...\". That is not one-for-one with the entry. The decision says the parser is unchanged, and FR-15 says CLI output is unchanged, so no one is assigned to fix this. Context lines are also never in the parser's view, but they sit before `Options:` and are harmless.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "FR-13 orders the entry as Question, Context, Options, Refs, then Answer. `answers()` in `src/nio/jury.py:204` reads Options up to the next `Answer:` or `Patched:` line, so the Refs line joins the last option's text. Take an entry `Options: 1. Keep (recommended) 2. Drop 3. Defer`, then `Refs: J-7 · FR-10`, then `Answer: 3 [human]`. `answers()` returns `Defer Refs: J-7 · FR-10` as the human's answer, not `Defer`. AC-23 (\"extracts every human answer ... match the entries one for one\") then fails for that case, and the Decisions claim that the parser keeps working unchanged is false.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "The grill logs `Options: 1. Keep it (recommended) 2. Drop it`, then `Refs: J-7 · FR-10, FR-11 · jury.py:268`, then `Answer: 1 [human]`. jury.py's `answers()` regex for options (line 204) runs until the next `Answer:` or `Patched:` line, so the `Refs:` text is absorbed into the last option. A human who picks option 2 gets back `Drop it Refs: J-7 · FR-10, FR-11 · jury.py:268` as the answer that the scope lens reads. The spec's AC-23 check would fail on that entry.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`src/nio/jury.py` line 204 captures options with `^Options[^:]*: (.*(?:\\n(?!Answer:|Patched:).*)*)`, which stops only at `Answer:` or `Patched:`. Under FR-13's order the `Refs:` line lands inside that span and is appended to the last option's label. So the Decisions claim \"keeps working unchanged\" is false for a numbered pick of the last option.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13: Refs: lives only in the ## Asked entry; the answer entry keeps Question/Options/Answer/Patched as today; AC-23 adds a last-option pick with no Refs in the answer",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-4",
+      "title": "The new log shape breaks `nio jury answers` when the last option is picked",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-13",
+        "AC-23",
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "so `nio jury answers` keeps working unchanged",
+        "the extracted answers match the entries one for one, each with its header's ID"
+      ],
+      "fix": "either change the entry order (put `Refs:` before `Options:`) or allow a parser change and say so; add an AC with a last-option pick and a `Refs:` line.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-13 orders an entry as `Question:`, `Context:`, `Options:`, `Refs:`, then the answer. In `src/nio/jury.py` (`answers`, line 204), the options capture is `^Options[^:]*: (.*(?:\\n(?!Answer:|Patched:).*)*)`. It stops only at `Answer:` or `Patched:`, so the new `Refs: J-7 · FR-10, FR-11 · jury.py:268` line is swallowed into the last option's text. If the human picked the last option by number (for example \"3\"), the extracted answer becomes \"<option text> Refs: J-7 · ...\". That is not one-for-one with the entry. The decision says the parser is unchanged, and FR-15 says CLI output is unchanged, so no one is assigned to fix this. Context lines are also never in the parser's view, but they sit before `Options:` and are harmless.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-3",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "A round gives one message several `Refs:` lines, against the definition of the Refs line, and the round's opening line is never logged",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-25",
+        "AC-25",
+        "FR-5",
+        "FR-13",
+        "FR-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "**Refs line**: the last line of a message, holding the IDs, files, commands and sources the message rests on.",
+        "three `Refs:` lines, one per question"
+      ],
+      "fix": "define a round as N messages plus an opening line. State where the opening line is logged, or say it is not logged.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the grill asks a round of 3 questions. AC-25 treats it as one message with one opening line and three `Refs:` lines. The Key entities definition (and FR-5, \"end it with a `Refs:` line\") allows exactly one `Refs:` line, as the last line. Also, FR-13 logs \"what the human saw word for word\", but only one entry per question is logged, so the round's first line (\"Answer 5 questions, by number\") appears in no entry. Under FR-24 the host question tool shows the first line and context in the question text, so the human saw that line but the log has no place for it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-25 and Key entities: a round is one message per question under an opening line; each question ends with its own Refs; the opening line is not logged",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-6",
+      "title": "A command shown in the body can carry an ID or slug, which the no-ID rule forbids",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "FR-23",
+        "AC-4",
+        "FR-3",
+        "SC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHEN the human must run a command THE SYSTEM SHALL show that command in the message body, not only in `Refs:`.",
+        "no message shows an ID above its `Refs:` line"
+      ],
+      "fix": "say that a command shown for copying is exempt from FR-3 and SC-2, or that the command is shown without IDs.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "AC-4 requires the command \"above the `Refs:` line\". A command the human must run can take a slug or other ID as an argument, for example `nio check spec plain-talk` or a command that names a finding. The command is then an ID above `Refs:`, so SC-2 fails, and FR-3 (\"never by an ID\") fails, even though FR-23 was followed. The rules do not say which one wins.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-3, SC-2: a command shown for the human to copy is quoted exactly, IDs included",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-7",
+      "title": "\"area\" in the first line breaks the rule against NIO terms the human does not start by name",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-3",
+        "FR-22",
+        "AC-21"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "only stage names (spec, grill, jury, plan) may be used as they are",
+        "the first line asks to pick or add an area"
+      ],
+      "fix": "either add \"area\" to the allowed terms, or reword AC-21 to describe an area by what it does (\"pick where this should be filed, or add a new place\").",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "remember finds no memory area that fits a record. AC-21 requires a first line asking the human to \"pick or add an area\", and its `Refs:` lists `memory.areas`. \"Area\" is a NIO memory term, not a stage name, and FR-3 allows only the four stage names as they are. Following AC-21 literally breaks FR-3, and following FR-3 means AC-21's first line cannot say \"area\". The same tension applies to the terms `challenged` and `conflict` in FR-21 if they are shown to the human.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-21: ask where to file the record or add a new place, without the word area",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-8",
+      "title": "NFR-1 is untraced and unconfirmed",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "NFR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL run the drift test with the Python standard library only, offline, in under 2 seconds. [agent]",
+        "[default] (your proposal; the grill must confirm it)"
+      ],
+      "fix": "have the grill confirm NFR-1 or drop it; if kept, relabel it so the provenance matches the header's rules.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "if NFR-1 is not built, the human loses nothing they asked for. The stdlib-only rule, the offline rule and the 2-second budget are not in the intake or in Q1 to Q14. The grill never confirmed them, yet the tag is `[agent]`, which the header does not allow for an unconfirmed item (only `[default]` is, and it must be confirmed).",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "NFR-1 confirmed by the human (Q17); tag now [human]",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "6c5f608b7917a3f8cbe01fef81c209b1e0c6cfde"
+    },
+    {
+      "id": "J-9",
+      "title": "AC-14 and AC-13 go beyond what the intake asks for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "AC-13",
+        "AC-14",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "it fails saying the source copy is missing, rather than passing with nothing to compare. [agent]",
+        "then it fails naming `jury` and the first line that differs. [agent]"
+      ],
+      "fix": "have the grill confirm AC-14 and drop the quoted-line detail from AC-13, or leave both as stated and let the grill confirm them.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "FR-11 says only \"fail the drift test, naming the skill.\" AC-14 (fail when NORTH_STAR has no block) guards against a vacuous pass, which is a reasonable reading of FR-11, so it is defensible. AC-13's requirement to quote the first differing line is extra output detail nobody asked for. If it is not built, the human loses nothing they named. Both carry the unconfirmed `[agent]` tag.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-13: dropped the quoted-differing-line detail; it names the file only",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-10",
+      "title": "One bundle where the spec could be split into slices",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "US-3",
+        "US-4",
+        "SC-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a shared block in each skill that talks to the human carries it, and a small test keeps the copies identical.",
+        "**Independent test:** read each listed step in the five skills; each says what the human is asked in plain words,"
+      ],
+      "fix": "ask the human once whether to keep one change or split it into an epic with a drift-test slice and a rewrite slice; if one change, no edit is needed.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "one change touches NORTH_STAR, CLAUDE.md, five skills (about 20 places, per Q6) and a drift test. The drift test (US-3) and the per-skill rewrites (US-4) each have their own independent test, so they could ship as separate slices. A problem in one rewrite would hold up SC-3 for the whole change, and `epic: \"\"` in the front matter records that no split was considered. The grill chose one bundle (Q6), and Q9 says a long list \"signals the spec should be split\", so this is for the human to decide.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "out-of-scope",
+      "by": "human",
+      "note": "Keep one change: the block, the test and the rewrites land together so no skill is ever half-converted; mostly wording, low risk.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "Many human-facing points in FR-17 to FR-22 have no AC",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-17",
+        "FR-18",
+        "FR-20",
+        "FR-21",
+        "FR-22",
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a lookup that found nothing, the follow-up on a vague answer, a glossary clash, a contradiction (both sides in plain words, the file:line in `Refs:`), the 15-question pause and the delegated stop"
+      ],
+      "fix": "extend AC-18 so it lists the \"and also\" points of FR-17 to FR-22, or add one AC per skill that covers them.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-18 enumerates only the points before \"and also\" for each skill. The grill's vague-answer follow-up, glossary clash, 15-question pause, the jury's failed gate and refuted findings, and the spec skill's \"`nio` missing\" are required by the FRs. No AC covers them, so they can keep their IDs in the body and every test still passes.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-18 lists only the points before \"and also\" in FR-17 to FR-22. The vague-answer follow-up, glossary clash, 15-question pause, delegated stop, jury failed gate and refuted findings, spec \"`nio` missing\" and others appear in no AC, so they can show IDs while every test still passes.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-18 now lists every point FR-17 to FR-22 name",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-12",
+      "title": "AC-18 checks for a mention of the shape, not for the absence of IDs",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-18",
+        "FR-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each listed point in the skill text refers to the shape or states the plain first line; no listed point asks for an ID, severity or lens in the body"
+      ],
+      "fix": "name the exact strings or phrases that must be gone, such as \"facts, each naming its source\", and the exact ones that must be present at each listed point.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a skill step that says \"follow the shape\" and also says \"name the finding's source in the question\" passes the first half, and the second half has no mechanical check. FR-17 can be broken, with the grill step still telling the agent to put sources in the body, while a unit test that looks for the shape reference passes. Nothing says how a test spots \"asks for an ID\" in prose.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-18's observable (Level: unit) says a point \"refers to the shape\" and \"asks for no ID\", with no named strings or mechanical check. A step that says \"follow the shape\" and also \"name the source in the question\" would pass the first half, and the second half is untestable as written.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-18 observable names the block heading, the phrases that must be gone, and the J-7 example",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-13",
+      "title": "The behaviour-change split in FR-7 has no testable criterion, and its stated misuse has no AC",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "AC-8",
+        "UJ-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL show in plain words every item that changes what the product does, however many, then one line counting the rest"
+      ],
+      "fix": "add an AC with a mixed list, where a labelled behaviour change must appear in the body and not in the count. Say who decides the label, for example the fixture. Alternatively, say that the check is human-judged.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-8 hands the agent a pre-sorted \"3 of 24\" and checks only the counts. No test checks that a behaviour change was not hidden in the count line. UJ-2 names that as the misuse: \"the agent counts a behaviour change among the 'nothing you'd notice' items\". If the agent miscounts a behaviour change as a wording fix, the AC-8 and AC-9 observables still pass, because the 3-and-21 shape is intact.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-8 and AC-9 hand the agent a pre-sorted split (\"3 of 24\") and check only counts and `Refs:`. UJ-2 names hiding a behaviour change in the count line as the misuse, but no AC has a mixed list or says who labels the items. The Glossary defines \"Behaviour change\" but gives no checkable test.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-7 defines a behaviour change by the grill's bar; new AC-26 with a mixed list",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-14",
+      "title": "NFR-1 has no AC, and FR-3's \"NIO term\" rule can't be checked",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "NFR-1",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "run the drift test with the Python standard library only, offline, in under 2 seconds"
+      ],
+      "fix": "add a unit AC for NFR-1 (an import check and a timing assertion). Give FR-3 a closed list of banned terms, or say that only IDs, severity and lens are machine-checked.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "no AC checks the 2-second limit, the standard-library-only rule or the offline rule. A drift test that imports a third-party package or takes 5 seconds satisfies every AC from AC-11 to AC-15. Separately, FR-3 bans \"a NIO term the human doesn't start by name\". No list of terms exists, and SC-2 and AC-6 check IDs only, so that part of FR-3 can't fail any test.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "new AC-27 checks stdlib imports and the 2 s limit; FR-3 says only IDs, severity names and lens are machine-checked, the rest is judged by the human",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-15",
+      "title": "Length and \"plain words\" are left to the human, with no number or sample",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-2",
+        "SC-1",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the human judges that each message's context is about 3 lines and none is too long to take in at a glance"
+      ],
+      "fix": "state that AC-2 and SC-1 are acceptance by human judgement and give the sample, for example every message in one named session. Optionally add a soft ceiling that is checked and logged, without failing the run.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the verdict \"about 3 lines\" and \"at a glance\" has no threshold. Neither does \"in the next grill and jury session\" in SC-1, which gives no count of messages. The decisions record this as deliberate (\"nothing counts lines\"). The result is that FR-2 can't fail an automated test, and a single lenient session is enough to pass SC-1. A 10-line context passes if the human lets it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "SC-1: the human judges every message of the next grill and jury session",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-16",
+      "title": "The entry header is named differently in FR-13 and in the spec's own Non-goals, and differently again in the grill skill",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "AC-10",
+        "Non-goals"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "under an entry header that keeps the ID (`## Q7 · J-7 · <date>`)",
+        "a lint on `## Asked` entries comes only if agents still drift"
+      ],
+      "fix": "choose one header, state in FR-13 that it replaces the skill's `## Asked · Q7 · <ID> · <date>` and say so in the change to step 7, and use that name in the Non-goals.",
+      "sources": [
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "The spec gives the header as `## Q7 · J-7 · <date>` (FR-13, AC-10) but refers to the same entries as `## Asked` entries (Non-goals). The grill skill writes `append `## Asked · Q7 · <ID> · <date>`` (`skills/grill/SKILL.md`, step 7). A lint or grep written from the Non-goals, or from the existing skill, won't match an entry written to FR-13's header. The spec doesn't say which header the change keeps.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "same fix as J-1: one header scheme (## Asked entry + ## Q answer entry), matching the non-goal and the skill",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-17",
+      "title": "A round of questions is specified without saying it is opt-in, so it reads as the default the grill spec forbids",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-25",
+        "AC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN the grill asks a round of questions THE SYSTEM SHALL open the round with one first line saying what's needed",
+        "Given the grill asks a round of 3 questions"
+      ],
+      "fix": "write \"in rounds mode (grill FR-3)\" into FR-25 and AC-25, and say in the Decisions which mode the e2e test runs in.",
+      "sources": [
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "The approved grill spec's FR-3 says the grill asks one question at a time by default and a numbered round only when `grill.mode` is `rounds` or the human asks for rounds. FR-25 and AC-25 don't state that condition. In a default run the grill never asks a round, so an e2e test written from AC-25 on a default config can't be reached, and a reader could take the round format as the normal shape.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-25, AC-25: rounds mode only",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-18",
+      "title": "The grill log header is given two different ways",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "US-2 (AC-10)",
+        "Non-goals"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "under an entry header that keeps the ID (`## Q7 · J-7 · <date>`)",
+        "a lint on `## Asked` entries comes only if agents still drift"
+      ],
+      "fix": "Pick one header form, use it in FR-13, AC-10 and the Non-goals, and state whether `## Asked` is kept.",
+      "sources": [
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "FR-13 and AC-10 say the entry header is `## Q7 · J-7 · <date>`, but the Non-goals say a possible lint would target `## Asked` entries. The grill skill writes `## Asked · Q7 · <ID> · <date>` at skills/grill/SKILL.md line 64 and `## Q7 · OP-5 · <date>` at line 82. The spec doesn't say which form the rewrite keeps, so a lint written from the Non-goals would match nothing that FR-13 produces.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "same fix as J-1",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-19",
+      "title": "Timing of the log entry against the shown message",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "AC-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "record what the human saw word for word",
+        "the logged entry matches it word for word"
+      ],
+      "fix": "State the order in FR-13 (for example, log after showing, with the text as displayed), or state that the pre-show entry is the record and the display must match it.",
+      "sources": [
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "The grill skill appends the `## Asked` entry before the question is shown (skills/grill/SKILL.md line 64: \"Before showing it, append\"). FR-13 asks the log to record \"what the human saw\". If the question tool changes the text on display, or the human sees a different version, the log written first won't match it, and AC-24's word-for-word check can fail without anyone seeing why. The spec doesn't say whether the entry is written before or after showing, or what happens if the two differ.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13: the pre-show ## Asked entry is the record, and the shown text must be exactly that text",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": "1b91098db90562303bc03162ccceb0bb006520d9"
+    },
+    {
+      "id": "J-20",
+      "title": "Grill fact sources move out of the question, against the approved grill FR-4",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-17",
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each fact in plain words with its source named beside it in plain words",
+        "none of these phrases remains in any skill: \"each naming its source"
+      ],
+      "fix": "either write a change request against grill FR-4 and AC-4 (the human decides whether the source is shown as an ID or only in `Refs:`), or keep the ID beside the fact and change only the wording around it.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the approved grill spec (`/home/work/nio/.nio/specs/grill/spec.md`, FR-4 and AC-4, verdict V-261025-kdsv, human) requires each fact in a question to be shown \"with its source (an RF-n, a file:line or a spec ID)\". Under FR-17 the grill shows the source only as \"per the jury code\" in plain words, with the ID or file:line in `Refs:`. AC-18 deletes the approved \"each naming its source\" wording from `skills/grill/SKILL.md` step 6. No change request against grill FR-4 is cited, so a grill question that follows FR-17 breaks the approved requirement. The spec's Decision line \"This keeps the grill's rule that every fact carries its source\" is the claim the text does not support.",
+          "severity": "blocker",
+          "round": 3
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-21",
+      "title": "The behaviour-change test in FR-7 is narrower than the grill's bar it cites",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "what data is kept, or what it costs"
+      ],
+      "fix": "copy the grill's five items word for word into FR-7, or write \"the grill's bar\" only and drop the restatement.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-7 says an item \"changes behaviour when it passes the grill's bar\", then restates the bar. The grill's step 4 in `/home/work/nio/skills/grill/SKILL.md` lists \"what data is kept or changed\". A change that alters existing data without changing what is kept, for example a backfill, passes the grill's bar but fails FR-7's restatement. Under UJ-2 it would be counted as \"nothing you'd notice\".",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-7: copies the grill's bar word for word (data kept or changed)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-22",
+      "title": "A round's questions need a \"what's needed\" first line and are also forbidden one",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "FR-25",
+        "AC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL make its first line say what is needed from the human",
+        "as one message per question under that opening line",
+        "only the round's first line says what's needed"
+      ],
+      "fix": "Say that a question inside a round is exempt from FR-1's first-line rule, and say what its logged `Question:` line holds. Or drop \"only\" from AC-25 so that each question opens with its own need.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The grill is in rounds mode and asks 3 questions. FR-25 makes each question \"one message\", and FR-1 says every message's first line says what is needed (\"Pick one\"). AC-25 and FR-25 say only the round's opening line says it, and the opening line is not logged. So question 2's first line must both say \"Pick one\" and not say it. FR-13's `Question:` line (the shown question line) and AC-1's rule that the first line starts with `Pick one:` have no defined content for a question inside a round.",
+          "severity": "major",
+          "round": 3
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-25 makes each question \"one message per question\", and FR-1 says every message's first line says what is needed. AC-25 says only the round's first line does. A test following AC-25 fails a compliant round, where question 2 starts \"Pick one\", or passes a round with no per-question first line. The Observable also never checks that the opening line is absent from `grill.md`, so a logged opening line passes.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-25 makes each question \"one message\", so FR-1 requires each message's first line to say what is needed. AC-25 and Q3 say that only the round's opening line says it and that questions in a round don't start with \"Pick one:\". Nothing in the spec exempts round questions from FR-1, and nothing says what the logged `Question:` line holds for them.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-25: a question inside a round has no first line of its own (the opening line meets FR-1); its Question: line holds the numbered question; AC-25 checks this and that the opening line is not logged",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-23",
+      "title": "The question tool's text cannot match the logged entry word for word",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-24",
+        "FR-13",
+        "AC-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL put the first line, the context and the `Refs:` line in the question text, and each option's consequence in its description",
+        "then `Context:`, `Options:` and `Refs:`",
+        "and the logged entry matches it word for word"
+      ],
+      "fix": "State how the tool's fields map onto the logged lines. For example, the match is per field (question text to `Question:`, `Context:` and `Refs:`; option labels and descriptions to `Options:`), or the match covers the whole shown message rather than the question text alone.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The grill asks J-7 through Claude Code's question tool. Under FR-24 the shown question text is the first line, the context and `Refs:`, and the options sit in separate option fields. FR-13 logs `Question:`, `Context:`, `Options:` and `Refs:` in that order, with `Options:` before `Refs:`. AC-24 requires the logged entry to match the question text word for word, but the log holds an `Options:` block that the question text does not, and in a different order. FR-13 also says \"show exactly that text\", which cannot hold when the text is split across tool fields.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-24 puts the first line, context and `Refs:` in the question text and the option consequences in the option descriptions. FR-13 logs `Question:`, `Context:`, `Options:` and `Refs:` in that order, and AC-24 requires the logged entry to match the question text word for word. The log therefore holds an `Options:` block the question text lacks, in a different order. The spec never says how the tool's fields map onto the logged lines.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13, AC-24: through a question tool the match is field by field (question text to Question/Context/Refs, options to Options)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-24",
+      "title": "\"Machine-checked\" contradicts the non-goal of having no linter",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "AC-6",
+        "SC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Only IDs, severity names and the word",
+        "Code that lints messages: enforcement is the instructions plus the self-check"
+      ],
+      "fix": "Reword FR-3 to say these are the only terms a reader or test script can check mechanically, and that the human judges the rest. Or drop \"machine-checked\" and say who checks AC-6 and SC-2.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-3 says IDs, severity names and \"lens\" are \"machine-checked\". The non-goals rule out any code that lints messages, and the only code is the drift test, which compares the blocks. So nothing machine-checks these words. AC-6 lists `blocker`, `major` and `minor` as words that must not appear above `Refs:`. A literal check would flag ordinary prose such as \"a minor change\", and there is no checker to apply it.",
+          "severity": "minor",
+          "round": 3
+        },
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "an implementer reads FR-3 and builds a check that flags IDs or \"lens\" in messages. That is the lint the non-goal forbids. Another reader takes the non-goal at its word and writes no check, so FR-3's \"machine-checked\" claim is never met. The spec gives no check that would make the claim true.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The refuter's J-26 verdict, which it marked same-as J-24: FR-3 says IDs, severity names and \"lens\" are \"machine-checked\", but the Non-goals rule out code that lints messages, and the drift test checks none of those words. No check exists that could make the FR-3 claim true.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-3: no code checks messages; IDs, severity names and lens are what a transcript reader looks for (SC-2)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-25",
+      "title": "Showing every behaviour change \"however many\" can break the glance-length rule",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-7",
+        "FR-2",
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "however many",
+        "none is too long to take in at a glance"
+      ],
+      "fix": "Say that AC-2 and FR-2 govern the context only and that a list may run as long as its behaviour changes. Or add a threshold above which the list is grouped or split across messages.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A jury approval has 30 dispositions and 12 of them pass the grill's behaviour bar. FR-7 requires all 12 in the body in plain words. AC-2 and FR-2 require that the human can take each message in at a glance. A 12-item body fails AC-2, and trimming it to meet AC-2 breaks FR-7. The spec does not say which rule wins.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-2: the about-3-lines limit is on context only; an FR-7 list runs as long as its behaviour changes (the human's Q9)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-26",
+      "title": "FR-3 says messages are machine-checked, but the non-goals rule out a message lint",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "Non-goals",
+        "Risks and evidence against"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Only IDs, severity names and the word \"lens\" are machine-checked; other terms are judged by the human (SC-1).",
+        "Code that lints messages: enforcement is the instructions plus the self-check; a lint on `## Asked` entries comes only if agents still drift.",
+        "Only instructions enforce the shape, so agents may still put IDs in the body; the fallback is a lint on `## Asked` entries."
+      ],
+      "fix": "reword FR-3 so it says only instructions and the self-check enforce the rule, with the human judging terms (SC-1). Or, if a machine check is wanted, have the grill decide it and remove the non-goal.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "an implementer reads FR-3 and builds a check that flags IDs or \"lens\" in messages. That is the lint the non-goal forbids. Another reader takes the non-goal at its word and writes no check, so FR-3's \"machine-checked\" claim is never met. The spec gives no check that would make the claim true.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-24",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-27",
+      "title": "AC-14 adds a drift-test case the human never asked for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "AC-14",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given `NORTH_STAR.md` has no block, when the drift test runs, then it fails saying the source copy is missing, rather than passing with nothing to compare. [agent]",
+        "IF any skill under `skills/` lacks the shared block, or its copy differs from the one in `NORTH_STAR.md`, THEN THE SYSTEM SHALL fail the drift test, naming the skill."
+      ],
+      "fix": "drop AC-14, or have the human confirm it in the grill and cite it to FR-11.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "if NORTH_STAR lacks the block, the skills' copies differ from it, so FR-11 already makes the test fail, naming each skill. AC-14's extra message is the only thing it adds. Nothing the human asked for is lost if it is not built. The `[agent]` tag and the check's \"agent calls: AC-13, AC-14\" line show the grill never confirmed it.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-14 dropped and retired; FR-11 already fails when NORTH_STAR lacks the block",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-28",
+      "title": "AC-18 covers about 35 points but its test checks three phrases and block presence",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-18",
+        "FR-17",
+        "FR-18",
+        "FR-20",
+        "FR-21",
+        "FR-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "none of these phrases remains in any skill",
+        "then it tells the agent to follow the shape and none tells it to show an ID in the body"
+      ],
+      "fix": "make the Observable per point, for example a per-step check that the step names the shape and contains no ID, severity or lens instruction. Or list the exact old phrases to be gone for each of FR-17 to FR-22.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the jury skill's \"second lens failure\" step still says \"show the lens name and finding IDs\". The Observable still passes, because the block is present and none of the three listed phrases appears. FR-18 is broken and AC-18 stays green. The same holds for every point other than those three phrases, such as a glossary clash, a slug that already exists, or recall's \"memory has nothing\".",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Given in AC-18 says no listed point tells the agent to show an ID in the body. The Observable checks only block presence, three removed phrases and the J-7 example. A jury step that still says \"show the lens name and finding IDs\" would pass, so FR-18 could be broken while AC-18 stays green.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-18: per-point grep that each listed step refers to the block or opens plainly, and has no ID/severity/lens/file:line outside Refs",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-29",
+      "title": "AC-25 contradicts FR-1 and doesn't test FR-25's \"not logged\"",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-25",
+        "FR-25",
+        "FR-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "then only the round's first line says what's needed",
+        "the opening line carries no decision and is not logged"
+      ],
+      "fix": "state whether each per-question message has its own first line. Add to the Observable that `grill.md` holds three `## Asked` entries and none holds the opening line.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-25 makes each question \"one message per question\", and FR-1 says every message's first line says what is needed. AC-25 says only the round's first line does. A test following AC-25 fails a compliant round, where question 2 starts \"Pick one\", or passes a round with no per-question first line. The Observable also never checks that the opening line is absent from `grill.md`, so a logged opening line passes.",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-22",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-30",
+      "title": "AC-7 tests a self-check sentence that the spec never states",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-7",
+        "FR-6",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the last line of the block in `NORTH_STAR.md` and in each skill is the self-check sentence"
+      ],
+      "fix": "quote the exact self-check sentence in FR-6 or AC-7, or name the words that must appear in the last line.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "nowhere does the spec give the sentence or its required words. A test can only match a string it knows. If the block ends \"Check before sending\", does it pass? AC-11 only compares copies with each other, so a block with a weakened or missing self-check passes both tests.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-6, AC-7: the self-check sentence is quoted exactly",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-31",
+      "title": "AC-26 and AC-8 leave to the agent the classification they are meant to test",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-26",
+        "AC-8",
+        "FR-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "2 change what a user sees and 8 only reword the spec"
+      ],
+      "fix": "give AC-26 a fixed fixture of 10 items with a stated expected split, and add one borderline example to FR-7.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Given doesn't fix the 10 items, so a test run can't say which two are the behaviour changes. If the agent counts a visible change among the 8, the test can only be judged by a human reading the items. FR-7's bar (\"what it costs\", \"what data is kept\") has no examples at the borderline, for example a renamed error message.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-26: a fixed 10-item fixture with items 3 and 7 the behaviour changes",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    },
+    {
+      "id": "J-32",
+      "title": "AC-10's \"written before the question is shown\" has no observable",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-10",
+        "FR-13"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "written before the question is shown"
+      ],
+      "fix": "name the check, for example that in the session trace the write to `grill.md` precedes the message to the human. Otherwise drop \"before\" from the Observable and keep it only in FR-13.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Observable compares the logged lines to the transcript, which shows content but not order. An agent that shows the question and then writes the entry satisfies every other clause. A test has to compare tool-call order or file timestamps, and the spec names neither.",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-10: dropped 'written before' from the Observable; the order stays in FR-13",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "fixed_in": "e15a1b2ec325762e528f08463291ee7ce402350c"
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      2,
+      "rejected"
+    ],
+    [
+      3,
+      "rejected"
+    ],
+    [
+      3,
+      "human"
+    ]
+  ],
+  "versions": {
+    "1": "ddc1971850b4f65d90355ff28043f1653ebae1d7",
+    "2": "ddc1971850b4f65d90355ff28043f1653ebae1d7",
+    "3": "6c5f608b7917a3f8cbe01fef81c209b1e0c6cfde"
+  }
+}
