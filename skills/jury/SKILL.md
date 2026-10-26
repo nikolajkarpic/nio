@@ -75,19 +75,23 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    and the human's grill answers (for findings about what was or wasn't asked for). Save its answer to
    `.nio/runs/<run>/jury/spec-refuter.md` and collect again.
 5. **Escalate.** For each lens with a blocker the refuter **confirmed**, run that lens twice more as independent
-   jurors, `spec-<lens>-2.md` and `spec-<lens>-3.md`, each with a fresh pack, then collect. Two of three decide. Majors
+   jurors, `spec-<lens>-2.md` and `spec-<lens>-3.md`, each with a fresh pack (after the first review, the
+   blocker's pack, `nio jury fixcheck <slug> spec --lens <lens> --blocker J-<n>`), then collect. Two of three decide. Majors
    and refuted blockers never escalate. Every juror counts toward the cap.
 6. **Decide.** Run `nio jury check <slug> spec --record` and act on the outcome:
 
    | Outcome | What you do |
    | --- | --- |
-   | `rerun` | re-run each lens it names, once, then collect; when it says the spec changed, re-review (step 8) |
+   | `rerun` | re-run each lens it names, once, then collect; when it says the spec changed, or asks for the final fix check, re-review (step 8) |
    | `pending` | run the refuter (step 4) |
-   | `human` | show each reason with its findings in plain words (their IDs in `Refs:`), and wait for the human |
+   | `human` with one list | after the first review there's no confirmed blocker, so no new round: show every listed finding in one message, each with two options, fix or accept as risk, in plain words (their IDs in `Refs:`); record each answer with `nio jury dispose` (a fix as you would in step 7), then check again |
+   | `human`, the final fix check flagged | show every flagged finding in one message, each with fix or accept as risk, saying a confirmed blocker may be among them and that no further check follows; record each with `nio jury dispose`, then check again: the jury then ends |
+   | `human`, other reasons | show each reason with its findings in plain words (their IDs in `Refs:`), and wait for the human |
    | `rejected` | dispose of each open finding (step 7), then re-review (step 8) |
    | `approved` | tell the human the outcome and the next stage (the plan); show the dispositions you made as a long list (see the block above), with the verdict record and their IDs in `Refs:` |
 
-   Show refuted findings too, in plain words with the refuter's reason; never hide them.
+   Show refuted findings too, in plain words with the refuter's reason; never hide them. Show the notes `nio jury
+   check` lists (findings below blocker raised after the first review) as one line each; they need no ruling.
 7. **Dispose** of each open finding, within your authority:
 
    | Disposition | Who | How |
@@ -103,9 +107,15 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    session settles one by removing its DF line from `## Deferred` (DF-n moves to `retired:`) before `--by grill`, which only a session the human answered may record;
    `nio jury dispose` refuses the spec-fix while the line is still there.
 8. **Re-review.** After the fixes, `nio check spec <slug> --gate` must pass again. Run `nio jury changed <slug> spec`:
-   it lists the IDs the fixes changed and the lenses to re-run (every lens that blocked, plus any lens whose findings
-   cite a changed ID). Start a new run, re-run only those lenses with packs that name the changed IDs and the findings
-   the human accepted as risk (so they aren't raised again), and continue from step 3. A finding that has failed two rounds goes to the human, described in plain words, not to another re-run (`nio jury check` says so).
+   it lists the IDs and sections the fixes changed, their neighbours, and the lenses to re-run. Start a new run and
+   give each of those lenses its fix-check pack, `nio jury fixcheck <slug> spec --lens <lens>`, exactly as printed and
+   nothing else of the spec. A lens answers fixed or not fixed for each finding in its pack and raises only blockers; a
+   new major or minor becomes a note. An escalation juror gets `--blocker J-<n>` instead and judges only that blocker.
+   Continue from step 3. After the first review only a confirmed blocker starts another re-review; everything else
+   comes to the human as one list (step 6). Once they settle it with a fix, `nio jury check` asks for the one final fix
+   check, run the same way; what it flags goes to the human, and once they settle that the jury ends without another
+   check. A finding that has failed two rounds goes to the human, described in plain words, not to another re-run
+   (`nio jury check` says so).
 
 ## When to stop
 

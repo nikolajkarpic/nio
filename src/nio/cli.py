@@ -65,7 +65,10 @@ def main():
     ja.add_argument("slug")
     jp = jsub.add_parser("plan", help="the lens runs a gate needs, why each runs, the tier and the run budget; fails on a missing card")
     jp.add_argument("--add", action="append", default=[], help="lens:reason, a lens the skill's own triggers add; repeatable")
-    jg = jsub.add_parser("changed", help="IDs changed since the version the last round judged, and the lenses to re-run")
+    jg = jsub.add_parser("changed", help="IDs and sections changed since the version the last round judged, their neighbours, and the lenses to re-run")
+    jf = jsub.add_parser("fixcheck", help="print one lens's fix-check pack for a re-review or the final fix check")
+    jf.add_argument("--lens", required=True)
+    jf.add_argument("--blocker", metavar="J-N", help="the pack for an escalation juror, who judges only this new blocker")
     jc = jsub.add_parser("collect", help="merge the run's lens outputs (and the refuter's, if present) into .nio/specs/<slug>/jury/<gate>")
     jc.add_argument("--run", required=True)
     jc.add_argument("--expect", action="append", default=[], help="a lens that must report; repeatable")
@@ -80,7 +83,7 @@ def main():
     jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
     jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
     jk.add_argument("--human", default="", metavar="REASON", help="the human closes the gate themselves: outcome human, with their reason")
-    for s in (jp, jg, jc, jk):  # dispose takes them first, before the finding
+    for s in (jp, jg, jf, jc, jk):  # dispose takes them first, before the finding
         s.add_argument("slug")
         s.add_argument("gate", choices=sorted(jury.GATES))
     a = p.parse_args()
@@ -173,8 +176,11 @@ def main():
                 print("\n".join(lines))
                 sys.exit(0 if ok else 1)
             elif a.jury_cmd == "changed":
-                ids, rerun = jury.changed(root, a.slug, a.gate)
-                print(f"changed: {', '.join(ids) or 'nothing'}\nre-run: {', '.join(rerun) or 'nothing'}")
+                ids, rerun, near, secs = jury.changed(root, a.slug, a.gate)
+                print(f"changed: {', '.join(ids) or 'nothing'}\nsections: {', '.join(secs) or 'nothing'}\n"
+                      f"neighbours: {', '.join(near) or 'nothing'}\nre-run: {', '.join(rerun) or 'nothing'}")
+            elif a.jury_cmd == "fixcheck":
+                print("\n".join(jury.fixcheck(root, a.slug, a.gate, a.lens, a.blocker)))
             elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
             elif a.jury_cmd == "dispose":

@@ -42,3 +42,11 @@ inferred rather than saw can't be a blocker. If nothing qualifies, the Findings 
 ## Stop when
 
 Every action and every piece of sensitive data has been checked, or you have 5 findings.
+
+## Re-review
+
+After the first review you get a fix-check pack (`nio jury fixcheck`) instead of the whole artefact: your own findings
+that were fixed, the changed text before and after, and the items around it. Read nothing else. Unless the pack says
+to give no verdicts (an escalation juror's), give each finding in the pack one verdict, fixed or not fixed, with a
+reason, in a `## Verdicts` section before `## Findings`. Raise a new finding only if it is a blocker you can show from
+the pack; a new major or minor is kept only as a note. Stop once every finding in the pack has a verdict.
