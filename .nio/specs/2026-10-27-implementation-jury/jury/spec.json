@@ -1,0 +1,1033 @@
+{
+  "gate": "spec",
+  "subject": "2026-10-27-implementation-jury",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261027-j5go/spec-adversary.md": "8557c5e3b86ffca9b4d221e9e1e6415f024d14ac903d5b96965288d5dcc4460c",
+    "R-261027-j5go/spec-consistency.md": "97ac4ab3032f4129be1acf0b41f1107e1018d91c6d5816353688f7f97e5c4a73",
+    "R-261027-j5go/spec-logic.md": "f358e8ec67a1264ff251e2a4f920c87a68add25707e96ae53d5f245571928fd5",
+    "R-261027-j5go/spec-scope.md": "c43c2d56c744e78d432cec3267a312276cadec5bc04b9c19b036f262e8281ac3",
+    "R-261027-j5go/spec-testability.md": "0c6b88a457dd6d7651ef78eb6bacbde066b7917c341f065c5cb58f1fdf825660",
+    "R-261027-j5go/spec-refuter.md": "e75e3472bb17fd4b21399eceb4798c74507dc1f9ceb566ad14b42a9d13f7d539",
+    "R-261027-xyvc/spec-adversary.md": "b41fbab226a522f4f3df5d51cf4ff6f180fe18d6dfbd9d9db57e28237cccad12",
+    "R-261027-xyvc/spec-consistency.md": "a495736b2b75d913db638433ff533b24fe40a4087e3718abd799151aa57066d1",
+    "R-261027-xyvc/spec-logic.md": "74ae14e9dcd88072dc5cc549bfda8c07238ceffe6e60603be727ccaf96170a7b",
+    "R-261027-xyvc/spec-scope.md": "56de94aff04612304dd9f9e691254afcd77b03d9243e515b836b58104936bfed",
+    "R-261027-xyvc/spec-testability.md": "7f8c22b4ff16a4e014425672f985d93befa83985649ad6a3f05bf91f43b09b96"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+      "judged": 2
+    },
+    "spec-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": false,
+      "errors": [
+        "J-6 is not in the fix-check pack"
+      ],
+      "round": 3,
+      "version": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+      "judged": 1
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Per-AC \"evidence\" is the test author's claim, not an observation",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "FR-6",
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "judging each test by its name and description",
+        "never a task's status or a worker's claim"
+      ],
+      "fix": "require the conformance lens to confirm that the matched test's body actually exercises the AC. Add a CLI hint for tests with no assertion, as FR-9 does for stubs, and an AC for a forged passing test.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "an implementer writes a test named \"empty input is rejected for AC-5\" with body `assert True`. It passes in the FR-3 run, and the conformance lens matches it to the AC from name and description alone. FR-5 then raises no missing-evidence finding, and SC-1 (\"observed evidence\") is met by a claim. Only FR-36 and FR-10 look at assertions, and only in tests that already existed. A new, empty test is never flagged. Nothing makes the conformance lens read the test body, or flag a test with no assertion.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-4 matches tests \"by its name and description\" and nothing makes the lens read the test body. FR-36 and FR-10 only cover assertions in tests that already existed, so a new `assert True` test passes as evidence.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q14: lens confirms from the test body; free no-assertion hint (FR-4, FR-39, AC-51)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "The human's \"chosen set\" can drop the core lenses that FR-14 says always run",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-14",
+        "FR-16",
+        "AC-23"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL run the conformance and correctness lenses on every epic at the implementation gate",
+        "run only what the human picks: all, all but the lowest-hit-rate lenses, or a chosen set"
+      ],
+      "fix": "say that core lenses are never droppable, and that the pick applies only to triggered lenses. Define the hit-rate source and the tie-break when there is no history.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a plan has 7 runs and the human picks \"a chosen set\" that leaves out conformance. FR-14 requires it, FR-16 allows the omission. Without the conformance lens, FR-5 never fires, so no AC is flagged for missing evidence and the epic can be approved. \"Lowest-hit-rate\" has no data on a first epic (SC-1 says \"first epic juried\"), and the spec doesn't say whether it can pick a core lens or how ties are broken.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The plan is over the cap and the human picks \"choose\" and leaves out conformance, or picks \"drop the lowest-hit-rate lenses\" and conformance has a low hit rate. FR-16 allows it. FR-14 says the core lenses run on every epic. SC-1 (\"every AC the epic covers ends with either observed evidence or a finding\") then fails, because only the conformance lens records missing-evidence findings (FR-5).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-14 says the core lenses run on every epic, but FR-16 lets the human pick \"a chosen set\" or drop the lowest-hit-rate lenses with no core exemption. The spec doesn't define the hit-rate source or the tie-break.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-16: drop/choice apply to triggered lenses only; core lenses always run (FR-14, grill Q1 decision); AC-23 observable checks it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "The CLI executes project tests, spec text and juror-named runs unsandboxed and with no timeout",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-12",
+        "FR-20",
+        "AC-17"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "run the spec's misuse lines as scripted attacks and the per-journey runs in quickstart.md",
+        "Jurors running code, tests or attacks themselves, or needing a sandbox."
+      ],
+      "fix": "add a per-run timeout and an output cap, with an AC where a run times out and is recorded as failed without wedging the gate. State the execution boundary: working directory, no network, and whether it is a throwaway checkout.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the non-goal is about jurors. The CLI still runs the epic's own, possibly hostile, code (tests, attacks, journeys) with the human's privileges and no containment. A test or attack that hangs, forks without limit, or deletes files leaves the epic stuck in the state table row `in jury`. AC-17 covers a crash before any test runs, not a hang. Nothing bounds run time, output size (the results are put in every pack), or what a scripted attack may touch. A misuse line written as prose and turned into a command by whatever fills DF-3 is executed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The non-goal about no sandbox covers jurors only. FR-3, FR-11 and FR-12 have the CLI run project code, with no timeout, output cap or execution boundary anywhere in the spec. AC-17 covers only a crash.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q15: runs in a throwaway copy, 10-minute default limit, output cap; no network isolation is a stated risk (FR-40, FR-41, AC-52, AC-53, AC-55)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "A lens that returns nothing, or INVALID output, is indistinguishable from \"no findings\"",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-28",
+        "FR-28",
+        "FR-25",
+        "AC-34"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "collect prints `INVALID` naming the finding's missing gap type.",
+        "WHEN the gate finds nothing wrong THE SYSTEM SHALL write no task."
+      ],
+      "fix": "state that the outcome is `pending` until every planned lens has delivered a valid output, and that an INVALID output is re-requested or listed for the human. Add an AC for an approved outcome refused when a planned lens has no valid output.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the conformance lens times out, crashes, returns an empty file, or returns INVALID output. The collected findings are zero, so FR-28 and AC-34 compose \"approved\" and write no task. The state table has no row or event for a missing or invalid lens output, and `pending` appears in FR-25 with no AC saying when it applies. The unsteered-lens problem also exists: the diff is untrusted and can carry text steering a lens to report nothing. The refuter checks only blockers and majors, so a lens that wrongly reports clean is never checked.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-28 and AC-34 approve when there are no findings. AC-28 only says an INVALID output is \"invalid\". No row, FR or AC ties the outcome to a lens that delivered nothing, and `pending` has no stated trigger.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "New FR-38, AC-49: missing or invalid lens output composes rerun, never approved; human after second failure (spec jury behaviour, FR-32)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "\"One fix task per open finding\" conflicts with the decision table and has no replay guard",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-26",
+        "decision table where a confirmed finding goes",
+        "AC-33"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "append one fix task per open finding to the epic, each citing exactly that finding",
+        "change request; the spec is not edited"
+      ],
+      "fix": "limit FR-26 to confirmed findings that the decision table routes to a task. Say that a finding with a task already appended is not appended again, and add an AC for composing the same outcome twice.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a rejected outcome has an open `contradicts` finding where the code is right. FR-26 says every open finding gets a fix task. The decision table sends it to a change request, so the implementer is told to change correct code, or the agent gets both a task and a change request. \"Open\" also isn't limited to blockers and majors, so open minors may get tasks, against AC-37, which approves with minors. If the compose step is retried after a timeout, or run twice, FR-26 appends a second task for the same finding. AC-33 only checks that old tasks are untouched and the new ID is free, not that one finding gets one task.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The epic is rejected on a confirmed blocker, and the same round also holds one open `contradicts` finding where the code is the right side. FR-26 says to append a fix task per open finding, so that finding gets a task. The decision table and FR-30 say it gets a change request and no task. The same applies to an open minor beside the blocker: FR-26 gives it a task, while FR-31 and AC-37 treat minors as items to list, not to fix. Two outcomes are specified for the same finding.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-26 says \"one fix task per open finding\", while the decision table and FR-30 route `contradicts` with the code right to a change request. Nothing guards against appending twice for the same finding, and AC-33 doesn't test that.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q16: tasks only for blocker/major findings routed to a task, never twice; minors never get tasks (FR-26, FR-43, AC-50, AC-56)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "The cap of 6 can never be exceeded, so the 7-run plan can't occur",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-22",
+        "AC-23",
+        "FR-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a plan of 7 lens runs, when the gate is planned",
+        "IF an epic's planned lens runs exceed the cap of 6",
+        "(conformance, correctness, security, adversary, consistency, risk and rollback)"
+      ],
+      "fix": "Either name the extra lens or the rule that counts a seventh run (for example a re-review lens run counted against the cap), or drop the cap-of-6 rule for this gate and rewrite AC-22 and AC-23 to the real maximum.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "The human is asked to pick among a 7-run plan (AC-22) and AC-23 names the \"dropped lenses\" of a 7-run plan. Under the trigger table, an epic gets conformance and correctness plus at most security, adversary, consistency and risk and rollback. That is six runs at most. A test built from AC-22 has no 7-run plan to produce, so it can't pass or fail, and the cap branch in FR-16 never runs.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The spec defines six lenses: conformance, correctness, security, adversary, consistency and risk and rollback. A lens run is one juror running one lens on one epic. So the most one epic can plan is 6 runs, with every trigger set. AC-22 (\"a plan of 7 lens runs\") and UJ-4 (\"more than 6 lens runs\") describe a case the definitions can't produce. FR-16, AC-22, AC-23 and UJ-4 are therefore dead rules. If the cap counts runs across rounds, or several jurors per lens, the glossary doesn't say so.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The glossary defines a lens run as one juror, one lens, one epic, and the spec lists six lenses, so the maximum is 6. AC-22 and UJ-4 describe a 7-run plan that nothing in the spec can produce.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Cap is reachable: glossary counts escalation jurors and jury.max_runs (RF-10); AC-22/AC-23 use max_runs=4 and a 5-run plan",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "Who writes the crash finding: the CLI at gate start or the conformance lens",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-17",
+        "FR-5",
+        "NFR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a test run that crashes before any test runs, when the gate starts, then every AC is recorded without passing evidence.",
+        "matching ACs to tests (FR-4, FR-5) is the conformance lens's job"
+      ],
+      "fix": "Say which component writes the missing-evidence finding when the test run crashes, and make AC-17's \"when\" match it.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "AC-17 says a missing-evidence finding is recorded \"when the gate starts\" and that the CLI runs with zero model calls. NFR-1 and AC-5 and AC-6 put the same finding on the conformance lens. An implementer can't tell whether the CLI writes the ledger finding itself or only hands the AC over to the lens. The two readings give different tests.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-17: the missing-evidence findings come after the conformance lens; the CLI only records the crash",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "The gap-type names differ from the shipped lens output",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "(missing, partial, contradicts or unrequested)"
+      ],
+      "fix": "Pick one field name and one set of values for the implementation gate, and state whether the spec-gate template's `kind` changes or the implementation gate uses a separate field.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "The shipped lens output template (`nio` jury template) has the field `kind` with the values \"contradiction | gap | ambiguity | ...\". It spells the value \"contradiction\" where FR-21 says \"contradicts\", and it has no \"missing, partial or unrequested\" field. A juror following the shipped template writes a kind the spec doesn't accept. The spec's \"gap type\" is not the template's \"kind\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-21: gap type is its own field beside the lens output's kind",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "A decision the spec treats as settled is still uncommitted in memory",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Tests prove ACs by what their name and description say, never by spec IDs in the test"
+      ],
+      "fix": "Mark the decision in the spec as tentative until its memory record is committed, or commit or review the record before the spec is approved.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "The Decisions section presents this as settled, and FR-4 and NFR-1 rest on it. The memory pack marks D-261027-b44u as \"uncommitted\" (tentative, not reviewed). If the decision changes, FR-4, AC-4 and the conformance lens's matching step change with it, and the spec would have no change request to show for it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Q21: commit the decision record with the spec when the human asks for a commit",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "The cap of 6 lens runs can never be exceeded",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "AC-22",
+        "UJ-4",
+        "Glossary (Lens run)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "one juror running one lens on one epic; the cap of 6 counts these",
+        "IF an epic's planned lens runs exceed the cap of 6",
+        "security, adversary, consistency or risk and rollback"
+      ],
+      "fix": "Define what makes up a run count above 6 (for example, lens runs summed across rounds, or several jurors per lens). Otherwise set the cap below 6, or drop FR-16 and UJ-4.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The spec defines six lenses: conformance, correctness, security, adversary, consistency and risk and rollback. A lens run is one juror running one lens on one epic. So the most one epic can plan is 6 runs, with every trigger set. AC-22 (\"a plan of 7 lens runs\") and UJ-4 (\"more than 6 lens runs\") describe a case the definitions can't produce. FR-16, AC-22, AC-23 and UJ-4 are therefore dead rules. If the cap counts runs across rounds, or several jurors per lens, the glossary doesn't say so.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-6",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "FR-26 appends a task for every open finding, but the decision table sends some findings elsewhere",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-26",
+        "FR-30",
+        "FR-31",
+        "AC-36",
+        "decision table \"where a confirmed finding goes\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "append one fix task per open finding to the epic",
+        "change request; the spec is not edited",
+        "THE SYSTEM SHALL list the minor findings in the approved verdict"
+      ],
+      "fix": "Make FR-26 read \"per open finding whose route in the decision table is a task\". State whether minors get tasks when the outcome is rejected.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The epic is rejected on a confirmed blocker, and the same round also holds one open `contradicts` finding where the code is the right side. FR-26 says to append a fix task per open finding, so that finding gets a task. The decision table and FR-30 say it gets a change request and no task. The same applies to an open minor beside the blocker: FR-26 gives it a task, while FR-31 and AC-37 treat minors as items to list, not to fix. Two outcomes are specified for the same finding.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "A removed or changed assertion is both a major tampering finding \"whatever the reason\" and a case the lens may clear",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-10",
+        "FR-36",
+        "AC-13",
+        "AC-43"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "flag it as test tampering at severity major, whatever reason is given",
+        "the correctness lens SHALL judge whether the change weakened the test"
+      ],
+      "fix": "State how FR-10 and FR-36 relate. For example, removal is always tampering under FR-10, and a changed value is an FR-36 flag at a named severity that the lens verdict can lower or raise.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The diff removes an assertion from an existing test. FR-10 and AC-13 call this \"weakens a test\", which is tampering at severity major whatever the reason, and only the human can accept it. FR-36 says that when an assertion line is removed or changed, the correctness lens judges whether the test got weaker. Suppose the lens says it did not get weaker. FR-10 still requires a major flag, and FR-36 says there is nothing to flag. Which one wins is not specified. The severity of an FR-36 flag is also not given, though AC-43 covers changed values.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-10 makes any weakening a major flag \"whatever reason is given\". FR-36 lets the correctness lens judge whether the changed or removed assertion weakened the test. The spec doesn't say which wins when the lens says \"not weaker\", and FR-36 gives no severity.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q17: deleted/skipped always tampering; edited assertions only when the correctness lens confirms weaker (FR-10, FR-36, AC-13, AC-57)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "The human may drop the always-on core lenses",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-14",
+        "FR-16",
+        "AC-23",
+        "SC-1",
+        "UJ-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL run the conformance and correctness lenses on every epic at the implementation gate",
+        "all but the lowest-hit-rate lenses, or a chosen set"
+      ],
+      "fix": "State that FR-16's drop or choice applies to the triggered lenses only and that the two core lenses are never droppable. Or state an explicit exception to FR-14.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The plan is over the cap and the human picks \"choose\" and leaves out conformance, or picks \"drop the lowest-hit-rate lenses\" and conformance has a low hit rate. FR-16 allows it. FR-14 says the core lenses run on every epic. SC-1 (\"every AC the epic covers ends with either observed evidence or a finding\") then fails, because only the conformance lens records missing-evidence findings (FR-5).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "The state table has no row for the outcomes rerun and pending, or for a rejection with no task to work",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-25",
+        "FR-26",
+        "FR-30",
+        "state table row `in jury`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "approved, rejected, rerun, pending or human",
+        "outcome approved | outcome rejected | outcome human"
+      ],
+      "fix": "Add rerun and pending columns, or state which existing state each maps to. Say what a rejected epic with only change-request findings does, and what happens to a finding when its change request is rejected.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-25 gives five outcomes, but the state table's `in jury` row has columns for only three. If the gate composes rerun or pending, the epic's next state isn't defined. Separately, the outcome is rejected because of a `contradicts`/code blocker. Per the decision table that finding gets a change request and no fix task. The table sends the epic from `in jury` to `implementing`, where there is nothing for the implement stage to do. The next gate start is also undefined: FR-1 requires \"all tasks finished\" and they all are. The spec doesn't say what happens when the human rejects the change request (UJ-3 step 3), or whether the finding then becomes a fix task.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-25 lists five outcomes, but the `in jury` row of the state table has columns for only approved, rejected and human. The spec doesn't say what happens to a rejection whose only findings go to change requests, or when a change request is rejected (UJ-3 step 3).",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q18: new state waiting on change; accepted change settles, rejected becomes a fix task; rerun/pending keep the epic in jury (FR-44, AC-58, AC-59)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "One spec carries seven independently testable stories that should be slices",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "US-1",
+        "US-2",
+        "US-3",
+        "US-4",
+        "US-5",
+        "US-6",
+        "US-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "route: full",
+        "### US-3 The lens plan has two core lenses, triggered lenses and a cap (P2) [human]",
+        "### US-6 Findings become appended tasks or change requests, and the outcome follows the spec jury (P1) [human]"
+      ],
+      "fix": "split into epic slices, for example (a) US-1 and US-2 as the CLI-first gate, (b) US-3 and US-4 as the lens plan and packs, (c) US-5 and US-6 as findings and outcome, (d) US-7 as the lens cards, each with its own `R-<n>` and `route`. Keep the shared IDs as they are; the retired list stays as is.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the spec has 7 user stories, each with its own priority and \"Independent test\", plus 37 FRs and 46 ACs, and `epic: \"\"` marks it as not a slice. The CLI evidence (US-2) can ship and be tested before the lens plan (US-3) or the outcome and task appending (US-6) exist, as US-2's own independent test shows. Building it as one unit means one review round covers the whole gate, so a defect in the outcome logic blocks the evidence checks that were otherwise ready. The human asked for a gate that runs on real epics, and that gate depends on #42 and #43, so the slices can be sequenced.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Splitting into slices is a planning preference. No requirement or grill answer calls for it, and the spec already handles size with per-story priorities (P1/P2) and independent tests. Slicing into epics belongs to the tasks stage, not to this spec's correctness.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "The human's security trigger list is narrowed to auth and PII without a word",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "| auth | security | [human] |",
+        "| pii | security | [human] |"
+      ],
+      "fix": "either add the permissions and secrets triggers to the trigger table with a note that they come from the implementation-gate draft, or state in the Decisions section that the security trigger is auth and PII only, citing the decided summary.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human's draft row for the implementation gate (intake, \"Implementation gate: lenses\") listed security for auth, permissions, secrets and PII. The spec's decision table maps only `auth` and `pii` to security, and no risk flag in the spec covers permissions or secrets. An epic that changes a permission check or handles a secret, without either flag, gets no security lens, and nothing in the spec says that was a choice. The later decided summary in the intake drops the qualifiers, so this may be settled, but the spec does not say so.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q19: new risk flag secrets -> security; permissions stay under auth (FR-45, FR-46, AC-60, AC-61)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "Conformance ACs are deterministic tests of a model's output",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-4",
+        "AC-5",
+        "AC-6",
+        "FR-4",
+        "NFR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the conformance lens has run, then a missing-evidence finding is recorded for it",
+        "matching ACs to tests (FR-4, FR-5) is the conformance lens's job"
+      ],
+      "fix": "split the CLI part (turning a lens's match table into findings, with a fixed fixture) from the lens judgement. Give the lens judgement a tolerance or a separate eval, and say so in the Level.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-5 and AC-6 are Level unit and AC-4 expects exactly two matches by `file:line`. The only thing that produces those matches is a model reading test names. Rerunning gives different matches, so the test is flaky. A test with a stubbed lens would pass even if the FR-4 matching were broken.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-4, AC-5 and AC-6 are Level unit or integration, but their outputs come from the conformance lens, which is a model call (NFR-1 says matching is the lens's job). A stubbed lens would pass them even if matching were broken, and a real lens would vary between runs.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-4/5/6 test the CLI side against a fixed conformance lens output; the lens's matching is judged by its card's evaluation",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "\"Weakens\" is flagged by the CLI and also judged by a model, and severity is never checked",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-10",
+        "FR-36",
+        "AC-11",
+        "AC-12",
+        "AC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THEN THE SYSTEM SHALL flag it as test tampering at severity major",
+        "the correctness lens SHALL judge whether the change weakened the test"
+      ],
+      "fix": "define \"weakens\" as a closed list of CLI-detectable forms, and add `severity major` to the Observables. Say whether an AC-43 flag becomes major only after the lens confirms it.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-10 puts \"weakens\" in the zero-model-call flag, but the only CLI-detectable forms are the three in AC-11 to AC-13 plus the changed assertion in AC-43. A weakening such as `assertEqual` to `assertTrue` or a loosened tolerance is flagged by AC-43 only as \"changed\", and FR-10's major severity never applies to it. None of AC-11 to AC-13 or AC-43 has `major` in its Observable, so a flag with severity minor would pass them all.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-10 requires severity major, but the Observables of AC-11, AC-12, AC-13 and AC-43 don't mention severity. \"Weakens\" is not defined as a closed set of CLI-detectable forms, and AC-43 flags a change without saying how it becomes major.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q17: severity major in AC-11/12/13 observables; edited-assertion flag is a hint until the lens confirms",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-19",
+      "title": "\"Cost\" and \"lowest-hit-rate\" have no measure",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-22",
+        "AC-23",
+        "FR-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the plan output lists 7 runs with a cost each and the three choices",
+        "drop the lowest-hit-rate lenses"
+      ],
+      "fix": "state the cost unit and where it comes from, define hit rate and a tie rule, and say how many runs are dropped (down to the cap of 6).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a test can't say what unit or source \"a cost each\" has, or how many lenses \"the lowest-hit-rate lenses\" drops. Where hit rates come from for a first epic is not stated (7 runs down to 6, or down to 2?). The Observable \"the verdict names each dropped lens\" passes for any dropped set.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-22 requires \"a cost each\" and FR-16 requires showing \"their cost\", but no unit or source is defined anywhere. \"Lowest-hit-rate\" has no definition, no history source for a first epic, and no count of how many lenses to drop.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q20: cost shown as model tier; drop-lowest-hit-rate only once hit rates are recorded (FR-16, AC-22, AC-23, UJ-4)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "Findings' required fields and the refuter's blocker and rejection paths have no AC",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-21",
+        "FR-24",
+        "AC-28",
+        "AC-31"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL require every finding at the implementation gate to carry a gap type (missing, partial, contradicts or unrequested), the AC, FR or CT it traces to, and its evidence as a file or area",
+        "Given a major finding, when the gate composes its outcome, then the finding goes to the refuter before the human sees it."
+      ],
+      "fix": "add ACs for a missing trace and a missing evidence field, a blocker through the refuter, and a refuted finding leaving the open set.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-21 requires three fields but AC-28 tests only a missing gap type. A finding with no AC/FR/CT or no evidence passes every AC. FR-24 covers blockers and majors but AC-31 tests a major only. No AC says what happens when the refuter refutes a finding, so it could still reach the human or become a fix task.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "New AC-47 (missing trace or evidence is invalid) and AC-48 (refuted finding gets no task)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-21",
+      "title": "No numbers or failure cases for the runs the CLI makes",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-3",
+        "FR-11",
+        "FR-12",
+        "AC-14",
+        "AC-15",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a test run that crashes before any test runs, when the gate starts, then every AC is recorded without passing evidence."
+      ],
+      "fix": "add a per-run timeout value and one AC for a timeout and one for a crashing check. State whether a failed check creates a finding.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "only a crash of the test run is covered. The lint, type-check, misuse-line and journey runs can crash or hang, and a test run can hang. The spec gives no timeout, so a hung attack stalls the gate and no AC fails. It is also not stated whether a failed lint or type check blocks the gate or only gets recorded (AC-14 says \"record\").",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q15: timeouts count as failures; failed lint or type check is a major finding (FR-40, FR-42, AC-52, AC-54)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-22",
+      "title": "Deferred by the grill: How the tasks stage (#42) and implement stage (#43) define an epic, a task, a ta",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "DF-1",
+        "OP-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- **DF-1** (from OP-2) How the tasks stage (#42) and implement stage (#43) define an epic, a task, a task's status and \"finished\", and where their files live. Deferred: not decided in #42, #43 or #45 yet (RF-16, RF-17, RF-18); the human chose to wait on them rather than pre-decide."
+      ],
+      "fix": "settle it in a grill session, or accept the risk or rule it out of scope",
+      "sources": [
+        {
+          "juror": "grill",
+          "lens": "deferred",
+          "situation": "How the tasks stage (#42) and implement stage (#43) define an epic, a task, a task's status and \"finished\", and where their files live. Deferred: not decided in #42, #43 or #45 yet (RF-16, RF-17, RF-18); the human chose to wait on them rather than pre-decide.",
+          "severity": "major"
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "deferred by the grill; only the human can close it",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Q21: accept as risks; waiting on #42, #43, #38, #48, #49; nothing is built until they settle",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-23",
+      "title": "Deferred by the grill: How an epic and its rounds fit the jury ledger, which today is one file per spec",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "DF-2",
+        "OP-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- **DF-2** (from OP-3) How an epic and its rounds fit the jury ledger, which today is one file per spec and gate with no epic (RF-19). Deferred: depends on #42 and #45's folder layout, still open."
+      ],
+      "fix": "settle it in a grill session, or accept the risk or rule it out of scope",
+      "sources": [
+        {
+          "juror": "grill",
+          "lens": "deferred",
+          "situation": "How an epic and its rounds fit the jury ledger, which today is one file per spec and gate with no epic (RF-19). Deferred: depends on #42 and #45's folder layout, still open.",
+          "severity": "major"
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "deferred by the grill; only the human can close it",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Q21: accept as risks; waiting on #42, #43, #38, #48, #49; nothing is built until they settle",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-24",
+      "title": "Deferred by the grill: In what runnable form the misuse lines and `quickstart.md` exist (today prose on",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "DF-3",
+        "OP-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- **DF-3** (from OP-4) In what runnable form the misuse lines and `quickstart.md` exist (today prose only and no template, RF-21, RF-22). Deferred: open in #38 and #48."
+      ],
+      "fix": "settle it in a grill session, or accept the risk or rule it out of scope",
+      "sources": [
+        {
+          "juror": "grill",
+          "lens": "deferred",
+          "situation": "In what runnable form the misuse lines and `quickstart.md` exist (today prose only and no template, RF-21, RF-22). Deferred: open in #38 and #48.",
+          "severity": "major"
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "deferred by the grill; only the human can close it",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Q21: accept as risks; waiting on #42, #43, #38, #48, #49; nothing is built until they settle",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-25",
+      "title": "Deferred by the grill: How a target project tells nio its test, lint and type-check commands (no mechan",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "DF-4",
+        "OP-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- **DF-4** (from OP-5) How a target project tells nio its test, lint and type-check commands (no mechanism today, RF-23). Deferred: open in #49."
+      ],
+      "fix": "settle it in a grill session, or accept the risk or rule it out of scope",
+      "sources": [
+        {
+          "juror": "grill",
+          "lens": "deferred",
+          "situation": "How a target project tells nio its test, lint and type-check commands (no mechanism today, RF-23). Deferred: open in #49.",
+          "severity": "major"
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "deferred by the grill; only the human can close it",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Q21: accept as risks; waiting on #42, #43, #38, #48, #49; nothing is built until they settle",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      3,
+      "human"
+    ]
+  ],
+  "versions": {
+    "1": "2f07a30d6668cd313d2d29cb79f36bf55707ec48",
+    "2": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+    "3": "fe88aa0fb9a81dc623738830ff55d4bc8606f904"
+  },
+  "closed": [
+    3,
+    "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+    "All findings fixed; four lenses approved; consistency said fixed twice but its retry was rejected because another lens closed J-6 in the same round (pack bookkeeping bug)"
+  ]
+}
