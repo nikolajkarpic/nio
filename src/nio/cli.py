@@ -2,7 +2,7 @@ import argparse
 import sys
 from importlib import resources
 
-from nio import agents, hooks, index, jury, pack, query, records, spec
+from nio import agents, hooks, index, jury, pack, plan, query, records, spec
 
 
 def report(errors, warnings, count):
@@ -17,19 +17,19 @@ def report(errors, warnings, count):
 def main():
     p = argparse.ArgumentParser(prog="nio", description="NIO memory CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
-    n = sub.add_parser("new", help="create a record (or `new spec <slug>`, a spec) from its template and print its path")
-    n.add_argument("type", choices=sorted(set(records.REQUIRED) | {"spec"}))
-    n.add_argument("slug", nargs="?", help="spec only: a short name; the folder is .nio/specs/<YYYY-MM-DD>-<name>/")
+    n = sub.add_parser("new", help="create a record (or `new spec <name>`, a spec; `new plan <slug>`, a spec's plan files) from its template and print its path")
+    n.add_argument("type", choices=sorted(set(records.REQUIRED) | {"spec", "plan"}))
+    n.add_argument("slug", nargs="?", help="spec: a short name; the folder is .nio/specs/<YYYY-MM-DD>-<name>/. plan: the spec's slug")
     n.add_argument("--area", help="records: the area folder")
     n.add_argument("--title", help="records: the title")
     n.add_argument("--route", choices=sorted(spec.ROUTES), default="full", help="spec only: full, lite (bugfix) or epic")
     n.add_argument("--epic", default="", help="spec only: the epic slice it belongs to, e.g. checkout/R-2")
     n.add_argument("--by", default="human", help="role / host / model, or human")
     n.add_argument("--run", default="", help="run ID, e.g. R-261024-a1b2; empty when written by hand")
-    c = sub.add_parser("check", help="lint every record under .nio/memory, or `check spec <slug>`: a spec's mechanical checks")
-    c.add_argument("what", nargs="?", choices=["spec"])
+    c = sub.add_parser("check", help="lint every record under .nio/memory, or `check spec|plan <slug>`: a spec's or its plan's mechanical checks")
+    c.add_argument("what", nargs="?", choices=["spec", "plan"])
     c.add_argument("slug", nargs="?")
-    c.add_argument("--gate", action="store_true", help="spec only: also require no [default] and no open points")
+    c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
     c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
@@ -95,6 +95,10 @@ def main():
                 if not a.slug:
                     sys.exit("error: give the spec a short name: nio new spec <name>")
                 print(spec.new(root, a.slug, a.route, a.epic).relative_to(root))
+            elif a.type == "plan":
+                if not a.slug:
+                    sys.exit("error: give the spec's slug: nio new plan <slug>")
+                print("\n".join(str(p.relative_to(root)) for p in plan.new(root, a.slug)))
             elif not (a.area and a.title):
                 sys.exit("error: a record needs --area and --title")
             else:
@@ -103,11 +107,11 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "run":
         print(records.new_run(root))
-    elif a.cmd == "check" and a.what == "spec":
+    elif a.cmd == "check" and a.what:
         if not a.slug:
-            sys.exit("error: give the spec's slug: nio check spec <slug>")
+            sys.exit(f"error: give the spec's slug: nio check {a.what} <slug>")
         try:
-            errors, notes = spec.check(root, a.slug, a.gate, a.base)
+            errors, notes = {"spec": spec, "plan": plan}[a.what].check(root, a.slug, a.gate, a.base)
         except ValueError as e:
             sys.exit(f"error: {e}")
         print("\n".join([f"ERROR {e}" for e in errors] + notes + [f"{len(errors)} errors"]))

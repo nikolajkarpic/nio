@@ -11,6 +11,7 @@ from importlib import resources
 from pathlib import Path
 
 from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
 
 BASE32 = "abcdefghijklmnopqrstuvwxyz234567"
 LETTER = {"decision": "D", "verdict": "V", "lesson": "L", "change": "C", "run": "R"}
@@ -81,7 +82,10 @@ def parse(path, text=None):
     if not text.startswith("---\n") or "\n---\n" not in text[4:]:
         raise ValueError("missing --- frontmatter block")
     head, body = text[4:].split("\n---\n", 1)
-    meta = YAML(typ="safe", pure=True).load(head)  # YAML 1.2: `no` stays a string
+    try:
+        meta = YAML(typ="safe", pure=True).load(head)  # YAML 1.2: `no` stays a string
+    except YAMLError as e:
+        raise ValueError(f"frontmatter is not valid YAML: {str(e).splitlines()[0]}") from None
     if not isinstance(meta, dict):
         raise ValueError("frontmatter is not a mapping")
     return meta, body.splitlines()
