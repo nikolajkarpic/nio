@@ -440,7 +440,7 @@ def history(root, rel, found, retired, base):
         old_meta, _ = records.parse(rel, old_text + "\n")
     except ValueError:
         return []
-    old, now = defined(old_text), defined(path(root, rel.parent.name).read_text())
+    old, now = defined(old_text), defined((root / rel).read_text())
     errs = [f"{iid} was removed without being retired; add it to `retired:` (IDs are never reused)"
             for iid in old if iid not in now and iid not in retired]
     errs += [f"{iid} was retired at {base} and can't be brought back" for iid in old_meta.get("retired") or []

@@ -9,7 +9,7 @@ import subprocess
 
 from nio import agents, records, spec
 
-GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "architecture.md"], "tasks": ["tasks.md"]}
+GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "quickstart.md"], "tasks": ["tasks.md"]}
 KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "inconsistency"}
 SEVERITY = ["minor", "major", "blocker"]  # ascending
 CONTEXT = {"sufficient", "limited", "needs-more"}
