@@ -1,0 +1,804 @@
+{
+  "gate": "spec",
+  "subject": "2026-10-27-tasks-stage",
+  "round": 3,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261027-zzk6/spec-consistency.md": "4e5a143445a6905822d0f6f05ca735b2072f784cf1539e16bad0cb621931cd23",
+    "R-261027-zzk6/spec-logic.md": "f8f04cf210f868833362e26193e89364ae243cccd77664bf3449ccbeb7180a4d",
+    "R-261027-zzk6/spec-scope.md": "03efa3448a440353d9324efc0ce977ff7a287d4b23ec0fc276fe2514327651d7",
+    "R-261027-zzk6/spec-testability.md": "122ca9c1cb107975b7e3f5bdeb31c44d69799006ac92e161edd213e05b6c3ceb",
+    "R-261027-zzk6/spec-refuter.md": "945695b02fe5d37efb3d640b67cccdbc8ae15d381e8b0f94451cb6c72cd156cb",
+    "R-261027-zzk6/spec-consistency-2.md": "dbf1ac7dc335f0c26af011c5ca7f57c06fc9f9b3be3427e38ff06fb940ada018",
+    "R-261027-zzk6/spec-consistency-3.md": "d35b720a5cb217629ecca954a8d5d4063ebfbfa6a68ead13e1ac600e876bc812",
+    "R-261027-in64/spec-consistency.md": "38a214a370ccd5c288c62012cbee2dbdf349245a5c48cdf5f05d6cf4e399689c",
+    "R-261027-in64/spec-logic.md": "061e1b4f067ff15ce2b06a505acb175d195180a64ce9ac9bf2bbe51d9111a504",
+    "R-261027-in64/spec-scope.md": "6081f1568c11c556a1fc8ca6011322d3f35051fc2dcfc95cb39eec50f59fd5b2",
+    "R-261027-in64/spec-testability.md": "7adfccd964433dc90120cd509b4db594c21d1268183f61ba937a191581b9a71f"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
+      "judged": 3
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
+      "judged": 3
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
+      "judged": 3
+    },
+    "spec-consistency-2": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "88a7f5301da2f06244f243fa8b554bce119b5ca1",
+      "judged": 2
+    },
+    "spec-consistency-3": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "88a7f5301da2f06244f243fa8b554bce119b5ca1",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Drafter writes a decision record directly",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-22",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "record it as a decision with `@nio:remember`, so the tasks jury can see it.",
+        "one new decision record under `.nio/memory` naming the choice and the spec's slug"
+      ],
+      "fix": "have FR-22 and AC-7 require a candidate in `.nio/runs/<run>/promote.md`, promoted by the memory writer. Or write a change request against D-261024-kljr before the spec proceeds.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the tasks drafter is an agent and it makes a design choice. FR-22 and AC-7 have it write a decision record under `.nio/memory` directly. D-261024-kljr (current) says only the configured memory writer writes `.nio/memory/`, other agents append candidates to `promote.md`, and \"New pipeline stages ... never write records themselves.\" No change request exists against kljr. The drafter's choice should instead be a candidate in the run's `promote.md`, which the writer promotes, or the spec needs a change request against kljr first.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "the tasks drafter is an agent, not the configured memory writer. Under D-261024-kljr (current, in the pack) only the memory writer writes `.nio/memory/`, and other agents append candidates to the run's `promote.md`. The remember skill says a non-writer \"may only add candidates\". FR-22 and AC-7 require the drafter to write a decision record itself, and the spec carries no change request against D-261024-kljr. A drafter that follows FR-22 breaks the single-writer rule the memory was built on.",
+          "severity": "blocker",
+          "round": 2
+        },
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "D-261024-kljr (current) says \"Only the configured memory-writer role writes `.nio/memory/`. Other agents append candidates to the run's `promote.md`\", and its Reuse section says \"New pipeline stages emit an event and append candidates; they never write records themselves.\" The tasks stage is a new pipeline stage. When the drafter makes a design choice, FR-22 has it write a decision record directly, which skips the writer's admission rule and dedup. The spec does not cite D-261024-kljr and no change request against it is in the pack, so the requirement goes against a current decision without the change request the memory rules require.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "D-261024-kljr (status human, in /home/work/nio/.nio/memory/sync/) says only the configured writer writes `.nio/memory/`, and new stages \"never write records themselves\". skills/remember/SKILL.md lines 23-24 say a non-writer \"may only add candidates\". FR-22 and AC-7 ask the tasks agent for a record under `.nio/memory`, and no change request against kljr exists.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-22/AC-7: drafter appends a decision candidate to promote.md and names the choice in tasks.md; the memory writer records it (follows D-261024-kljr, which is in force)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Tier values described as already shared with agent cards",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-15",
+        "FR-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the same values agent cards use."
+      ],
+      "fix": "change FR-15 to \"the same values agent cards use once FR-17 is in place\", or note the dependency on FR-17.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-15 says the task tier values `cheap|strong|max|frontier` are \"the same values agent cards use\". `src/nio/agents.py` line 12 has `TIERS = {\"cheap\", \"strong\", \"max\"}`, and `nio agents` rejects any other tier. Until FR-17 lands, a card with `tier: frontier` fails validation, so the two sets do not match yet. Either say FR-15 depends on FR-17, or drop the \"same values\" claim.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "`src/nio/agents.py` line 12 is `TIERS = {\"cheap\", \"strong\", \"max\"}`, and card validation rejects any other tier. A card with `tier: frontier` fails validation today, so a task rated `Tier: frontier` and a card cannot share a value set until FR-17 lands. The spec does not say FR-15 depends on FR-17.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-15: same values as agent cards once FR-17 adds frontier",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-3",
+      "title": "The word \"tier\" already names the jury's risk tier",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-15",
+        "Glossary \"Model tier\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "**Model tier**: cheap, strong, max or frontier"
+      ],
+      "fix": "add one sentence to the Glossary that the jury's risk tier is a different field, or rename the task field.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`src/nio/records.py` line 34 gives verdict records a `tier` field with `low|medium|high`, and `src/nio/cli.py` line 75 names `--tier` \"the ladder rung triage picked\". D-261027-vi67 rejected low/medium/high partly because \"the names clash with the jury's risk tier\". The spec's `Tier:` line, the glossary, and the estimate table use \"tier\" for the model class, with no note on the existing jury meaning. A reader of `nio query` output could confuse a task's `Tier:` with a verdict's `tier`.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "`src/nio/templates/verdict.md` line 11 defines `tier:` on verdict records as a jury risk level, `low | medium | high`, and `jury.py` line 37 defaults the ledger's `tier` to `\"medium\"`. An agent reading `tier` in memory or in a jury ledger may take it for a model tier, or the reverse. The glossary does not say the two are separate.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Glossary: model tier is not the jury's risk tier field",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-4",
+      "title": "Fix heading named two ways",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-27",
+        "Glossary \"Fix task\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "put it under a `#### Fixes` heading",
+        "a task added after planning under an epic's `Fixes` heading."
+      ],
+      "fix": "make the Glossary entry say `#### Fixes`, to match FR-27.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-27 and the drafting rules name the heading `#### Fixes` (level 4). The Glossary's \"Fix task\" says only \"an epic's `Fixes` heading\", with no level. The `nio check tasks` heading rule (FR-27, FR-28, FR-30, AC-34, AC-51) depends on the exact heading, so a fixer could match a different level.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Glossary: Fix task names the #### Fixes heading",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "A justify-or-remove task must serve an AC and must not",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "FR-49",
+        "FR-9",
+        "AC-51",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a task serves no AC THEN THE SYSTEM SHALL fail the check, naming the task.",
+        "and count such a task as covering no AC",
+        "IF a task cites an AC, task or epic ID that the spec or `tasks.md` doesn't define THEN THE SYSTEM SHALL fail the check, naming the task and the ID."
+      ],
+      "fix": "Add the exception to FR-11 (\"a `Fixes` task whose `Serves:` is a `J-n` its `From:` names is exempt\") and to FR-9. Alternatively, make a justify-or-remove task cite an AC like any other task.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A task under `#### Fixes` has `From: J-4 (implementation-E-2, round 1)` and `Serves: J-4`. FR-49 and AC-51 say the check passes. FR-49 also says the task covers no AC, so FR-11 and AC-17 say it fails as \"serving no AC\". J-4 is also defined in neither the spec nor `tasks.md`, so FR-9 would fail it as an undefined ID. AC-51 is true only if FR-11 and FR-9 each get an unwritten exception.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-49 says a `J-n` task \"counts as covering no AC\", so FR-11 (\"IF a task serves no AC THEN fail\") and AC-17 still apply to it. FR-9 fails undefined IDs, and `J-4` is defined in neither the spec nor `tasks.md`. FR-49 and AC-51 give no exception to FR-11 or FR-9, so AC-51 can't pass as written.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-9 and FR-11 except a task FR-49 allows to serve a J-n finding",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "The clash rule fails two parallel tasks that cannot run together",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-13",
+        "FR-48",
+        "FR-47",
+        "AC-50"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF two tasks marked parallel name the same file THEN THE SYSTEM SHALL fail the check, naming both tasks and the file.",
+        "SHALL let a `Parallel: yes` task depend on other tasks, starting it only once they are done",
+        "decide whether a task runs in parallel only from its `Parallel:` and `Depends on:` lines"
+      ],
+      "fix": "Say whether FR-13 exempts pairs where one task depends on the other, directly or through other tasks. Add that column to the clash table. State plainly what the estimate's \"parallel\" list means for a task with dependencies.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "T-1 is `Parallel: yes` and names `src/a.py`. T-4 is `Parallel: yes`, has `Depends on: T-1`, and names `src/a.py`. FR-48 starts T-4 only after T-1 is done, so they never overlap. FR-13 and the first row of the clash table (yes, yes, shares a file) still fail the check with \"parallel clash\". FR-47 says `Depends on:` decides parallelism, but FR-13 and the table never use it. AC-50 and AC-27 list a task that has a dependency as \"parallel\", and the spec never says what \"parallel\" then means.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-13 and the first row of the clash table fail any two `Parallel: yes` tasks that share a file. FR-48 lets a `Parallel: yes` task depend on others and start only after they are done, and FR-47 says `Depends on:` decides parallelism. Nothing exempts a dependent pair, so FR-13 contradicts FR-48 and AC-50, and \"parallel\" is left undefined for a dependent task.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-13 and the clash table exempt pairs where one depends on the other (follows FR-48); glossary defines parallel task",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "AC-6 demands path checks the spec never requires and that new files would fail",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-6",
+        "FR-19"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "each path exists in the repo or sits in a directory that exists"
+      ],
+      "fix": "Drop the directory clause, or limit it to existing files a task edits. Say whether the check enforces it.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "No spec with no `plan.md` adds a new package, for example a task whose `Files:` is `src/nio/tasks/check.py` in a directory that does not exist yet. AC-6's observable says that task is wrong. FR-19 only says to name the files, and no FR makes `nio check tasks` verify paths. So the rule is either unenforced or rejects valid tasks that create new directories.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-6 observable: non-empty Files line only; no path-exists rule",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "FR-45 does not say which tasks count as dependents, or what a foundational task is",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-45",
+        "AC-46",
+        "FR-46"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "fail the check when a foundational task cites an AC none of its dependent tasks serve"
+      ],
+      "fix": "Say \"directly depend\" or \"directly or transitively depend\". Say how the check recognises the foundational epic, for example an epic naming no user story.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "T-1 is foundational with `Serves: AC-1`. T-5 depends on T-1 and serves AC-2. T-8 depends on T-5 (so only indirectly on T-1) and serves AC-1. Read directly, the check fails T-1 for citing AC-1. Read as transitive, it passes. The check also has no stated way to tell a foundational epic from a story epic, since FR-46 bans epic-level dependency lines. Only the epic naming a user story separates them.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-45: dependents directly or through other tasks; foundational epic = the epic naming no user story",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "\"Next free T-n\" does not say whether retired IDs are free",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-27",
+        "FR-6",
+        "AC-31"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "with the next free `T-n`",
+        "never renumber or reuse an ID, and list removed IDs in a `retired:` list"
+      ],
+      "fix": "Define next free as one above the highest ID ever used, live or retired.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The highest live task is T-11 and T-12 is in `retired:`. A fix task is added. AC-31 reads \"next free\" as \"highest ID + 1\", which gives T-12 and reuses a retired ID. FR-6 forbids that, and FR-40 would then fail the check once something cites T-12.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-27: next free T-n is one above the highest ID ever used, live or retired (follows FR-6)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "Tests and requirements need the CLI state and implement stage that the non-goals exclude",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-36",
+        "AC-29",
+        "FR-33",
+        "Non-goals bullet \"Building the CLI's state file\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Building the CLI's state file and `nio flow` (#45) or the implement stage (#43)",
+        "Given T-3 is green in the CLI's state, when it is set to done without a review, then the change is refused.",
+        "Given a spec whose estimate the human has not approved, when the implement stage is asked to start, then it refuses."
+      ],
+      "fix": "either move AC-36, AC-37 and the \"claimed\" wording in AC-30 to #45's spec, or state in the non-goal that this spec's ACs are checked on fixtures that model the state. Confirm which with the human.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the spec says this spec does not build the CLI state or the implement stage. AC-36 needs a \"green\" state and a guard that refuses \"done\" without review, and AC-29 needs an implement stage that refuses to start. Neither exists in this spec, so the two acceptance criteria cannot be run as written. The human's intake says those belong to #45 and #43.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The non-goal says this spec does not build the CLI state, `nio flow` or the implement stage. AC-36 needs a green task, with a guard that refuses \"done\" without review. AC-29 needs the implement stage to refuse to start, and FR-33 requires that behaviour. The spec doesn't say these ACs run on fixtures, and the non-goal says it only defines what \"finished\" means.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Non-goal: the state and implement-stage ACs run once #45 and #43 are built",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "A speed target nobody asked for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "NFR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL finish `nio check tasks` in under 2 seconds on a `tasks.md` of 200 tasks."
+      ],
+      "fix": "drop NFR-2, or have the human confirm the figure at the grill.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "no intake sentence or grill answer sets a time or a size of 200 tasks. If this NFR is not built, the human loses nothing they asked for. If it is built, the 2-second figure has no test in the spec and no owner.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "NFR-2 removed (an agent call nobody asked for); retired",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "An epic-level dependency ban nobody asked for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-46",
+        "AC-47"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with no epic-level dependency line."
+      ],
+      "fix": "drop FR-46 and AC-47, or have the human confirm the rule in the grill.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "intake Q3 says only that \"the story epics depend on it\". It does not say where that dependency is written. FR-46 forbids the epic-level line, and AC-47 fails any drafter that writes one. The human never asked for that restriction, so a spec that is otherwise right fails the check.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-46 and AC-47 removed (an agent call nobody asked for); retired",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "The approval commit AC does not check the verdict it promises",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-45",
+        "FR-44"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the latest commit's message is `nio: approve tasks` and it touches `tasks.md`",
+        "one `nio: approve tasks` commit"
+      ],
+      "fix": "add to the Observable that the commit touches the tasks verdict file. Add an AC where the implement stage is asked to start after the approval commit and proceeds.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-44 says one commit holds both `tasks.md` and the tasks verdict. A commit that holds only `tasks.md` still passes AC-45. No AC shows the implement stage starts after that commit, or that it ignores a commit missing the verdict. FR-33's positive path is therefore untested: AC-29 and AC-30 only cover refusal.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-44 says one commit holds `tasks.md` and the tasks verdict, but AC-45's Observable checks only the message and that `tasks.md` is touched. A commit without the verdict passes. No AC covers the implement stage proceeding after the approval commit. AC-29 and AC-30 cover only refusal, so FR-33's positive path is untested.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-45 checks the verdict record in the commit; new AC-55 for implement proceeding after approval",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "The estimate row has no concrete value for efforts",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-27",
+        "FR-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a row for E-1 showing 3 tasks, 2 cheap, 0 strong, 1 max, 0 frontier, their efforts, and T-1, T-2 as parallel"
+      ],
+      "fix": "give each task an effort in the Given, such as low, med, high. State the expected counts per effort in the Observable.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Given gives the tiers and parallel flags but no efforts. \"their efforts\" has no expected counts, so a test cannot assert them. An effort column that is wrong or missing still passes.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-27 gives each task an effort and the expected effort counts",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "The state table has undecidable cells, and FR-25 has one AC",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "FR-25",
+        "AC-36",
+        "state table row `green`",
+        "state table row `review`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "reject: #45 decides (DF-1)",
+        "when it is set to done without a review, then the change is refused"
+      ],
+      "fix": "add ACs for the other reject cells, or one AC per row family. Mark the DF-1 cells as out of scope for tests, as in the deferred section.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the cell \"test fails (red)\" in the `green` and `review` rows says only that #45 decides. A test of that transition cannot say whether to expect reject or pass. FR-25 lists a guarded path of seven steps with a reject for every wrong step. Only one skip-review case (AC-36) is tested. Rejecting `claimed → done`, a double claim, and pending claimed before its dependencies are done all go untested. An implementation that guards only the green-to-done step passes every AC.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The `green` and `review` rows have \"reject: #45 decides (DF-1)\" in the `test fails (red)` column, an open deferral that a test can't pin down. FR-25 lists seven guarded steps, but only AC-36 (green to done) tests a reject. Rejects such as claimed to done, double claim and claim before dependencies are done have no AC.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "New AC-56, AC-57 for claimed-to-done, claim before dependencies, double claim; DF-1 cells stay deferred",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "The decision-record AC cannot be triggered by a test",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-7",
+        "FR-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given the drafter chooses between two designs while writing tasks, when it is done, then the choice is recorded as a decision."
+      ],
+      "fix": "pin a fixture where two designs are forced, such as a spec that allows two storage options. Or move the check to the card's instruction, with the fixture's decision as the Observable.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "whether the model chooses between designs is its own call. An e2e run on a fixture may never hit the Given. Then \"one new decision record\" cannot be asserted, or a decision is written when none was made. The test passes or fails by chance. Nothing says what counts as a design choice.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-7 uses a fixture that forces two storage options",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "The foundational task's Serves rule is checked in one direction only",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-45",
+        "AC-46"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "fail the check when a foundational task cites an AC none of its dependent tasks serve"
+      ],
+      "fix": "say whether citing a subset of dependents' ACs is allowed. Add an AC for that case.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the first half of FR-45 says the foundational task cites the ACs its dependents serve. The check only fails when it cites an extra AC. T-1 depends-on'd by T-5 (serves AC-1) and T-6 (serves AC-2), and citing only AC-1, passes the check. A reader of the first half would call it wrong. No AC says which reading holds.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-45: one or more of the dependents' ACs; extra ACs fail",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "Deferred by the grill: What happens when a green or in-review task's tests fail again. Deferred: #45 bu",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "DF-1",
+        "OP-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- **DF-1** (from OP-5) What happens when a green or in-review task's tests fail again. Deferred: #45 builds the task state machine and decides it (grill Q4)."
+      ],
+      "fix": "settle it in a grill session, or accept the risk or rule it out of scope",
+      "sources": [
+        {
+          "juror": "grill",
+          "lens": "deferred",
+          "situation": "What happens when a green or in-review task's tests fail again. Deferred: #45 builds the task state machine and decides it (grill Q4).",
+          "severity": "major"
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "deferred by the grill; only the human can close it",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Accept as known risk; waits on #45, which builds the task state machine",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-19",
+      "title": "Fallback for an unmapped frontier tier differs from today's code",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a host with no frontier model uses its max model."
+      ],
+      "fix": "state in FR-17 whether the max-model fallback replaces the current WARN-and-inherit behaviour, for `frontier` only or for every tier.",
+      "sources": [
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "a task or card with `Tier: frontier` on a host with no frontier mapping. Today `src/nio/agents.py` `resolve()` returns no model for an unmapped tier, and `render` prints \"WARN ... no model for tier ...; nio-<name> inherits the parent's\". FR-17 says such a host uses its max model. The spec does not say whether the new rule replaces the inherit-and-warn rule for existing cards, so an implementer could go either way and AC-26 would not settle it.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q14: unmapped tier falls back one tier down for cards and tasks, with a warning (FR-52, AC-58)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "rejected"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "88a7f5301da2f06244f243fa8b554bce119b5ca1",
+    "2": "88a7f5301da2f06244f243fa8b554bce119b5ca1",
+    "3": "fef2e67a3594214b34eeb72e1733a624922543f8"
+  }
+}
