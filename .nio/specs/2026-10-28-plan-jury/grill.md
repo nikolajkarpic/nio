@@ -209,3 +209,35 @@ Options:
 3. Handing it to you closes it
 Answer: 1. Add a "with you" state: the tasks stage refuses while the gate is there, and only your ruling moves it. Settling with fixes leads to the one final check, and closing with a reason closes it. [human]
 Patched: state table (new state with-human; new events "handed to the human" and "human settles with fixes"); added FR-50, AC-59
+
+## Session 3 · 2026-10-28 · @nio:plan, decisions nothing upstream settled
+
+## Asked · Q12 · OP-1 · 2026-10-28
+Question: Pick one: the tasks stage isn't built yet, so how does this plan cover "the tasks stage refuses or starts"?
+Context: Six acceptance criteria watch the tasks stage refuse or start (no tasks file written, the drafter started). There's no tasks stage in the code yet; the tasks-stage spec builds it (per the skills folder). The plan can deliver the check the tasks stage will call, `nio check plan <slug> --approved`, and test its answer now.
+Options: 1. Deliver and test the check; the tasks stage wires it in when it's built (Recommended): everything here is testable now. The "no tasks file written" part is proven when the tasks stage lands, which the tasks-stage change request will say. 2. Build a minimal tasks-stage refusal now: these criteria pass as written, but it pulls part of the tasks stage into this work. 3. Defer those six criteria to the tasks stage: less here, but the plan jury ships with nothing that enforces its approval.
+Refs: OP-1 · AC-40, AC-41, AC-42, AC-55, AC-56, AC-59 · CT-16 · RF-21
+
+## Q12 · OP-1 · 2026-10-28
+Question: The tasks stage isn't built yet, so how does this plan cover "the tasks stage refuses or starts"?
+Options:
+1. Deliver and test the check; the tasks stage wires it in when it's built (recommended)
+2. Build a minimal tasks-stage refusal now
+3. Defer those six criteria to the tasks stage
+Answer: 1. Deliver and test the check; the tasks stage wires it in when it's built: everything here is testable now. The "no tasks file written" part is proven when the tasks stage lands, which the tasks-stage change request will say. [human]
+Patched: TC-52, TC-53, TC-54, TC-57, TC-58, TC-59 (assert on `nio check plan --approved`); plan.md Decisions; retired OP-1
+
+## Asked · Q13 · OP-2 · 2026-10-28
+Question: Pick one: the 15 end-to-end tests run the new reviews on real models; when do they run?
+Context: These tests feed fixture plans with known flaws to the test-proof and architecture-fit reviews and check what they find. Each run is a max-model review (you chose Opus at medium effort, grill Q6), so a full pass costs about 15 review runs. Today the self-checks run with no model at all (per the test files).
+Options: 1. Only when asked, with a switch (Recommended): `NIO_E2E=1 uv run python tests/test_lenses.py` runs them; the normal self-checks stay free. You run them after changing a card. 2. As part of the normal self-checks: every run proves the cards, but every run costs about 15 max-model reviews. 3. As a manual checklist in the quickstart: no test code to maintain, but nothing repeats them automatically.
+Refs: OP-2 · TC-18, TC-20 to TC-26, TC-28 to TC-33, TC-36 (end-to-end) · FR-40 · grill Q6
+
+## Q13 · OP-2 · 2026-10-28
+Question: The 15 end-to-end tests run the new reviews on real models; when do they run?
+Options:
+1. Only when asked, with a switch (recommended)
+2. As part of the normal self-checks
+3. As a manual checklist in the quickstart
+Answer: 1. Only when asked, with a switch: `NIO_E2E=1 uv run python tests/test_lenses.py` runs them; the normal self-checks stay free. You run them after changing a card. [human]
+Patched: plan.md Decisions, tests.md note; retired OP-2
