@@ -1,0 +1,457 @@
+{
+  "gate": "plan",
+  "subject": "2026-10-27-tasks-stage",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "architecture-fit",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261028-rwvl/plan-architecture-fit.md": "ea49bdb4a2f3d8525fd4967f4e3b4d269da64bd7b656341997de09fb3426bd68",
+    "R-261028-rwvl/plan-test-proof.md": "bddd4c256cdbee66b597e2b38d8ca0f30e0af53178326cfb0975a376ba542fc6",
+    "R-261028-rwvl/plan-refuter.md": "baa0e49c3499469845489fde40a25df0f03c5272db61f0893568b9bbd38c70ef",
+    "R-261028-zkqg/plan-architecture-fit.md": "a7dfea453b2043cf39b8591b59c977b90f8a2bfbe396fd09a0ff3efb79068ce2",
+    "R-261028-zkqg/plan-test-proof.md": "6799416db768cf782dbeab17694fec7d465f4465345ec0f5e94d44820b710f1d"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "750c96999bb0e0708c225a093bba3d5eed1d4cde",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "750c96999bb0e0708c225a093bba3d5eed1d4cde",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Appending a fix task withdraws the tasks approval the implement stage needs",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-14",
+        "CT-16",
+        "CT-12",
+        "FR-50"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "exit 0 when the tasks gate is approved or closed by the human on the current tasks, plan and spec",
+        "the implement stage (#43) calls this before it claims a task",
+        "after `nio: approve tasks`, a planned task whose text changed fails, naming it, and says \"planned tasks are frozen after approval\"",
+        "if current != judged:"
+      ],
+      "fix": "Have CT-14 judge approval on the planned part of `tasks.md` plus the plan and spec, for example the text above each `#### Fixes`, with CT-16's frozen check guarding it. Otherwise state that every fix task needs a new tasks-jury round and a new `nio: approve tasks` commit, and test that in TC-53 and TC-40.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The existing jury hashes the whole gate artefact (`artefact` joins every file in `GATES[gate]`). `compose` returns `rerun` whenever the current blob differs from the judged one. CT-12 puts `tasks.md` in that artefact. When the implementation jury appends T-12 under `#### Fixes`, which FR-27 and FR-50 allow after approval, `approved()` turns false. The implement stage then refuses to claim T-12 or any other task until the tasks jury re-runs. Meanwhile CT-16 treats appending below `#### Fixes` as legal without re-approval.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-12 puts tasks.md in the gate artefact and CT-14 asks for approval \"on the current tasks\". The existing jury hashes the whole artefact, so appending a fix task under `#### Fixes` (legal per CT-16) turns `approved()` false. Nothing in the plan excludes the Fixes section from the hash.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-12: the tasks artefact leaves out each Fixes section, so approval covers planned tasks, plan and spec; CT-14 says a fix task appended since doesn't withdraw it (FR-27, FR-50)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "US-7 delivers nothing that can refuse a state transition, yet its tests expect refusals",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "US-7",
+        "CT-15",
+        "AC-36",
+        "AC-56",
+        "AC-57"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "#45 supplies `states` and enforces the transitions",
+        "`finished(states, epic) -> (bool, not_done)`",
+        "T-3's state stays green; the message names the missing review.",
+        "are tested through `tasks.finished` and `tasks.approved`, which those stages will call"
+      ],
+      "fix": "Either move AC-36, AC-56 and AC-57 (and their TCs) to wait on #45, as the spec's non-goal says (\"AC-29, AC-30, AC-36 and AC-55 to AC-57 run once #45 and #43 are built\"), and say so in `## Decisions`. Or add a contract that owns the transition table, so US-7 has something to show.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "TC-58, TC-43 and TC-44 cover CT-15 and assert that a \"set to done\" or a claim is refused, with messages. CT-15 is a pure predicate over a states dict, and it explicitly leaves transitions to #45. No contract in the plan holds a state or emits \"dependencies not done\" or \"already claimed\". When US-7 is done, the only things to show are `finished()` on a dict and a ledger path that `jury.load` already produces. The three refusal ACs cannot pass from what is built.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "CT-15 only reports whether an epic is finished, and this plan builds nothing that claims, moves or refuses a task. TC-43, TC-44 and TC-58 can't run against any code here. If a test stubs a refusal itself, a state table that allows claimed → done would pass. The plan decision says these go through `tasks.finished`, but `finished` emits neither \"already claimed\" nor \"missing review\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-15 is only `finished(states, epic)` and leaves transitions to #45. No contract in the plan produces \"dependencies not done\", \"already claimed\" or \"missing review\", yet US-7 owns TC-58, TC-43 and TC-44, which assert those refusals. The plan's Decisions line does not close the gap, because `finished` does not refuse anything.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-43, TC-44 and TC-58 move to tests/test_flow.py and run once #45 builds nio flow, as the spec's non-goal says; the Decisions line now says so",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "CT-11 promises executability alone, but the bound `jury.plan` adds spec-gate risk lenses and the scope lens to any non-plan gate",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "FR-42"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio jury plan <slug> tasks` → `lenses: executability (core)`",
+        "if flags & set(risk) and (lens in PLAN_TRIGGERED if gate == \"plan\" else not at_plan):",
+        "elif spec.SCOPE_NOTE in notes[0]:",
+        "Tasks-jury lenses beyond executability, and the plan-gate coverage checks (#28, #50)."
+      ],
+      "fix": "In CT-11's Shape, state that the tasks gate adds `CORE[\"tasks\"] = [\"executability\"]`, runs `tasks.check` in its own branch, and skips the risk-lens and scope triggers. Add a TC with a risk-flagged spec that asserts only executability is planned.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "In the existing `plan()`, any gate other than `plan` takes the spec branch. On a spec flagged `auth` or `money`, the tasks gate would schedule the spec-gate risk lenses. It would also test `spec.SCOPE_NOTE` against `notes[0]` of the tasks check, whose notes CT-4 never defines, and an empty list raises IndexError. CT-11 says neither that these branches are excluded nor how the tasks gate gets its own branch, and it does not mention `CORE[\"tasks\"]`, which architecture.md names.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`jury.plan` has an `else` branch for every gate other than plan. It calls `spec.check` and applies the spec-gate risk lenses, then tests `spec.SCOPE_NOTE in notes[0]`. CT-11 does not mention `CORE[\"tasks\"]`, a tasks branch, or excluding those triggers. CT-4 defines no notes for the tasks check.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-11: CORE[tasks] = executability, its own branch in jury.plan running tasks.check, no risk or scope lens; TC-24 uses a risk-flagged spec and asserts only executability",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "CT-13 binds `jury.load`, but the change it needs is a `GATES` entry whose file list it defers",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "CT-13",
+        "FR-31",
+        "AC-38"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`jury.GATES` accepts any `implementation-E-<n>` name, its files set by #29",
+        "for n in GATES[gate]",
+        "raise ValueError(f\"gate must be one of {sorted(GATES)}\")",
+        "The implementation jury records round 1 on E-2."
+      ],
+      "fix": "Rebind CT-13 to what actually changes (`jury.GATES` lookup / `collect`) and give a concrete file list for an `implementation-E-n` gate. Otherwise mark CT-13 as having no code change (paths already follow the gate name) and move TC-60 to #29.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`load`, `folder` and `verdict` already derive `jury/<gate>.json` and the subject `<gate>:<slug>` from any name, so the bound symbol needs no change. `collect` rejects any gate not in `GATES`, and `artefact` and `sources` index `GATES[gate]` for a file list. A pattern name with no files is not something `GATES`, a dict of file lists, can hold. TC-60 needs a round recorded, which needs `collect`. Either TC-60 cannot pass in this feature, or the implementer must invent the file list that the contract assigns to #29.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`jury.load`, `save` and `verdict` already accept any gate name, write `<gate>.json` and `.md`, and set the subject to `<gate>:<slug>`. If the ledger is written through them, TC-60 passes before CT-13 is built. The real gap is that `collect` still raises \"gate must be one of\" for `implementation-E-2`, and the test doesn't touch that.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`collect` raises \"gate must be one of\" for any gate not in `GATES`, and `artefact` indexes `GATES[gate]`. CT-13 binds `jury.load`, which needs no change, and defers the file list to #29. TC-60 cannot go green through `collect` in this feature.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-13 binds jury.verdict, which already gives the path and subject from the gate name; collecting implementation-E-n rounds is #29's. TC-60 pins the existing behaviour",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "CT-7 changes `resolve`'s return without its callers, and `resolve` is keyed by card name while TC-48 needs it for a task",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "FR-52",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`resolve(cfg, name, meta, host)` returns the nearest lower mapped tier's model and a warning naming the tier and the model used",
+        "\"\"\"(tier, model or None, effort) for a card on a host, after config overrides.\"\"\"",
+        "_, want, _ = resolve(cfg, name, cards[name][0], \"claude\")",
+        "Setup: A task with `Tier: frontier` and a Claude host."
+      ],
+      "fix": "In CT-7's Shape, state the new return (e.g. `(tier, model, effort, warning)`), that `sync` prints the warning in place of its inherit message, and that `verify` uses the same fallback. Also say how a task's tier reaches `resolve` (e.g. `name=None`, no override), or bind TC-48 to the implement stage (#43).",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`sync` and `verify` unpack a 3-tuple from `resolve`. `sync` builds its own \"inherits the parent's\" warning when no model is mapped. CT-7 adds a warning to the return value but says nothing about either caller. `verify` would then compare against a model computed differently from the one `sync` rendered. `resolve` also applies `agents.override` by card `name`, and a task's worker in TC-48 has no card name.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-7: resolve returns (tier, model, effort, warning); sync prints the warning and verify uses the same model; a task calls it with name=None",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "Tests are scheduled in build-order entries that don't deliver the contract they test",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-7",
+        "TC-5",
+        "AC-8",
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Delivers: CT-6, CT-7",
+        "- Tests: TC-7, TC-8, TC-9, TC-10, TC-11, TC-12, TC-13, TC-14",
+        "- Delivers: CT-4, CT-10, CT-11, CT-12"
+      ],
+      "fix": "move CT-4 into US-1 (or a Foundation entry), and move each test into the entry that delivers its contract.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "US-2's tests TC-7 to TC-14 all run `nio check tasks` (CT-4), and TC-5 in US-1 does too. CT-4 is only delivered in US-3, so none of these tests can go green inside its own entry. US-3 has the same problem the other way: it lists tests whose contracts come later, namely TC-29, TC-33 and TC-42 (CT-14, US-5), TC-35 (CT-5, US-5), TC-38 to TC-40 (CT-16, US-6), TC-43 and TC-44 (CT-15, US-7), and TC-32 (CT-9, US-4).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "US-2 delivers CT-6 and CT-7 but lists TC-7 to TC-14, which exercise `nio check tasks` (CT-4). CT-4 is only delivered in US-3. US-3 also lists tests whose contracts are delivered in later entries, such as TC-29 and TC-42 (CT-14, US-5).",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "The build order follows the contracts: CT-4 moves to US-1, and each test sits in the entry that delivers the last contract it covers",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "Tests that expect a refused state transition have no contract that refuses one",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "TC-43",
+        "TC-44",
+        "TC-58",
+        "AC-56",
+        "AC-57",
+        "AC-36"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`finished(states, epic) -> (bool, not_done)`, where `states` maps each `T-n` to its state in the CLI's state (#45)",
+        "#45 supplies `states` and enforces the transitions",
+        "both claims refused with \"dependencies not done\" and \"already claimed\""
+      ],
+      "fix": "add a contract for the transition guard (for example `tasks.step(state, event) -> (state | reject reason)` taken from the spec's state table) and test it, or mark these tests as deferred to #45.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "CT-15 only reports whether an epic is finished, and this plan builds nothing that claims, moves or refuses a task. TC-43, TC-44 and TC-58 can't run against any code here. If a test stubs a refusal itself, a state table that allows claimed → done would pass. The plan decision says these go through `tasks.finished`, but `finished` emits neither \"already claimed\" nor \"missing review\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "Fix-task and approve-commit tests check text the test writes itself",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "TC-53",
+        "TC-54",
+        "TC-55",
+        "TC-33",
+        "AC-31",
+        "AC-32",
+        "AC-33",
+        "AC-45"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "T-12 sits under `#### Fixes` in E-2 with `From: J-4 (implementation-E-2, round 1)` and the seven fields.",
+        "Approve the estimate; the agent commits `nio: approve tasks` with `tasks.md` and the tasks verdict.",
+        "1. Add `### T-<next> Fix the finding` with its seven lines and `- From: J-1 (implementation-E-1, round 1)` under a `#### Fixes` heading in E-1"
+      ],
+      "fix": "test through `nio check tasks` (CT-16): a fix task numbered below the highest ID fails, an edited planned task fails, and `--approved` rejects a commit without the verdict. Or make these e2e on the skill.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "The agent adds the fix task and makes the approve commit, following the markdown skill (CT-1). No code contract does either, so these unit and integration tests can only write the result themselves and then read it back. A skill that appends T-8 instead of T-12, edits T-6, or commits without the verdict would still pass.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-1 is a markdown skill and CT-16 only validates. TC-53 to TC-55 and TC-33 have the agent or the test itself add fix tasks and make the approve commit, with no code contract doing either. The tests can only write the result and read it back.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-53 to TC-55 test the fix-task rules through nio check tasks (next free ID, frozen planned tasks, From line); TC-33 tests --approved, and QS-2 walks the commit",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "TC-27 and TC-2 assert epic dependencies, but the tasks template has no place to record them",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "TC-27",
+        "TC-2",
+        "AC-61",
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`## E-n <title> (US-n | Foundation)` sections, each with `### T-n <title>` tasks holding seven lines",
+        "epic sections in the order foundational, US-1, US-2; E-3's dependencies name E-2."
+      ],
+      "fix": "add an epic-level `Depends on: E-n` line to CT-2 and check it in CT-4, or restate the assert in task terms (\"some task in E-3 depends on a task in E-2\").",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "CT-2 gives an epic only a heading. The only `Depends on:` lines are on tasks, and they cite `T-n`. So \"E-3's dependencies name E-2\" and \"every story epic's dependencies reach it\" have no field to read. A drafter that leaves out every cross-epic task dependency could still pass on a lenient reading.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-2 gives an epic only a heading, and `Depends on:` appears only on tasks, citing T-n. TC-2 and TC-27 assert \"E-3's dependencies name E-2\" and that story epics' dependencies \"reach\" the foundational one. Neither assertion has a field to read.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "An epic's dependencies are its tasks' dependencies: TC-2 and TC-27 assert task-to-task dependencies across epics; Decisions says tasks.md has no epic-level line",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "TC-60 passes on today's code",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-60",
+        "AC-38"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`.nio/specs/<slug>/jury/implementation-E-2.json` and `.md` exist; the verdict subject is `implementation-E-2:<slug>`.",
+        "values = {\"subject\": f'\"{gate}:{slug}\"', \"outcome\": outcome, \"tier\": led[\"tier\"], \"paths\": f'[\"{rel}\"]'}",
+        "(out / f\"{led['gate']}.json\").write_text(json.dumps(led, indent=2, ensure_ascii=False) + \"\\n\")"
+      ],
+      "fix": "have TC-60 record the round through `jury.collect` (or the `nio jury` CLI) with gate `implementation-E-2`, so that today's `if gate not in GATES` check makes it fail.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`jury.load`, `save` and `verdict` already accept any gate name, write `<gate>.json` and `.md`, and set the subject to `<gate>:<slug>`. If the ledger is written through them, TC-60 passes before CT-13 is built. The real gap is that `collect` still raises \"gate must be one of\" for `implementation-E-2`, and the test doesn't touch that.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-4",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "498142e654526302298bbae26ef5ddd3009a5c5a",
+    "2": "750c96999bb0e0708c225a093bba3d5eed1d4cde"
+  }
+}
