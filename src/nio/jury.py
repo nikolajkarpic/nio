@@ -300,7 +300,8 @@ def diff(root, slug, gate):
 def changed(root, slug, gate):
     """(changed IDs, lenses to re-run, neighbour IDs, changed sections) since the version the last round judged
     (#27 FR-19, FR-23; #52 FR-14). In the first review the lenses to re-run are every lens that blocked, plus any lens
-    with a finding citing a changed ID; after it, every lens with a fix to check."""
+    with a finding citing a changed ID; after it, every lens with a fix to check. Once the gate was approved or closed,
+    every lens that judged it re-checks the change."""
     led, _, _, ids, secs, neighbours = diff(root, slug, gate)
     lenses = {s["lens"] for f in led["findings"] for s in f["sources"] if s["lens"] != "deferred"}
     if any(o == "rejected" for _, o in led["recorded"]):  # a re-review or the final check is next
@@ -308,6 +309,10 @@ def changed(root, slug, gate):
     else:
         rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
         rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] != "deferred"}
+    if not rerun and (ids or secs) and led["recorded"] and led["recorded"][-1][1] in ("approved", "human"):
+        # an approved or closed gate whose artefact changed since (a change request, #57 FR-35, FR-47): every lens that
+        # judged it re-checks only what changed, from its fix-check pack
+        rerun = set(votes(led))
     return ids, sorted(rerun), neighbours, secs
 
 
