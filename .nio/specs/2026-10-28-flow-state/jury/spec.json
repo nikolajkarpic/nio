@@ -1,0 +1,1016 @@
+{
+  "gate": "spec",
+  "subject": "2026-10-28-flow-state",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261028-32yw/spec-adversary.md": "a0eb1bd4d63ad49dadc0ae1ba2a12b5ea32cf9ac49f9865298ded2ea930d7da6",
+    "R-261028-32yw/spec-consistency.md": "653818f14c7bc3c9aa426ac8bf021730f6bd1f69b71d96418f38911a82f0ad82",
+    "R-261028-32yw/spec-logic.md": "9822db02f9ea8d23f53b630148c3f80fb665969ee51ec00abb2d196ba2c004f8",
+    "R-261028-32yw/spec-scope.md": "0260d0cf9f2556f6bcbf37998fc7943c3d9782071f8d20a73898e819aa03026b",
+    "R-261028-32yw/spec-testability.md": "81017b260f5da834a0cd7a7b0ec5150493961b4fee845ae0ca5b749e81ff3d40",
+    "R-261028-32yw/spec-refuter.md": "68c38cb2cd5d40a0aab0a14f697382e261ba9be09efef0696bf817ed4b6a9662",
+    "R-261028-nbzi/spec-adversary.md": "64e350830f7de8385326929bdb6ebad715706787a19969e807e25686c4b7829d",
+    "R-261028-nbzi/spec-consistency.md": "091c4c9ad157b3218244731ea5d9a2ff55f68a6bea4f5f1708c4972a36067c7a",
+    "R-261028-nbzi/spec-logic.md": "02017ace9c79c76f93129dcb0c142637abbd1e3544b40e3f932e2895ba3c096a",
+    "R-261028-nbzi/spec-scope.md": "7bd15db8bd9eeb73be64b63c8c31db5594864a6dd3ca51290c0e086112aeda38",
+    "R-261028-nbzi/spec-testability.md": "e4ec64ba8ecb259b5b7d4dd9be59bf564e4384fee124be72bf7ca515903d65e5",
+    "R-261028-ymzg/spec-scope.md": "e70e845c8255362d1719d60e58b5af05af6e6a662f7be648d44c3f7f26305d74",
+    "R-261028-ymzg/spec-testability.md": "c722acc761404d1a70d9d3e378c126e9b37d3b2aafd61f4fc5e4791c9e8df3ad"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bb92963b5029af3a3372dc042b054e3370c68c0b",
+      "judged": 2
+    },
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bb92963b5029af3a3372dc042b054e3370c68c0b",
+      "judged": 2
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bb92963b5029af3a3372dc042b054e3370c68c0b",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "92b69aba535ce285803d9f88616974b95b185b85",
+      "judged": 3
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "92b69aba535ce285803d9f88616974b95b185b85",
+      "judged": 3
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The override has no check on who gives it, so the agent the guards watch can pass any guard",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "FR-24",
+        "FR-26",
+        "UJ-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL pass the stage and append a history line holding the failing guard output and the reason",
+        "an agent uses the override to skip a guard it can't pass"
+      ],
+      "fix": "add an AC and FR that the override is accepted only from a human-attended session (for example an interactive confirmation or an env marker). Alternatively, make `status` and `next` flag every override as unreviewed until the human acknowledges it.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "A-2 is the only caller of `nio flow done`. It hits a failing `nio check spec --gate` and runs `nio flow done grilling --human \"settled\"`. FR-24 and FR-26 refuse only an empty reason, so any non-empty string passes the stage. The UJ-3 misuse line is listed, but no AC rejects or contains it. The only protection is a history line that nobody is told to read. The refusal of `--human` inside a run is deferred to `nio flow run` (Non-goals), so nothing covers a plain orchestrator session. This empties every guard in US-2, and it also empties UJ-1's \"reports a stage done on its own say-so\" line.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-24 and FR-26 refuse only an empty reason, and the UJ-3 misuse line has no AC. The refusal of `--human` inside a run is deferred to `nio flow run` (Non-goals), so a plain orchestrator session can pass any guard.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q14: only the human gives --human (skills and cards say so); each override shows in status and next until nio flow seen (FR-57, AC-57)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Hand-editing the allowed `state.json` keys is not caught, including the auto flag that turns on commits",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-6",
+        "FR-3",
+        "FR-18",
+        "AC-9",
+        "UJ-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "or `state.json` holds a key outside FR-3's list",
+        "the orchestrator edits `state.json` by hand"
+      ],
+      "fix": "derive the flag and pauses from a history line (the grant) or sign or hash-chain history lines. At minimum, add an AC that `state.json` content differing from what the last history line recorded is refused.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "The orchestrator sets the auto flag in the committed `state.json` to true by hand. This spec \"only reads the flag\", and the grant is a later spec. FR-18 then commits `nio: approve <stage>` on every gate without the human's `--commit`, and FR-39 to FR-41 now apply. Or it clears the pause reason or waiting-on, so a `waiting_for_human` effort carries on. AC-9 rejects only keys outside the list, and AC-11 only checks the skill texts. An allowed key with a forged value passes silently. Nothing checks that the file matches a history line, and nothing detects a rewritten or truncated `history.jsonl`, though FR-4 says \"never rewrite an earlier line\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-9 and FR-6 reject only keys outside FR-3's list. Nothing checks the auto flag, the pause reason or the waiting-on value against history, so a hand-set value passes. UJ-1 lists hand-editing as misuse, but AC-11 only checks the skill texts.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q15: every history line records a hash of state.json; a mismatch stops every command (FR-58, FR-6, AC-58)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "One torn or truncated history line permanently bricks the effort, with no repair path",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-6",
+        "FR-4",
+        "AC-10",
+        "FR-45"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THEN THE SYSTEM SHALL refuse every `nio flow` command on that effort and name the file and the key or line"
+      ],
+      "fix": "say that a final line with no trailing newline is ignored or truncated on the next write. Add a read-only `status` that reports such an effort as `broken` instead of failing the listing. Add one repair command that is allowed on a broken file.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "A `nio flow done` call crashes, is killed, or runs out of disk partway through appending a line. A reader such as `nio flow status` may also catch the half-written last line, because reads take no lock (FR-45 only refuses writers). The file now has an invalid last line, so FR-6 refuses every command. That includes `park`, `abandon`, `start` and `done --human`, which are the only ways to recover. FR-1 forbids hand edits, so the cure is the very thing the spec bans. In `status`, one broken effort could also blank the whole listing. This is the silent-failure case: the effort looks dead for no stated reason beyond a line number.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-6 and AC-10 refuse every command on an unreadable line. Nothing says how a torn last line is handled, and no recovery command is allowed. FR-1 bans hand edits.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q19: a torn last line is cut off and noted; other damage refuses and status shows broken (FR-59, FR-60, AC-10, AC-59)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "A one-minute lock timeout can be taken over while the first writer is still running, which gives two writers",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-54",
+        "FR-45",
+        "AC-12",
+        "AC-56",
+        "FR-20"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "SHALL take over a lock older than one minute as left by a crashed call"
+      ],
+      "fix": "tie the lock to the holder (pid and host), refresh it while working, and take it over only when the holder is gone. Make the takeover itself atomic. Add an AC where the holder is alive past the timeout.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "`nio flow done spec_jury --commit` runs the guards (`nio check`, ledger reads) and then `git commit`, which can trigger slow pre-commit hooks (FR-20 anticipates them) or a lock on the git index. If that takes more than 60 seconds, a second `nio flow` call, such as a second orchestrator session after a host switch, treats the live lock as crashed and takes it over. Both then append to `history.jsonl`, giving duplicate or contradictory transitions, or a commit that half-succeeds. Two callers may also see the same stale lock and both take it over, because the spec gives no atomic takeover. AC-12 and AC-56 cover only \"still writing\" within the window and an idle 2-minute lock, not a long live writer.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-54 takes over any lock older than one minute and ties it to age only, not to the holder being gone. AC-12 and AC-56 cover only a fresh lock and an idle 2-minute lock, not a live writer past the timeout. FR-20 admits slow commit hooks.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-54: the lock names its process and host, is created atomically, and is taken over only when its process is gone or it is on another host and older than a minute; AC-61",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "The \"stuck\" stop has nowhere to keep its failure count, so the cost brake in auto mode can never fire",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-41",
+        "FR-13",
+        "FR-3",
+        "AC-46",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN the same guard fails with the same output 3 times",
+        "THE SYSTEM SHALL leave the state unchanged, print each failing guard with what is still missing, and exit non-zero"
+      ],
+      "fix": "allow a failure record in `state.json` or in a non-transition history kind (for example `fail`) with the guard-output hash. Update FR-3, FR-13, AC-7 and AC-14 to match.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "An auto orchestrator loops on `nio flow done tasking`, which fails identically each time and costs a subagent or jury run on each pass. FR-13 and AC-14 require a failed `done` to leave the state unchanged and add no history line. FR-3 and AC-7 limit `state.json` to a fixed key list with no failure counter or last-output hash. Only \"task claims and attempts\" is close, and it belongs to the later task machine. The 3 failures therefore have nowhere to be counted, so AC-46 cannot pass as written. If an implementer adds a hidden counter, it breaks AC-7 and AC-9. If one is not added, the loop runs forever, which is the exhaustion the stop list exists to prevent (FR-40's count caps depend on the same missing record).",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "In auto mode, `done tasking` fails three times with identical output. A failed `done` leaves the state unchanged (FR-13) and adds no history line (AC-14). FR-3 lists the only keys `state.json` may hold, and FR-6 refuses any other key. \"Task claims and attempts\" are task-machine fields (a non-goal). So after the first two failures nothing records them, and the third failure can't tell it is the third. AC-46 and AC-47 (3 same versus 3 different outputs) can't be met.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "In auto mode `nio flow done tasking` fails twice. Each call is a separate process, and a failed `done` writes no history line and leaves state unchanged. `state.json` has no key for failure count or last guard output. On the third failure, `done` cannot know it has seen the same output before. AC-46 cannot pass without breaking FR-3 or FR-13. AC-47 cannot be told apart from AC-46.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-13 and AC-14 leave state and history unchanged on a failed `done`. FR-3 and AC-7 have no key for a failure count or output hash. FR-41 and AC-46 therefore have nowhere to count the 3 failures.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q16: in auto mode a failed done appends a fail line; 3 matching lines suspend as stuck (FR-41, FR-13)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "The Flow table says spec_jury leads to arch_grilling, but the ACs go straight to planning",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-15",
+        "FR-47",
+        "AC-1",
+        "AC-51"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "| spec_jury | → arch_grilling | → grilling | [human] |",
+        "Given an effort whose spec gate is approved and which has no plan yet, when `nio flow next` runs, then it names the planning stage"
+      ],
+      "fix": "add a guard row, or an explicit \"not built, skipped\" rule, for `arch_grilling`, `advocate_walking` and `implementing`. Then make AC-1 and AC-51 agree with the table.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The spec ledger is approved and there is no plan. The state table puts the effort in `arch_grilling`, and the Owning-stage table sends `architecture.md` changes to `arch_grilling`. AC-1 and AC-51 say `next` names `planning`. The Guards table has no `arch_grilling` row, so FR-47 (the first stage whose guard fails) can't place an effort there. `advocate_walking` (skipped by FR-21) and `implementing` (FR-22 only waits) have no guard rows either. So `implementing → done` can never fire, and `done` is unreachable until the implement stage is built. Yet AC-31, AC-39 and SC-3 expect efforts at `done`.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Flow table sends spec_jury to arch_grilling, but AC-1 and AC-51 go straight to planning. The Guards table has no arch_grilling row (its header lists the stages left, without it), and no skip rule is stated for it.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-21 names researching, advocate_walking and arch_grilling as not built (RF-2); Guards rows added for them and implementing; AC-1 and AC-51 now match",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "\"Stage = first stage whose guard fails on its files\" can't produce a rejection or an override",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-47",
+        "FR-23",
+        "FR-24",
+        "AC-8",
+        "AC-24",
+        "AC-25",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "whose guard does not pass on its files",
+        "then the stage reflects the rejection without any `nio flow` write in between",
+        "THE SYSTEM SHALL pass the stage and append a history line holding the failing guard output and the reason"
+      ],
+      "fix": "state how recorded history (overrides) and the ledger's `rejected` outcome feed the derivation. For example, a rejected round sends the stage back until a newer round exists, and an override line counts as a pass. Update FR-47 and the state table to match.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "Two cases break FR-47.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the spec ledger flips to `rejected` and spec.md is unchanged. The grilling guard (`nio check spec --gate`) still passes. The spec_jury guard fails, because the table requires \"the spec ledger says approved\". FR-47 takes the first failing stage, which is spec_jury, so `nio flow next` names spec_jury. AC-24 requires grilling. The same conflict hits AC-25 (tasks_jury back to tasking). Rejection needs its own rule that overrides the derived stage, or the derivation rule has to say so.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-47 takes the first stage whose guard fails on its files. A `rejected` ledger gives spec_jury, not the grilling that AC-8 and AC-24 require. A `--human` override leaves the failing guard failing, so the derived stage would never advance. The finding's situation text is empty, but its title and fix make the claim clear.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q13: gates pass only with their approval commit or an override; a rejected round sends the effort back until the files change (FR-47, FR-55, FR-56, AC-63, AC-64)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "`done <gate>` after the stage has been derived past it is a no-op, so the deferred approval commit can never be made",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-17",
+        "FR-48",
+        "FR-49",
+        "FR-47",
+        "AC-19",
+        "AC-52"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "names a stage the effort has already passed THE SYSTEM SHALL change nothing, add no history line and exit 0",
+        "THE SYSTEM SHALL make no commit, record nothing, and print the exact `nio flow done <gate> --commit` command for the human to approve"
+      ],
+      "fix": "define \"passed\" as recorded in history (as FR-12 implies), or carve out an unrecorded gate for FR-17. Say what `done <gate> --commit` does while the approval is unrecorded.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The spec ledger is approved and uncommitted, and the auto flag is off. FR-48 records nothing, and FR-47 derives the stage as past `spec_jury`. This is the state FR-49 describes. The human runs the printed `nio flow done spec_jury --commit`. By FR-47 the effort has \"already passed\" `spec_jury`, so FR-17 applies: exit 0, no commit, no history line. AC-19 and AC-52 need the commit. Exit 0 also makes the no-op look like success.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-48 records nothing, so FR-47 derives the stage as past spec_jury once the ledger is approved. FR-17 then makes `done spec_jury --commit` a no-op that exits 0, which conflicts with FR-18, AC-19 and AC-52.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q13: an approved gate without its commit is not passed, so done --commit makes the commit; next waits on it (FR-55, FR-49)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "A pending change request: `next` names the stage to rework, or reports waiting_for_human with no skill",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-38",
+        "FR-43",
+        "FR-35",
+        "AC-38",
+        "AC-41",
+        "UJ-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio flow next` SHALL report the effort `waiting_for_human` on that record",
+        "then the effort is back in planning and history names the change record"
+      ],
+      "fix": "pick one outcome for `next` while the record is pending. Say who changes its `outcome`, and whether `next` appends the move once or on every call.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The effort is in `tasking` with a pending `C-*` record against `plan.md`. AC-38 and UJ-4 step 3 expect `next` to name `planning` so the orchestrator reworks the plan. FR-38 and FR-43 expect `waiting_for_human` on the record with no skill named. The orchestrator can't rework the plan, because `done planning` is refused while the record is pending (AC-41) and nothing says who clears it. The spec also doesn't say how often the history line is written when `next` is called again while the record is still pending.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "An effort at tasking has a pending change record against `plan.md`. FR-35 and AC-38 say `next` moves it to planning. FR-38 says `next` reports `waiting_for_human` on the record. No AC checks the FR-38 `next` output, so a test written from either text passes while the other is broken. AC-41 tests only the refusal by `done`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-38 and FR-43 make `next` report `waiting_for_human` on a pending record. AC-38 and UJ-4 step 3 make `next` name planning. AC-41 also leaves planning unable to finish while the record is pending, and nothing says who clears the record.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-38 and FR-37 follow FR-38 (Q10): next reports waiting_for_human on the record, names planning, and records the move once",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "The \"same output 3 times\" counter has no place to be stored",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-41",
+        "FR-3",
+        "FR-6",
+        "FR-13",
+        "AC-14",
+        "AC-46"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "only the auto flag, the pause reason, the abandon reason, what the effort waits on, task claims and attempts, and the current run",
+        "WHEN the same guard fails with the same output 3 times",
+        "no history line is added"
+      ],
+      "fix": "name where failed-guard attempts and their output hashes are kept: a key allowed by FR-3, or a history line kind for failures. Align FR-13, AC-14 and AC-7 with that choice.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "In auto mode, `done tasking` fails three times with identical output. A failed `done` leaves the state unchanged (FR-13) and adds no history line (AC-14). FR-3 lists the only keys `state.json` may hold, and FR-6 refuses any other key. \"Task claims and attempts\" are task-machine fields (a non-goal). So after the first two failures nothing records them, and the third failure can't tell it is the third. AC-46 and AC-47 (3 same versus 3 different outputs) can't be met.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "Rejected spec_jury: FR-47 derives spec_jury, but FR-23 and AC-24 say grilling",
+      "kind": "inconsistency",
+      "severity": "blocker",
+      "cites": [
+        "FR-47",
+        "FR-23",
+        "AC-24",
+        "Flow table row spec_jury",
+        "Guards table row spec_jury"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the first stage in the state table \"Flow\" whose guard does not pass on its files",
+        "WHEN a gate's jury ledger says `rejected` THE SYSTEM SHALL move the effort back as the state table \"Flow\" says.",
+        "| spec_jury | → arch_grilling | → grilling | [human] |",
+        "then the effort is back in grilling"
+      ],
+      "fix": "state in FR-47 that a jury `rejected` verdict moves the effort to the stage named by the Flow table, and say how that rule composes with the derived stage.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the spec ledger flips to `rejected` and spec.md is unchanged. The grilling guard (`nio check spec --gate`) still passes. The spec_jury guard fails, because the table requires \"the spec ledger says approved\". FR-47 takes the first failing stage, which is spec_jury, so `nio flow next` names spec_jury. AC-24 requires grilling. The same conflict hits AC-25 (tasks_jury back to tasking). Rejection needs its own rule that overrides the derived stage, or the derivation rule has to say so.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-7",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "NFR-2 and NFR-3 are not traceable to any intake sentence or grill answer",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "NFR-2",
+        "NFR-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THE SYSTEM SHALL print `nio flow status` for 20 efforts in under 2 seconds.",
+        "THE SYSTEM SHALL answer `nio flow next`, `nio flow status` and `nio flow park` with no model or network call."
+      ],
+      "fix": "drop both, or get the human to confirm them at the grill with the reason.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "nothing the human asked for is lost if these are not built. The \"20 efforts\" figure is not tied to anything in the intake, and the repo has 8 efforts. Both items carry the drafter's `[agent]` tag, not `[human]`, so the grill never confirmed them. If the human does not want a speed or no-network bound, the spec carries two untested requirements.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "spec-scope: NFR-2 and NFR-3 keep the [agent] tag, and NFR-3 keeps the untraced \"20 efforts\" figure, now with \"50 history lines each\" added. The fix asserts the Q11 delegation but the pack shows no intake sentence or grill answer that supports the figures.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q20: the human confirmed NFR-2 and NFR-3, now [human]",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-13",
+      "title": "The stop list is built but no live run can reach it in this spec",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "US-6",
+        "FR-39",
+        "FR-40",
+        "FR-41",
+        "FR-42",
+        "FR-51",
+        "Non-goals"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "set the auto flag in a fixture `state.json` and drive each stop condition.",
+        "this spec only reads the flag."
+      ],
+      "fix": "say in the spec that the stop list is unexercised until the switch spec, or move the stop list to the switch spec.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "nine requirements (FR-39 to FR-42, FR-51, AC-43 to AC-48 and AC-54) are proven only with a hand-set flag. The switch lands in a later spec. The first real auto run is then the first time the stop list meets a live gate, so a fault in it shows up in an unattended run and not in this one. The human did ask for the stop list in this build, so this is a risk, not a scope extension.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Risk line added: the stop list is proven only with a fixture flag until the auto switch's spec",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "The stuck counter has no place to live",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-41",
+        "AC-46",
+        "FR-3",
+        "FR-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the same guard fails with the same output 3 times",
+        "only the auto flag, the pause reason, the abandon reason, what the effort waits on, task claims and attempts, and the current run",
+        "leave the state unchanged"
+      ],
+      "fix": "say where the failure count and last output are kept, and widen FR-3's key list to match. Also say what \"same output\" means when the output holds a timestamp or path.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "In auto mode `nio flow done tasking` fails twice. Each call is a separate process, and a failed `done` writes no history line and leaves state unchanged. `state.json` has no key for failure count or last guard output. On the third failure, `done` cannot know it has seen the same output before. AC-46 cannot pass without breaking FR-3 or FR-13. AC-47 cannot be told apart from AC-46.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "\"A round closed no finding\" is undefined for round 1",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-39",
+        "AC-44"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "or a round closed no finding",
+        "round 2 closed no finding of round 1"
+      ],
+      "fix": "define the rule as a number: \"from round 2 on, a round that closes none of the previous round's open findings\". State the round-1 case explicitly and give it an AC.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "In round 1 there is no earlier finding to close, so \"closed no finding\" is true at once. A test author can read FR-39 as pausing after round 1. AC-44 reads it as pausing after round 2. The AC-44 fixture could pass or fail depending on the reading. It is also unclear whether a round with no prior findings, or with zero findings, counts.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-39 says \"a round closed no finding\" without defining round 1, where nothing earlier exists to close. Only AC-44 fixes round 2, and no AC covers round 1.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-39: from round 2 on, a round that closes none of the previous round's open findings; AC-60 covers round 1",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-16",
+      "title": "FR-38's `next` clause contradicts AC-38 and has no AC",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-38",
+        "AC-38",
+        "AC-41",
+        "FR-35"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio flow next` SHALL report the effort `waiting_for_human` on that record",
+        "then the effort is back in planning and history names the change record"
+      ],
+      "fix": "say whether `next` reports planning or `waiting_for_human` while the record is pending. Add an AC that checks that exact `next` output.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "An effort at tasking has a pending change record against `plan.md`. FR-35 and AC-38 say `next` moves it to planning. FR-38 says `next` reports `waiting_for_human` on the record. No AC checks the FR-38 `next` output, so a test written from either text passes while the other is broken. AC-41 tests only the refusal by `done`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-9",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "Abandon has no failure-case ACs",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-52",
+        "FR-53",
+        "AC-55"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with a non-empty reason"
+      ],
+      "fix": "add an FR and an AC for abandon with an empty reason, and for abandon on a done, legacy or unsupported effort. Say whether the refusal writes nothing.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "`nio flow abandon <slug> \"\"`, abandoning an already-done effort, and abandoning a legacy or unsupported effort have no AC. Park has the equivalent in AC-35 and FR-32. A test cannot check that an empty reason is refused. AC-55 is a single compound scenario of abandon, change record and start, and it covers only the happy path.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "spec-testability: FR-61 covers an empty reason and \"legacy or unsupported\" efforts, but AC-62 tests only the empty reason and the legacy `.nio/specs/grilling/` folder. The `unsupported` branch has no AC, and abandoning a done effort is not mentioned in FR-61 or any AC. Fix: add an unsupported-route effort to AC-62, and state in FR-61 or a new AC whether abandoning a `done` effort is allowed or refused.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q21: abandon refuses a done effort too; AC-62 covers an unsupported (lite) effort and a done one",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-18",
+      "title": "NFR-3 has no conditions, and NFR-2 has no test",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "NFR-3",
+        "NFR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "print `nio flow status` for 20 efforts in under 2 seconds"
+      ],
+      "fix": "state the fixture (20 effort folders, N history lines each) and the measurement point. Add ACs for both NFRs, using a network-denied test for NFR-2.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "No AC covers either NFR. NFR-3 gives no hardware, no repo size and no history length per effort. Does it count a cold start of the Python CLI, and is the effort a legacy folder? On a slow CI runner a correct build fails the test, and on a fast machine a broken build passes it. NFR-2 (\"no model or network call\") needs a stated way to observe it, such as a blocked-socket fixture, or it cannot fail.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "NFR-2 is checked with network blocked; NFR-3 names its fixture and measurement point",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-19",
+      "title": "The task machine is moved to #43, against the approved tasks-stage spec that gives it to #45",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-3",
+        "non-goal \"The task machine\" (no ID; quoted)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "The task machine: claims, attempts, the red and green test guards and picking the next ready task ship with the implement stage (#43)",
+        "The task machine ships with the implement stage (#43), not here (Q4)."
+      ],
+      "fix": "file a change request against the tasks-stage spec (DF-1, FR-23, FR-25, AC-36, AC-55 to AC-57), or move the non-goal back to #45 and keep only the attempt and claim fields here.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the tasks-stage spec (approved 2026-10-27, per C-261028-7njg) says in its FR-25 that a task is finished only through \"the guarded steps ... of #45\", its FR-23 that \"a task's status lives only in the CLI's state (#45)\", and its DF-1 that \"#45 builds the task state machine and decides it\". tests/test_flow.py waits for #45 on the AC-36, AC-56 and AC-57 refusals. After this spec is approved, nothing builds claims or the red/green guards in #45, and the approved tasks-stage spec still says #45 does. No change request against the tasks-stage spec exists in the pack.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The tasks-stage spec (`.nio/specs/2026-10-27-tasks-stage/spec.md`) has FR-23 and FR-25 and DF-1 saying the task state machine is #45's. Its non-goals line 317 says AC-36 and AC-55 to AC-57 run once #45 and #43 are built. The flow-state spec moves claims and the red/green guards to #43 with no change request.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q17: change request C-261028-xcg6, accepted, moves the tasks-stage spec's task machine to #43",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-20",
+      "title": "The owning-stage rows name gate targets that the spec never defines as gates",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-36",
+        "FR-35",
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "| intake.md | drafting | drafting | [agent] |",
+        "**Gate**: a stage closed by a jury verdict or the human's approval (spec_jury, plan_jury, tasks_jury); only gates commit.",
+        "| architecture.md | arch_grilling | arch_grilling | [agent] |"
+      ],
+      "fix": "give intake.md and architecture.md no approved-edit column (only the pending column applies), and add arch_grilling's guard row or say it has none.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the Glossary names three gates only, so no jury or approval closes drafting (intake.md), grilling (research.md) or arch_grilling (architecture.md). FR-36 says an approved file edited after its gate \"moves the effort back to the stage the decision table 'Owning stage' gives\", and the table gives drafting for an intake.md that no gate ever approved, so the rule has no approval to test against. arch_grilling also has no row in the Guards table, so FR-15 (\"use the guards in the decision table 'Guards' to leave each stage\") has no guard to run there.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Glossary names only spec_jury, plan_jury and tasks_jury as gates. The Owning-stage table still has an \"edited after its gate approved\" column for intake.md and architecture.md, and no gate approves either file. arch_grilling has no Guards row for FR-15.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Owning stage: intake.md and architecture.md ignore the edited-approved column, since no gate approves them; arch_grilling has a Guards row",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-21",
+      "title": "Researching is said to be skipped but is also expected to pass, and the derivation rule does not allow for the skip",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-21",
+        "FR-47",
+        "AC-22"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "not built today, since the grill does research inside its own stage, so it is skipped",
+        "Given researching passes and advocate_walking is not built",
+        "the first stage in the state table \"Flow\" whose guard does not pass on its files"
+      ],
+      "fix": "state in FR-47 that a stage marked not built is passed by skip, and make AC-22 and the Guards row say the same thing.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the Guards row says researching is not built and skipped, but AC-22 treats researching as a stage that passes. FR-47 derives the stage as the first stage whose guard fails. If the grill writes no research.md for a new effort, the researching guard never passes, so every new effort derives as stuck at researching and never reaches grilling, which the skip in FR-21 was meant to prevent. The spec does not say whether FR-47 applies the FR-21 skip.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Guards row says researching is skipped as not built, but AC-22 has it pass. FR-47 derives the stage as the first failing guard and says nothing about applying the FR-21 skip, so a new effort without research.md would stick at researching.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-47 counts a not-built stage as passed (FR-21); AC-22 and the Guards row agree",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-22",
+      "title": "Local, uncommitted current-effort pointer goes against the current decision that new state is committed",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "kept in a local pointer that is not committed",
+        "Flow state lives in committed files and anything faster is derived from them: D-261024-ifge (memory, 2026-10-24)."
+      ],
+      "fix": "either file a change request against D-261024-ifge that exempts a per-machine pointer (and say so in the Decisions section), or store the current effort in state.json, or derive it from the most recent history line.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "D-261024-ifge (current, human) says \"Any new NIO state: put the truth in committed files and derive anything faster from them.\" The spec cites that decision in its own Decisions section and then makes the current-effort pointer local and uncommitted, a new piece of state no committed file holds. Nothing in the pack records an exception. Two agents on different hosts would act on different efforts with no file to say which.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 and the Key entities section make the current-effort pointer local and uncommitted. The Decisions section cites D-261024-ifge, \"files in git are truth\", and records no exception for it.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q18: no slug means the effort with the newest history line; the local pointer is gone (FR-9, FR-10, FR-11, AC-3)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-23",
+      "title": "A new budgets key for the effort's count caps overlaps the existing jury.max_runs config key",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-40",
+        "AC-45"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a per-effort count cap from a new `budgets` key in config (juries, subagent runs; neither is counted per effort today, RF-5)"
+      ],
+      "fix": "name the new key's scope (per effort, jury count) and say how it relates to jury.max_runs (per gate, lens runs), or reuse jury.max_runs with a per-effort total.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "jury.py:32 already defines MAX_RUNS = 6 \"lens runs per gate ... `jury.max_runs` in config overrides it (#47)\", and jury.py:237 reads it. A human who sets jury.max_runs to limit juries will expect it to cap the auto run's juries too, and it does not; the new budgets key is a second cap with the same meaning.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-40 names budgets.juries and budgets.subagents as per-effort caps, distinct from jury.max_runs per gate",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "a68d1e0702796bc3071ae3092145aa1a3e386450",
+    "2": "bb92963b5029af3a3372dc042b054e3370c68c0b",
+    "3": "92b69aba535ce285803d9f88616974b95b185b85"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-12",
+      "J-17"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}
