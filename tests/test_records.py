@@ -6,6 +6,10 @@ from pathlib import Path
 
 from nio import records
 
+# every suite imports this module: one temp folder per run, removed at exit, holds every fixture repo
+_TMP = tempfile.TemporaryDirectory(prefix="nio-test-")
+tempfile.tempdir = _TMP.name
+
 GOOD_BODY = """## Decision
 Store sessions in Redis.
 ## Why
