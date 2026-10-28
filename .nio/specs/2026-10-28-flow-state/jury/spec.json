@@ -1,7 +1,7 @@
 {
   "gate": "spec",
   "subject": "2026-10-28-flow-state",
-  "round": 3,
+  "round": 4,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -23,7 +23,12 @@
     "R-261028-nbzi/spec-scope.md": "7bd15db8bd9eeb73be64b63c8c31db5594864a6dd3ca51290c0e086112aeda38",
     "R-261028-nbzi/spec-testability.md": "e4ec64ba8ecb259b5b7d4dd9be59bf564e4384fee124be72bf7ca515903d65e5",
     "R-261028-ymzg/spec-scope.md": "e70e845c8255362d1719d60e58b5af05af6e6a662f7be648d44c3f7f26305d74",
-    "R-261028-ymzg/spec-testability.md": "c722acc761404d1a70d9d3e378c126e9b37d3b2aafd61f4fc5e4791c9e8df3ad"
+    "R-261028-ymzg/spec-testability.md": "c722acc761404d1a70d9d3e378c126e9b37d3b2aafd61f4fc5e4791c9e8df3ad",
+    "R-261028-hjdt/spec-adversary.md": "620006d0a6143667811d12d6f7420127141d0c11ec01e1db628152a53949091a",
+    "R-261028-hjdt/spec-consistency.md": "32fb1942a0a895dd02050c5b262fe5f88a63f2c7439af0d5cd19d32e3a44934b",
+    "R-261028-hjdt/spec-logic.md": "b336199fd401fe085df159d26d2146bac5cc9fedc223d556941397bc3bb807bd",
+    "R-261028-hjdt/spec-scope.md": "08981bd48e139a1de305c470aa7c6c3b986ad0d6938c8512f57cf3d813a3c39e",
+    "R-261028-hjdt/spec-testability.md": "f7febd44dc2e28475255e9d8f7face9eebc536d3c33d5dde77782e14e1d15adc"
   },
   "jurors": {
     "spec-adversary": {
@@ -33,9 +38,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "bb92963b5029af3a3372dc042b054e3370c68c0b",
-      "judged": 2
+      "round": 4,
+      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
+      "judged": 4
     },
     "spec-consistency": {
       "attempts": 1,
@@ -44,9 +49,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "bb92963b5029af3a3372dc042b054e3370c68c0b",
-      "judged": 2
+      "round": 4,
+      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
+      "judged": 4
     },
     "spec-logic": {
       "attempts": 1,
@@ -55,9 +60,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "bb92963b5029af3a3372dc042b054e3370c68c0b",
-      "judged": 2
+      "round": 4,
+      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
+      "judged": 4
     },
     "spec-scope": {
       "attempts": 1,
@@ -66,9 +71,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "92b69aba535ce285803d9f88616974b95b185b85",
-      "judged": 3
+      "round": 4,
+      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
+      "judged": 4
     },
     "spec-testability": {
       "attempts": 1,
@@ -77,9 +82,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "92b69aba535ce285803d9f88616974b95b185b85",
-      "judged": 3
+      "round": 4,
+      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
+      "judged": 4
     }
   },
   "findings": [
@@ -982,6 +987,41 @@
       "first_round": 1,
       "last_round": 1,
       "fixed_in": 2
+    },
+    {
+      "id": "J-24",
+      "title": "The printed command's gate name differs between FR-62 and AC-65",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-62",
+        "AC-65"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "at a jury gate (spec_jury, plan_jury, tasks_jury)",
+        "the output contains `nio jury check` with the slug, `spec` and `--human`"
+      ],
+      "fix": "state in FR-62 that the printed gate is the jury's name (`spec`, `plan`, `tasks`) and not the flow stage name",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "`nio flow done spec_jury --human \"pack bug\"` runs. FR-62 prints the command with `<gate>`, and `<gate>` is the flow gate, `spec_jury`. AC-65 expects the output to contain `spec`. If `<gate>` is substituted as `spec_jury`, then `nio jury check` may get a gate name it does not know. If it is mapped to `spec`, FR-62 does not say so.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4
     }
   ],
   "outcome": "approved",
@@ -997,12 +1037,17 @@
     [
       3,
       "approved"
+    ],
+    [
+      4,
+      "approved"
     ]
   ],
   "versions": {
     "1": "a68d1e0702796bc3071ae3092145aa1a3e386450",
     "2": "bb92963b5029af3a3372dc042b054e3370c68c0b",
-    "3": "92b69aba535ce285803d9f88616974b95b185b85"
+    "3": "92b69aba535ce285803d9f88616974b95b185b85",
+    "4": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc"
   },
   "list": {
     "round": 2,
