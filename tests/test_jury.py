@@ -1315,6 +1315,30 @@ def test_escaped_quotes_ground():
     print("ok")
 
 
+
+def test_ac41_it_plans_executability_as_the_core_lens():
+    from test_tasks import repo
+    root = repo()
+    path = spec.path(root, PSLUG)
+    path.write_text(re.sub(r"^risk: .*$", "risk: [auth, money]", path.read_text(), count=1, flags=re.M))
+    lines, ok = jury.plan(root, PSLUG, "tasks")
+    assert ok and lines[1] == "lenses: executability (core)", lines
+    print("ok")
+
+
+def test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n():
+    """FR-31: pins what already holds; collecting implementation-E-n rounds is #29's."""
+    root = plan_repo()
+    led = jury.load(root, PSLUG, "implementation-E-2")
+    led["round"] = 1
+    jury.save(root, led)
+    path = jury.verdict(root, led, "approved", [])
+    folder = jury.folder(root, PSLUG)
+    assert (folder / "implementation-E-2.json").exists() and (folder / "implementation-E-2.md").exists()
+    assert f'subject: "implementation-E-2:{PSLUG}"' in path.read_text()
+    print("ok")
+
+
 if __name__ == "__main__":
     test_review_scenarios()
     test_plan_gate_versions()
@@ -1372,3 +1396,5 @@ if __name__ == "__main__":
     test_uj1_plan_gate_needs_lens_outputs()
     test_nfr1_plan_gate_makes_no_model_call()
     test_escaped_quotes_ground()
+    test_ac41_it_plans_executability_as_the_core_lens()
+    test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n()

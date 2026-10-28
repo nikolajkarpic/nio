@@ -2,7 +2,7 @@ import argparse
 import sys
 from importlib import resources
 
-from nio import agents, hooks, index, jury, pack, plan, query, records, spec
+from nio import agents, hooks, index, jury, pack, plan, query, records, spec, tasks
 
 
 def report(errors, warnings, count):
@@ -18,7 +18,7 @@ def main():
     p = argparse.ArgumentParser(prog="nio", description="NIO memory CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
     n = sub.add_parser("new", help="create a record (or `new spec <name>`, a spec; `new plan <slug>`, a spec's plan files) from its template and print its path")
-    n.add_argument("type", choices=sorted(set(records.REQUIRED) | {"spec", "plan"}))
+    n.add_argument("type", choices=sorted(set(records.REQUIRED) | {"spec", "plan", "tasks"}))
     n.add_argument("slug", nargs="?", help="spec: a short name; the folder is .nio/specs/<YYYY-MM-DD>-<name>/. plan: the spec's slug")
     n.add_argument("--area", help="records: the area folder")
     n.add_argument("--title", help="records: the title")
@@ -27,10 +27,14 @@ def main():
     n.add_argument("--by", default="human", help="role / host / model, or human")
     n.add_argument("--run", default="", help="run ID, e.g. R-261024-a1b2; empty when written by hand")
     c = sub.add_parser("check", help="lint every record under .nio/memory, or `check spec|plan <slug>`: a spec's or its plan's mechanical checks")
-    c.add_argument("what", nargs="?", choices=["spec", "plan"])
+    c.add_argument("what", nargs="?", choices=["spec", "plan", "tasks"])
     c.add_argument("slug", nargs="?")
     c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
-    c.add_argument("--approved", action="store_true", help="plan only: exit 0 when the tasks stage may start on this spec")
+    c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
+    t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
+    t.add_argument("action", choices=["show"])
+    t.add_argument("slug")
+    t.add_argument("id")
     c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
@@ -102,6 +106,10 @@ def main():
                 if not a.slug:
                     sys.exit("error: give the spec's slug: nio new plan <slug>")
                 print("\n".join(str(p.relative_to(root)) for p in plan.new(root, a.slug)))
+            elif a.type == "tasks":
+                if not a.slug:
+                    sys.exit("error: give the spec's slug: nio new tasks <slug>")
+                print(tasks.new(root, a.slug).relative_to(root))
             elif not (a.area and a.title):
                 sys.exit("error: a record needs --area and --title")
             else:
@@ -114,16 +122,16 @@ def main():
         if not a.slug:
             sys.exit(f"error: give the spec's slug: nio check {a.what} <slug>")
         if a.approved:
-            if a.what != "plan":
-                sys.exit("error: --approved is for `nio check plan`")
+            if a.what == "spec":
+                sys.exit("error: --approved is for `nio check plan` and `nio check tasks`")
             try:
-                ok, why = plan.approved(root, a.slug)
+                ok, why = {"plan": plan, "tasks": tasks}[a.what].approved(root, a.slug)
             except ValueError as e:
                 sys.exit(f"error: {e}")
             print(why)
             sys.exit(0 if ok else 1)
         try:
-            errors, notes = {"spec": spec, "plan": plan}[a.what].check(root, a.slug, a.gate, a.base)
+            errors, notes = {"spec": spec, "plan": plan, "tasks": tasks}[a.what].check(root, a.slug, a.gate, a.base)
         except ValueError as e:
             sys.exit(f"error: {e}")
         print("\n".join([f"ERROR {e}" for e in errors] + notes + [f"{len(errors)} errors"]))
@@ -208,6 +216,11 @@ def main():
                 outcome, lines = jury.check(root, a.slug, a.gate, a.record, a.human)
                 print("\n".join(lines))
                 sys.exit({"approved": 0, "rejected": 1, "human": 3}.get(outcome, 2))
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+    elif a.cmd == "task":
+        try:
+            print("\n".join(tasks.show(root, a.slug, a.id)))
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":
