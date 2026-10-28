@@ -1,7 +1,7 @@
 {
   "gate": "spec",
   "subject": "2026-10-27-tasks-stage",
-  "round": 5,
+  "round": 6,
   "tier": "low",
   "expect": [
     "consistency",
@@ -28,52 +28,56 @@
     "R-261028-l6gm/spec-consistency.md": "326a7671382cadb8f2f751660b67aaa85b257b225c786a1e62ab2e824256dc12",
     "R-261028-l6gm/spec-logic.md": "8173b7b44b11c8c1495ce3e11f360ca016fb09eec04fbe76e3e94af2b1d50d50",
     "R-261028-l6gm/spec-scope.md": "bf7cbea1777bece0eb3a73ba87c8ab370091988b09bd38c49e0d04090187538a",
-    "R-261028-l6gm/spec-testability.md": "77cb75512ddb93df7c8a9a42e4ae245f967e41ebab9c26df40f3888a88701231"
+    "R-261028-l6gm/spec-testability.md": "77cb75512ddb93df7c8a9a42e4ae245f967e41ebab9c26df40f3888a88701231",
+    "R-261028-fh2w/spec-consistency.md": "01dd32d48de04d428372434c3ecca174260af3e1c0033481f47f1adb4fa62ce3",
+    "R-261028-fh2w/spec-logic.md": "c9f92d4aed80743bda2d0ba4786e3fdd80c8e9b1ebd9e49d5c085f126f570e4e",
+    "R-261028-fh2w/spec-scope.md": "d9b4e6d472038eb297964aef7fed7f74628e544ea6688bd81589faf43dd19fb2",
+    "R-261028-fh2w/spec-testability.md": "e902847b206b6f9b2fd7b8dffc5372f06559da3397f4dbb6b2e1055f4ceaa3cd"
   },
   "jurors": {
     "spec-consistency": {
       "attempts": 1,
       "lens": "consistency",
-      "by": "juror / claude-code / haiku",
+      "by": "juror / claude-code / claude-haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 5,
-      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
-      "judged": 5
+      "round": 6,
+      "version": "bc774ec07d2edd0c90d6efab8e362240afb20402",
+      "judged": 6
     },
     "spec-logic": {
       "attempts": 1,
       "lens": "logic",
-      "by": "juror / claude-code / sonnet",
+      "by": "juror / claude-code / claude-sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 5,
-      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
-      "judged": 5
+      "round": 6,
+      "version": "bc774ec07d2edd0c90d6efab8e362240afb20402",
+      "judged": 6
     },
     "spec-scope": {
       "attempts": 1,
       "lens": "scope",
-      "by": "juror / claude-code / haiku",
+      "by": "juror / claude-code / claude-haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 5,
-      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
-      "judged": 5
+      "round": 6,
+      "version": "bc774ec07d2edd0c90d6efab8e362240afb20402",
+      "judged": 6
     },
     "spec-testability": {
       "attempts": 1,
       "lens": "testability",
-      "by": "juror / claude-code / sonnet",
+      "by": "juror / claude-code / claude-sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 5,
-      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
-      "judged": 5
+      "round": 6,
+      "version": "bc774ec07d2edd0c90d6efab8e362240afb20402",
+      "judged": 6
     },
     "spec-consistency-2": {
       "attempts": 1,
@@ -880,6 +884,10 @@
     [
       5,
       "approved"
+    ],
+    [
+      6,
+      "approved"
     ]
   ],
   "versions": {
@@ -887,6 +895,7 @@
     "2": "88a7f5301da2f06244f243fa8b554bce119b5ca1",
     "3": "fef2e67a3594214b34eeb72e1733a624922543f8",
     "4": "d3038c564cf082053da020215582bf9adab93296",
-    "5": "36091f8c867a6a5c16a16f366040c7acbec65f61"
+    "5": "36091f8c867a6a5c16a16f366040c7acbec65f61",
+    "6": "bc774ec07d2edd0c90d6efab8e362240afb20402"
   }
 }

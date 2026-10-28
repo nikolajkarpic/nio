@@ -1,11 +1,11 @@
-"""The task state machine's refusals (#42 AC-36, AC-56, AC-57). They wait for #45, which builds `nio flow` and the
-CLI's state, as the tasks-stage spec's non-goal says. Until then each test says so and passes.
+"""The task state machine's refusals (#42 AC-36, AC-56, AC-57). They wait for #43, which builds the task machine
+(change request C-261028-xcg6), as the tasks-stage spec's non-goal says. Until then each test says so and passes.
 Run: uv run python tests/test_flow.py"""
 
 
 def waits(test):
     def run():
-        print(f"waits for #45 (nio flow): {test.__name__}")
+        print(f"waits for #43 (task machine): {test.__name__}")
     run.__name__ = test.__name__
     return run
 
