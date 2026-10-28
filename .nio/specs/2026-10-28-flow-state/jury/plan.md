@@ -1,7 +1,7 @@
 ---
 gate: plan
 subject: 2026-10-28-flow-state
-round: 2
+round: 3
 outcome: approved
 ---
 # Plan jury: 2026-10-28-flow-state
@@ -196,7 +196,7 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| plan-architecture-fit | architecture-fit | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
-| plan-logic | logic | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
-| plan-risk-rollback | risk-rollback | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
-| plan-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
+| plan-architecture-fit | architecture-fit | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 3 |
+| plan-logic | logic | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 3 |
+| plan-risk-rollback | risk-rollback | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 3 |
+| plan-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 3 |
