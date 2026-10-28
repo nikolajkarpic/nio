@@ -701,6 +701,41 @@ def test_fix_verdicts():
     print("ok")
 
 
+def test_retry_after_another_lens_fixed_a_shared_finding():
+    """#55: two lenses share J-1; logic marks it fixed, testability's output is invalid. Its retry gives verdicts on the
+    pack it was handed: accepted, in the same round, and the gate is approved. A human closure later is its own record."""
+    root = setup()
+    lens(root, "R-1", "logic", MAJOR)
+    lens(root, "R-1", "testability", MAJOR)
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "rejected"
+    fix(root, "J-1")
+    lens(root, "R-2", "logic", verdicts=verdicts(J_1="fixed"))
+    lens(root, "R-2", "testability", reasoning="", verdicts=verdicts(J_1="fixed"))  # invalid: no reasoning
+    jury.collect(root, "refunds", "spec", "R-2")
+    rnd = jury.load(root, "refunds", "spec")["round"]
+    lens(root, "R-2", "testability", verdicts=verdicts(J_1="fixed"))  # the retry
+    out = jury.collect(root, "refunds", "spec", "R-2")
+    assert not any("INVALID" in line for line in out), out
+    assert jury.load(root, "refunds", "spec")["round"] == rnd  # a retry starts no round
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "approved", lines
+
+    # a stuck juror sends the round to the human; the human's own closure in that round is still recorded
+    root = setup()
+    lens(root, "R-1", "logic", reasoning="")
+    jury.collect(root, "refunds", "spec", "R-1")
+    lens(root, "R-1", "logic", reasoning="", findings="none\nstill no reasoning")
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "human"
+    lines = jury.check(root, "refunds", "spec", record=True, human="the juror's output is fine; tooling bug")[1]
+    assert any(line.startswith("recorded") for line in lines), lines
+    assert not any(line.startswith("recorded") for line in jury.check(root, "refunds", "spec", record=True)[1])  # once
+    print("ok")
+
+
 BOLD = """# Refunds
 ## Functional requirements
 - **FR-1** A refund is allowed while the order is paid.
@@ -1356,6 +1391,7 @@ if __name__ == "__main__":
     test_stop_rule()
     test_final_check()
     test_fix_verdicts()
+    test_retry_after_another_lens_fixed_a_shared_finding()
     test_changed_and_fixcheck()
     test_phases()
     test_old_ledgers()

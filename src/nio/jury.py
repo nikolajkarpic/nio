@@ -327,7 +327,7 @@ def changed(root, slug, gate):
     else:
         rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
         rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] != "deferred"}
-    if not rerun and (ids or secs) and led["recorded"] and led["recorded"][-1][1] in ("approved", "human"):
+    if not rerun and (ids or secs) and led["recorded"] and led["recorded"][-1][1] in ("approved", "human", "closed"):
         # an approved or closed gate whose artefact changed since (a change request, #57 FR-35, FR-47): every lens that
         # judged it re-checks only what changed, from its fix-check pack
         rerun = set(votes(led))
@@ -446,7 +446,14 @@ def collect(root, slug, gate, run, expect=(), tier=None):
             new.append(path)
     if new and gate == "plan" and (st := state(root, slug, led))[0] in ("with-human", "waiting-on-spec"):
         raise ValueError(st[1])  # no round runs until the human rules, or the spec change is settled (#57 FR-50)
-    if new:
+    # a retry: every new file re-runs a juror that failed (invalid, or asked for more context) in this round, on this
+    # same version. It joins the round its juror failed in instead of starting one (#55).
+    jj = led["jurors"]
+    retry = new and all(p.stem in jj and jj[p.stem]["round"] == led["round"] and jj[p.stem]["version"] == blob(root, text)
+                        and (not jj[p.stem]["valid"] or jj[p.stem]["context"] == "needs-more") for p in new)
+    if new and retry:
+        out += merge(led, new, gate, slug, ground, human)
+    elif new:
         led["round"] += 1
         # the artefact this round judges, kept in git's object store so a later round can tell what changed (FR-23)
         led.setdefault("versions", {})[str(led["round"])] = blob(root, text, write=True)
@@ -513,8 +520,10 @@ def merge(led, paths, gate, slug, text, human=""):
         # (`<gate>-<lens>-2`) judges only the new blocker, and a lens asking for more context is re-run anyway
         if review and not errs and not re.search(r"-\d+$", path.stem) and meta.get("context") != "needs-more":
             want = packs.setdefault(lens, set(pack_ids(led, lens)))
+            # the lens's own findings another lens's verdict fixed earlier this round were in the pack it was handed (#55)
+            handed = want | {f["id"] for f in led["findings"] if f.get("fixed_in") == rnd and any(s["lens"] == lens for s in f["sources"])}
             errs += [f"no verdict for {i}, which is in the fix-check pack" for i in sorted(want - set(meta["verdicts"]))]
-            errs += [f"{i} is not in the fix-check pack" for i in sorted(set(meta["verdicts"]) - want)]
+            errs += [f"{i} is not in the fix-check pack" for i in sorted(set(meta["verdicts"]) - handed)]
             if not errs:
                 for i, (v, why) in meta["verdicts"].items():
                     verdicts[i].append((path.stem, v, why))
@@ -564,8 +573,8 @@ def apply_verdicts(led, verdicts, rnd):
             if f["severity"] == "blocker":
                 f["validation"] = "pending"
             out.append(f"not fixed {i} {f['title']}")
-        else:
-            f.update(status="fixed", baseline="absent")
+        elif f["status"] != "fixed":
+            f.update(status="fixed", baseline="absent", fixed_in=rnd)
             out.append(f"fixed   {i} {f['title']}")
     return out
 
@@ -793,9 +802,11 @@ def check(root, slug, gate, record=False, human=""):
     review = [f for f in led["findings"] if f["by"] == "agent"]  # still listed once a re-run marks it fixed
     lines += ["for the human to review (set by the agent):"] * bool(review)
     lines += [f"- {f['id']} {f['disposition']}: {f['note']}" for f in review]
-    if record and outcome in ("approved", "rejected", "human") and [led["round"], outcome] not in led["recorded"]:
+    # the human's closure is its own record, even in a round that already recorded `human` from the jury (#55)
+    entry = [led["round"], "closed" if closed else outcome]
+    if record and outcome in ("approved", "rejected", "human") and entry not in led["recorded"]:
         lines.append(f"recorded {verdict(root, led, outcome, reasons).relative_to(root)}")
-        led["recorded"].append([led["round"], outcome])
+        led["recorded"].append(entry)
     if gate == "plan":
         save(root, led)
         lines.insert(1, "state: {} ({})".format(*state(root, slug)))
