@@ -235,9 +235,9 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 - **FR-54** IF the drafter meets a design choice the plan (full spec) or the spec (bug-fix spec) doesn't settle THEN THE SYSTEM SHALL stop without writing `tasks.md`: on a full spec the gap goes back to the plan or the spec through a change request; a bug-fix spec is re-routed to a full spec with a plan. [human]
 - **FR-55** WHEN the spec is a full spec THE SYSTEM SHALL have each task's `Test:` line cite the plan's `TC-n` it writes, and a bug-fix spec's describe the test in words. [human]
 - **FR-56** WHEN the spec or the plan changes after the `nio: approve tasks` commit THE SYSTEM SHALL treat the tasks approval as withdrawn until the tasks jury re-checks what changed, as a spec change withdraws a plan's approval. [human]
-- **FR-23** THE SYSTEM SHALL keep no status or checkbox in `tasks.md`; a task's status lives only in the CLI's state (#45), and only `nio flow` changes it. [human]
+- **FR-23** THE SYSTEM SHALL keep no status or checkbox in `tasks.md`; a task's status lives only in the CLI's state, kept by the task machine the implement stage builds (#43, C-261028-xcg6), and only `nio flow` changes it. [human]
 - **FR-24** IF `tasks.md` holds a checkbox or a status line THEN THE SYSTEM SHALL fail the check, naming the task. [derived: FR-23]
-- **FR-25** THE SYSTEM SHALL count a task finished only when it reaches `done` through the guarded steps `pending → ready → claimed → red → green → review → done` of #45, never on an agent's claim. [human]
+- **FR-25** THE SYSTEM SHALL count a task finished only when it reaches `done` through the guarded steps `pending → ready → claimed → red → green → review → done` of the task machine (#43, C-261028-xcg6), never on an agent's claim. [human]
 - **FR-26** THE SYSTEM SHALL count an epic finished, and ready for the implementation jury, only when every task in it, fix tasks included, is `done`. [human]
 - **FR-27** WHEN a task is added after planning (an implementation-jury fix task, a "justify or remove" task, or a task from a rejected change request) THE SYSTEM SHALL put it under a `#### Fixes` heading in its epic's section, with the next free `T-n` (one above the highest ID ever used, live or retired) and a `From:` line citing its finding or change request. [human]
 - **FR-28** IF a task under a `#### Fixes` heading has no `From:` line THEN THE SYSTEM SHALL fail the check, naming the task. [derived: FR-27]
@@ -272,8 +272,8 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 | ready | ignore | → claimed | reject: not claimed | reject: not claimed | reject: not claimed | reject: not claimed | reject: not claimed | reject: not claimed | [research: RF-12] |
 | claimed | ignore | reject: already claimed | → red | reject: no failing test first | reject: no failing test first | reject: not reviewed | reject: not reviewed | → ready | [research: RF-12] |
 | red | ignore | reject: already claimed | ignore | → green | reject: tests not green | reject: not reviewed | reject: not reviewed | → ready | [research: RF-12] |
-| green | ignore | reject: already claimed | reject: #45 decides (DF-1) | ignore | → review | reject: not reviewed | reject: not reviewed | → ready | [human] |
-| review | ignore | reject: already claimed | reject: #45 decides (DF-1) | ignore | ignore | → done | → claimed | → ready | [research: RF-12] |
+| green | ignore | reject: already claimed | reject: #43 decides (DF-1) | ignore | → review | reject: not reviewed | reject: not reviewed | → ready | [human] |
+| review | ignore | reject: already claimed | reject: #43 decides (DF-1) | ignore | ignore | → done | → claimed | → ready | [research: RF-12] |
 | done | ignore | reject: task is done | reject: task is done | ignore | reject: task is done | ignore | reject: task is done | reject: task is done | [research: RF-12] |
 
 ### Decision table: parallel clash
@@ -314,7 +314,7 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 - The research skill's re-check of a task's files just before a worker starts (#18). [human]
 - A fixed size limit on tasks (file count or AC count). [human]
 - Tasks-jury lenses beyond executability, and the plan-gate coverage checks (#28, #50). [human]
-- Building the CLI's state file and `nio flow` (#45) or the implement stage (#43); this spec only defines what "finished" means for them; AC-29, AC-30, AC-36 and AC-55 to AC-57 run once #45 and #43 are built. [derived: FR-23, FR-25]
+- Building `nio flow` (#45) or the implement stage and its task machine (#43, C-261028-xcg6); this spec only defines what "finished" means for them; AC-29, AC-30, AC-36 and AC-55 to AC-57 run once #43 is built. [derived: FR-23, FR-25]
 
 ## Glossary
 - **Epic**: a slice of a spec that can ship on its own: one user story, or the foundational setup. Never "phase" or "milestone".
@@ -347,4 +347,4 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 ## Open points
 
 ## Deferred
-- **DF-1** (from OP-5) What happens when a green or in-review task's tests fail again. Deferred: #45 builds the task state machine and decides it (grill Q4).
+- **DF-1** (from OP-5) What happens when a green or in-review task's tests fail again. Deferred: #43 builds the task state machine and decides it (grill Q4; moved from #45 by C-261028-xcg6).
