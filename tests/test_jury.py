@@ -1306,6 +1306,15 @@ def test_nfr1_plan_gate_makes_no_model_call():
     assert all(c[0] == "git" for c in calls), calls
 
 
+def test_escaped_quotes_ground():
+    """A juror that escapes the marks inside a quote is grounded on the artefact's bare text."""
+    assert jury.unquote('"said \\"no\\""') == 'said "no"'
+    assert jury.unquote('"+ \\"\\\\n\\")"') == '+ "\\n")'
+    assert jury.unquote('plain') == 'plain'
+    assert jury.grounded({"cites": ["FR-1"], "quotes": [jury.unquote('"said \\"no\\" twice"')]}, '- FR-1: it said "no" twice.')
+    print("ok")
+
+
 if __name__ == "__main__":
     test_review_scenarios()
     test_plan_gate_versions()
@@ -1362,3 +1371,4 @@ if __name__ == "__main__":
     test_uj2_spec_change_blocks_plan_fix()
     test_uj1_plan_gate_needs_lens_outputs()
     test_nfr1_plan_gate_makes_no_model_call()
+    test_escaped_quotes_ground()

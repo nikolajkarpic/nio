@@ -55,6 +55,12 @@ def blocks(lines):
     return out
 
 
+def unquote(q):
+    """A quote's text: the outer marks off, and the escapes a juror puts inside (`\\"`, `\\\\`) undone."""
+    q = q[1:-1] if len(q) > 1 and q[0] == q[-1] == '"' else q.strip('"')
+    return re.sub(r'\\(["\\])', r"\1", q)
+
+
 def parse_lens(path, gate, slug):
     """(meta, findings, errors) for one lens output. Any error makes the whole output invalid."""
     try:
@@ -80,7 +86,7 @@ def parse_lens(path, gate, slug):
             errs.append(f"finding `{head}`: needs `### F<n> <title>` and {missing or 'all fields'}")
             continue
         one = {k: f[k][0] for k in FIELDS if k != "quote"}
-        one.update(ref=m[1], title=m[2], quotes=[q.strip('"') for q in f["quote"]],
+        one.update(ref=m[1], title=m[2], quotes=[unquote(q) for q in f["quote"]],
                    cites=[c.strip() for c in one["cites"].split(",") if c.strip()])
         bad = [f"{k} `{one[k]}` must be one of {', '.join(sorted(allowed))}" for k, allowed in
                (("kind", KINDS), ("severity", SEVERITY), ("evidence", EVIDENCE)) if one[k] not in allowed]
