@@ -11,6 +11,8 @@ Nothing here makes a design choice.
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Inputs and outputs
 
 - **Input:** the slug of a spec whose spec jury approved it, or which the human closed with a reason; on a full spec,

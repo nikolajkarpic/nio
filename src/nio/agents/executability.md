@@ -6,6 +6,8 @@ effort: med
 tools: [read]
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Judge whether each task in `tasks.md` can be carried out as written by one worker from one context pack. `nio check

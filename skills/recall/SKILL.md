@@ -12,6 +12,8 @@ IDs, get their links, read at most 5 records. Never load all of `.nio/cache/INDE
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Inputs and outputs
 
 - **Inputs:** a file you are about to change, or a question.

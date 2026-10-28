@@ -6,6 +6,8 @@ effort: med
 tools: [read]
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Try to prove each finding in the batch wrong. A finding stands only if, after an honest attempt to refute it, the

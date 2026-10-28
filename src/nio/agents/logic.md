@@ -6,6 +6,8 @@ effort: high
 tools: [read]
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Find logic errors the CLI can't. `nio check` has already proved every table cell has an outcome; you judge whether

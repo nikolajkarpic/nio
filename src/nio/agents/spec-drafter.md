@@ -6,6 +6,8 @@ effort: high
 tools: [read, edit, shell]   # shell: to run `nio check spec`
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Turn the intake into spec.md v0 by filling in the template that `nio new spec` already created. Get the human's

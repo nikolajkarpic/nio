@@ -6,6 +6,8 @@ effort: med
 tools: [read]
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Check the spec against what NIO already knows: the decisions in memory and the code they describe. A requirement that
