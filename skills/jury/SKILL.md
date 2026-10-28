@@ -86,7 +86,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    | `rerun` | re-run each lens it names, once, then collect; when it says the spec changed, or asks for the final fix check, re-review (step 8) |
    | `pending` | run the refuter (step 4) |
    | `human` with one list | after the first review there's no confirmed blocker, so no new round: show every listed finding in one message, each with two options, fix or accept as risk, in plain words (their IDs in `Refs:`); record each answer with `nio jury dispose` (a fix as you would in step 7), then check again |
-   | `human`, the final fix check flagged | show every flagged finding in one message, each with fix or accept as risk, saying a confirmed blocker may be among them and that no further check follows; record each with `nio jury dispose`, then check again: the jury then ends |
+   | `human`, the final fix check flagged | show every flagged finding in one message, each with fix, accept as risk, or overrule (it is already fixed: the human says why, recorded with `overruled --by human`), saying a confirmed blocker may be among them and that no further check follows; record each with `nio jury dispose`, then check again: the jury then ends |
    | `human`, other reasons | show each reason with its findings in plain words (their IDs in `Refs:`), and wait for the human |
    | `rejected` | dispose of each open finding (step 7), then re-review (step 8) |
    | `approved` | tell the human the outcome and the next stage (the plan); show the dispositions you made as a long list (see the block above), with the verdict record and their IDs in `Refs:` |

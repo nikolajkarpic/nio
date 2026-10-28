@@ -17,10 +17,10 @@ KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "in
 SEVERITY = ["minor", "major", "blocker"]  # ascending
 CONTEXT = {"sufficient", "limited", "needs-more"}
 EVIDENCE = {"observed", "inferred"}
-DISPOSITIONS = {"spec-fix", "plan-fix", "spec-change", "open-question", "accepted-risk", "out-of-scope"}
+DISPOSITIONS = {"spec-fix", "plan-fix", "spec-change", "open-question", "accepted-risk", "out-of-scope", "overruled"}
 FIXES = {"spec-fix", "plan-fix", "spec-change", "open-question"}  # settled by changing the judged artefact; a lens checks each
 PLAN_ONLY = {"plan-fix", "spec-change"}  # spec-change: a plan finding rooted in the spec, sent to a change request
-HUMAN_ONLY = {"accepted-risk", "out-of-scope"}
+HUMAN_ONLY = {"accepted-risk", "out-of-scope", "overruled"}  # overruled: a final-check `not fixed` the human overrides (#58)
 BY = {"agent", "grill", "human"}  # grill: the human answered a grill question
 MAX_FINDINGS = 5
 FIELDS = ["cites", "kind", "severity", "evidence", "quote", "situation", "fix"]
@@ -360,7 +360,9 @@ def fixcheck(root, slug, gate, lens, blocker=None):
         for f in mine:
             out += [f"### {f['id']} {f['title']}", f"- cites: {', '.join(f['cites'])}", *[f'- quote: "{q}"' for q in f["quotes"]],
                     *[f"- situation: {s['situation']}" for s in f["sources"] if s["lens"] == lens][:1],
-                    f"- fix asked: {f['fix']}", f"- what was done: {f['note']}", ""]
+                    f"- fix asked: {f['fix']}", f"- what was done: {f['note']}",
+                    # what it cites, as it reads now: a fix made rounds ago isn't among the changed items (#58)
+                    *(["- what it cites, now:", *[after[0][c] for c in f["cites"] if c in after[0]]] if any(c in after[0] for c in f["cites"]) else []), ""]
     ruled = [f for f in led["findings"] if f["disposition"] in HUMAN_ONLY]
     out += ["## Settled by the human: don't raise these again", *([f"- {f['id']} {f['title']} ({f['disposition']}: {f['note']})" for f in ruled] or ["None."]), ""]
     out += ["## Changed items, before and after", ""]
@@ -685,9 +687,13 @@ def dispose(root, slug, gate, fid, disposition, by, note, change=""):
             raise ValueError(f"{f['cites'][0]} is still in `## Deferred`; a spec-fix settles it there first")
     if f["status"] == "disposed" and f["disposition"] == "spec-change" and state(root, slug, led)[0] == "waiting-on-spec":
         raise ValueError(f"{fid} is disposed and waits on {(CHANGE.findall(f['note']) or ['its change request'])[0]}")
+    if disposition == "overruled" and fid not in (led.get("list") or {}).get("flagged", []):
+        raise ValueError(f"only a finding the final fix check flagged can be overruled; {fid} isn't one")
     if f["status"] != "open" and not (by == "human" and f["status"] == "disposed"):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
-    f.update(status="disposed", disposition=disposition, by=by, note=note)
+    f.update(status="overruled" if disposition == "overruled" else "disposed", disposition=disposition, by=by, note=note)
+    if disposition == "overruled":
+        f["reason"] = f"overruled by the human: {note}"
     save(root, led)
 
 
