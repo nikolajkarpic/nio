@@ -11,6 +11,8 @@ only when it answers one of them. The full rules are in `MEMORY_NORTH_STAR.md` i
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Pick a mode
 
 | Mode | When | Who |

@@ -1,8 +1,10 @@
 import argparse
+import datetime
+import re
 import sys
 from importlib import resources
 
-from nio import agents, hooks, index, jury, pack, plan, query, records, spec, tasks
+from nio import agents, flow, hooks, index, jury, pack, plan, query, records, spec, tasks
 
 
 def report(errors, warnings, count):
@@ -57,7 +59,9 @@ def main():
     k.add_argument("--run", help="also save the pack to .nio/runs/<run>/packs/")
     sub.add_parser("hooks", help="install git hooks: refresh the index and agent files after pulls, checkouts and rebases; check memory before commits and pushes")
     sub.add_parser("status", help="index freshness: indexed commit against HEAD, model, store")
-    sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
+    r = sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
+    r.add_argument("slug", nargs="?", help="the effort the run serves (.nio/specs/<slug>/)")
+    r.add_argument("target", nargs="?", help="the stage or task (T-n) it serves; written to the run's flow.json")
     ag = sub.add_parser("agents", help="agent cards: render them for each host, or check which model they ran on")
     agsub = ag.add_subparsers(dest="agents_cmd", required=True)
     agsub.add_parser("sync", help="render the shipped, personal and team cards as .claude/agents and .codex/agents files")
@@ -93,6 +97,29 @@ def main():
     for s in (jp, jg, jf, jc, jk, jl):  # dispose takes them first, before the finding
         s.add_argument("slug")
         s.add_argument("gate", choices=sorted(jury.GATES))
+    f = sub.add_parser("flow", help="where an effort is, what to do next, and moving it on only when its guards pass")
+    fsub = f.add_subparsers(dest="flow_cmd", required=True)
+    by = {"metavar": "BY", "help": '"<role> / <host> / <model>", or human'}
+    fn = fsub.add_parser("next", help="the effort's state, the skill to run, its inputs, exit criteria and done command")
+    fn.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
+    fn.add_argument("--by", metavar="BY", help="record what the call finds owed (a resume, a move back, a pause) as this caller")
+    fs = fsub.add_parser("start", help="start an effort, or resume a parked, suspended or abandoned one")
+    fs.add_argument("slug")
+    fd = fsub.add_parser("done", help="report a stage done: its guard decides; at a gate, --commit approves it")
+    fd.add_argument("stage", choices=list(flow.STAGES))
+    fd.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
+    fd.add_argument("--commit", action="store_true", help="at a gate: make the `nio: approve <gate>` commit")
+    fd.add_argument("--human", metavar="REASON", help="the human passes a failing check, with their reason")
+    fsub.add_parser("status", help="one line per effort, newest activity first")
+    fp = fsub.add_parser("park", help="park an effort, with the reason")
+    fa = fsub.add_parser("abandon", help="abandon an effort until `nio flow start` resumes it, with the reason")
+    for s in (fp, fa):
+        s.add_argument("slug")
+        s.add_argument("why")
+    fe = fsub.add_parser("seen", help="the human saw the effort's overrides")
+    fe.add_argument("slug")
+    for s in (fs, fd, fp, fa, fe):
+        s.add_argument("--by", required=True, **by)
     a = p.parse_args()
 
     root = records.repo_root()
@@ -117,7 +144,17 @@ def main():
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "run":
-        print(records.new_run(root))
+        link = None
+        if a.slug:
+            if not a.target:
+                sys.exit("error: give the stage or task too: nio run <slug> <stage|T-n>")
+            if not (root / ".nio/specs" / a.slug).is_dir():
+                sys.exit(f"error: no effort {a.slug} under .nio/specs/")
+            if a.target not in flow.STAGES and not re.fullmatch(r"T-\d+", a.target):
+                sys.exit(f"error: {a.target} is neither a stage ({', '.join(flow.STAGES)}) nor a task T-n")
+            link = {"effort": a.slug, "task" if a.target.startswith("T-") else "stage": a.target,
+                    "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+        print(records.new_run(root, link))
     elif a.cmd == "check" and a.what:
         if not a.slug:
             sys.exit(f"error: give the spec's slug: nio check {a.what} <slug>")
@@ -218,6 +255,21 @@ def main():
                 sys.exit({"approved": 0, "rejected": 1, "human": 3}.get(outcome, 2))
         except ValueError as e:
             sys.exit(f"error: {e}")
+    elif a.cmd == "flow":
+        try:
+            code, lines = {
+                "next": lambda: flow.next_step(root, a.slug, by=a.by),
+                "start": lambda: flow.start(root, a.slug, by=a.by),
+                "done": lambda: flow.done(root, a.stage, a.slug, commit=a.commit, human=a.human, by=a.by),
+                "status": lambda: flow.status(root),
+                "park": lambda: flow.park(root, a.slug, a.why, by=a.by),
+                "abandon": lambda: flow.abandon(root, a.slug, a.why, by=a.by),
+                "seen": lambda: flow.seen(root, a.slug, by=a.by),
+            }[a.flow_cmd]()
+        except (ValueError, flow.Broken, flow.Busy) as e:
+            sys.exit(f"error: {e}")
+        print("\n".join(lines))
+        sys.exit(code)
     elif a.cmd == "task":
         try:
             print("\n".join(tasks.show(root, a.slug, a.id)))

@@ -43,8 +43,10 @@ SECTIONS = {
 }
 
 
-def git(root, *args):
-    return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True).stdout.splitlines()
+def git(root, *args, full=False):
+    """git's stdout lines; with `full`, (exit code, stdout, stderr), for a caller that must see git fail (CT-19)."""
+    r = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
+    return (r.returncode, r.stdout, r.stderr) if full else r.stdout.splitlines()
 
 
 def repo_root():
@@ -291,11 +293,14 @@ def new(root, rtype, area, title, by="human", run=""):
     return path
 
 
-def new_run(root):
-    """Create .nio/runs/<run>/promote.md and return the run ID."""
+def new_run(root, link=None):
+    """Create .nio/runs/<run>/promote.md and return the run ID. Given `link` (the effort and the stage or task the run
+    serves), also write it as flow.json, unchecked: the caller checks it (2026-10-28-flow-state CT-17)."""
     known = {p.name for p in (root / ".nio/runs").glob("R-*")}
     rid = new_id("run", known)
     run = root / ".nio/runs" / rid
     run.mkdir(parents=True)
     (run / "promote.md").write_text(f"# Memory candidates for {rid}\n")
+    if link is not None:
+        (run / "flow.json").write_text(json.dumps(link, indent=2) + "\n")
     return rid

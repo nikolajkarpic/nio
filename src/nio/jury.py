@@ -129,14 +129,19 @@ def grounded(finding, text, human=""):
         " ".join(q.split()) in flat for q in finding["quotes"])
 
 
+def planned(name, text):
+    """A file as its gate judges it: tasks.md without its `#### Fixes` sections, any other file as it is. Work added
+    under Fixes after approval doesn't withdraw it (#42 FR-27, FR-50)."""
+    if name != "tasks.md":
+        return text
+    text = re.sub(r"^#### Fixes$.*?(?=^## |\Z)", "", text, flags=re.M | re.S)
+    return re.sub(r"\n\s*\n+", "\n\n", text).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+
+
 def artefact(root, slug, gate):
-    """The gate's artefacts as one text, in a fixed order; empty when none exists. At the tasks gate, tasks.md without its
-    `#### Fixes` sections: work added there after approval doesn't withdraw it (#42 FR-27, FR-50)."""
-    def text(p):
-        if gate != "tasks" or p.name != "tasks.md":
-            return p.read_text()
-        planned = re.sub(r"^#### Fixes$.*?(?=^## |\Z)", "", p.read_text(), flags=re.M | re.S)
-        return re.sub(r"\n\s*\n+", "\n\n", planned).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+    """The gate's artefacts as one text, in a fixed order; empty when none exists. At the tasks gate, tasks.md as
+    `planned` reads it."""
+    text = lambda p: planned(p.name, p.read_text()) if gate == "tasks" else p.read_text()
     return "\n".join(text(p) for p in (root / ".nio/specs" / slug / n for n in GATES[gate]) if p.exists())
 
 

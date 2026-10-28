@@ -6,6 +6,8 @@ effort: med
 tools: [read]
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Find what can't be turned into a test that would fail if the requirement broke. `nio check spec` has already proved

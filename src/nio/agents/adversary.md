@@ -6,6 +6,8 @@ effort: high
 tools: [read]
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Attack the spec on paper. For every place the outside world reaches the system, find an input, sequence or timing the

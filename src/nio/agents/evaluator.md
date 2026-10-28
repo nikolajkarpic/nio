@@ -6,6 +6,8 @@ effort: med
 tools: [read, edit]
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Rate every task's model tier and effort, so the human's estimate shows what the work will cost before anything is spent.

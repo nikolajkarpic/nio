@@ -12,6 +12,8 @@ one, it stops and sends the human to the architecture stage.
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Inputs and outputs
 
 - **Input:** the slug of a spec the jury approved.

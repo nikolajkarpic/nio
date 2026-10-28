@@ -6,6 +6,8 @@ effort: high
 tools: [read, edit, shell]   # shell: to run `nio check tasks`
 ---
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Job
 
 Cut the approved work into epics and tasks that one worker can each carry out from one context pack. On a full spec,
