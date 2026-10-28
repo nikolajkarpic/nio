@@ -8,6 +8,7 @@ retired: []
 
 ### CT-1 Refund an order (FR-1, FR-2) [research: RF-5]
 - Binding: `app.py:refund_order` (new)
+- Like: none: the first payment code in the app
 - Kind: function
 - Shape: `refund_order(order_id: str, by: str) -> Refund`
 - Accepts: the ID of an order in state `paid`

@@ -9,20 +9,25 @@ import subprocess
 
 from nio import agents, records, spec
 
-GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "quickstart.md"], "tasks": ["tasks.md"]}
+# the plan gate judges its four files against the spec and architecture.md: a change to either withdraws its approval
+GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "quickstart.md", "spec.md", "architecture.md"],
+         "tasks": ["tasks.md"]}
 KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "inconsistency"}
 SEVERITY = ["minor", "major", "blocker"]  # ascending
 CONTEXT = {"sufficient", "limited", "needs-more"}
 EVIDENCE = {"observed", "inferred"}
-DISPOSITIONS = {"spec-fix", "open-question", "accepted-risk", "out-of-scope"}
+DISPOSITIONS = {"spec-fix", "plan-fix", "spec-change", "open-question", "accepted-risk", "out-of-scope"}
+FIXES = {"spec-fix", "plan-fix", "spec-change", "open-question"}  # settled by changing the judged artefact; a lens checks each
+PLAN_ONLY = {"plan-fix", "spec-change"}  # spec-change: a plan finding rooted in the spec, sent to a change request
 HUMAN_ONLY = {"accepted-risk", "out-of-scope"}
 BY = {"agent", "grill", "human"}  # grill: the human answered a grill question
 MAX_FINDINGS = 5
 FIELDS = ["cites", "kind", "severity", "evidence", "quote", "situation", "fix"]
 CLOSED = {"refuted", "dropped", "merged", "overruled", "noted"}  # never need a disposition
 VERDICT = re.compile(r"^- (J-\d+):\s*(fixed|not fixed)\b\s*[—–:-]*\s*(.*)$")  # a fix verdict in a re-review (#52 FR-8)
-CORE = {"spec": ["testability", "logic"]}  # #47; the plan and tasks gates come with their stages
+CORE = {"spec": ["testability", "logic"], "plan": ["test-proof", "architecture-fit"]}  # #47; the tasks gate comes with its stage
 HIGH_RISK = {"auth", "money", "data-deletion", "migration"}
+PLAN_TRIGGERED = {"security", "risk-rollback"}  # the risk lenses the plan gate runs (#57 FR-5, FR-6)
 MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
 
 
@@ -122,6 +127,26 @@ def artefact(root, slug, gate):
     return "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in GATES[gate]) if p.exists())
 
 
+LIKE = re.compile(r"^- (?:Binding|Like):\s*`([^`:]+)", re.M)
+
+
+def sources(root, slug, gate):
+    """The files a juror at this gate is given, which are also the only files its quotes may come from (#57 FR-42,
+    FR-43). The plan gate adds CLAUDE.md and every file a contract binds or a `Like:` line names."""
+    folder = root / ".nio/specs" / slug
+    files = [folder / n for n in GATES[gate]]
+    if gate == "plan":
+        contracts = folder / "contracts.md"
+        named = LIKE.findall(contracts.read_text()) if contracts.exists() else []
+        files += [root / "CLAUDE.md"] + [root / n for n in dict.fromkeys(named)]
+    return [p for p in dict.fromkeys(files) if p.is_file() and p.resolve().is_relative_to(root.resolve())]
+
+
+def grounding(root, slug, gate):
+    """What a quote is checked against: the gate's artefact, plus at the plan gate the other files its jurors read."""
+    return "\n".join(p.read_text() for p in sources(root, slug, gate))
+
+
 def blob(root, text, write=False):
     """The git blob hash of `text`, stored in git's objects when `write` (the version a round judged, #27 FR-23)."""
     args = ["git", "hash-object", "--stdin"] + ["-w"] * write
@@ -155,20 +180,34 @@ def rung(risk):
 
 
 def plan(root, slug, gate, extra=()):
-    """(lines, ok): the lens runs this gate needs, why each runs, the tier, and the run budget. Not ok when the spec
-    hasn't passed the gate or a lens has no card; over the cap is reported for the human to choose, not refused."""
+    """(lines, ok): the lens runs this gate needs, why each runs, the tier, and the run budget. Not ok when the gate's
+    own check fails or a lens has no card; over the cap is reported for the human to choose, not refused."""
     if gate not in CORE:
-        raise ValueError(f"only the {', '.join(CORE)} gate is built so far")
-    errors, notes = spec.check(root, slug, gate=True)
-    if errors:
-        return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
+        raise ValueError(f"only the {', '.join(CORE)} gates are built so far")
+    if gate == "plan":
+        from nio import plan as plans  # plan.py reads the jury's ledger for `approved`
+        errors, notes = plans.check(root, slug, gate=True)
+        if errors:
+            return [f"`nio check plan {slug} --gate` fails ({len(errors)} errors): finish the plan first"], False
+    else:
+        errors, notes = spec.check(root, slug, gate=True)
+        if errors:
+            return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
     meta, _ = records.parse(spec.path(root, slug))
     risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
     lenses = {lens: "core" for lens in CORE[gate]}
-    for lens, flags in spec.LENSES.items():
-        if "(plan gate)" not in lens and flags & set(risk):
+    for key, flags in spec.LENSES.items():
+        lens, at_plan = key.removesuffix(" (plan gate)"), key.endswith("(plan gate)")
+        if flags & set(risk) and (lens in PLAN_TRIGGERED if gate == "plan" else not at_plan):
             lenses.setdefault(lens, "risk: " + ", ".join(sorted(flags & set(risk))))
-    if spec.SCOPE_NOTE in notes[0]:  # the check's own count, so the two never disagree
+    if gate == "plan":
+        contracts = (root / ".nio/specs" / slug / "contracts.md").read_text()
+        stateful = [m[1] for m in re.finditer(r"^### (CT-\d+)\b(?:(?!^### ).)*?^- State:", contracts, re.M | re.S)]
+        if stateful:
+            lenses.setdefault("logic", f"state: {', '.join(stateful)}")
+        if re.search(r"^## Data model\s*$", contracts, re.M):
+            lenses.setdefault("risk-rollback", "data model")
+    elif spec.SCOPE_NOTE in notes[0]:  # the check's own count, so the two never disagree
         lenses.setdefault("scope", f"more than {spec.SCOPE_FRS} FRs")
     for item in extra:  # the skill's own triggers (#27 FR-27), each with its reason
         lens, _, why = item.partition(":")
@@ -206,12 +245,12 @@ def fixes(led):
     listed = [f for f in led["findings"] if f["id"] in lst.get("ids", [])]
     if not listed or any(f["status"] == "open" for f in listed):
         return []
-    return [f["id"] for f in listed if f["disposition"] in ("spec-fix", "open-question")]
+    return [f["id"] for f in listed if f["disposition"] in FIXES]
 
 
 def pack_ids(led, lens):
     """The findings a lens gives a fix verdict on in a re-review (#52 FR-7, FR-9): its own, disposed as fixed."""
-    return [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] in ("spec-fix", "open-question")
+    return [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] in FIXES
             and any(s["lens"] == lens for s in f["sources"])]
 
 
@@ -374,7 +413,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
     text = artefact(root, slug, gate)
     if not text:
         raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
-    human = human_words(root, slug)
+    human, ground = human_words(root, slug), grounding(root, slug, gate)
     jury = root / ".nio/runs" / run / "jury"
     out, new = [], []
     for path in sorted(jury.glob(f"{gate}-*.md")):
@@ -382,16 +421,18 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         if path.stem != f"{gate}-refuter" and led["collected"].get(key) != sha:
             led["collected"][key] = sha
             new.append(path)
+    if new and gate == "plan" and (st := state(root, slug, led))[0] in ("with-human", "waiting-on-spec"):
+        raise ValueError(st[1])  # no round runs until the human rules, or the spec change is settled (#57 FR-50)
     if new:
         led["round"] += 1
         # the artefact this round judges, kept in git's object store so a later round can tell what changed (FR-23)
         led.setdefault("versions", {})[str(led["round"])] = blob(root, text, write=True)
         if fixes(led) and not led["list"].get("final"):  # the round that starts the one final fix check (#52 FR-24)
             led["list"]["final"] = led["round"]
-        out += merge(led, new, gate, slug, text, human)
+        out += merge(led, new, gate, slug, ground, human)
     review = phase(led) in ("re-review", "final")
     for f in led["findings"]:  # what the grounding sources now hold may ground a finding dropped earlier
-        if f["status"] == "dropped" and grounded(f, text, human):
+        if f["status"] == "dropped" and grounded(f, ground, human):
             f.update(status="open", reason="", validation="pending" if f["severity"] != "minor" else "grounded")
             if review and f["severity"] != "blocker":  # after the first review, a note (#52 FR-12)
                 f.update(status="noted", validation="grounded")
@@ -546,7 +587,7 @@ def add(led, f, juror, lens, rnd, text, human="", review=False):
     # reported again on a newer version than it was last raised on: the fix didn't take, a failed round
     if match["last_round"] < rnd and version(led, match["last_round"]) not in (None, version(led, rnd)):
         match["baseline"] = "unchanged"
-        if match["status"] in ("fixed", "open", "overruled") or match["disposition"] in ("spec-fix", "open-question"):
+        if match["status"] in ("fixed", "open", "overruled") or match["disposition"] in FIXES:
             match.update(status="open", rounds=match["rounds"] + 1, disposition="", by="", note="")
     elif match["status"] == "fixed":  # raised again on the very version it was marked fixed on: it isn't fixed
         match.update(status="open", baseline="unchanged")
@@ -588,13 +629,20 @@ def refute(led, path):
     return out
 
 
-def dispose(root, slug, gate, fid, disposition, by, note):
+def dispose(root, slug, gate, fid, disposition, by, note, change=""):
     led = load(root, slug, gate)
     f = next((g for g in led["findings"] if g["id"] == fid), None)
     if not f:
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
     if disposition not in DISPOSITIONS or by not in BY or not note.strip():
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
+    if disposition in PLAN_ONLY and gate != "plan":
+        raise ValueError(f"`{disposition}` belongs to the plan gate")
+    if disposition == "spec-change":  # #57 FR-34, FR-41: the change record the finding waits on
+        path, meta = change_record(root, change)
+        if not path:
+            raise ValueError(f"spec-change needs --change naming a change record; `{change}` isn't one")
+        note = f"{change}: {note}"
     if disposition in HUMAN_ONLY and by != "human":
         raise ValueError(f"{disposition} is the human's call (--by human)")
     if any(s["lens"] == "deferred" for s in f["sources"]) and by == "agent":
@@ -603,6 +651,8 @@ def dispose(root, slug, gate, fid, disposition, by, note):
         still = dict(spec.items(spec.sections(spec.path(root, slug).read_text().splitlines()).get("Deferred", [])))
         if f["cites"][0] in still:
             raise ValueError(f"{f['cites'][0]} is still in `## Deferred`; a spec-fix settles it there first")
+    if f["status"] == "disposed" and f["disposition"] == "spec-change" and state(root, slug, led)[0] == "waiting-on-spec":
+        raise ValueError(f"{fid} is disposed and waits on {(CHANGE.findall(f['note']) or ['its change request'])[0]}")
     if f["status"] != "open" and not (by == "human" and f["status"] == "disposed"):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
     f.update(status="disposed", disposition=disposition, by=by, note=note)
@@ -646,7 +696,7 @@ def compose(led, current):
             still = [f["id"] for f in flagged if f["status"] == "open"]
             if still:
                 return "human", [f"the final fix check flagged these; fix or accept each as risk: {', '.join(still)}"], still
-            done = [f["id"] for f in flagged if f["disposition"] in ("spec-fix", "open-question")]
+            done = [f["id"] for f in flagged if f["disposition"] in FIXES]
             return "approved", [f"fixed after the final fix check, judged by no lens: {', '.join(done)}"] * bool(done), []
         if ph == "final":  # passed, then edited: approved, saying no lens judged the edit (#52 FR-5)
             return "approved", [f"the {led['gate']} changed after the final fix check; no lens judged that change"], []
@@ -678,10 +728,10 @@ def compose(led, current):
              if f["status"] == "open" and f["rounds"] >= 2 and (ph == "first" or (ph == "re-review" and blocker))]
     # disposed as a spec-fix, yet the artefact (== judged, see above) reads as it did when the finding was raised: the
     # fix never landed, or was undone; a fix judged in a later round that skipped the finding's lens counts
-    unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] == "spec-fix"
+    unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] in ("spec-fix", "plan-fix")
                  and version(led, f["last_round"]) == judged]
     if unapplied:
-        return "human" if ph == "final" else "rejected", [f"spec-fix without a change to the {led['gate']}: {', '.join(unapplied)}"], []
+        return "human" if ph == "final" else "rejected", [f"{'plan' if led['gate'] == 'plan' else 'spec'}-fix without a change to the {led['gate']}: {', '.join(unapplied)}"], []
     if stuck or split or stale:
         return "human", stuck + split + stale, []
     unresolved = [f for f in led["findings"] if f["status"] == "open"]
@@ -700,6 +750,7 @@ def check(root, slug, gate, record=False, human=""):
     `human` is the human closing the gate themselves, with their reason: the outcome is `human`, never `approved`.
     Returns (outcome, lines to print)."""
     led = load(root, slug, gate)
+    reopened = reopen_dropped(root, led) if gate == "plan" else []
     current = blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
     outcome, reasons, listed = compose(led, current)
     if human.strip():
@@ -712,7 +763,7 @@ def check(root, slug, gate, record=False, human=""):
         outcome, reasons = "human", [f"the human closed the gate: {closed[2]}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
     led["outcome"] = outcome
     unresolved = sum(f["status"] == "open" for f in led["findings"])
-    lines = [f"outcome: {outcome}", f"round: {led['round']}", f"unresolved: {unresolved}", *[f"- {r}" for r in reasons]]
+    lines = [f"outcome: {outcome}", f"round: {led['round']}", f"unresolved: {unresolved}", *[f"- {r}" for r in reasons], *reopened]
     lines += [f"vote {lens}: {', '.join(f'{n}={v}' for n, v in js)}" for lens, js in votes(led).items()]
     notes = [f for f in led["findings"] if f["status"] == "noted"]  # raised below blocker after the first review (#52 FR-12)
     lines += ["notes (no ruling needed):"] * bool(notes) + [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}" for f in notes]
@@ -722,6 +773,9 @@ def check(root, slug, gate, record=False, human=""):
     if record and outcome in ("approved", "rejected", "human") and [led["round"], outcome] not in led["recorded"]:
         lines.append(f"recorded {verdict(root, led, outcome, reasons).relative_to(root)}")
         led["recorded"].append([led["round"], outcome])
+    if gate == "plan":
+        save(root, led)
+        lines.insert(1, "state: {} ({})".format(*state(root, slug)))
     if record and listed and not closed:  # the list the human settles, or what the final check flagged (#52 FR-24)
         if phase(led) == "final":
             led["list"]["flagged"] = sorted(set(led["list"]["flagged"]) | set(listed), key=lambda i: int(i[2:]))
@@ -729,6 +783,59 @@ def check(root, slug, gate, record=False, human=""):
             led["list"] = {"round": led["round"], "ids": listed, "final": None, "flagged": []}
     save(root, led)
     return outcome, lines
+
+
+CHANGE = re.compile(r"\bC-\d{6}-[a-z2-7]{4}\b")
+
+
+def change_record(root, cid):
+    """(path, meta) of the change record `cid`, or (None, {}) when there is none."""
+    for path in (root / ".nio/memory").rglob(f"{cid}-*.md"):
+        meta, _ = records.parse(path)
+        if meta.get("type") == "change":
+            return path, meta
+    return None, {}
+
+
+def standing(root, slug, gate):
+    """The gate's outcome on its current artefact, as `check` would print it, without saving anything."""
+    led = load(root, slug, gate)
+    current = blob(root, artefact(root, slug, gate))
+    outcome = compose(led, current)[0]
+    closed = led.get("closed") or []
+    return "closed" if closed[:2] == [led["round"], current] and outcome != "approved" else outcome
+
+
+def state(root, slug, led=None):
+    """(state, reason) of the plan gate, from its ledger, the change records its spec-rooted findings name, and the spec
+    gate (#57 FR-35, FR-47, FR-49, FR-50; the spec's state table "plan gate")."""
+    led = led or load(root, slug, "plan")
+    for f in led["findings"]:
+        if f["status"] == "disposed" and f["disposition"] == "spec-change":
+            cid = (CHANGE.findall(f["note"]) or [""])[0]
+            outcome = change_record(root, cid)[1].get("outcome")
+            if outcome == "pending" or outcome == "accepted" and standing(root, slug, "spec") not in ("approved", "closed"):
+                return "waiting-on-spec", f"the plan jury is paused until the spec change is settled ({cid}, for {f['id']})"
+    now = standing(root, slug, "plan")
+    if now == "closed":
+        return "closed-by-human", "the human closed the plan gate"
+    if now == "approved":
+        return "approved", "the plan jury approved the plan"
+    if now == "human":
+        return "with-human", "the plan gate waits on the human's ruling"
+    return "open", f"the plan jury's outcome is {now}"
+
+
+def reopen_dropped(root, led):
+    """A spec-rooted finding whose change request the human rejected goes back to them, open (#57 FR-49)."""
+    out = []
+    for f in led["findings"]:
+        if f["status"] == "disposed" and f["disposition"] == "spec-change":
+            cid = (CHANGE.findall(f["note"]) or [""])[0]
+            if change_record(root, cid)[1].get("outcome") == "rejected":
+                f.update(status="open", disposition="", by="", note=f"{cid} was dropped; fix it in the plan or accept the risk")
+                out.append(f"reopened {f['id']}: {cid} was dropped")
+    return out
 
 
 def verdict(root, led, outcome, reasons):

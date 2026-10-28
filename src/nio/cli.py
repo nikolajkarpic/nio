@@ -30,6 +30,7 @@ def main():
     c.add_argument("what", nargs="?", choices=["spec", "plan"])
     c.add_argument("slug", nargs="?")
     c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
+    c.add_argument("--approved", action="store_true", help="plan only: exit 0 when the tasks stage may start on this spec")
     c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
@@ -80,10 +81,12 @@ def main():
     jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS))
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
     jd.add_argument("--note", required=True)
+    jd.add_argument("--change", default="", metavar="C-ID", help="spec-change only: the change record the finding waits on")
+    jl = jsub.add_parser("files", help="the files a juror at this gate reads, and the only files its quotes may come from")
     jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
     jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
     jk.add_argument("--human", default="", metavar="REASON", help="the human closes the gate themselves: outcome human, with their reason")
-    for s in (jp, jg, jf, jc, jk):  # dispose takes them first, before the finding
+    for s in (jp, jg, jf, jc, jk, jl):  # dispose takes them first, before the finding
         s.add_argument("slug")
         s.add_argument("gate", choices=sorted(jury.GATES))
     a = p.parse_args()
@@ -110,6 +113,15 @@ def main():
     elif a.cmd == "check" and a.what:
         if not a.slug:
             sys.exit(f"error: give the spec's slug: nio check {a.what} <slug>")
+        if a.approved:
+            if a.what != "plan":
+                sys.exit("error: --approved is for `nio check plan`")
+            try:
+                ok, why = plan.approved(root, a.slug)
+            except ValueError as e:
+                sys.exit(f"error: {e}")
+            print(why)
+            sys.exit(0 if ok else 1)
         try:
             errors, notes = {"spec": spec, "plan": plan}[a.what].check(root, a.slug, a.gate, a.base)
         except ValueError as e:
@@ -183,12 +195,14 @@ def main():
                 ids, rerun, near, secs = jury.changed(root, a.slug, a.gate)
                 print(f"changed: {', '.join(ids) or 'nothing'}\nsections: {', '.join(secs) or 'nothing'}\n"
                       f"neighbours: {', '.join(near) or 'nothing'}\nre-run: {', '.join(rerun) or 'nothing'}")
+            elif a.jury_cmd == "files":
+                print("\n".join(str(f.relative_to(root)) for f in jury.sources(root, a.slug, a.gate)))
             elif a.jury_cmd == "fixcheck":
                 print("\n".join(jury.fixcheck(root, a.slug, a.gate, a.lens, a.blocker)))
             elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
             elif a.jury_cmd == "dispose":
-                jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note)
+                jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note, a.change)
                 print(f"{a.id}: {a.disposition} by {a.by}")
             else:
                 outcome, lines = jury.check(root, a.slug, a.gate, a.record, a.human)

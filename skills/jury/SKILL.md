@@ -1,6 +1,6 @@
 ---
 name: jury
-description: Take a settled NIO spec to a verdict. Independent lens subagents judge it, the refuter validates their findings, and `nio jury` composes the outcome. Use after @nio:grill finishes, when the human asks to run the jury, judge or approve a spec, or to continue a jury after fixes.
+description: Take a settled NIO spec, or its plan, to a verdict. Independent lens subagents judge it, the refuter validates their findings, and `nio jury` composes the outcome. Use after @nio:grill or @nio:plan finishes, when the human asks to run the jury, judge or approve a spec or a plan, or to continue a jury after fixes.
 ---
 
 # @nio:jury
@@ -8,13 +8,14 @@ description: Take a settled NIO spec to a verdict. Independent lens subagents ju
 Takes a spec that passes `nio check spec <slug> --gate` to a verdict: approved, rejected (fix and re-run) or the
 human's call. The lenses are independent agents that judge the spec in a fresh context. You pick them, build their
 packs, save what they return, and drive `nio jury`, which grounds, merges, validates and composes. You never judge the
-spec yourself. The spec gate is the only gate so far; the plan and tasks gates come with their stages.
+spec yourself. The steps below are the spec gate's; the plan gate runs the same steps with the differences in
+"At the plan gate". The tasks gate comes with its stage.
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
 ## Inputs and outputs
 
-- **Input:** the slug of a spec the grill finished.
+- **Input:** the slug of a spec the grill finished, or of a spec whose plan passes `nio check plan <slug> --gate`.
 - **Outputs:**
   - lens outputs in `.nio/runs/<run>/jury/`;
   - the findings ledger `.nio/specs/<slug>/jury/spec.md` (and its `.json`);
@@ -116,6 +117,28 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    check, run the same way; what it flags goes to the human, and once they settle that the jury ends without another
    check. A finding that has failed two rounds goes to the human, described in plain words, not to another re-run
    (`nio jury check` says so).
+
+## At the plan gate
+
+Run the steps above with `plan` in place of `spec` (`nio jury plan <slug> plan`, `plan-<lens>.md`, the ledger
+`jury/plan.md`), with these differences:
+- **Packs.** Each lens gets the files `nio jury files <slug> plan` prints, plus the `nio check plan <slug>` output and
+  the lens output format. Those files are also the only ones a quote may come from. The plan gate has no scope or
+  consistency lens of the skill's own.
+- **Fixes in the plan.** A finding whose cause is in the plan is a `plan-fix`: fix the plan files, and dispose it as you
+  would a `spec-fix` (you for a fix that changes no behaviour, the human otherwise).
+- **Findings rooted in the spec.** When a finding's cause is in the approved spec (the spec leaves a limit unstated, two
+  FRs contradict, an AC can't be met as written), never fill the gap in the plan. Propose it to the human as rooted in
+  the spec, with a draft change request (`@nio:remember`, `against` the spec). Only once they confirm, dispose it:
+  `nio jury dispose <slug> plan J-n spec-change --by human --note "<why>" --change C-<id>`. A second spec-rooted finding
+  joins the same open change request. The plan jury is then paused (`nio jury check <slug> plan` prints
+  `state: waiting-on-spec`) until the spec jury re-approves the changed spec, or the human rejects the change request,
+  which hands the finding back to them.
+- **With the human.** While `nio jury check <slug> plan` prints `state: with-human`, collect refuses a new round: show
+  the human the list and wait for their ruling.
+- **Approval.** When the outcome is `approved`, or the human closed the gate with a reason, and the human asks, commit
+  the four plan files and the plan verdict record as one `nio: approve plan` commit. `nio check plan <slug> --approved`
+  is what the tasks stage reads; a later spec change withdraws the approval until the plan jury re-checks what changed.
 
 ## When to stop
 

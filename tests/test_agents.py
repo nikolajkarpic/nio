@@ -111,7 +111,41 @@ def test_verify():
     print("ok")
 
 
+def card(name):
+    meta, body, path = agents.load(setup())[name]
+    assert not agents.check(name, meta, body), agents.check(name, meta, body)
+    return meta, body
+
+
+def test_ac12_test_proof_exists_with_an_at_plan_secti():
+    meta, body = card("test-proof")
+    assert (meta["tier"], meta["effort"], meta["tools"]) == ("max", "med", ["read"]) and "\n## At plan\n" in body
+    print("ok")
+
+
+def test_ac20_architecture_fit_exists_with_an_at_plan():
+    meta, body = card("architecture-fit")
+    assert (meta["tier"], meta["effort"]) == ("max", "med") and "\n## At plan\n" in body
+    print("ok")
+
+
+def test_ac46_risk_rollback_exists_with_an_at_plan_se():
+    meta, body = card("risk-rollback")
+    assert (meta["tier"], meta["effort"]) == ("max", "med") and "\n## At plan\n" in body
+    print("ok")
+
+
+def test_ac47_it_has_an_at_plan_section_next_to_at_spe():
+    _, body = card("security")
+    assert "\n## At spec\n" in body and "\n## At plan\n" in body
+    print("ok")
+
+
 if __name__ == "__main__":
     test_shipped_cards_are_valid()
     test_sync()
     test_verify()
+    test_ac12_test_proof_exists_with_an_at_plan_secti()
+    test_ac20_architecture_fit_exists_with_an_at_plan()
+    test_ac46_risk_rollback_exists_with_an_at_plan_se()
+    test_ac47_it_has_an_at_plan_section_next_to_at_spe()

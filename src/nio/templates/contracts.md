@@ -14,6 +14,7 @@ quote a constraint word for word when a builder needs it here. Open questions go
 
 ### CT-1 <name> (FR-1, FR-2) [default]
 - Binding: `<file>:<symbol>` (new | existing)    <!-- the symbol is optional when the whole file is the contract -->
+- Like: `<file>:<symbol>`    <!-- new contracts only: the existing code it follows, or `none: <reason>` when nothing is like it -->
 - Kind: <function | class | cli | http | event | file | config>
 - Shape: `<signature, command line or message>` | see `<project's own schema file>#<pointer>`
 - Accepts: <each input and its limits>
