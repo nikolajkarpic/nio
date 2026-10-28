@@ -1,7 +1,7 @@
 ---
 gate: spec
 subject: 2026-10-28-flow-state
-round: 4
+round: 5
 outcome: approved
 ---
 # Spec jury: 2026-10-28-flow-state
@@ -34,6 +34,7 @@ outcome: approved
 | J-22 | major | contradiction | FR-9, FR-3 | consistency | confirmed | fixed | spec-fix (grill) | absent, 0 |
 | J-23 | minor | ambiguity | FR-40, AC-45 | consistency | grounded | fixed | spec-fix (agent) | absent, 0 |
 | J-24 | minor | ambiguity | FR-62, AC-65 | logic | grounded | noted |  | new, 0 |
+| J-25 | minor | risk | Decision table: Owning stage (row `research.md`), Decisions Q26 | adversary | grounded | noted |  | new, 0 |
 
 ### J-1 The override has no check on who gives it, so the agent the guards watch can pass any guard
 - quote: "THE SYSTEM SHALL pass the stage and append a history line holding the failing guard output and the reason"
@@ -225,12 +226,18 @@ outcome: approved
 - fix: state in FR-62 that the printed gate is the jury's name (`spec`, `plan`, `tasks`) and not the flow stage name
 - validation: grounded: raised in a re-review below blocker: a note only
 
+### J-25 Research edits after approval are ignored, including rewrites of existing facts
+- quote: "Edits to `research.md` after approval send nothing back"
+- situation (adversary): after the spec jury approves, someone rewrites an existing finding in `research.md`, for example changing a cited fact the spec relies on. The effort stays at its current stage and the spec jury never re-checks it, because the table treats an appended note and an overwritten fact the same.
+- fix: either accept the risk and say so in Q26, or send the effort back only when lines already in `research.md` change and not when lines are appended.
+- validation: grounded: raised in a re-review below blocker: a note only
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| spec-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 4 |
-| spec-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 4 |
-| spec-logic | logic | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 4 |
-| spec-scope | scope | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 4 |
-| spec-testability | testability | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 4 |
+| spec-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 5 |
+| spec-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 5 |
+| spec-logic | logic | juror / claude-code / sonnet-5.5 | sufficient | yes | 1 | 5 |
+| spec-scope | scope | juror / claude-code / claude-haiku-5-5 | limited | yes | 1 | 5 |
+| spec-testability | testability | juror / claude-code / sonnet-5-5 | sufficient | yes | 1 | 5 |

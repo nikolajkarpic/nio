@@ -320,7 +320,7 @@ file sends the effort back to the stage that owns the file, and the stop list pa
 | Changed file (intake.md, research.md, spec.md, architecture.md, plan files, tasks.md) | → Pending change request against it sends the effort to | → Edited after its gate approved it sends the effort to | Src |
 | --- | --- | --- | --- |
 | intake.md | drafting | ignore | [agent] |
-| research.md | grilling | grilling | [research: RF-2] |
+| research.md | grilling | ignore | [human] |
 | spec.md | grilling | spec_jury | [human] |
 | architecture.md | arch_grilling | ignore | [agent] |
 | plan files | planning | plan_jury | [human] |
@@ -391,5 +391,6 @@ file sends the effort back to the stage that owns the file, and the stop list pa
 - No slug means the effort with the newest history line; there is no local pointer (Q18, FR-9).
 - A torn last history line is cut off and noted; any other damage stops the effort and shows as broken (Q19, FR-59, FR-60).
 - `--human` at a jury gate goes through `nio jury check --human`, so the jury's record and the flow agree (Q24, FR-62, C-261028-quyk).
+- Edits to `research.md` after approval send nothing back, since later stages append their notes there; a pending change request against it still does (Q26, C-261028-bdn6).
 
 ## Open points

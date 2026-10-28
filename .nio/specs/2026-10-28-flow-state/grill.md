@@ -553,3 +553,23 @@ Options:
 2. Allow direct git calls: a change request lets `nio flow` call git itself for the commit. Fine, but a second way to run git in the codebase.
 3. Make every git call report errors: change the helper for all callers. Consistent everywhere, but it touches code this feature otherwise only reads.
 Refs: J-1 · CT-6, CT-11 · architecture.md · src/nio/records.py:git · RF-10
+
+## Q25 · J-1 (plan) · 2026-10-28
+Question: Pick one: the approval commit needs git's exit code, which the existing git helper throws away; how should the plan get it?
+Options:
+1. Extend helper, note jury fns (recommended)
+2. Allow direct git calls
+3. Every git call reports errors
+Answer: 1. Extend helper, note jury fns: the existing git helper gains an optional "return the exit code and error" mode, with every current caller unchanged; a change request adds that and the two jury functions to the note. Smallest change, and the note stays true. [human]
+Patched: architecture.md through C-261028-dclz; CT-19, CT-11, CT-6, CT-7 (logged late: this answer entry was missed when the session recorded it, found by `nio flow status`)
+
+## Session 5 · 2026-10-28 · found by running the built `nio flow` on this repo
+
+## Q26 · Owning stage, research.md row · 2026-10-28
+Question: Pick one: the plan stage adds notes to the research file, and the new flow then sends the whole effort back to grilling; which rule changes?
+Options:
+1. Edits to research notes don't send back (recommended)
+2. Judge it with the latest gate
+3. Plan writes its own notes file
+Answer: 1. Edits to research notes don't send back: a change request sets the research file's "edited after approval" rule to ignore, as for the intake and architecture files; a pending change request against it still sends the effort back. [human]
+Patched: spec Owning stage row research.md; C-261028-bdn6; src/nio/flow.py OWNING

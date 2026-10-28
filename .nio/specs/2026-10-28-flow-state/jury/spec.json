@@ -1,7 +1,7 @@
 {
   "gate": "spec",
   "subject": "2026-10-28-flow-state",
-  "round": 4,
+  "round": 5,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -28,7 +28,12 @@
     "R-261028-hjdt/spec-consistency.md": "32fb1942a0a895dd02050c5b262fe5f88a63f2c7439af0d5cd19d32e3a44934b",
     "R-261028-hjdt/spec-logic.md": "b336199fd401fe085df159d26d2146bac5cc9fedc223d556941397bc3bb807bd",
     "R-261028-hjdt/spec-scope.md": "08981bd48e139a1de305c470aa7c6c3b986ad0d6938c8512f57cf3d813a3c39e",
-    "R-261028-hjdt/spec-testability.md": "f7febd44dc2e28475255e9d8f7face9eebc536d3c33d5dde77782e14e1d15adc"
+    "R-261028-hjdt/spec-testability.md": "f7febd44dc2e28475255e9d8f7face9eebc536d3c33d5dde77782e14e1d15adc",
+    "R-261028-bqep/spec-adversary.md": "1fbcbd7677739e8c9521da006781c88d7c9219dbd5e019f7af2d88d113cedf8c",
+    "R-261028-bqep/spec-consistency.md": "d4249dd96bf1ca06aa0f38bc787f8c6b32d664920f5c0b6326eff0f35914dfcd",
+    "R-261028-bqep/spec-logic.md": "a7c264d5cdd36be689782c5f30f1bb2bc54a23889b295076e534966d46f1790d",
+    "R-261028-bqep/spec-scope.md": "9bbfa85afa06c423fbdf0fd745a97325b388495549144cc0b3e04914ee2ae0cb",
+    "R-261028-bqep/spec-testability.md": "62397239de83f54b8eb2992cd19f13f852536793234699db85e6869764de214b"
   },
   "jurors": {
     "spec-adversary": {
@@ -38,9 +43,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
-      "judged": 4
+      "round": 5,
+      "version": "9807a4b79e9c34aa8289b872ff0290c473250076",
+      "judged": 5
     },
     "spec-consistency": {
       "attempts": 1,
@@ -49,42 +54,42 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
-      "judged": 4
+      "round": 5,
+      "version": "9807a4b79e9c34aa8289b872ff0290c473250076",
+      "judged": 5
     },
     "spec-logic": {
       "attempts": 1,
       "lens": "logic",
-      "by": "juror / claude-code / claude-sonnet-5-5",
+      "by": "juror / claude-code / sonnet-5.5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
-      "judged": 4
+      "round": 5,
+      "version": "9807a4b79e9c34aa8289b872ff0290c473250076",
+      "judged": 5
     },
     "spec-scope": {
       "attempts": 1,
       "lens": "scope",
       "by": "juror / claude-code / claude-haiku-5-5",
-      "context": "sufficient",
+      "context": "limited",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
-      "judged": 4
+      "round": 5,
+      "version": "9807a4b79e9c34aa8289b872ff0290c473250076",
+      "judged": 5
     },
     "spec-testability": {
       "attempts": 1,
       "lens": "testability",
-      "by": "juror / claude-code / claude-sonnet-5-5",
+      "by": "juror / claude-code / sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
-      "judged": 4
+      "round": 5,
+      "version": "9807a4b79e9c34aa8289b872ff0290c473250076",
+      "judged": 5
     }
   },
   "findings": [
@@ -1022,6 +1027,40 @@
       "rounds": 0,
       "first_round": 4,
       "last_round": 4
+    },
+    {
+      "id": "J-25",
+      "title": "Research edits after approval are ignored, including rewrites of existing facts",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "Decision table: Owning stage (row `research.md`)",
+        "Decisions Q26"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Edits to `research.md` after approval send nothing back"
+      ],
+      "fix": "either accept the risk and say so in Q26, or send the effort back only when lines already in `research.md` change and not when lines are appended.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "after the spec jury approves, someone rewrites an existing finding in `research.md`, for example changing a cited fact the spec relies on. The effort stays at its current stage and the spec jury never re-checks it, because the table treats an appended note and an overwritten fact the same.",
+          "severity": "minor",
+          "round": 5
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 5,
+      "last_round": 5
     }
   ],
   "outcome": "approved",
@@ -1041,13 +1080,18 @@
     [
       4,
       "approved"
+    ],
+    [
+      5,
+      "approved"
     ]
   ],
   "versions": {
     "1": "a68d1e0702796bc3071ae3092145aa1a3e386450",
     "2": "bb92963b5029af3a3372dc042b054e3370c68c0b",
     "3": "92b69aba535ce285803d9f88616974b95b185b85",
-    "4": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc"
+    "4": "2689ead8dc6cd5e48e5d4661bc9bb03dbd97c2fc",
+    "5": "9807a4b79e9c34aa8289b872ff0290c473250076"
   },
   "list": {
     "round": 2,
