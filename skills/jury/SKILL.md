@@ -108,7 +108,8 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    session settles one by removing its DF line from `## Deferred` (DF-n moves to `retired:`) before `--by grill`, which only a session the human answered may record;
    `nio jury dispose` refuses the spec-fix while the line is still there.
 8. **Re-review.** After the fixes, `nio check spec <slug> --gate` must pass again. Run `nio jury changed <slug> spec`:
-   it lists the IDs and sections the fixes changed, their neighbours, and the lenses to re-run. Start a new run and
+   it lists the IDs and sections the fixes changed, their neighbours, and the lenses to re-run. The same
+   applies when a change request edits a gate that was approved or closed: every lens that judged it re-checks the change. Start a new run and
    give each of those lenses its fix-check pack, `nio jury fixcheck <slug> spec --lens <lens>`, exactly as printed and
    nothing else of the spec. A lens answers fixed or not fixed for each finding in its pack and raises only blockers; a
    new major or minor becomes a note. An escalation juror gets `--blocker J-<n>` instead and judges only that blocker.

@@ -972,7 +972,7 @@ def set_change(root, cid, outcome):
 def approve_spec(root, run):
     plan_lens(root, run, "logic", gate="spec")
     jury.collect(root, PSLUG, "spec", run)
-    assert jury.check(root, PSLUG, "spec")[0] == "approved"
+    assert jury.check(root, PSLUG, "spec", record=True)[0] == "approved"
 
 
 def approve_plan(root, run="R-P1"):
@@ -1176,6 +1176,7 @@ def test_ac36_only_fr_4_and_the_items_around_it_are_in():
     pack = "\n".join(jury.fixcheck(root, PSLUG, "spec", "logic"))
     assert "### FR-1" in pack and "### FR-2\n" not in pack
     set_change(root, cid, "accepted")
+    assert jury.changed(root, PSLUG, "spec")[1] == ["logic"]  # the approved spec gate re-checks the change (FR-35)
     assert jury.state(root, PSLUG)[0] == "waiting-on-spec"  # accepted, but not re-approved yet
     approve_spec(root, "R-S2")
     assert jury.state(root, PSLUG)[0] == "open"
