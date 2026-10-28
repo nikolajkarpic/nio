@@ -1,7 +1,7 @@
 {
   "gate": "tasks",
   "subject": "2026-10-28-flow-state",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "executability"
@@ -10,19 +10,20 @@
     "R-261028-t55l/tasks-executability.md": "9be2461daa2a1a80aefff492a3aa0591bc505466ffddeb62ff97949a071a1bf7",
     "R-261028-t55l/tasks-refuter.md": "adb16699daf286a3baa017c9f83de6aed4b804bab55a9be260f532db5f63e1af",
     "R-261028-hlh3/tasks-executability.md": "49043491853eb9887fa69dd0ed8e02354c066e960683babce7a1d4f5ee2e1831",
-    "R-261028-hlh3/tasks-refuter.md": "d71f818bfd5462c85a78c641530f4ae8ef6fc40c1963344bb847d23b41d221d9"
+    "R-261028-hlh3/tasks-refuter.md": "d71f818bfd5462c85a78c641530f4ae8ef6fc40c1963344bb847d23b41d221d9",
+    "R-261028-rf3o/tasks-executability.md": "9e236401cc21dc013c83daac3d5a61052ebdfff4d914664feef02654d896dc9b"
   },
   "jurors": {
     "tasks-executability": {
       "attempts": 1,
       "lens": "executability",
-      "by": "juror / claude-code / opus-5.5",
+      "by": "juror / claude-code / claude-haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "b3fa0048bbe5f7644689187653b68eaf06d0745c",
-      "judged": 2
+      "round": 3,
+      "version": "ee8b23d936069539489e29c253266a00db19ddc6",
+      "judged": 3
     }
   },
   "findings": [
@@ -233,10 +234,15 @@
     [
       2,
       "approved"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "4c8346b3e21eb097b5d92804f5f3e8f6685d7bda",
-    "2": "b3fa0048bbe5f7644689187653b68eaf06d0745c"
+    "2": "b3fa0048bbe5f7644689187653b68eaf06d0745c",
+    "3": "ee8b23d936069539489e29c253266a00db19ddc6"
   }
 }
