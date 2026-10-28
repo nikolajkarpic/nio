@@ -1,0 +1,242 @@
+{
+  "gate": "tasks",
+  "subject": "2026-10-28-flow-state",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261028-t55l/tasks-executability.md": "9be2461daa2a1a80aefff492a3aa0591bc505466ffddeb62ff97949a071a1bf7",
+    "R-261028-t55l/tasks-refuter.md": "adb16699daf286a3baa017c9f83de6aed4b804bab55a9be260f532db5f63e1af",
+    "R-261028-hlh3/tasks-executability.md": "49043491853eb9887fa69dd0ed8e02354c066e960683babce7a1d4f5ee2e1831",
+    "R-261028-hlh3/tasks-refuter.md": "d71f818bfd5462c85a78c641530f4ae8ef6fc40c1963344bb847d23b41d221d9"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "b3fa0048bbe5f7644689187653b68eaf06d0745c",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "E-1 tasks are proved by tests that need commands and helpers from tasks that depend on them",
+      "kind": "inconsistency",
+      "severity": "blocker",
+      "cites": [
+        "T-1",
+        "T-2",
+        "T-4",
+        "TC-6",
+        "TC-12",
+        "TC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-6, TC-7, TC-9, TC-58, TC-59, TC-73, TC-74, TC-75",
+        "- Action: `flow.start(root, \"S\", by=\"orchestrator / claude-code / opus\")`.",
+        "### T-6 The test helpers `effort`, `history`, `cli`, `snap` in tests/test_flow.py, and `flow.pick` / `flow.kind` (CT-4)",
+        "- Action: `flow.done(root, \"grilling\", \"S\")`."
+      ],
+      "fix": "give T-1, T-2 and T-4 only the tests their own code can pass, or new unit TCs that call `load`, `record`, `lock` and `guard` directly. Move TC-6, TC-12, TC-13 to TC-16 and TC-56 to T-8, T-9 and T-12, where most of them already appear. Or move T-6's helpers ahead of E-1 and make T-1, T-2 and T-4 depend on it, adding `tests/test_flow.py` to their Files.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a worker gets T-1 with Files `src/nio/flow.py` only. TC-6 calls `flow.start` (built in T-8, which depends on T-1) and the `effort` helper (built in T-6, which depends on T-1). TC-74 and TC-75 call `flow.park` (T-9). The test can't be written in a file the task doesn't list, and it can't pass. The same holds for T-2: TC-12 and TC-56 run `cli(root, \"park\", ...)`, and `park` comes in T-9. It holds for T-4 too: TC-13 to TC-16 call `flow.done`, which comes in T-12. Each worker either stops or invents an untested stub, and nothing proves the task is done.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-1's Test lists TC-6 (calls `flow.start`, built in T-8, and the `effort` helper from T-6) and TC-74/75 (call `flow.park`, T-9), but its Files are only `src/nio/flow.py`. T-2 (TC-12, TC-56 run `park`) and T-4 (TC-13 to TC-16 call `flow.done`, T-12) have the same problem. Nothing in tests.md or tasks.md lets those tests pass at that point.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-6 (helpers) moved first; T-1, T-2, T-3, T-4 depend on it, list tests/test_flow.py and test their own code directly; command-level tests named as proved later by T-8, T-9, T-10, T-12, T-13, T-16, T-19",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "T-5's test runs `start` and `next`, which come later and depend on T-5",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "T-5",
+        "TC-3",
+        "T-7",
+        "T-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-3, TC-12, TC-77",
+        "- Action: `cli(root, \"start\", \"2026-10-20-refunds\")`, then `cli(root, \"next\")`.",
+        "- Depends on: T-2, T-5, T-7"
+      ],
+      "fix": "give T-5 only TC-77, plus a test that a stub `ValueError`, `Broken` or `Busy` prints `error: ...` and exits 1, and add `tests/test_flow.py` to its Files. TC-3 already sits in T-8, and TC-12 already sits in T-9.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-5 builds only the argparse wiring. TC-3 needs `flow.start` (T-8, which depends on T-5) and `flow.next_step` (T-7). TC-12 needs `park` (T-9). The `cli` helper comes from T-6. So T-5's tests fail whatever the worker does, and its Files list no test file.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-5's Test lists TC-3, which runs `cli(root,\"start\",...)` then `next`. `start` is T-8, which depends on T-5, and `next` is T-7. TC-12 needs `park` (T-9), and T-5's Files list no test file.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-5 tests only TC-77 plus the error-to-exit-1 check, with tests/test_flow.py and T-6",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "T-11 runs in parallel while writing to the test file E-2 is building",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "T-11",
+        "T-6",
+        "T-7",
+        "T-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`src/nio/agents/testability.md`, `tests/test_flow.py`",
+        "- Parallel: yes"
+      ],
+      "fix": "set T-11 to `Parallel: no` and make it depend on T-6. Or put TC-11 in its own test file so T-11 shares no file with E-2.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-11 depends on nothing and runs alongside T-6 to T-10, and all of them edit tests/test_flow.py. T-6 creates the module's helpers and test layout while T-11 adds `test_ac11_no_hand_edit_instruction` to the same file. That file already holds the 4 waiting #42 tests. Two workers' edits then collide or overwrite each other, depending on which one lands first.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-11 has `Depends on: none` and `Parallel: yes`, and its Files include `tests/test_flow.py`. T-6 to T-10 also edit that file, and T-6 creates its helpers. Nothing orders T-11 against them, so the shared-file collision is real.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-11 is Parallel: no and depends on T-6",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "T-7's line-limit test needs unseen overrides, which come from tasks it doesn't depend on",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-7",
+        "TC-65",
+        "T-19",
+        "T-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-1, TC-2, TC-8, TC-65",
+        "the planning one with 5 unseen overrides."
+      ],
+      "fix": "move TC-65 to T-20, which adds unseen overrides to `next`, or add TC-65 to T-20's Test as well and drop the override part from T-7's run.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "TC-65 builds a planning effort with 5 unseen overrides and checks that `next` stays within 12 lines. Overrides and the unseen flag come from T-19 and T-20, which run after T-7. A worker on T-7 can't build that setup, and `next` doesn't print overrides yet. So TC-65 either can't run, or passes without testing the overrides part of NFR-1.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-7's Test includes TC-65, whose setup is a planning effort with 5 unseen overrides. Overrides come from T-19 and the unseen flag from T-20, and T-7 depends only on T-4 and T-6. The override part of TC-65 can't be built at T-7.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "TC-65 moved to T-20; T-7 names it as proved later by T-20",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "T-6 now runs first but is still proved by TC-4, which needs `nio flow next` from T-7 and T-5",
+      "kind": "inconsistency",
+      "severity": "blocker",
+      "cites": [
+        "T-6",
+        "TC-4",
+        "AC-4",
+        "T-7",
+        "T-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-4",
+        "- Depends on: none",
+        "Given no current effort and no slug, when `nio flow next` runs, then it fails and lists the efforts it could start.",
+        "- Test: TC-1, TC-2, TC-4, TC-8; TC-65 proved later by T-20, which adds unseen overrides to `next`"
+      ],
+      "fix": "drop TC-4 from T-6's Test and Serves, since T-7 already proves it. Give T-6 direct unit checks on `flow.pick` and `flow.kind` (no current effort, a legacy folder, an intake-only folder) and on the helpers it builds, and note \"TC-4 proved later by T-7\".",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a worker gets T-6, the first task, with nothing before it. TC-4 runs `nio flow next` with no slug and expects it to fail and list the efforts it could start. `flow.next_step` comes from T-7 and the `next` subparser from T-5, and both depend on T-6. TC-4 can't pass. The worker either stops or writes a stub `next` that T-7 and T-5 later replace, and nothing proves T-6 is done. T-7 already lists TC-4.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tests.md TC-4 is a unit test whose Action is `flow.pick(root)`, not `nio flow next`. It asserts a `ValueError` naming the efforts and `nio flow start`, and it covers CT-4. T-6's title (tasks.md) builds `flow.pick` / `flow.kind (CT-4)` with Depends on: none, so T-6 can pass TC-4 on its own. The finding took the AC-4 sentence \"when `nio flow next` runs\" as the test action. T-7 also lists TC-4, but that is extra coverage and does not stop T-6 from proving it.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "4c8346b3e21eb097b5d92804f5f3e8f6685d7bda",
+    "2": "b3fa0048bbe5f7644689187653b68eaf06d0745c"
+  }
+}
