@@ -1,11 +1,14 @@
 """Self-check for nio jury collect / dispose / check. Run: uv run python tests/test_jury.py"""
 import json
+import re
+import subprocess
 from importlib import resources
 
 from test_records import repo
 
-from nio import jury, records
+from nio import agents, jury, plan, records, spec
 
+PSLUG = "checkout-refunds"
 SPEC = """# Refunds
 - FR-1: A refund is allowed while the order is paid or shipped.
 - FR-2: Shipped orders can never be refunded; they must be returned first.
@@ -897,6 +900,411 @@ def test_implementation_review():
     print("ok")
 
 
+# --- the plan gate (#57, spec 2026-10-28-plan-jury) ---
+
+PLAN_FINDING = """### F{n} The refund contract {what}
+- cites: CT-1
+- kind: gap
+- severity: {sev}
+- evidence: observed
+- quote: "{quote}"
+- situation: a refund for a paid order {what}
+- fix: say it in CT-1
+"""
+
+
+def plan_repo(risk="[]", edits=None, route="full"):
+    """The checkout-refunds spec and its plan (tests/fixtures/plan), with the spec's risk flags and route set."""
+    from test_plan import setup as plan_setup
+    root = plan_setup(edits)
+    path = spec.path(root, PSLUG)
+    text = re.sub(r"^risk: .*$", f"risk: {risk}", path.read_text(), count=1, flags=re.M)
+    path.write_text(re.sub(r"^route: \w+", f"route: {route}", text, count=1, flags=re.M))
+    (root / ".nio/config.json").write_text(json.dumps({"memory": {"areas": ["auth", "project"]}}))
+    return root
+
+
+def plan_lens(root, run, name, findings="none", verdicts="", gate="plan"):
+    path = root / ".nio/runs" / run / "jury" / f"{gate}-{name}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\nlens: {name.split('-')[0] if name.endswith(('-2', '-3')) else name}\ngate: {gate}\nsubject: {PSLUG}\n"
+                    f"by: \"juror / claude-code / opus\"\ncontext: sufficient\n---\n## Reasoning\nChecked every contract.\n"
+                    + (f"\n## Verdicts\n{verdicts}\n" if verdicts else "") + f"\n## Findings\n{findings}\n")
+
+
+def lenses_line(root, extra=()):
+    lines, ok = jury.plan(root, PSLUG, "plan", extra)
+    return next((line for line in lines if line.startswith("lenses: ")), ""), lines, ok
+
+
+def no_state(text):
+    return text.replace("- State: follows the spec's state table order\n", "")
+
+
+def major(n=1, what="never says the currency", quote="Refund an order"):
+    return PLAN_FINDING.format(n=n, what=what, sev="major", quote=quote)
+
+
+def confirm(*ids):
+    return "\n".join(f"### {i}\n- result: confirmed\n- reason: it holds\n" for i in ids)
+
+
+def plan_round(root, run, findings="none", refute=(), verdicts=""):
+    plan_lens(root, run, "test-proof", findings, verdicts)
+    out = jury.collect(root, PSLUG, "plan", run)
+    if refute:
+        (root / ".nio/runs" / run / "jury/plan-refuter.md").write_text(confirm(*refute))
+        out += jury.collect(root, PSLUG, "plan", run)
+    return out
+
+
+def change(root, outcome="pending"):
+    path = records.new(root, "change", "project", "Say the refund currency")
+    path.write_text(path.read_text().replace('against: ""', f'against: "{PSLUG}/spec.md"').replace("outcome: pending", f"outcome: {outcome}"))
+    return path.name[:13]
+
+
+def set_change(root, cid, outcome):
+    path = next((root / ".nio/memory").rglob(f"{cid}-*.md"))
+    path.write_text(re.sub(r"^outcome: \w+", f"outcome: {outcome}", path.read_text(), count=1, flags=re.M))
+
+
+def approve_spec(root, run):
+    plan_lens(root, run, "logic", gate="spec")
+    jury.collect(root, PSLUG, "spec", run)
+    assert jury.check(root, PSLUG, "spec")[0] == "approved"
+
+
+def approve_plan(root, run="R-P1"):
+    plan_round(root, run)
+    assert jury.check(root, PSLUG, "plan", record=True)[0] == "approved"
+
+
+def to_human(root):
+    """A first review rejected for a confirmed major, fixed by the agent, found not fixed: the gate goes to the human."""
+    plan_round(root, "R-P1", major(), refute=["J-1"])
+    assert jury.check(root, PSLUG, "plan", record=True)[0] == "rejected"
+    jury.dispose(root, PSLUG, "plan", "J-1", "plan-fix", "agent", "said the currency")
+    contracts = spec.path(root, PSLUG).parent / "contracts.md"
+    contracts.write_text(contracts.read_text() + "\n")
+    contracts.write_text(contracts.read_text().replace("- Kind: function", "- Kind: function (in EUR)"))
+    plan_round(root, "R-P2", verdicts="- J-1: not fixed — still no currency")
+    outcome, lines = jury.check(root, PSLUG, "plan", record=True)
+    assert outcome == "human" and "- one list for the human; fix or accept each as risk: J-1" in lines, lines
+
+
+def test_ac1_it_plans_the_two_core_lenses():
+    root = plan_repo(edits={"contracts.md": no_state})
+    line, lines, ok = lenses_line(root)
+    assert ok and line == "lenses: test-proof (core), architecture-fit (core)", lines
+    assert not any("only the spec gate" in x for x in lines)
+
+
+def test_ac2_no_lens_is_planned():
+    root = plan_repo(edits={"tests.md": lambda t: t.replace("### TC-1 ", "### TC-91 ")})
+    line, lines, ok = lenses_line(root)
+    assert not ok and not line and lines[0].startswith(f"`nio check plan {PSLUG} --gate` fails (") and "errors)" in lines[0], lines
+
+
+def test_ac3_the_spec_check_is_not_what_decides_it():
+    root = plan_repo()
+    path = spec.path(root, PSLUG)
+    fr1 = next(line for line in path.read_text().splitlines() if line.startswith("- **FR-1**"))
+    path.write_text(path.read_text().replace(fr1, re.sub(r"\[[^\]]*\]$", "[default]", fr1)))
+    assert spec.check(root, PSLUG, gate=True)[0]  # the spec fails its gate check
+    line, lines, ok = lenses_line(root)
+    assert ok and line and not any("nio check spec" in x for x in lines), lines
+
+
+def test_ac4_logic_runs_with_its_reason():
+    assert "logic (state: CT-1)" in lenses_line(plan_repo())[0]
+
+
+def test_ac5_logic_does_not_run():
+    assert "logic" not in lenses_line(plan_repo(edits={"contracts.md": no_state}))[0]
+
+
+def test_ac6_security_runs_with_its_reason():
+    assert "security (risk: pii)" in lenses_line(plan_repo("[pii]"))[0]
+
+
+def test_ac53_security_runs_with_its_reason():
+    assert "security (risk: auth)" in lenses_line(plan_repo("[auth]"))[0]
+
+
+def test_ac54_risk_rollback_runs_with_its_reason():
+    assert "risk-rollback (risk: data-deletion)" in lenses_line(plan_repo("[data-deletion]"))[0]
+
+
+def test_ac48_risk_rollback_runs_with_its_reason():
+    model = "\n## Data model\n- **Refund** (spec Key entity) in `app.py` (existing) [default]\n  - amount: integer cents.\n"
+    line, lines, ok = lenses_line(plan_repo(edits={"contracts.md": lambda t: t + model}))
+    assert ok and "risk-rollback (data model)" in line, lines
+
+
+def test_ac7_the_gate_is_blocked_naming_the_missing_card():
+    root, load = plan_repo("[migration]"), agents.load
+    agents.load = lambda r: {k: v for k, v in load(r).items() if k != "risk-rollback"}
+    try:
+        line, lines, ok = lenses_line(root)
+    finally:
+        agents.load = load
+    assert not ok and "risk-rollback (risk: migration)" in line, lines
+    assert "missing cards: risk-rollback — the gate is blocked until they exist" in lines
+
+
+def test_ac8_it_is_the_plan_gate_s_own_ledger():
+    root = plan_repo()
+    plan_round(root, "R-P1")
+    folder = jury.folder(root, PSLUG)
+    assert (folder / "plan.json").exists() and (folder / "plan.md").exists() and not (folder / "spec.json").exists()
+
+
+def plan_files(root):
+    return [str(p.relative_to(root)) for p in jury.sources(root, PSLUG, "plan")]
+
+
+def test_ac9_it_holds_all_four_plan_files():
+    files = plan_files(plan_repo())
+    assert all(f".nio/specs/{PSLUG}/{n}" in files for n in ("plan.md", "contracts.md", "tests.md", "quickstart.md")), files
+
+
+def test_uj1_juror_files_hold_all_plan_files():
+    files = plan_files(plan_repo())
+    assert all(files.count(f".nio/specs/{PSLUG}/{n}") == 1 for n in ("plan.md", "contracts.md", "tests.md", "quickstart.md")), files
+
+
+def test_ac44_the_first_is_kept_and_the_second_dropped():
+    root = plan_repo()
+    (root / "app.py").write_text("def refund_order(order_id, by):\n    return order_total(order_id)\n")
+    (root / "other.py").write_text("SECRET_FALLBACK = 1\n")
+    plan_round(root, "R-P1", PLAN_FINDING.format(n=1, what="calls the total", sev="minor", quote="return order_total(order_id)")
+               + PLAN_FINDING.format(n=2, what="keeps a secret", sev="minor", quote="SECRET_FALLBACK = 1"))
+    status = {f["title"]: f["status"] for f in jury.load(root, PSLUG, "plan")["findings"]}
+    assert status == {"The refund contract calls the total": "open", "The refund contract keeps a secret": "dropped"}, status
+
+
+def test_ac45_they_hold_the_plan_files_the_spec_claude():
+    extra = "\n### CT-9 More (FR-1) [default]\n- Binding: `src/a.py:f` (existing)\n- Like: `src/b.py:g`\n- Kind: function\n- Shape: `f()`\n"
+    root = plan_repo(edits={"contracts.md": lambda t: t + extra})
+    for name in ("src/a.py", "src/b.py", "CLAUDE.md"):
+        (root / name).parent.mkdir(exist_ok=True)
+        (root / name).write_text("def f(): pass\ndef g(): pass\n")
+    want = {f".nio/specs/{PSLUG}/{n}" for n in ("plan.md", "contracts.md", "tests.md", "quickstart.md", "spec.md")}
+    want |= {"CLAUDE.md", "app.py", "src/a.py", "src/b.py"}  # app.py: the fixture's contracts bind it
+    assert set(plan_files(root)) == want, plan_files(root)
+    (root / f".nio/specs/{PSLUG}/architecture.md").write_text("# Architecture\n")
+    assert set(plan_files(root)) == want | {f".nio/specs/{PSLUG}/architecture.md"}
+
+
+def test_ac10_it_is_invalid_as_at_the_spec_gate():
+    root = plan_repo()
+    six = "".join(PLAN_FINDING.format(n=n, what=f"misses point {n}", sev="minor", quote="Refund an order") for n in range(1, 7))
+    out = plan_round(root, "R-P1", six)
+    assert any("6 findings; a lens returns at most 5" in line for line in out), out
+
+
+def test_ac33_the_ledger_records_it():
+    root = plan_repo()
+    plan_round(root, "R-P1", major(), refute=["J-1"])
+    jury.dispose(root, PSLUG, "plan", "J-1", "plan-fix", "agent", "said the currency")
+    f = jury.load(root, PSLUG, "plan")["findings"][0]
+    assert (f["status"], f["disposition"]) == ("disposed", "plan-fix"), f
+
+
+def test_ac34_the_disposition_is_refused():
+    root = plan_repo()
+    plan_lens(root, "R-S1", "logic", PLAN_FINDING.format(n=1, what="x", sev="minor", quote="Refunds").replace("CT-1", "FR-1"), gate="spec")
+    jury.collect(root, PSLUG, "spec", "R-S1")
+    try:
+        jury.dispose(root, PSLUG, "spec", "J-1", "plan-fix", "agent", "x")
+        raise AssertionError("plan-fix was taken at the spec gate")
+    except ValueError as e:
+        assert "`plan-fix` belongs to the plan gate" in str(e), e
+
+
+def spec_rooted(root, *ids, cid=None):
+    cid = cid or change(root)
+    for i in ids:
+        jury.dispose(root, PSLUG, "plan", i, "spec-change", "human", "the spec never says the currency", cid)
+    return cid
+
+
+def test_ac35_a_change_request_on_the_spec_is_written():
+    root = plan_repo()
+    plan_round(root, "R-P1", major(3, what="has no limit"), refute=["J-1"])
+    cid = spec_rooted(root, "J-1")
+    st, why = jury.state(root, PSLUG)
+    assert st == "waiting-on-spec" and cid in why and "J-1" in why, (st, why)
+    plan_lens(root, "R-P2", "architecture-fit")
+    try:
+        jury.collect(root, PSLUG, "plan", "R-P2")
+        raise AssertionError("a plan round was collected while the plan jury waits on the spec")
+    except ValueError as e:
+        assert "paused until the spec change is settled" in str(e), e
+
+
+def test_ac43_the_ledger_records_it_with_its_change_re():
+    root = plan_repo()
+    plan_round(root, "R-P1", major(), refute=["J-1"])
+    cid = spec_rooted(root, "J-1")
+    f = jury.load(root, PSLUG, "plan")["findings"][0]
+    assert f["disposition"] == "spec-change" and f["note"].startswith(cid), f
+
+
+def test_ac37_the_plan_does_not_state_its_own_limit_fo():
+    root = plan_repo()
+    folder = spec.path(root, PSLUG).parent
+    before = {n: (folder / n).read_text() for n in ("plan.md", "contracts.md", "tests.md", "quickstart.md")}
+    plan_round(root, "R-P1", major(what="leaves the refund limit unstated"), refute=["J-1"])
+    spec_rooted(root, "J-1")
+    f = jury.load(root, PSLUG, "plan")["findings"][0]
+    assert f["disposition"] == "spec-change" and f["disposition"] != "plan-fix"
+    assert before == {n: (folder / n).read_text() for n in before}  # the plan gains no limit while the spec is open
+
+
+def test_ac36_only_fr_4_and_the_items_around_it_are_in():
+    root = plan_repo()
+    approve_spec(root, "R-S1")
+    plan_round(root, "R-P1", major(), refute=["J-1"])
+    cid = spec_rooted(root, "J-1")
+    path = spec.path(root, PSLUG)
+    fr1 = next(line for line in path.read_text().splitlines() if line.startswith("- **FR-1**"))
+    path.write_text(path.read_text().replace(fr1, fr1.replace("SHALL", "SHALL, in the order's currency,")))
+    ids, _, _, _ = jury.changed(root, PSLUG, "spec")
+    assert ids == ["FR-1"], ids  # the spec jury's fix check gets the changed item only, and its neighbours
+    pack = "\n".join(jury.fixcheck(root, PSLUG, "spec", "logic"))
+    assert "### FR-1" in pack and "### FR-2\n" not in pack
+    set_change(root, cid, "accepted")
+    assert jury.state(root, PSLUG)[0] == "waiting-on-spec"  # accepted, but not re-approved yet
+    approve_spec(root, "R-S2")
+    assert jury.state(root, PSLUG)[0] == "open"
+    assert jury.pack_ids(jury.load(root, PSLUG, "plan"), "test-proof") == ["J-1"]  # its lens checks the spec change fixed it
+    plan_round(root, "R-P2")  # the plan jury resumes
+
+
+def test_ac38_it_tells_the_juror_not_to_raise_j_2_agai():
+    root = plan_repo()
+    plan_round(root, "R-P1", major() + major(2, what="never says who refunds", quote="Refund over HTTP"), refute=["J-1", "J-2"])
+    jury.dispose(root, PSLUG, "plan", "J-2", "accepted-risk", "human", "who refunds is fine as is")
+    contracts = spec.path(root, PSLUG).parent / "contracts.md"
+    contracts.write_text(contracts.read_text() + "\n<!-- edited -->\n")
+    pack = "\n".join(jury.fixcheck(root, PSLUG, "plan", "test-proof"))
+    settled = pack.split("## Settled by the human: don't raise these again")[1].split("##")[0]
+    assert "J-2" in settled and "J-1" not in settled, pack
+
+
+def test_ac51_j_1_goes_to_the_refuter_before_any_outco():
+    root = plan_repo()
+    out = plan_round(root, "R-P1", major())
+    assert any(line.startswith("## Refuter batch") for line in out) and "### J-1 The refund contract never says the currency" in out, out
+    assert jury.check(root, PSLUG, "plan")[0] == "pending"
+
+
+def test_ac52_no_new_round_is_asked_for_and_the_majors():
+    root = plan_repo()
+    to_human(root)  # asserts the outcome `human` and the one list
+    assert jury.check(root, PSLUG, "plan")[0] != "rerun"
+
+
+def test_ac59_it_is_refused_and_the_tasks_stage_refuse():
+    root = plan_repo()
+    to_human(root)
+    plan_lens(root, "R-P3", "architecture-fit")
+    try:
+        jury.collect(root, PSLUG, "plan", "R-P3")
+        raise AssertionError("a round was collected while the gate waits on the human")
+    except ValueError as e:
+        assert "waits on the human's ruling" in str(e), e
+    ok, why = plan.approved(root, PSLUG)
+    assert not ok and why.startswith("the plan must be approved first (with-human"), why
+
+
+def test_ac42_it_proceeds_given_a_plan_gate_handed_to():
+    root = plan_repo()
+    to_human(root)
+    assert not plan.approved(root, PSLUG)[0]
+    jury.check(root, PSLUG, "plan", record=True, human="the currency is in the spec's glossary")
+    assert plan.approved(root, PSLUG)[0] and jury.state(root, PSLUG)[0] == "closed-by-human"
+
+
+def test_ac39_one_nio_approve_plan_commit_holds_the_pl():
+    root = plan_repo()
+    approve_plan(root)
+    verdicts = [p for p in (root / ".nio/memory").rglob("V-*.md") if f'"plan:{PSLUG}"' in p.read_text()]
+    assert len(verdicts) == 1, verdicts
+    folder = spec.path(root, PSLUG).parent
+    git = lambda *a: subprocess.run(["git", *a], cwd=root, check=True, capture_output=True, text=True).stdout
+    git("add", *[str(folder / n) for n in ("plan.md", "contracts.md", "tests.md", "quickstart.md")], str(verdicts[0]))
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "nio: approve plan")
+    touched = git("show", "--name-only", "--format=%s", "HEAD").split()
+    assert touched[:3] == ["nio:", "approve", "plan"] and str(verdicts[0].relative_to(root)) in touched, touched
+    assert all(f".nio/specs/{PSLUG}/{n}" in touched for n in ("plan.md", "contracts.md", "tests.md", "quickstart.md")), touched
+
+
+def test_ac56_the_plan_gate_is_no_longer_approved_and():
+    root = plan_repo()
+    approve_plan(root)
+    assert plan.approved(root, PSLUG)[0]
+    path = spec.path(root, PSLUG)
+    fr1 = next(line for line in path.read_text().splitlines() if line.startswith("- **FR-1**"))
+    path.write_text(path.read_text().replace(fr1, fr1.replace("SHALL", "SHALL, in the order's currency,")))
+    ok, why = plan.approved(root, PSLUG)
+    assert not ok and why.startswith("the plan must be approved first"), why
+    pack = "\n".join(jury.fixcheck(root, PSLUG, "plan", "architecture-fit"))
+    assert "### FR-1" in pack and "### CT-1" in pack.split("## Neighbours")[1], pack
+
+
+def test_ac57_j_6_joins_c_1():
+    root = plan_repo()
+    plan_round(root, "R-P1", major() + major(2, what="never says who refunds", quote="Refund over HTTP"), refute=["J-1", "J-2"])
+    cid = spec_rooted(root, "J-1")
+    spec_rooted(root, "J-2", cid=cid)
+    notes = [f["note"] for f in jury.load(root, PSLUG, "plan")["findings"]]
+    assert all(n.startswith(cid) for n in notes) and len(list((root / ".nio/memory").rglob("C-*.md"))) == 1
+    assert jury.state(root, PSLUG)[0] == "waiting-on-spec"
+
+
+def test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag():
+    root = plan_repo()
+    plan_round(root, "R-P1", major(), refute=["J-1"])
+    cid = spec_rooted(root, "J-1")
+    set_change(root, cid, "rejected")
+    outcome, lines = jury.check(root, PSLUG, "plan")
+    assert f"reopened J-1: {cid} was dropped" in lines and not any("paused" in x for x in lines), lines
+    f = jury.load(root, PSLUG, "plan")["findings"][0]
+    assert f["status"] == "open" and "fix it in the plan or accept the risk" in f["note"], f
+
+
+def test_uj2_spec_change_blocks_plan_fix():
+    root = plan_repo()
+    plan_round(root, "R-P1", major(), refute=["J-1"])
+    cid = spec_rooted(root, "J-1")
+    try:
+        jury.dispose(root, PSLUG, "plan", "J-1", "plan-fix", "agent", "filled the limit in the plan")
+        raise AssertionError("a spec-rooted finding took a plan-fix")
+    except ValueError as e:
+        assert f"J-1 is disposed and waits on {cid}" in str(e), e
+    assert jury.load(root, PSLUG, "plan")["findings"][0]["disposition"] == "spec-change"
+
+
+def test_uj1_plan_gate_needs_lens_outputs():
+    root = plan_repo()
+    outcome, lines = jury.check(root, PSLUG, "plan", record=True)
+    assert outcome == "rerun" and "- no lens output has been collected yet: run the lenses" in lines, lines
+    assert not list((root / ".nio/memory").rglob("V-*.md"))
+
+
+def test_nfr1_plan_gate_makes_no_model_call():
+    root, calls, run = plan_repo(), [], subprocess.run
+    subprocess.run = lambda args, *a, **k: calls.append(args) or run(args, *a, **k)
+    try:
+        assert jury.plan(root, PSLUG, "plan")[1] and plan.check(root, PSLUG, gate=True)[0] == []
+    finally:
+        subprocess.run = run
+    assert all(c[0] == "git" for c in calls), calls
+
+
 if __name__ == "__main__":
     test_review_scenarios()
     test_plan_gate_versions()
@@ -919,3 +1327,37 @@ if __name__ == "__main__":
     test_old_ledgers()
     test_skill_and_cards()
     test_implementation_review()
+    test_ac1_it_plans_the_two_core_lenses()
+    test_ac2_no_lens_is_planned()
+    test_ac3_the_spec_check_is_not_what_decides_it()
+    test_ac4_logic_runs_with_its_reason()
+    test_ac5_logic_does_not_run()
+    test_ac6_security_runs_with_its_reason()
+    test_ac53_security_runs_with_its_reason()
+    test_ac54_risk_rollback_runs_with_its_reason()
+    test_ac48_risk_rollback_runs_with_its_reason()
+    test_ac7_the_gate_is_blocked_naming_the_missing_card()
+    test_ac8_it_is_the_plan_gate_s_own_ledger()
+    test_ac9_it_holds_all_four_plan_files()
+    test_uj1_juror_files_hold_all_plan_files()
+    test_ac44_the_first_is_kept_and_the_second_dropped()
+    test_ac45_they_hold_the_plan_files_the_spec_claude()
+    test_ac10_it_is_invalid_as_at_the_spec_gate()
+    test_ac33_the_ledger_records_it()
+    test_ac34_the_disposition_is_refused()
+    test_ac35_a_change_request_on_the_spec_is_written()
+    test_ac43_the_ledger_records_it_with_its_change_re()
+    test_ac37_the_plan_does_not_state_its_own_limit_fo()
+    test_ac36_only_fr_4_and_the_items_around_it_are_in()
+    test_ac38_it_tells_the_juror_not_to_raise_j_2_agai()
+    test_ac51_j_1_goes_to_the_refuter_before_any_outco()
+    test_ac52_no_new_round_is_asked_for_and_the_majors()
+    test_ac59_it_is_refused_and_the_tasks_stage_refuse()
+    test_ac42_it_proceeds_given_a_plan_gate_handed_to()
+    test_ac39_one_nio_approve_plan_commit_holds_the_pl()
+    test_ac56_the_plan_gate_is_no_longer_approved_and()
+    test_ac57_j_6_joins_c_1()
+    test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag()
+    test_uj2_spec_change_blocks_plan_fix()
+    test_uj1_plan_gate_needs_lens_outputs()
+    test_nfr1_plan_gate_makes_no_model_call()

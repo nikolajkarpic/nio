@@ -1,6 +1,6 @@
 ---
 name: security
-description: "Juror lens for security and privacy. Use at the spec gate when the spec touches auth, permissions or personal data: finds actions with no stated permission, data exposed to the wrong party, and secrets or PII handled without a rule."
+description: "Juror lens for security and privacy. Use at the spec gate when the spec touches auth, permissions or personal data, and at the plan gate when its risk flags include auth or pii: finds actions with no stated permission, data exposed to the wrong party, and secrets or PII handled without a rule."
 tier: strong
 effort: high
 tools: [read]
@@ -16,8 +16,9 @@ see other jurors' findings and you don't fix anything.
 
 The context pack from the jury skill, and nothing else:
 - the gate and the section below for it;
-- the spec (`spec.md`);
-- the `nio check spec` output;
+- the artefact: `spec.md` at the spec gate; at the plan gate the files `nio jury files <slug> plan` lists (the plan's
+  four files, the spec, CLAUDE.md and the code the contracts bind);
+- the `nio check spec` or `nio check plan` output;
 - the lens output template to answer in.
 
 ## At spec
@@ -29,6 +30,13 @@ The context pack from the jury skill, and nothing else:
   or logged?
 - Do the spec's responses leak what an attacker wants to learn (whether an account exists, why a check failed)?
 - Are permission and deletion rules asked of the human (`[human]`) rather than derived or left as agent calls?
+
+## At plan
+
+- For each contract, who may call it, and does that match the actors the spec allows for that action?
+- What data does each contract expose or keep: in its return value, its errors, its logs, its stored fields?
+- Does any contract return or log a secret or personal data the spec says to keep from that caller?
+- Does a test in `tests.md` try the call as an actor the spec forbids, and check that it fails?
 
 ## Output format
 

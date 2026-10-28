@@ -146,6 +146,7 @@ def check(root, slug, gate=False, base="HEAD"):
                 errs.append(f"{where(iid)}: {iid}: write the binding as `file:symbol` (new | existing); the symbol is optional")
             else:
                 errs += binding(root, Path(where(iid)), iid, m, metas, "adds a module")
+                errs += [f"{where(iid)}: {e}" for e in like(root, iid, m[3], field(block, "Like"))]
     for iid in kind("TC"):
         _, _, block = items[iid]
         parts = head(block[0])
@@ -221,6 +222,44 @@ def check(root, slug, gate=False, base="HEAD"):
     defaults = [i for i in items if (t := spec.TAG.search(items[i][2][0])) and t[1] == "default"]
     notes += [f"proposals for the plan jury: {', '.join(defaults)}"] * bool(defaults)
     return errs, notes
+
+
+def like(root, iid, kind, value):
+    """A new contract names the existing code it follows, `file:symbol`, or `none: <reason>` (#57 FR-28 to FR-30)."""
+    if kind != "new":
+        return []
+    if not value:
+        return [f"{iid}: a new contract needs `- Like: <file>:<symbol>` or `- Like: none: <reason>`"]
+    if re.match(r"none\b", value):
+        return [] if re.match(r"none:\s*\S", value) else [f"{iid}: `Like: none` needs a reason, as `Like: none: <reason>`"]
+    m = re.fullmatch(r"`?([^`:\s]+)(?::([^`\s]+))?`?", value.strip())
+    if not m:
+        return [f"{iid}: write `Like:` as `<file>:<symbol>` or `none: <reason>`"]
+    path = root / m[1]
+    if not path.is_file() or not path.resolve().is_relative_to(root.resolve()):
+        return [f"{iid}: `Like:` names `{m[1]}`, which doesn't exist"]
+    if m[2] and not re.search(rf"(?<![\w.]){re.escape(m[2])}(?!\w)", path.read_text()):
+        return [f"{iid}: `Like:` names `{m[2]}`, which isn't in `{m[1]}`"]
+    return []
+
+
+def approved(root, slug):
+    """(ok, why): may the tasks stage start on this spec (#57 FR-38, FR-39, FR-47)? A bug-fix spec has no plan stage; a
+    full spec needs its plan gate approved, or closed by the human, on the current plan and spec."""
+    from nio import jury  # jury imports this module for the plan gate's check
+    if not spec.path(root, slug).exists():
+        raise ValueError(f"no spec at {spec.path(root, slug).relative_to(root)}")
+    meta, _ = records.parse(spec.path(root, slug))
+    if meta.get("route") == "lite":
+        return True, "a bug-fix spec has no plan stage"
+    if meta.get("route") != "full":
+        return False, f"`{slug}` is route `{meta.get('route')}`: run the tasks stage on each slice's spec"
+    if not (spec.path(root, slug).parent / "plan.md").exists():
+        return False, "the plan must be approved first (there is no plan.md)"
+    st, why = jury.state(root, slug)
+    if st in ("approved", "closed-by-human"):
+        return True, why
+    return False, f"the plan must be approved first ({st}: {why})"
 
 
 def binding(root, rel, what, m, metas, change):

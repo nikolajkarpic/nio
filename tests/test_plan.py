@@ -1,4 +1,6 @@
 """Self-check for nio new plan / nio check plan. Run: uv run python tests/test_plan.py"""
+import re
+import subprocess
 from pathlib import Path
 
 from test_records import repo
@@ -223,6 +225,107 @@ def test_gate_and_ids():
     print("ok")
 
 
+# --- the `Like:` line and the tasks stage's check (#57, spec 2026-10-28-plan-jury) ---
+
+def with_like(ct1=None, ct2_new=False, ct2=None):
+    """Contracts with CT-1's `Like:` value (None: the line removed) and CT-2 bound new (with its own `Like:` value)."""
+    def edit(t):
+        t = t.replace("- Like: none: the first payment code in the app\n", f"- Like: {ct1}\n" if ct1 else "")
+        if ct2_new:
+            t = t.replace("- Binding: `app.py` (existing)", "- Binding: `app.py:refund_http` (new)" + (f"\n- Like: {ct2}" if ct2 else ""))
+        return t
+    return {"contracts.md": edit}
+
+
+def like_errors(root):
+    return [e for e in errors(root) if "Like" in e]
+
+
+def test_ac27_it_fails_naming_ct_2():
+    errs = like_errors(setup(with_like("none: the first payment code", ct2_new=True)))
+    assert errs == [f".nio/specs/{SLUG}/contracts.md: CT-2: a new contract needs `- Like: <file>:<symbol>` or `- Like: none: <reason>`"], errs
+    print("ok")
+
+
+def test_ac49_only_ct_6_is_an_error():
+    errs = like_errors(setup(with_like("none: first HTTP endpoint in the project", ct2_new=True, ct2="none")))
+    assert len(errs) == 1 and "CT-2: `Like: none` needs a reason" in errs[0], errs
+    print("ok")
+
+
+def test_ac28_it_fails():
+    errs = like_errors(setup(with_like("`src/nio/nope.py:thing`")))
+    assert len(errs) == 1 and "CT-1" in errs[0] and "`src/nio/nope.py`" in errs[0], errs
+    print("ok")
+
+
+def code(root):
+    (root / "app.py").write_text("def plan(root):\n    return root\n")
+    return root
+
+
+def test_ac29_it_fails():
+    errs = like_errors(code(setup(with_like("`app.py:no_such_symbol`"))))
+    assert len(errs) == 1 and "CT-1" in errs[0] and "`no_such_symbol`" in errs[0], errs
+    print("ok")
+
+
+def test_ac30_ct_2_raises_no_error():
+    root, calls, run = code(setup(with_like("`app.py:plan`"))), [], subprocess.run
+    subprocess.run = lambda args, *a, **k: calls.append(args) or run(args, *a, **k)
+    try:
+        errs = [e for e in errors(root) if "CT-1" in e]
+    finally:
+        subprocess.run = run
+    assert errs == [] and all(c[0] == "git" for c in calls), (errs, calls)
+    print("ok")
+
+
+def test_ac31_ct_4_raises_no_error():
+    assert not [e for e in errors(setup()) if "CT-2" in e]  # CT-2 is bound (existing) and has no `Like:`
+    print("ok")
+
+
+def test_ac32_it_raises_no_error_for_it():
+    order = ("### Foundation\n- Delivers: CT-2\n- Tests: TC-2\n- Scenario: QS-1\n\n"
+             "### US-1 Customer refunds a paid order\n- Depends on: Foundation\n- Delivers: CT-1\n- Tests: TC-1, TC-3, TC-4\n")
+    edit = lambda t: re.sub(r"(## Build order\n).*?(?=\n## )", lambda m: m[1] + order, t, flags=re.S)
+    errs = errors(setup({"plan.md": edit}))
+    assert not [e for e in errs if "US-1" in e or "Scenario" in e], errs
+    print("ok")
+
+
+def set_route(root, route):
+    path = spec.path(root, SLUG)
+    path.write_text(re.sub(r"^route: \w+", f"route: {route}", path.read_text(), count=1, flags=re.M))
+    return root
+
+
+def test_ac40_it_refuses():
+    root = setup()
+    ok, why = plan.approved(root, SLUG)
+    assert not ok and why.startswith("the plan must be approved first") and not (spec.path(root, SLUG).parent / "tasks.md").exists(), why
+    print("ok")
+
+
+def test_ac55_it_refuses_given_a_bug_fix_spec_with_no():
+    root = setup()
+    for f in plan.FILES:
+        (spec.path(root, SLUG).parent / f).unlink()
+    ok, why = plan.approved(root, SLUG)
+    assert not ok and why == "the plan must be approved first (there is no plan.md)", why
+    assert plan.approved(set_route(root, "lite"), SLUG) == (True, "a bug-fix spec has no plan stage")
+    print("ok")
+
+
+def test_ac41_it_proceeds():
+    from test_jury import approve_plan, plan_repo
+    root = plan_repo()
+    approve_plan(root)
+    assert plan.approved(root, SLUG) == (True, "the plan jury approved the plan")
+    print("ok")
+
+
 if __name__ == "__main__":
     test_example_passes()
     test_templates_need_filling()
@@ -235,3 +338,13 @@ if __name__ == "__main__":
     test_bindings()
     test_robustness()
     test_second_review()
+    test_ac27_it_fails_naming_ct_2()
+    test_ac49_only_ct_6_is_an_error()
+    test_ac28_it_fails()
+    test_ac29_it_fails()
+    test_ac30_ct_2_raises_no_error()
+    test_ac31_ct_4_raises_no_error()
+    test_ac32_it_raises_no_error_for_it()
+    test_ac40_it_refuses()
+    test_ac55_it_refuses_given_a_bug_fix_spec_with_no()
+    test_ac41_it_proceeds()
