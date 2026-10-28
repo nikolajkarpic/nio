@@ -78,7 +78,7 @@ def main():
     jc.add_argument("--run", required=True)
     jc.add_argument("--expect", action="append", default=[], help="a lens that must report; repeatable")
     jc.add_argument("--tier", choices=["low", "medium", "high"], help="the ladder rung triage picked")
-    jd = jsub.add_parser("dispose", help="set a finding's disposition; accepted-risk and out-of-scope need --by human")
+    jd = jsub.add_parser("dispose", help="set a finding's disposition; accepted-risk, out-of-scope and overruled need --by human")
     jd.add_argument("slug")
     jd.add_argument("gate", choices=sorted(jury.GATES))
     jd.add_argument("id")

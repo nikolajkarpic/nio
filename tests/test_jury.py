@@ -553,9 +553,10 @@ CONFIRM = "### J-{n}\n- result: confirmed\n- reason: yes\n"
 REFUTE = "### J-{n}\n- result: refuted\n- reason: FR-2 settles it\n"
 
 
-def first_review(findings=MAJOR + MINOR, refuter=CONFIRM.format(n=1)):
+def first_review(findings=MAJOR + MINOR, refuter=CONFIRM.format(n=1), text=SPEC):
     """A first review that the jury rejects and records, with every finding then fixed by the agent (#52)."""
     root = setup()
+    (root / ".nio/specs/refunds/spec.md").write_text(text)
     lens(root, "R-1", "logic", findings)
     jury.collect(root, "refunds", "spec", "R-1")
     (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(refuter)
@@ -698,6 +699,35 @@ def test_fix_verdicts():
     (root / ".nio/runs/R-2/jury/spec-refuter.md").write_text(REFUTE.format(n=1))
     jury.collect(root, "refunds", "spec", "R-2")
     assert jury.check(root, "refunds", "spec")[0] == "approved" and led(root)["J-1"]["status"] == "refuted"
+    print("ok")
+
+
+def test_final_check_sees_cites_and_human_overrules():
+    """#58: the fix-check pack shows what each finding cites as it reads now, not only what changed last; and the
+    human can overrule a `not fixed` the final check flagged, so a clean spec is approved instead of closed."""
+    root = first_review(text=re.sub(r"^- ([A-Z]+-\d+):", r"- **\1**", SPEC, flags=re.M))
+    to_list(root, "J-1")
+    fix(root, "J-1", by="human")
+    pack = "\n".join(jury.fixcheck(root, "refunds", "spec", "logic"))
+    cites = pack.split("- what it cites, now:\n")[1].split("\n\n")[0]  # FR-1 and FR-2 didn't change in the last edit
+    assert "**FR-1**" in cites and "**FR-2**" in cites and "**FR-2**" not in pack.split("## Changed items")[1], pack
+    try:
+        jury.dispose(root, "refunds", "spec", "J-1", "overruled", "human", "it's fixed")
+        raise AssertionError("overruled a finding the final check never flagged")
+    except ValueError:
+        pass
+    lens(root, "R-3", "logic", verdicts=verdicts(J_1="not fixed"))
+    jury.collect(root, "refunds", "spec", "R-3")
+    assert jury.check(root, "refunds", "spec", record=True)[0] == "human"
+    try:
+        jury.dispose(root, "refunds", "spec", "J-1", "overruled", "agent", "it's fixed")
+        raise AssertionError("an agent overruled a finding")
+    except ValueError:
+        pass
+    jury.dispose(root, "refunds", "spec", "J-1", "overruled", "human", "FR-1 no longer lists shipped; the pack missed it")
+    outcome, lines = jury.check(root, "refunds", "spec", record=True)
+    assert outcome == "approved", lines
+    assert "overruled by the human" in (root / ".nio/specs/refunds/jury/spec.md").read_text()
     print("ok")
 
 
@@ -1392,6 +1422,7 @@ if __name__ == "__main__":
     test_final_check()
     test_fix_verdicts()
     test_retry_after_another_lens_fixed_a_shared_finding()
+    test_final_check_sees_cites_and_human_overrules()
     test_changed_and_fixcheck()
     test_phases()
     test_old_ledgers()
