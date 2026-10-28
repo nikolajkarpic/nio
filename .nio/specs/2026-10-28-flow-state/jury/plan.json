@@ -1,0 +1,809 @@
+{
+  "gate": "plan",
+  "subject": "2026-10-28-flow-state",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "architecture-fit",
+    "logic",
+    "risk-rollback",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261028-stif/plan-architecture-fit.md": "3bdec06b3e9e05bf0b4c0a4bcb74a33d68a2c44f67edff92e7c8b6787613d0b6",
+    "R-261028-stif/plan-logic.md": "53166c2d9cde5a27c9f03d92f743744a9d9fdb88c37f058a84aef276d774cf66",
+    "R-261028-stif/plan-risk-rollback.md": "f7856d831a9a061162e04b114fa962f6be6e7d43145810bd165b456cdb372208",
+    "R-261028-stif/plan-test-proof.md": "82f70b01ea707a0bc42d71c9906d9eff92f29a9e4f05e333e54fbec744894e56",
+    "R-261028-stif/plan-refuter.md": "5f2246df896b3a9ef4a7424693e85f64afcd2d0c9e906bad66939c5cd03b9ce0",
+    "R-261028-hjdt/plan-architecture-fit.md": "92622a6f49ebcf61818fdc180409158fad590a43e3ecadf77f7375a6ebad89e5",
+    "R-261028-hjdt/plan-logic.md": "cbae07a3aba0fa91f6b5201799187026117b1e979dc4d695404e78e58c65be84",
+    "R-261028-hjdt/plan-risk-rollback.md": "32c9faa849a4d46ff3fc055f7bd491c1b53c5db8d263e4eb7e3e7a72a11f7fa6",
+    "R-261028-hjdt/plan-test-proof.md": "871196e7fb6d26a703f7e97521bf4dff6d560e6101a14ff18fc2707f04f7eb44"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "6d8085e6151d5de14af4f251917cf2c89d3fec86",
+      "judged": 2
+    },
+    "plan-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "6d8085e6151d5de14af4f251917cf2c89d3fec86",
+      "judged": 2
+    },
+    "plan-risk-rollback": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "6d8085e6151d5de14af4f251917cf2c89d3fec86",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "6d8085e6151d5de14af4f251917cf2c89d3fec86",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "CT-11 bypasses `records.git`, which architecture.md fixes as the git path",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "It reads the other stages only through their existing functions: `spec.check`, `plan.check`,",
+        "and git through `records.git`.",
+        "git runs through `subprocess.run` directly, not `records.git`, to read the exit code and stderr (RF-10)",
+        "Read-only to the plan; changing it takes a change request."
+      ],
+      "fix": "file a change request that amends architecture.md to allow direct `subprocess.run` for the gate commit and `jury.blob`/`jury.artefact` for CT-6 (or add an exit-code-returning helper to records.py and use it), and cite the change request in CT-11",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "architecture.md, which the plan may not change, says flow.py reaches git only through `records.git`. CT-11 calls `subprocess.run` directly for `git add` and `git commit`. CT-6 also reads `jury.blob(jury.artefact(...))` and runs `git log --grep`, which are outside architecture.md's list of functions. `records.git` returns only stdout lines, so CT-11's reason is real, but the plan breaks an approved architecture.md without a change request.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "contracts.md CT-11 line 144 calls `subprocess.run` directly, while architecture.md line 11 says git goes \"through `records.git`\"; the plan has no change request amending architecture.md.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "Q25 (C-261028-dclz): records.git gains a full=True mode (CT-19); CT-11 commits through it; CT-6 and CT-7 use jury.blob and jury.artefact",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "An effort at intake or drafting has no full-route spec.md, so CT-4 makes it unsupported and no command can drive it",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "CT-5",
+        "CT-10",
+        "FR-47"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a dated folder whose `spec.md` frontmatter `route` is not `full` is `unsupported: <route>`",
+        "a dated folder `.nio/specs/YYYY-MM-DD-<name>/` with a full-route `spec.md`",
+        "intake: `intake.md` exists; drafting: `spec.md` exists",
+        "raise ValueError(f\"no spec at {spec.path(root, slug).relative_to(root)}\")"
+      ],
+      "fix": "in CT-4 and the Effort data model, treat a dated folder with no spec.md (or no `route` yet) as an effort at intake/drafting, and mark it `unsupported` only when a spec.md exists with a route other than `full`; add a test for an intake-only folder",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "a new dated folder holding only `intake.md` is at intake, the Flow table's start state. tasks.route, the `Like:` that CT-4 copies, raises `no spec at ...` when there is no spec.md. Read as the contract says (route missing, so not `full`), the folder is `unsupported: None`, so `nio flow start` refuses it. Either way, the intake and drafting guards in CT-5 and the `@nio:spec` skill CT-6 gives those stages can never be reached.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-4 line 59 marks a dated folder whose spec.md `route` is not `full` as unsupported and says nothing about a folder with no spec.md. CT-5 (line 67) defines the intake guard as \"`intake.md` exists\", so an intake-only folder is a valid state that CT-4 doesn't cover.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-4: a dated folder with no spec.md or no route is an effort; only a non-full route is unsupported; TC-76",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "CT-8's subagent cap sums a counter that jury.py resets on every new version",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-8",
+        "FR-40"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "or `budgets.subagents` is not more than the subagent runs used, the sum of `attempts` over their jurors",
+        "attempts count per version: a new version earns a fresh retry"
+      ],
+      "fix": "count subagent runs from data that is never reset (for example the number of collected lens outputs per round in the ledger, or the run folders whose `flow.json` names the effort), and name that source in CT-8",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "in jury.merge, a juror's `attempts` goes back to 0 whenever the judged version changes, and every re-review round is a new version. So the sum over the ledger's jurors counts only the runs since each juror's last version change, not the subagent runs the effort actually used. `budgets.subagents` would undercount, and in a multi-round effort it could fail to trip at all.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "jury.py lines 533-534 set `juror[\"attempts\"] = 0` whenever the judged version changes, so summing `attempts` (CT-8) does not count total subagent runs across rounds.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-8 counts subagent runs as collected keys across the effort's ledgers (RF-17)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "The commands `next` and `done` print omit the `--by` that CT-16 makes mandatory",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-16",
+        "CT-9",
+        "CT-11",
+        "CT-6",
+        "FR-48"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each writing one requiring `--by` (no default: without it the command refuses and writes nothing",
+        "`done: nio flow done <stage> <slug>`",
+        "printed as `nio flow done <stage> --commit <slug>` with exit 0"
+      ],
+      "fix": "print `--by \"<role> / <host> / <model>\"` (or `--by human` on the approval command) in CT-6's `command`, CT-9's `done:` line and CT-11's FR-48 output, and add the flag to the commands TC-1 and AC-52 expect",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "FR-48 requires printing \"the exact `nio flow done <gate> --commit` command\", and an orchestrator follows CT-9's `done:` line. Both printed commands lack `--by`, so running either as printed is refused by CT-16. That breaks UJ-1 step 3 and the human's approval step.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-16 (line 187) makes `--by` mandatory. CT-11 (line 142) prints `nio flow done <stage> --commit <slug>` and CT-6 (line 80) uses the same command string. Neither includes `--by`, so running them as printed is refused.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "every printed command carries --by (caller's value or placeholder; --by human on --commit and resume)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "CT-17 puts Flow-stage validation into records.py, the base module flow.py imports",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-17"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Binding: `src/nio/records.py:new_run` (existing)",
+        "a slug with a folder under `.nio/specs/` and a stage of the state table"
+      ],
+      "fix": "keep new_run as a plain folder creator that only writes `flow.json` when given one, and do the slug and stage check in the CLI's `run` branch, using flow.py's stage list",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "today records.new_run only creates a folder, and every stage module (tasks.py, plan.py, jury.py) imports records. Validating a stage against the Flow table inside new_run needs the stage list that flow.py owns, so records.py would import flow.py, the reverse of the existing dependency direction.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-17: new_run(root, link=None) only creates the folder and flow.json; the CLI run branch checks slug and stage",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "A human override on a rejected gate is undone by the rejected-round rule",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-24",
+        "FR-56",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a gate whose ledger's saved `outcome` is `rejected`",
+        "THE SYSTEM SHALL pass the stage and append a history line holding the failing guard output and the reason",
+        "kind `override`, the output in `evidence.output_text` beside its hash"
+      ],
+      "fix": "make CT-6 skip the rejected-round rule when a history `override` line from that gate exists, or have `done --human` at a gate refuse and point to `nio jury check --human`. State which in FR-24 or CT-11.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "The spec ledger's saved outcome is `rejected` and `spec.md` is unchanged since that round. This is the UJ-3 jury-tooling-bug case. The human runs `nio flow done spec_jury --human \"pack bug\"`. CT-11 writes a `pass` or `override` line, and FR-47 and FR-55 count the gate as passed. CT-6 then reads the saved `rejected` outcome \"before its guard is read\" and sets the stage back to grilling. So `done --human` reports `moved` and the next call puts the effort back in grilling. The ledger stays `rejected` because `nio flow` never rewrites it. Only `nio jury check --human` changes the saved outcome to `human`, so only that route sticks.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-6 (line 79) applies the rejected-round rule \"before its guard is read\", and the rule keys only on the ledger's saved `outcome`. Nothing exempts a gate with a history `override` line, and `nio flow` never rewrites the ledger.",
+      "status": "fixed",
+      "disposition": "spec-change",
+      "by": "human",
+      "note": "C-261028-quyk: Q24: done --human at a jury gate refuses and points to nio jury check --human (FR-62, AC-65); CT-11, TC-72",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "`nio flow next` must resume and record a move, but CT-16 lets it run without `--by`",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-31",
+        "FR-37",
+        "AC-34",
+        "AC-38",
+        "CT-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`next` takes it optionally and records a move only when it is given",
+        "WHEN `nio flow start` or `nio flow next` runs on a parked effort THE SYSTEM SHALL resume it and record the resume in history"
+      ],
+      "fix": "make `--by` required on `next` as on the other commands, or say what `next` does without it. For example, it prints the state, reports \"would resume\" and writes nothing. Then change FR-31, AC-34 and AC-38 to match.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "A parked effort at tasking. The orchestrator runs `nio flow next` with no `--by`, as UJ-1 and AC-34 describe. FR-31 and AC-34 require the effort to resume and one `resume` history line to be added. CT-16 records nothing without `--by`. FR-5 requires `who` on every line, so a line without `--by` can't be written at all. The same holds for AC-38's single `back` line, written by `next`, and for CT-8's stop-list `pause` line. The effort ends up either unresumed, with `next` still printing the parked wait, or resumed with an unrecorded or anonymous line.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-16 says `next` \"records a move only when it is given\" `--by`. TC-34 and TC-38 call `next_step(root, \"S\")` with no `by` and expect a `resume` or `back` line, and CT-2 requires `who` on every line.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-9: next records only with --by; without it prints 'would record' and writes nothing; TC-34, TC-38, TC-43 pass by=",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "The gate-approval commit message is spelled two ways, so gates can't be found in git",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-18",
+        "AC-19",
+        "CT-6",
+        "CT-7",
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a gate (spec_jury, plan_jury, tasks_jury) has passed when its guard passes",
+        "commit the effort's files with the message `nio: approve <stage>`",
+        "then one commit `nio: approve spec` holds the effort's files"
+      ],
+      "fix": "define one gate-to-message map in CT-6 and CT-11 (`spec_jury` -> `nio: approve spec`, and so on), and use it in the grep, the commit and CT-7. Make FR-18 say `<gate>`.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "CT-6 names the gates `spec_jury`, `plan_jury` and `tasks_jury`. Its test is `git log --grep \"^nio: approve <gate>$\"`, and CT-11 commits `nio: approve <gate>`. FR-18 says `<stage>`, so the message would be `nio: approve spec_jury`. AC-19 and CT-7 (\"the gate being spec ... plan ... tasks\") and the existing repo commit `72adf84 nio: approve spec` use the short name. If the grep takes the stage name, it never matches the real commits. Every past gate then reads as unapproved, and SC-3 fails on all four past efforts. If the commit takes the stage name, AC-19 fails.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-18 says `<stage>`, while FR-55, CT-6 and CT-11 say `<gate>`, and CT-6 names the gates `spec_jury`, `plan_jury` and `tasks_jury`. AC-19 and the tests expect `nio: approve spec`. No contract maps gate to message, so the commit and the grep can disagree.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "one GATES map (spec_jury -> nio: approve spec, ...) used by CT-6, CT-7 and CT-11",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "A holder that lost its lock deletes the lock of the caller that took it over",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-45",
+        "FR-54",
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the lock is held for the body and removed on exit, also on an exception",
+        "when it no longer holds its own `pid` and `host` (taken over meanwhile), it raises `flow.Busy` and writes nothing"
+      ],
+      "fix": "in CT-3, remove the lock on exit only when it still holds this caller's own `pid`, `host` and `at`.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "Caller A is slow, and its lock goes stale. Caller B renames the stale lock away and creates its own `flow.lock`. A re-reads the lock, sees it is no longer its own and raises `flow.Busy`. Because the lock is \"removed on exit, also on an exception\", A's exit then unlinks `flow.lock`, which is now B's. A third caller C can then take the lock while B is still writing. That gives two writers, and FR-45 and AC-12 are broken.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-3 line 41 says the lock is removed on exit \"also on an exception\". Line 46 makes a holder that lost the lock raise `Busy`. Nothing limits the removal to a lock the caller still owns, so A's exit deletes B's lock.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-3 removes the lock on exit only when it still holds this caller's pid, host and at",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "Overridden or human-closed gates have no judged version, so later edits are never sent back",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-36",
+        "FR-55",
+        "CT-7",
+        "CT-11"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHEN an approved file's content no longer matches the version its gate judged",
+        "a file with no such commit, or whose column says `ignore`, gives no entry",
+        "a guard `closed` by the human (CT-5) records kind `override` with the ledger's reason and needs no `--commit`"
+      ],
+      "fix": "in CT-7, take the judged blob for an overridden gate from the ledger's version for its closing round (or record the blobs on the `override` line). In CT-6, count an approve commit or override only if it is not older than the gate's current ledger round.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "The tasks gate is closed with `nio jury check --human`, and `nio flow done tasks_jury` records an `override` line with no `nio: approve tasks` commit. The effort moves to implementing. Someone then edits `tasks.md`. CT-7 takes the judged blob only from an approve commit, so there is no entry and no `back` line (AC-39 never fires). The `override` line also never expires, so FR-55 keeps counting the gate as passed. Work carries on against a tasks.md nobody re-judged, which is the UJ-4 misuse. For a gate that was approved by commit and then edited and re-judged, the old commit also satisfies FR-55 on its own. Then `where` says `working` while `done` still demands `--commit`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-7 reads the judged blob from the approve commit only. FR-55 counts an `override` line as passed with no expiry (CT-6 line 81), so a human-closed gate has no judged version to compare against.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "override lines record evidence.blobs and evidence.round; CT-7 uses them; CT-6 counts an approval commit or override only for the ledger's current round",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "A crash partway through a multi-line append breaks CT-2's recovery claim, and no test covers recovery",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "(2) append the lines, each carrying the new state's hash, and flush",
+        "A crash before (2) completes leaves a temp file whose hash matches no complete line, which CT-1 ignores and the next write deletes",
+        "`load` reads `state.json.new` in place of `state.json` when its hash equals the last complete line's `state` hash"
+      ],
+      "fix": "write all of a call's entries in a single `write` and fsync, and fix the \"crash before (2) completes\" sentence. Alternatively, put a batch marker on the last line of a batch and accept the new hash only from that line. Add TCs that leave `state.json.new` behind, once with a matching last line and once without, and check that `load` and the next write recover as CT-1 and CT-2 say.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`done drafting` appends `pass`, `skip` and `skip`, all carrying the new hash. The process crashes after the `pass` line is complete and while the first `skip` is torn. The `pass` line is complete and carries the new hash, so CT-1 treats `state.json.new` as the current state. The history then keeps half of the batch: the skip lines (and in other calls a `back` or `pause` line, or a `park` after `repair`) are lost for good when the next write cuts the torn line. That contradicts \"Either way the next call sees `state.json` agree with the last complete line... nothing is recorded twice\". No TC in tests.md creates a leftover `state.json.new`, so neither recovery branch, ignore-and-delete or read-and-rename, is proven.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-2 line 31 appends several lines (`pass` plus `skip`s) that all carry the new state hash, and line 30 truncates a torn last line. A crash after the first complete line leaves `state.json.new` matching it, which CT-1 accepts, and the next write cuts the torn lines. That loses the rest of the batch and contradicts \"nothing is recorded twice\". No TC leaves a `state.json.new` behind.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-2 writes a call's lines in one write+fsync with end:true on the last; CT-1 treats lines after the last end as torn; TC-73, TC-74",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "The rollback after a failed gate commit has no stated method, and TC-21 checks only file names",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "TC-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the gate commit fails → git's stderr, exit 1, `history.jsonl`, `state.json` and the index restored as they were (FR-20)",
+        "the lines are written, then `git add -A -- .nio/specs/<slug>` and `git commit -m \"nio: approve <gate>\" -- .nio/specs/<slug>` run",
+        "`history.jsonl`, `state.json` and the staged file list equal the snapshot"
+      ],
+      "fix": "write down the method. Before the append, save the byte length of `history.jsonl`, the bytes of `state.json` and the index (`git write-tree`, or a copy of `.git/index`). On failure, truncate the history, rewrite `state.json` and run `git read-tree`. Say what a crash between the append and the commit leaves behind. Extend TC-21 with a partly staged file in the folder and compare `git ls-files -s` and `git diff --cached`, not names only.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`git add -A` replaces whatever the human had staged in the effort folder, for example one hunk of `spec.md` staged with `git add -p` or a staged deletion. CT-11 does not say how the index is put back: no saved index and no `read-tree`. It also does not say how `history.jsonl` is truncated back, given that CT-2 deletes `state.json.new` and the `repair` line may already have cut a torn line. If the process dies between the append and the commit, the history keeps a `pass` line with no commit. TC-21 compares only `git diff --cached --name-only`, so a staged hunk replaced by the whole file would pass the test while the human's staging is lost.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-11 line 142 does `git add -A` and commit, and promises the restore only in the clause \"restored as they were\". It states no snapshot or restore method for the index or the history. TC-21 compares file names only, per the finding's quote.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-11 saves history length, state.json bytes and git write-tree before the append and restores on failure; TC-21 compares ls-files -s and diff --cached",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "A stale lock renamed during takeover is never removed and is not git-ignored, so the approval commit picks it up",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "is taken over by renaming it to a unique name first, so of two callers taking it over only one wins, then creating it anew",
+        "`.nio/specs/<slug>/.gitignore` gets the lines `flow.lock` and `state.json.new` when missing",
+        "`git status --porcelain` lists no path ending in `flow.lock`"
+      ],
+      "fix": "delete the renamed file once the new lock is created. Also ignore it in the folder's `.gitignore` (for example `flow.lock*`). Make TC-56 assert that `git status --porcelain` is empty for the effort folder apart from `history.jsonl` and `state.json`.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "after a takeover, a file such as `flow.lock.<unique>` stays in the effort folder. CT-3 never deletes it, and the `.gitignore` names only `flow.lock` and `state.json.new`, so git does not ignore it. The next gate's `git add -A -- .nio/specs/<slug>` stages it into the `nio: approve <gate>` commit. TC-56 checks only for paths ending in `flow.lock`, so it misses the renamed file.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-3 line 44 renames a stale lock to a unique name and never deletes it. The line 45 `.gitignore` lists only `flow.lock` and `state.json.new`, so the renamed file is untracked and `git add -A` stages it.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "the renamed stale lock is deleted after takeover; .gitignore says flow.lock*",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "The torn-line cut deletes bytes for good and cannot tell a crash-torn line from a whole line missing its newline",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-2",
+        "CT-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a `repair` line whose `reason` gives the cut line's number and byte count, never its text, goes first (FR-59)",
+        "when `sha256(state.json bytes)` differs from the `state` hash on the last complete line (`where` = `hash mismatch`)"
+      ],
+      "fix": "treat a last line that has no newline but parses as JSON and whose `state` hash matches `state.json` as complete, and add the missing newline. Keep the bytes that are cut, for example in the `repair` line's `reason` or in an ignored sidecar file. Add a TC for a valid last line with no newline.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "say a merge tool or editor strips the final newline, leaving the last line valid JSON whose hash matches `state.json`. CT-1 treats that line as torn and checks against the previous line, so it reports `hash mismatch`. Every command is then refused, and no command restores the effort. If the cut does happen, the text of a real transition, such as an override and its reason, is gone, because `repair` keeps only the line number and byte count.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "a newline-less last line that parses and matches the hash counts as complete; the repair line keeps the cut bytes in hex; TC-75",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "Tests call writing commands without `--by`, which CT-16 makes mandatory",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-16",
+        "TC-56",
+        "TC-12",
+        "TC-9",
+        "TC-38",
+        "AC-56"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each writing one requiring `--by` (no default: without it the command refuses and writes nothing; `next` takes it optionally and records a move only when it is given; Q23)",
+        "runs `uv run nio flow ...` in `root` as a subprocess; returns (exit code, stdout + stderr)",
+        "Assert: exit 0; exactly 1 new line, `kind` `park`; `git status --porcelain` lists no path ending in `flow.lock`."
+      ],
+      "fix": "have `cli` append `--by \"orchestrator / test / test\"` to writing subcommands, and have the in-process calls pass `by=` wherever a line is expected. Or state in CT-16 that the Python functions take a default `by`, and add one test that a CLI writer without `--by` refuses and writes nothing.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "the `cli` helper adds no `--by`, and TC-56, TC-19, TC-20 and TC-66 pass none. On correct code their \"exit 0\" asserts fail. The refusal tests (TC-9, TC-12, TC-21, TC-61) exit non-zero because of the missing flag rather than the condition they target, so their output asserts fail too. The tests that call `flow.next_step` with no `by` and expect a recorded move (TC-34 resume, TC-38 back, TC-43 pause) contradict \"records a move only when it is given\". To make these tests pass, the builder would have to give `--by` a default, which breaks CT-16.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The `cli` helper (tests.md line 15) adds no `--by`, and TC-36 runs `cli(root, \"done\", \"planning\", \"S\")` with none. TC-34 and TC-38 call `next_step` with no `by` and expect lines. CT-16 requires `--by`.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "the cli test helper adds --by; in-process calls pass by=; TC-77 proves a writer without --by refuses",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-16",
+      "title": "TC-9 can't pass inside US-1, its own build-order entry",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-9",
+        "AC-9",
+        "CT-11",
+        "CT-14",
+        "CT-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Action: each of `next`, `start`, `done planning`, `park S x`, `abandon S x`, `seen S` through `cli`.",
+        "Delivers: CT-4, CT-6, CT-9, CT-10, CT-13, CT-18"
+      ],
+      "fix": "in US-1, limit TC-9 to `next`, `start` and `park`. Add the `done`, `abandon` and `seen` cases to tests listed under US-2, US-4 and US-3, or move TC-9 to the last entry that delivers a command it calls.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "US-1 lists TC-9, but `done`, `abandon` and `seen` arrive with CT-11 (US-2), CT-14 (US-4) and CT-15 (US-3). In US-1 those three commands fail with argparse or attribute errors that don't name `state.json` and `stage`, so TC-9 is red until US-4 and US-3 land. That makes a correct US-1 indistinguishable from a broken one.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "plan.md line 15-16 puts TC-9 in US-1. TC-9 (tests.md line 79) calls `done`, `abandon` and `seen`, which CT-11, CT-14 and CT-15 deliver in later entries (US-2, US-4 and US-3, per plan.md lines 20, 26 and 32).",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-9 covers next, start and park; TC-78, TC-79, TC-80 cover done, abandon and seen in their entries",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-17",
+      "title": "Nothing catches a lock file that git doesn't ignore",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-56",
+        "AC-56",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Assert: exit 0; exactly 1 new line, `kind` `park`; `git status --porcelain` lists no path ending in `flow.lock`.",
+        "Returns: the lock is held for the body and removed on exit, also on an exception"
+      ],
+      "fix": "in TC-12, inside the `with flow.lock(...)` block, assert that `git status --porcelain` lists nothing under `.nio/specs/S/` other than tracked changes, and that `git check-ignore .nio/specs/S/flow.lock` exits 0. In TC-56, assert that `git status --porcelain -- .nio/specs/S` shows only `history.jsonl` and `state.json`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "suppose the build never writes `.nio/specs/<slug>/.gitignore`. After `park` exits, the lock is already deleted, so `git status` lists no `flow.lock` and TC-56 passes. The stale lock renamed during takeover isn't checked either: its unique name doesn't end in `flow.lock`, so it could be left untracked. No other test (TC-12, TC-61) runs `git status` or `git check-ignore` while a lock exists.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-56 asserts only that `git status --porcelain` lists no path ending in `flow.lock` after the lock is gone. No test checks `.gitignore` coverage while a lock exists or for the renamed stale lock.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-12 asserts git check-ignore while the lock is held; TC-56 asserts only history.jsonl and state.json show in git status",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-18",
+      "title": "The history helper can't set the `at` times that the ordering tests depend on",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "TC-3",
+        "TC-31",
+        "TC-69",
+        "AC-31",
+        "CT-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`history(root, slug, *lines)`: writes history.jsonl and state.json through `flow.record`, so hashes match.",
+        "`record(root, slug, entries, state, who, run) -> None`",
+        "A working at planning (last line `2026-10-25T10:00:00Z`)"
+      ],
+      "fix": "say how the helper fixes `at`, either through an `at=` parameter on `record` for tests or a patched clock in `flow`, and keep the hash computed over the written state.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`record` stamps `at` itself, and `entries` has no `at` field. A helper that goes through `flow.record` therefore writes \"now\" on every line. A–D in TC-31 and A/B in TC-69 then share near-identical times, so the order assert either passes by accident or flakes, and \"`2026-10-21 09:00`\" can never appear. A status that ignores `at` entirely could still pass.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The tests.md line 14 helper writes through `flow.record`, and CT-2's `record(root, slug, entries, state, who, run)` has no `at` parameter and stamps the time itself. The fixed `at` values in TC-31 and TC-69 can't be produced.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "record takes at= for tests; the history helper passes it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-19",
+      "title": "TC-45's setup doesn't rule out the no-progress pause firing before the cap",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "TC-45",
+        "AC-45",
+        "CT-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Setup: auto effort at plan_jury whose ledgers' rounds sum to 4 (spec 2, plan 2) and whose jurors' attempts sum to 7",
+        "or its `round` is 2 or more with no finding `fixed_in` that round while a finding raised in an earlier round is still `open` (RF-8)"
+      ],
+      "fix": "in the setup, state that plan round 2 has a finding `fixed_in` 2 and no open finding from round 1, so only the cap applies. Separately, state CT-8's precedence when both rules hold.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "if the plan ledger's round 2 fixed none of round 1's open findings, FR-39's pause applies and status reads `waiting_for_human: plan jury round 2 closed none…`, not `suspended: cap`. CT-8 doesn't say which rule wins, so a correct build can fail this test, or the test only passes for whichever precedence the fixture happens to favour.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-45 setup has round 2 fix a finding; CT-8 states the precedence: round cap and no-progress, then count caps, then change pause",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "bd2b4f52d99c8a5ad1716fd00762e0c37829e47e",
+    "2": "6d8085e6151d5de14af4f251917cf2c89d3fec86"
+  }
+}
