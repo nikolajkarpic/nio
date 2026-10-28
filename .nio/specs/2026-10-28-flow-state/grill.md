@@ -455,3 +455,101 @@ Options:
 3. Accept as risk
 Answer: 1. Refused, like park: abandoning a done effort is refused like parking one; the test also covers an unsupported effort. Done work stays marked done. [human]
 Patched: FR-61, AC-62
+
+## Session 3 · 2026-10-28 · @nio:plan, calls below the grill's bar
+
+## Call · CT-2 write order · 2026-10-28
+`state.json` goes to `state.json.new` first, then the history line, then the rename; a crash leaves a temp file that matches the last line (rolled forward) or doesn't (ignored and deleted), so FR-6 and FR-58 hold after any crash (spec jury adversary note). [agent]
+
+## Call · CT-2 unchained hash · 2026-10-28
+Known limit, accepted under Q14 and Q15: an agent that edits `state.json` and appends a matching line by hand is not caught; the rule in every skill and card and the git diff guard it (spec jury adversary note). [agent]
+
+## Call · CT-3 lock from another host · 2026-10-28
+Known limit, as FR-54 says: a lock from another host is taken over after a minute with no liveness check; the holder re-reads its lock before writing and writes nothing if it was taken over (spec jury adversary note). [agent]
+
+## Call · CT-3 .gitignore · 2026-10-28
+The lock is ignored through `.nio/specs/<slug>/.gitignore` (`flow.lock`, `state.json.new`), inside the effort folder, so AC-3's "no file outside the effort folders" holds. [agent]
+
+## Call · CT-9, CT-12 who writes · 2026-10-28
+`status` never writes; `next` writes only on an effort with history and only when it has something to record; `done` refuses a parked effort (start or next resumes it). [agent]
+
+## Call · CT-16 --by · 2026-10-28
+Writing commands take `--by "<role> / <host> / <model>"`, default `human`, as `nio new --by`; skills tell the orchestrator to pass its own. [agent]
+
+## Call · CT-11 FR-48 exit code · 2026-10-28
+A gate whose guard passes without `--commit` (auto off) prints the `--commit` command and exits 0. [agent]
+
+## Call · CT-17 run lookup · 2026-10-28
+A history line's run is the newest run whose `flow.json` names the effort and the stage being left; `nio run` with one argument, an unknown slug or an unknown stage is refused. [agent]
+
+## Call · CT-8 subagent count · 2026-10-28
+Subagent runs used = the sum of juror attempts over the effort's ledgers, the only per-effort count the files hold (RF-5, RF-8). [agent]
+
+## Asked · Q22 · OP-1 (plan) · 2026-10-28
+Facet: data
+Question: Pick one: when an approved file is edited, what is it compared with to notice the change?
+Context: The spec says approved versions come from the jury ledger, but a ledger keeps one version for all of a gate's files together, not one per file, and no gate covers the research notes (per the plan's research). The spec also wants the history to name the edited file with its own approved and current versions. Every approval is already a `nio: approve` commit in git.
+Options:
+1. The file's copy in its approval commit (Recommended): each file is compared with its copy in the gate's `nio: approve` commit; outcomes, rounds and rejections still come from the ledger. Every row of the spec's owning-stage table works and nothing outside this feature changes; the spec's "read from the ledger" is read as covering the outcomes only, which the plan jury will check.
+2. The ledger only: the history names the gate's combined versions, not the file's; the research notes row can't work, so the spec needs a change request and another spec jury pass.
+3. Per-file versions in the ledger: exact, but it changes the jury code, which this feature only reads, and reopens the architecture note.
+Refs: OP-1 · CT-7 · spec FR-2, FR-36, AC-39 · RF-8, RF-9
+
+## Q22 · OP-1 (plan) · 2026-10-28
+Question: Pick one: when an approved file is edited, what is it compared with to notice the change?
+Options:
+1. Its copy in the approval commit (recommended)
+2. The ledger only
+3. Per-file versions in ledger
+Answer: 1. Its copy in the approval commit: each file is compared with its copy in the gate's `nio: approve` commit; outcomes, rounds and rejections still come from the ledger. Every owning-stage row works and nothing outside this feature changes; the spec's "read from the ledger" is read as covering outcomes only, which the plan jury will check. [human]
+Patched: CT-7 (as drafted); retired OP-1 in plan.md
+
+## Asked · Q23 · CT-16 `--by` default · 2026-10-28
+Facet: permissions
+Question: Pick one: when a `nio flow` command is run without saying who ran it, who does the history say it was?
+Context: Every history line records who moved the effort. The plan copied `nio new`, where a missing `--by` means "human", so an agent that forgets `--by` would look like you, the misuse Q14 wanted visible.
+Options:
+1. Required, no default (recommended)
+2. Default to unknown agent
+3. Default to human
+Refs: CT-16 · spec FR-5, FR-57, Q14
+
+## Q23 · CT-16 `--by` default · 2026-10-28
+Question: Pick one: when a `nio flow` command is run without saying who ran it, who does the history say it was?
+Options:
+1. Required, no default (recommended)
+2. Default to unknown agent
+3. Default to human
+Answer: 1. Required, no default: every writing `nio flow` command needs `--by`; without it the command refuses and writes nothing. Nobody is recorded as you by accident; you type `--by human` (skills give agents their own value). [human]
+Patched: CT-16 (and the command shapes in CT-10, CT-11, CT-13, CT-14)
+
+## Session 4 · 2026-10-28 · plan jury round 1 findings that change behaviour or the architecture note, the human answers
+
+## Asked · Q24 · J-6 (plan) · 2026-10-28
+Facet: permissions
+Question: Pick one: when a jury rejected a gate and you push it through with `--human`, what makes that stick?
+Context: The plan's logic review found (confirmed) that `nio flow done <gate> --human` on a rejected gate records the override, but the next call reads the jury's saved "rejected" and sends the effort back again, because `nio flow` never rewrites the jury's file. `nio jury check --human` already closes a gate with your reason, and the flow then counts it as an override (spec, closed by the human).
+Options:
+1. Refuse at a gate, point to the jury close (Recommended): at a jury gate `done --human` refuses and prints `nio jury check <slug> <gate> --human "<reason>" --record`; ordinary stages keep `done --human`. One way to close a gate, recorded in both the jury's record and the flow history.
+2. The override beats the rejection: an override line on a gate skips the rejected-round rule until its files change. Works from one command, but the jury's record still says rejected while the flow says passed.
+3. Write both: `done --human` at a gate also runs the jury close for you. One command and both records agree, but `nio flow` then writes the jury's file, which the plan keeps read-only.
+Refs: J-6 · CT-6, CT-11 · spec FR-24, FR-27, FR-56 · Q12 (#45)
+
+## Q24 · J-6 (plan) · 2026-10-28
+Question: Pick one: when a jury rejected a gate and you push it through with `--human`, what makes that stick?
+Options:
+1. Refuse at a gate, use jury close (recommended)
+2. Override beats the rejection
+3. Write both
+Answer: 1. Refuse at a gate, use jury close: at a jury gate `done --human` refuses and prints `nio jury check <slug> <gate> --human "<reason>" --record`; ordinary stages keep `done --human`. One way to close a gate, recorded in both the jury's record and the flow history. [human]
+Patched: (below; narrows spec FR-24 at gates, so it needs a change request on the spec)
+
+## Asked · Q25 · J-1 (plan) · 2026-10-28
+Facet: change
+Question: Pick one: the approval commit needs git's exit code, which the existing git helper throws away; how should the plan get it?
+Context: The architecture note you approved says `nio flow` reaches git only through the existing helper, which returns only git's output (per the plan's research). The approval commit must report git's error when a commit fails (spec), and spotting an edited file needs two jury functions the note doesn't list. The plan called git directly, which breaks the note (architecture review, confirmed).
+Options:
+1. Extend the helper, note the jury functions (Recommended): the existing git helper gains an optional "return the exit code and error" mode, with every current caller unchanged; a change request adds that and the two jury functions (one reads a file version, one lists a gate's files) to the note. Smallest change, and the note stays true.
+2. Allow direct git calls: a change request lets `nio flow` call git itself for the commit. Fine, but a second way to run git in the codebase.
+3. Make every git call report errors: change the helper for all callers. Consistent everywhere, but it touches code this feature otherwise only reads.
+Refs: J-1 · CT-6, CT-11 · architecture.md · src/nio/records.py:git · RF-10
