@@ -1,0 +1,754 @@
+{
+  "gate": "spec",
+  "subject": "2026-10-28-plan-jury",
+  "round": 3,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261028-wxib/spec-consistency.md": "ed760279ede4d5aaf30f688d6663df963a16764a6c0381a31cf23e4b2460a3cc",
+    "R-261028-wxib/spec-logic.md": "bef9c42ae3697d192431a2b562a3a497632060f028e94fba500ba0c3535c7c33",
+    "R-261028-wxib/spec-scope.md": "a9bb32de96cca99322161f1548701d789cc7ec0c58c06f5ac45bcb922b0fb493",
+    "R-261028-wxib/spec-testability.md": "566d7db82c0f176dcc3684b14090f216b0bcca79da2082f3e0159433c605be54",
+    "R-261028-wxib/spec-refuter.md": "0e0da340858bf546498c76c0e1ab33f52a93f11f03bc0914ab1044eb18ce552c",
+    "R-261028-5be3/spec-consistency.md": "7912d840b3c571ad97f157cf7b98daa30875aa9f0a8f4d8cf5aca9c2a5d29c5a",
+    "R-261028-5be3/spec-logic.md": "64a35aeaf01e4b48503099041e4b15c2ff42689a200d572de67a841fd9363c8c",
+    "R-261028-5be3/spec-scope.md": "d6ff8f46b1d5c0f01b203bf9687b6e756cb271047e0bb85cc47f6c0e2f371424",
+    "R-261028-5be3/spec-testability.md": "6d7835c409a4c831479c603e412f0515f1704a102ce4789a9fe3305890c66d1a",
+    "R-261028-ehbw/spec-consistency.md": "f46bc2b630f0d477963cfae8e7db733f2a7ed5ecf8349bc661f39547caed5d48",
+    "R-261028-ehbw/spec-logic.md": "52161e1a500bd3bf4d995faf34bd2bfe612f9def2b666f59935bad6256988200"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "5d06839f71da8290ae1326efe60751653be9da35",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "5d06839f71da8290ae1326efe60751653be9da35",
+      "judged": 3
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "24a509825f63dcf7cae0fb8a34217549dbf7ed11",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "24a509825f63dcf7cae0fb8a34217549dbf7ed11",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "FR-12 states a different stop rule from the current decision it borrows",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-12",
+        "D-261026-r52z"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a round cap, the human after 2 failed rounds, and no re-raising"
+      ],
+      "fix": "state in FR-12 that the plan gate uses the r52z stop rule (or cite D-261026-r52z in Decisions); if the plan gate should differ, write a change request against r52z first.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a plan gate's first review raises a confirmed major. Under FR-12 the plan jury runs another round until the human is asked after 2 failed rounds. Under the current decision r52z the major goes to the human in one list at once, and only a confirmed blocker starts a round, with one final fix check. The two rules give different round counts and different hand-offs to the human.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-12 says \"the spec gate's rules\" but lists a round cap and \"the human after 2 failed rounds\". The current spec-gate rule, D-261026-r52z, is that only a confirmed blocker starts a round, plus one final fix check. Nothing in the spec says the plan gate differs.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-12 now cites D-261026-r52z and states its stop rule: after the first review only a confirmed blocker starts a round, the rest go to the human as one list, one final fix check",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "The risk lens is named two ways",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-44",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL ship a `risk-rollback` lens card",
+        "add the risk-and-rollback lens to the plan gate."
+      ],
+      "fix": "pick one name (the card's file name is the one a juror will see) and use it in FR-6, the decision table, Decisions and AC-7 and AC-48.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a builder reading FR-44 creates a card called `risk-rollback`, then reading FR-6 looks for a lens called `risk-and-rollback`. AC-7 and AC-48 use both names in the same way, so a test can't tell whether the line holds the right lens.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the decision table, FR-6 and AC-7 use `risk-and-rollback`. The card (FR-44, AC-46) is `src/nio/agents/risk-rollback.md`, and AC-48 expects the lens line to hold `risk-rollback`. FR-9 blocks the gate when a lens \"has no card\". If the CLI names the lens `risk-and-rollback` and looks for that card, it never finds `risk-rollback.md`. A migration spec is then always blocked (AC-7's outcome), even though the card shipped, and AC-48's lens-line check fails.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-consistency: the pack shows only the Decisions line changed to `risk-rollback`, and the decision table already used that name. FR-6 (\"add the risk-and-rollback lens to the plan gate.\") and AC-7/AC-48 are not in the pack and not shown changed, so the two-name mismatch the finding cites is not shown resolved.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "human",
+      "note": "The human ruled it fixed: FR-6, AC-7 and AC-48 were renamed to risk-rollback in round 1, outside the final pack; the old name appears 0 times in the spec",
+      "baseline": "unchanged",
+      "rounds": 2,
+      "first_round": 1,
+      "last_round": 3
+    },
+    {
+      "id": "J-3",
+      "title": "AC-1 does not exclude the Data model trigger it says to ignore",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-1",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a spec with no risk flags whose plan passes `nio check plan --gate` and has no contract with a `State:` line",
+        "the lens line lists `test-proof (core)` and `architecture-fit (core)` and nothing else"
+      ],
+      "fix": "add \"and no `## Data model` section in `contracts.md`\" to AC-1's Given, or say the expected lens line includes risk-rollback in that case.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the spec has no risk flags, the plan passes the check, and no contract has a `State:` line, but `contracts.md` has a `## Data model` section. FR-6 and AC-48 add risk-rollback for that plan, so the lens line holds three lenses and AC-1's \"and nothing else\" fails. AC-1 is written as if the Data model trigger cannot hold.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1's Given adds: and no ## Data model section",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "The spec never says what happens to the existing testability lens at the plan gate",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-3",
+        "Glossary \"Test-proof\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL run test-proof and architecture-fit as the plan gate's core lenses on every plan.",
+        "the lens that asks whether each planned test would fail if its AC broke"
+      ],
+      "fix": "add one sentence to FR-3 or the Glossary saying whether `testability` runs at the plan gate, and how it differs from test-proof.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the spec gate's core lens is `testability` (`CORE = {\"spec\": [\"testability\", \"logic\"]}` in `src/nio/jury.py`), and it checks testable ACs. A reader of FR-3 cannot tell whether `testability` also runs at the plan gate, so an implementer may wire it in or leave it out, and AC-1's \"nothing else\" can't be checked either way. The spec should say whether `testability` is a plan-gate lens and, if not, that test-proof replaces it for plans only.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-3 says testability doesn't run at the plan gate; the Glossary says how test-proof differs",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "A plan gate waiting on the spec has no exit if the spec change fails, and a second spec-rooted finding is dropped",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-34",
+        "FR-35",
+        "state table row `waiting-on-spec`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "reject: finish the spec change first",
+        "reopen the spec only once the human confirms"
+      ],
+      "fix": "add a `waiting-on-spec` exit for \"spec change abandoned or spec gate closed by human\" (back to `open`, or to `closed-by-human`). Replace \"ignore\" for a further spec-rooted finding with a defined outcome, such as queueing it into the open change request.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "J-3 is confirmed spec-rooted, so the gate goes `open` to `waiting-on-spec`. The spec jury then rejects the change request twice and hands the spec gate to the human, or the human drops the change. The only exit from `waiting-on-spec` is \"spec re-approved\", and \"human closes\" is rejected. The plan gate is stuck, the plan jury is paused for good, and the tasks stage never starts. In the same state a second confirmed spec-rooted finding J-4 is \"ignore\", so the finding is silently lost, although FR-34 says a spec-rooted finding is never a plan fix.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "In the state table, `waiting-on-spec` exits only on \"spec re-approved\". \"human closes\" is a reject there, and a further spec-rooted finding is \"ignore\". If the spec change fails or is dropped, the gate has no exit, and the second finding is lost although FR-34 says it is never a plan fix.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Grill Q10: a dropped spec change resumes the plan jury and hands its findings back; a second spec-rooted finding joins the open change (FR-48, FR-49, new table event)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "\"Handed to the human but not closed\" is not a state in the table",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-39",
+        "FR-12",
+        "AC-42",
+        "state table plan gate"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a gate handed to the human but not closed as not approved",
+        "### State table: plan gate (start: open; final: approved, closed-by-human)"
+      ],
+      "fix": "add a `handed-to-human` state (not final) with its own transitions: human closes goes to `closed-by-human`, a human-directed round goes to `open`. Add the \"round rejected after the cap goes to handed-to-human\" transition from `open`.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-12 hands the gate to the human after 2 failed rounds, and FR-39 and AC-42 treat \"handed, not closed\" as a distinct case that refuses the tasks stage. The state table has no such state. A rejected round after the cap goes to `open`, the same as round 1. In `open`, \"round approved\" still gives `approved`, so a gate the human is holding can be approved by a third round, or can be closed. The table cannot say which of these is allowed, and a test of AC-42's second clause has no state to set up.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-39 and AC-42 distinguish \"handed to the human but not closed\". The state table has no such state, and `open` on \"round rejected\" goes back to `open`. The table cannot say whether a held gate may still be approved by a later round.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Grill Q11: new with-human state; no round runs until the human settles with fixes or closes (FR-50, AC-59)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "A spec with no plan.md can start the tasks stage",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "A-4",
+        "FR-38",
+        "AC-40"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "which may start only on an approved plan",
+        "WHILE a spec has a `plan.md` whose gate is not approved THE SYSTEM SHALL refuse to start the tasks stage on it."
+      ],
+      "fix": "make FR-38 \"IF a spec has no approved plan (including no `plan.md`) THEN refuse\", and add an AC for the no-plan case.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a spec reaches the tasks stage without `@nio:plan` ever running, so there is no `plan.md`. FR-38's condition (\"has a `plan.md` whose gate is not approved\") is false, so nothing refuses. A-4 says the tasks stage may start only on an approved plan, so it should refuse. AC-40 and AC-41 only cover specs that have a `plan.md`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-38 only fires \"WHILE a spec has a `plan.md` whose gate is not approved\". With no `plan.md` the condition is false, although A-4 says the tasks stage may start only on an approved plan. AC-40 and AC-41 do not cover the no-plan case.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Grill Q8: a full spec with no approved plan is refused, a bug-fix spec is not (FR-38, AC-55)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "A plan that is approved stays approved after the spec changes under it",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-35",
+        "FR-38",
+        "FR-37",
+        "state table row `approved`",
+        "state table row `closed-by-human`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "once the plan is approved or closed, changes go through a change request",
+        "reject: plan approved, write a change request"
+      ],
+      "fix": "state what happens to the approval when a change request edits the spec after approval. Either the plan gate reopens (`approved` to `open` on \"spec re-approved\"), or the plan is marked stale until a fix-check clears it. Reword the cell so that \"reject\" and \"write a change request\" are not contradictory.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the plan is approved (`nio: approve plan` exists). A spec-rooted finding then arrives and a change request edits FR-4. FR-35 reopens the spec gate and the spec is re-approved. In `approved` the \"spec re-approved\" cell is \"ignore\", so the plan stays approved against the old FR-4. FR-38 only checks that the plan gate is approved, so the tasks stage starts on a plan nobody judged against the changed spec. The \"reject\" cell also reads as if the finding is refused, while it is meant to open a change request.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "In the `approved` and `closed-by-human` rows, \"spec re-approved\" is \"ignore\". A change request after approval therefore leaves the plan approved against the changed spec, and FR-38 only checks approval. The \"reject: ... write a change request\" cell also reads as contradictory. Q7 says only that changes go through a change request, not what happens to the approval.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Grill Q9: a spec re-approved under an approved or closed plan withdraws that approval; the plan jury re-checks what changed (FR-47, AC-56)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "The risk lens has two names: risk-and-rollback and risk-rollback",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-6",
+        "FR-44",
+        "FR-9",
+        "AC-7",
+        "AC-46",
+        "AC-48",
+        "decision table plan-gate lenses"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL add the risk-and-rollback lens to the plan gate",
+        "then `risk-rollback` exists with an `## At plan` section"
+      ],
+      "fix": "use one name, `risk-rollback` (the card name), in FR-6, AC-7, the decision table and the glossary or Key entities.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the decision table, FR-6 and AC-7 use `risk-and-rollback`. The card (FR-44, AC-46) is `src/nio/agents/risk-rollback.md`, and AC-48 expects the lens line to hold `risk-rollback`. FR-9 blocks the gate when a lens \"has no card\". If the CLI names the lens `risk-and-rollback` and looks for that card, it never finds `risk-rollback.md`. A migration spec is then always blocked (AC-7's outcome), even though the card shipped, and AC-48's lens-line check fails.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "A human can close a plan gate with a reason, which nobody asked for",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-39",
+        "AC-42",
+        "state table row `closed-by-human`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL count a plan gate the human closed with a reason as approved for FR-38",
+        "| open | → approved | → open | → waiting-on-spec | ignore | → closed-by-human | [human] |"
+      ],
+      "fix": "drop FR-39, the closed-by-human column and AC-42, or ask the human in the grill whether a close-with-reason path is wanted and re-tag it as [human] if it is.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "FR-39 is tagged [research: RF-9], but the issue's research comment (intake.md) says nothing about closing a gate. The state table row is tagged [human], yet no answer in answers.md (Q7 covers only pausing and change requests) asks for a closed-by-human state. A plan with open findings can reach the tasks stage on the human's close with a reason, which the human never chose as a rule. AC-42 tests this path.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The premise that the research says nothing about closing a gate is wrong. `research.md` RF-9 records that the approved tasks-stage spec counts a gate the human closed as approved, and a gate handed over but not closed as not approved (tasks-stage spec line 205). The grill (grill.md line 101) surfaced RF-9. So FR-39's `[research: RF-9]` tag is backed, and the closed-by-human path is existing precedent, not something invented.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "One spec bundles the plan gate and the tasks-stage refusal, with a P2 slice",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "US-6",
+        "FR-37",
+        "FR-38"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the tasks stage needs it, but the gate's review is useful before the tasks stage is built.",
+        "epic: \\\"\\"
+      ],
+      "fix": "split US-6 and FR-37 to FR-39 into a second slice with its own `epic` value, or record in the spec why one slice is needed.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the spec has 46 FRs and 50 ACs. US-6 (the approval commit and the tasks-stage refusal) is marked P2, and the spec itself says the gate's review is useful before the tasks stage exists. If the tasks refusal ships with the gate, the first spec planned after this ships (SC-1) is blocked on a tasks-stage change that is not needed to judge a plan. The check output already flags scope as triggered (more than 8 FRs).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "NFR-1 zero-model-call rule for `nio jury plan` has a [human] tag the human did not give",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "NFR-1",
+        "AC-30"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL run `nio jury plan <slug> plan` and the `Like:` check in `nio check plan` with zero model calls. [human]"
+      ],
+      "fix": "re-tag NFR-1 as [default] so the grill confirms it, or narrow it to the Like check the human called free.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human said the Like check is \"the free check\" (Q5) and the research says \"checked for free\". Nothing in the intake or answers asks that `nio jury plan` itself make zero model calls. The provenance tag says the grill confirmed it, and it did not. If a later change needs a model call to plan lenses, this rule would block it with no human decision behind it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "NFR-1 is backed by research RF-10 (nio jury plan calls no model; #57 decided the Like check is free) instead of a [human] tag",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "FR-12 bundles five rules and gives no number for the round cap",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-12",
+        "AC-10",
+        "AC-38"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a refuter, a round cap, the human after 2 failed rounds"
+      ],
+      "fix": "split FR-12 into one FR per rule, state the cap as a number, and give each rule an AC with an exit code or ledger state as its Observable.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "Only \"at most 5 findings\" (AC-10) and the Decision re-raise (AC-38) have ACs. Nothing checks fresh context, the refuter running, the round cap, or the handoff to the human after 2 failed rounds. A plan gate that loops forever, skips the refuter or never reaches the human would pass every AC. \"A round cap\" has no number in this spec, so a test cannot assert it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-12 bundles five rules and gives \"a round cap\" no number. Only the 5-finding limit (AC-10) and the re-raise rule (AC-38) have ACs. Nothing tests the refuter, fresh context, the cap or the handoff.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-12 lists each rule exactly; new AC-51 (majors go to the refuter) and AC-52 (only confirmed blockers start a round, the rest to the human as one list)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "AC-38 asks a test to prove a model never repeats a finding",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-38"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the next round's ledger holds no new finding with the same cites and situation"
+      ],
+      "fix": "state the Observable on the CLI side, for example \"the pack lists the declined Decision text\" or \"collect rejects a finding whose cites match a declined one\". Leave the model's behaviour out of the AC.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "Jurors are models, so \"the same situation\" is a judgement and the output differs on each run. A test passes when the juror words the repeat differently, even though the human's decline was ignored. A test can only check what the CLI controls: that the declined finding is in the juror's pack, or that collect drops a finding matching it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-38's Observable is that the next round's ledger holds no new finding \"with the same cites and situation\". That depends on model output and on judging sameness, so it cannot be asserted deterministically. The spec states no CLI-side check, such as the pack carrying the declined Decision.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-38 now checks the CLI side: the fix-check pack lists the finding under Settled by the human",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "FR-5 and FR-6 name triggers that no AC tests",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-5",
+        "FR-6",
+        "AC-6",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN the spec's risk flags include auth or pii"
+      ],
+      "fix": "add an AC for `auth`, or make AC-6 a table with one row per flag, and do the same for `data-deletion`.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-6 tests only `pii`. A bug that triggers security on pii but not on auth passes every test. FR-6's `data-deletion` trigger has the same problem, because AC-7 and AC-48 cover only `migration` and `## Data model`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "New AC-53 (risk auth) and AC-54 (risk data-deletion)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "AC-37 and FR-36 are negatives with no way to detect a violation",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-37",
+        "FR-36"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the plan files gain no limit the spec doesn't state"
+      ],
+      "fix": "reduce the Observable to what a test can see, for example the disposition is `spec-change`, no `plan-fix` is recorded, and the plan files are unchanged until the spec is re-approved. Leave the \"no limit appears\" check to the architecture-fit or scope lens.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "To check this, a test must recognise \"a limit\" in free prose, then compare it to the spec. No rule says how to do that. A plan that adds \"max 50 rows\" passes if the checker misses it. The AC also mixes two things: where the finding goes (a change request, which is checkable) and what the plan text contains (not checkable).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-37's Observable \"the plan files gain no limit the spec doesn't state\" is a negative over free prose, with no rule for detecting a limit. It also mixes the checkable routing (a change request) with an uncheckable content claim.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-37's Observable is the ledger: spec-change, no plan-fix, plan files unchanged until the spec is re-approved",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "Some e2e Observables rely on the juror's own report",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-13",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "no test command was run by the juror"
+      ],
+      "fix": "give a checkable proxy. For AC-17, use the tool allowlist on the test-proof card, or the host's tool log. For AC-13, require the reasoning to quote the `Assert:` line and a changed line of the bound code, and have the collect step check those quotes.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "The AC gives no way to observe this. Nothing in the pack or ledger records the commands a juror ran. AC-13's \"holds a bug (e.g. a flipped condition)\" has the same problem: a test cannot tell a \"concrete bug\" from a vague one. SC-2 repeats the wording \"would or would not catch\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-13 names a changed line of the bound code; AC-17 relies on the card's read-only tools; SC-2 reworded",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "The plan-gate table calls `approved` and `closed-by-human` final but now leaves them",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-47",
+        "state table plan gate"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "### State table: plan gate (start: open; final: approved, closed-by-human)",
+        "| approved | ignore | ignore | ignore | reject: no round runs on an approved plan; a change request carries the problem | → open |"
+      ],
+      "fix": "change the header to something like \"final unless the spec is re-approved: approved, closed-by-human\", or say that FR-47 is the only exit from a final state.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the header says `approved` and `closed-by-human` are final, but the J-8 fix gives both a \"spec re-approved → open\" transition. A reader or a reachability check that treats final states as terminal gets two answers. \"Approved\" is no longer the end state the header says it is.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "human"
+    ]
+  ],
+  "versions": {
+    "1": "92bc72fe823ec1a49a93ec65adfc6af48fc18478",
+    "2": "24a509825f63dcf7cae0fb8a34217549dbf7ed11",
+    "3": "5d06839f71da8290ae1326efe60751653be9da35"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-2"
+    ],
+    "final": 3,
+    "flagged": [
+      "J-2"
+    ]
+  },
+  "closed": [
+    3,
+    "5d06839f71da8290ae1326efe60751653be9da35",
+    "J-2 is fixed in round 1 (FR-6, AC-7, AC-48 say risk-rollback); the final pack didn't show those lines"
+  ]
+}
