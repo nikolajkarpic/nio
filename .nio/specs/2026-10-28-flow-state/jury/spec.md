@@ -1,7 +1,7 @@
 ---
 gate: spec
 subject: 2026-10-28-flow-state
-round: 3
+round: 4
 outcome: approved
 ---
 # Spec jury: 2026-10-28-flow-state
@@ -33,6 +33,7 @@ outcome: approved
 | J-21 | major | inconsistency | FR-21, FR-47, AC-22 | consistency | confirmed | fixed | spec-fix (agent) | absent, 0 |
 | J-22 | major | contradiction | FR-9, FR-3 | consistency | confirmed | fixed | spec-fix (grill) | absent, 0 |
 | J-23 | minor | ambiguity | FR-40, AC-45 | consistency | grounded | fixed | spec-fix (agent) | absent, 0 |
+| J-24 | minor | ambiguity | FR-62, AC-65 | logic | grounded | noted |  | new, 0 |
 
 ### J-1 The override has no check on who gives it, so the agent the guards watch can pass any guard
 - quote: "THE SYSTEM SHALL pass the stage and append a history line holding the failing guard output and the reason"
@@ -217,12 +218,19 @@ outcome: approved
 - fix: name the new key's scope (per effort, jury count) and say how it relates to jury.max_runs (per gate, lens runs), or reuse jury.max_runs with a per-effort total.
 - disposition: spec-fix by agent: FR-40 names budgets.juries and budgets.subagents as per-effort caps, distinct from jury.max_runs per gate
 
+### J-24 The printed command's gate name differs between FR-62 and AC-65
+- quote: "at a jury gate (spec_jury, plan_jury, tasks_jury)"
+- quote: "the output contains `nio jury check` with the slug, `spec` and `--human`"
+- situation (logic): `nio flow done spec_jury --human "pack bug"` runs. FR-62 prints the command with `<gate>`, and `<gate>` is the flow gate, `spec_jury`. AC-65 expects the output to contain `spec`. If `<gate>` is substituted as `spec_jury`, then `nio jury check` may get a gate name it does not know. If it is mapped to `spec`, FR-62 does not say so.
+- fix: state in FR-62 that the printed gate is the jury's name (`spec`, `plan`, `tasks`) and not the flow stage name
+- validation: grounded: raised in a re-review below blocker: a note only
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| spec-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
-| spec-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
-| spec-logic | logic | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
-| spec-scope | scope | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 3 |
-| spec-testability | testability | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 3 |
+| spec-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 4 |
+| spec-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 4 |
+| spec-logic | logic | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 4 |
+| spec-scope | scope | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 4 |
+| spec-testability | testability | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 4 |

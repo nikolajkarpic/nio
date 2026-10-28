@@ -141,6 +141,8 @@ file sends the effort back to the stage that owns the file, and the stop list pa
   Observable: each `history.jsonl` has exactly one override line; neither is merged or deduplicated. Level: unit.
 - **AC-28** (FR-26) Given a failing guard, when `nio flow done grilling --human ""` runs, then it refuses. [human]
   Observable: non-zero exit; the message says a reason is required; no history line is added. Level: unit.
+- **AC-65** (FR-62) Given an effort at spec_jury whose spec ledger is rejected, when `nio flow done spec_jury --human "pack bug"` runs, then it refuses and prints the `nio jury check` command. [human]
+  Observable: non-zero exit; no history line; the output contains `nio jury check` with the slug, `spec` and `--human`. Level: unit.
 - **AC-29** (FR-27) Given the human closed the spec gate with `nio jury check --human "pack bug"`, when `nio flow done spec_jury` runs, then the gate passes as a human override carrying that reason. [human]
   Observable: exit 0; the history line has kind `override` and the reason `pack bug`. Level: unit.
 - **AC-57** (FR-57) Given an override on grilling, when `nio flow status` runs before and after `nio flow seen <slug>`, then the override shows before and not after, and history records the seen. [human]
@@ -245,6 +247,7 @@ file sends the effort back to the stage that owns the file, and the stop list pa
 - **FR-22** WHILE the implement stage is not built, WHEN an effort reaches implementing THE SYSTEM SHALL set it waiting for the human with the reason `implement not built`. [human]
 - **FR-23** WHEN a gate's jury ledger says `rejected` THE SYSTEM SHALL move the effort back as the state table "Flow" says. [human]
 - **FR-24** WHEN `nio flow done <stage> --human "<reason>"` runs and a guard fails THE SYSTEM SHALL pass the stage and append a history line holding the failing guard output and the reason. [human]
+- **FR-62** IF `nio flow done <gate> --human "<reason>"` runs at a jury gate (spec_jury, plan_jury, tasks_jury) THEN THE SYSTEM SHALL refuse, record nothing, and print `nio jury check <slug> <gate> --human "<reason>" --record`, whose closure FR-27 then counts as the override (C-261028-quyk). [human]
 - **FR-25** THE SYSTEM SHALL write each human override as its own history line and never merge or deduplicate it with another line. [human]
 - **FR-26** IF `--human` is given with an empty reason THEN THE SYSTEM SHALL refuse and record nothing. [human]
 - **FR-57** THE SYSTEM SHALL show each override in `nio flow status` and `nio flow next` as an override not yet seen, with its stage and reason, until `nio flow seen <slug>` records that the human saw it; every skill and agent card SHALL say that only the human gives `--human` or runs `nio flow seen`. [human]
@@ -387,5 +390,6 @@ file sends the effort back to the stage that owns the file, and the stop list pa
 - The task machine moves to #43 through change request C-261028-xcg6 on the tasks-stage spec (Q17).
 - No slug means the effort with the newest history line; there is no local pointer (Q18, FR-9).
 - A torn last history line is cut off and noted; any other damage stops the effort and shows as broken (Q19, FR-59, FR-60).
+- `--human` at a jury gate goes through `nio jury check --human`, so the jury's record and the flow agree (Q24, FR-62, C-261028-quyk).
 
 ## Open points
