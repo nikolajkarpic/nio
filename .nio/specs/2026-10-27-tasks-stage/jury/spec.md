@@ -1,7 +1,7 @@
 ---
 gate: spec
 subject: 2026-10-27-tasks-stage
-round: 3
+round: 5
 outcome: approved
 ---
 # Spec jury: 2026-10-27-tasks-stage
@@ -29,6 +29,8 @@ outcome: approved
 | J-17 | minor | ambiguity | FR-45, AC-46 | testability | grounded | fixed | spec-fix (agent) | absent, 0 |
 | J-18 | major | gap | DF-1, OP-5 | deferred | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-19 | minor | gap | FR-17 | consistency | grounded | fixed | spec-fix (grill) | absent, 0 |
+| J-20 | major | inconsistency | FR-2, AC-42, AC-1 | logic | grounded | noted |  | new, 0 |
+| J-21 | minor | contradiction | FR-55 | logic | grounded | noted |  | new, 0 |
 
 ### J-1 Drafter writes a decision record directly
 - quote: "record it as a decision with `@nio:remember`, so the tasks jury can see it."
@@ -166,13 +168,27 @@ outcome: approved
 - fix: state in FR-17 whether the max-model fallback replaces the current WARN-and-inherit behaviour, for `frontier` only or for every tier.
 - disposition: spec-fix by grill: Q14: unmapped tier falls back one tier down for cards and tasks, with a warning (FR-52, AC-58)
 
+### J-20 AC-42 and AC-1 do not name a route, so on a full spec they contradict FR-2's plan-approval clause
+- quote: "Given a spec whose jury the human closed with a reason, when the tasks stage starts, then it proceeds."
+- quote: "For a full spec it SHALL also refuse until `nio check plan <slug> --approved` exits 0, and say the plan must be approved first."
+- situation (logic): A full spec has its spec gate closed by the human with a reason, and its plan is not approved. AC-42 says the tasks stage proceeds with no refusal and starts the drafter. FR-2 and AC-59 say it refuses and writes no `tasks.md`. AC-1 has the same problem: "Given an approved spec with US-1 and US-2 and no shared setup" names no route, so on a full spec without an approved plan it cannot produce `tasks.md`.
+- fix: Name the route in the Given of AC-42, AC-1 and AC-2, for example a bug-fix spec, or a full spec whose plan is approved. A fixture that is plainly one or the other would also do.
+- validation: grounded: raised in a re-review below blocker: a note only
+
+### J-21 Two Decisions disagree on what a full spec's `Test:` line holds, and the older one is not marked superseded
+- quote: "A task's `Test:` line says in words what the test checks; tests carry no spec IDs and the conformance lens matches them to ACs: D-261027-b44u (memory, 2026-10-27)."
+- quote: "On a full spec a task's `Test:` line cites the plan's `TC-n`: D-261028-scwb (grill Q16, 2026-10-28)."
+- situation (logic): A reader of the Decisions section on a full spec gets two answers for a task's `Test:` line. The first says it describes the test in words. The second says it cites a `TC-n`. AC-62 fails the first reading with "a full spec's `Test:` cites a `TC-n`". FR-55 settles it for the build, but the older decision still reads as unconditional.
+- fix: Narrow the D-261027-b44u line to bug-fix specs, or add "superseded for full specs by D-261028-scwb".
+- validation: grounded: raised in a re-review below blocker: a note only
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| spec-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 3 |
+| spec-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 5 |
 | spec-consistency-2 | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 2 |
 | spec-consistency-3 | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 2 |
-| spec-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
-| spec-scope | scope | juror / claude-code / haiku | sufficient | yes | 1 | 3 |
-| spec-testability | testability | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
+| spec-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |
+| spec-scope | scope | juror / claude-code / haiku | sufficient | yes | 1 | 5 |
+| spec-testability | testability | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |

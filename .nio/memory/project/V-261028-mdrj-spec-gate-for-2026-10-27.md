@@ -1,0 +1,30 @@
+---
+id: V-261028-mdrj
+type: verdict
+title: "spec gate for 2026-10-27-tasks-stage: approved (round 4)"
+answers: jury             # why | reuse | jury
+date: 2026-10-28
+by: "jury"                # role / host / model, or human
+run: ""              # run ID; empty when written by hand
+subject: "spec:2026-10-27-tasks-stage"
+outcome: approved
+tier: low
+paths: [".nio/specs/2026-10-27-tasks-stage/jury/spec.md"]
+tags: []
+supersedes: []
+---
+## Ruling
+The spec jury ruled **approved** for `2026-10-27-tasks-stage` in round 4 (1 disposed, 18 fixed, 2 noted). Ledger: `.nio/specs/2026-10-27-tasks-stage/jury/spec.md`.
+## Jurors
+| Lens | Host | Model | Vote |
+| --- | --- | --- | --- |
+| consistency | claude-code | haiku | approve |
+| consistency | claude-code | haiku | approve |
+| consistency | claude-code | haiku | approve |
+| logic | claude-code | sonnet | approve |
+| scope | claude-code | haiku | approve |
+| testability | claude-code | sonnet | approve |
+## Reasons
+- J-18 [major/gap] Deferred by the grill: What happens when a green or in-review task's tests fail again. Deferred: #45 bu: disposed accepted-risk
+## What was rejected
+Nothing.
