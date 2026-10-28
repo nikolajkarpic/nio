@@ -962,8 +962,16 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         return commit_gate(root, slug, stage, entries, state, w, out)
 
 
+def verdicts(root, slug, gate):
+    """The verdict records `nio jury check --record` wrote for this gate, as paths from the root."""
+    line = f'subject: "{gate}:{slug}"'
+    return sorted(str(p.relative_to(root)) for p in (root / ".nio/memory").rglob("V-*.md")
+                  if line in p.read_text(encoding="utf-8").splitlines())
+
+
 def commit_gate(root, slug, stage, entries, state, w, out):
-    """Record the gate's pass and make its `nio: approve <gate>` commit of the effort folder alone (FR-18); when git
+    """Record the gate's pass and make its `nio: approve <gate>` commit of the effort folder and the gate's verdict
+    records (FR-18, the jury skill's Approval step); when git
     fails, put history.jsonl, state.json and the index back as they were, byte for byte, and print git's error (FR-20,
     CT-19)."""
     folder = root / ".nio/specs" / slug
@@ -975,8 +983,8 @@ def commit_gate(root, slug, stage, entries, state, w, out):
         return 1, [err.strip()]
     if entries:
         write(root, slug, entries, state, w, stage)
-    rel = f".nio/specs/{slug}"
-    for args in (["add", "-A", "--", rel], ["commit", "-q", "-m", GATES[stage][1], "--", rel]):
+    rel = [f".nio/specs/{slug}"] + verdicts(root, slug, GATES[stage][0])
+    for args in (["add", "-A", "--", *rel], ["commit", "-q", "-m", GATES[stage][1], "--", *rel]):
         code, _, err = records.git(root, *args, full=True)
         if code:
             if kept is None:
