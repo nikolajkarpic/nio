@@ -56,8 +56,8 @@ catches the mechanical cases (a new folder, or a new data model entry, with `arc
 
 ## Steps
 
-1. **Check the inputs.** Run `nio jury check <slug> spec`. Unless it says `outcome: approved`, stop: tell the human
-   the spec isn't approved yet and the spec jury comes first. If `architecture.md` exists, read it. Its
+1. **Check the inputs.** Run `nio jury check <slug> spec`. Unless it says `outcome: approved`, or `outcome: human` with
+   "the human closed the gate", stop: tell the human the spec isn't approved yet and the spec jury comes first. If `architecture.md` exists, read it. Its
    decisions are settled.
 2. **Create or resume.** If the plan files don't exist, run `nio new plan <slug>`, and set `architecture:` in
    `plan.md` to `approved` when `architecture.md` exists, else `none`. If they exist, this is a resume: run
