@@ -141,6 +141,15 @@ Run the steps above with `plan` in place of `spec` (`nio jury plan <slug> plan`,
   the four plan files and the plan verdict record as one `nio: approve plan` commit. `nio check plan <slug> --approved`
   is what the tasks stage reads; a later spec change withdraws the approval until the plan jury re-checks what changed.
 
+## At the tasks gate
+
+Run the steps with `tasks` in place of `spec`. `nio jury plan <slug> tasks` refuses until `nio check tasks <slug>`
+passes, and plans executability alone. Each pack holds `tasks.md`, the spec and, on a full spec, the plan's files, plus
+the `nio check tasks` output with its estimate. A finding is fixed in `tasks.md` (`plan-fix` doesn't apply here: dispose
+it as a `spec-fix` on the tasks, as you would at the spec gate). When the outcome is `approved` and the human approves
+the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approve tasks` commit; `nio check tasks <slug>
+--approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later don't withdraw it.
+
 ## When to stop
 
 Stop when the outcome is `approved` and the human has been told, or when the outcome is `human` and the decision is

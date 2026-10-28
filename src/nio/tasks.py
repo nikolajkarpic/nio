@@ -1,0 +1,313 @@
+"""The tasks stage (#42): create tasks.md next to an approved spec and plan, run its free checks, print the estimate,
+show one task, and answer whether the implement stage may start."""
+import collections
+import re
+from importlib import resources
+
+from nio import records, spec
+
+FIELDS = ["Files", "Serves", "Test", "Depends on", "Parallel", "Tier", "Effort"]
+TIER = re.compile(r"^(\S+?)(?::\s*(.*))?$")
+TIERS = ["cheap", "strong", "max", "frontier"]
+EFFORTS = ["low", "med", "high"]
+EPIC = re.compile(r"^## (E-\d+)\b\s*(.*)$")
+TASK = re.compile(r"^### (T-\d+)\b\s*(.*)$")
+LINE = re.compile(r"^- ([A-Z][A-Za-z ]*?):\s*(.*?)\s*$")
+ID = re.compile(r"(?<![\w-])([A-Z]+-\d+)(?![\w-])")
+CHANGE = re.compile(r"\bC-\d{6}-[a-z2-7]{4}\b")
+FINDING = re.compile(r"^(J-\d+) \(([\w-]+), round \d+\)$")
+
+
+def path(root, slug):
+    return spec.path(root, slug).parent / "tasks.md"
+
+
+def route(root, slug):
+    if not spec.path(root, slug).exists():
+        raise ValueError(f"no spec at {spec.path(root, slug).relative_to(root)}")
+    return records.parse(spec.path(root, slug))[0].get("route")
+
+
+def may_start(root, slug):
+    """(ok, why): may the tasks stage start (#42 FR-2, FR-39)? The spec gate approved or closed by the human, and on a
+    full spec the plan approved too."""
+    from nio import jury, plan
+    kind = route(root, slug)
+    if kind == "epic":
+        return False, f"`{slug}` is an epic: run the tasks stage on each slice's spec"
+    if jury.standing(root, slug, "spec") not in ("approved", "closed"):
+        return False, "the spec must be approved first"
+    if kind == "full":
+        ok, why = plan.approved(root, slug)
+        if not ok:
+            return False, why
+    return True, "the tasks stage may start"
+
+
+def new(root, slug):
+    """Write tasks.md from its template, never overwriting it; refuse until the tasks stage may start."""
+    ok, why = may_start(root, slug)
+    if not ok:
+        raise ValueError(why)
+    if path(root, slug).exists():
+        raise ValueError(f"{path(root, slug).relative_to(root)} already exists")
+    text = resources.files("nio").joinpath("templates/tasks.md").read_text().replace("<slug>", slug)
+    path(root, slug).write_text(text)
+    return path(root, slug)
+
+
+def parse(text):
+    """{"epics": [{"id", "title", "story", "head", "tasks": [ids]}], "tasks": {id: task}, "dupes": [ids]}. A task holds its
+    epic, whether it sits under `#### Fixes`, its block of lines and its `- Name: value` fields."""
+    epics, tasks, dupes, epic, fix, cur = [], {}, [], None, False, None
+    for line in re.sub(r"<!--.*?-->", "", text, flags=re.S).splitlines():
+        if m := EPIC.match(line):
+            story = re.search(r"\((US-\d+|Foundation)\)\s*$", m[2])
+            epic, fix, cur = {"id": m[1], "title": m[2], "story": story[1] if story else "", "head": line, "tasks": []}, False, None
+            epics.append(epic)
+        elif line.strip() == "#### Fixes":
+            fix, cur = True, None
+        elif (m := TASK.match(line)) and epic:
+            if m[1] in tasks:
+                dupes.append(m[1])
+            cur = {"id": m[1], "title": m[2], "epic": epic["id"], "fix": fix, "block": [line], "fields": {}}
+            tasks[m[1]] = cur
+            epic["tasks"].append(m[1])
+        elif line.startswith("## ") or line.startswith("# "):
+            epic, cur = None, None
+        elif cur is not None and line.strip():
+            cur["block"].append(line)
+            if m := LINE.match(line):
+                cur["fields"].setdefault(m[1], m[2])
+    return {"epics": epics, "tasks": tasks, "dupes": dupes}
+
+
+def files(value):
+    return [f.strip().strip("`") for f in value.split(",") if f.strip().strip("`")]
+
+
+def ids(value):
+    return ID.findall(value)
+
+
+def reach(tasks):
+    """{task: every task it depends on, directly or through others}."""
+    deps = {t: set(ids(tasks[t]["fields"].get("Depends on", ""))) & tasks.keys() for t in tasks}
+    out = {}
+    for t in tasks:
+        seen, todo = set(), list(deps[t])
+        while todo:
+            d = todo.pop()
+            if d not in seen:
+                seen.add(d)
+                todo += deps.get(d, [])
+        out[t] = seen
+    return out
+
+
+def cycles(tasks):
+    """Each dependency cycle once, as its tasks in order."""
+    deps = {t: [d for d in ids(tasks[t]["fields"].get("Depends on", "")) if d in tasks] for t in tasks}
+    found, state = [], {}
+
+    def walk(t, stack):
+        state[t] = "open"
+        for d in deps[t]:
+            if state.get(d) == "open":
+                found.append(stack[stack.index(d):] + [d])
+            elif d not in state:
+                walk(d, stack + [d])
+        state[t] = "done"
+    for t in tasks:
+        if t not in state:
+            walk(t, [t])
+    return found
+
+
+def plan_parts(root, slug):
+    """(build order {entry: (files, TCs)}, TC IDs) of a full spec's plan."""
+    folder = spec.path(root, slug).parent
+    _, cbody = records.parse(folder / "contracts.md")
+    bound = {}
+    for iid, block in spec.items(spec.sections(cbody).get("Contracts", [])):
+        m = re.search(r"^- Binding:\s*`([^`:]+)", "\n".join(block), re.M)
+        if m:
+            bound[iid] = m[1]
+    _, tbody = records.parse(folder / "tests.md")
+    tcs = set(re.findall(r"^### (TC-\d+)\b", "\n".join(tbody), re.M))
+    _, pbody = records.parse(folder / "plan.md")
+    entries = {}
+    for name, lines in spec.subsections(spec.sections(pbody).get("Build order", [])):
+        key = re.match(r"(US-\d+|Foundation)", name)
+        text = "\n".join(lines)
+        get = lambda f: ids((re.search(rf"^- {f}:\s*(.*)$", text, re.M) or [None, ""])[1])
+        if key:
+            entries[key[1]] = ({bound[c] for c in get("Delivers") if c in bound}, get("Tests"))
+    return entries, tcs
+
+
+def check(root, slug, gate=False, base="HEAD"):
+    """(errors, notes): the free checks of tasks.md (#42 FR-6 to FR-16, FR-24, FR-28 to FR-30, FR-34 to FR-38, FR-40,
+    FR-45, FR-48 to FR-50, FR-53, FR-55; NFR-1), and the estimate as notes. `gate` is accepted for the CLI's sake."""
+    kind = route(root, slug)
+    p = path(root, slug)
+    if not p.exists():
+        return [f"{p.relative_to(root)} is missing; create it with `nio new tasks {slug}`"], []
+    meta, body = records.parse(p)
+    retired = meta.get("retired") or []
+    parsed = parse("\n".join(body))
+    tasks, epics = parsed["tasks"], parsed["epics"]
+    _, sbody = records.parse(spec.path(root, slug))
+    acs = {i for _, lines in spec.sections(sbody).items() for i, _ in spec.items(lines) if i.startswith("AC-")}
+    errs = [f"`slug` must be `{slug}`"] * (meta.get("slug") != slug)
+    errs += [f"{t} is defined {1 + parsed['dupes'].count(t)} times" for t in dict.fromkeys(parsed["dupes"])]
+    errs += [f"{e} is defined {n} times" for e, n in collections.Counter(e["id"] for e in epics).items() if n > 1]
+    full = kind == "full"
+    entries, tcs = plan_parts(root, slug) if full else ({}, set())
+    for t, task in tasks.items():
+        f = task["fields"]
+        errs += [f"{t}: needs `- {name}:`" for name in FIELDS if name not in f]
+        if any(re.match(r"^- \[[ xX]\]", line) or re.match(r"^- Status:", line) for line in task["block"]):
+            errs.append(f"{t} holds a status or a checkbox; status lives in the CLI's state, not tasks.md")
+        if t in retired:
+            errs.append(f"{t} is retired and can't be used again")
+        for name in ("Serves", "Depends on", "Test"):
+            for i in ids(f.get(name, "")):
+                if i in retired:
+                    errs.append(f"{t} cites {i}, which is retired")
+                elif i.startswith("AC-") and i not in acs:
+                    errs.append(f"{t} cites {i}, which the spec doesn't define")
+                elif i.startswith("T-") and i not in tasks:
+                    errs.append(f"{t} cites {i}, which tasks.md doesn't define")
+                elif i.startswith("TC-") and full and i not in tcs:
+                    errs.append(f"{t} cites {i}, which the plan doesn't define")
+                elif i.startswith("J-") and not (task["fix"] and FINDING.match(f.get("From", "")) and FINDING.match(f["From"])[1] == i):
+                    errs.append(f"{t} cites {i}; a finding is served only by a fix task whose `From:` names it")
+        if "Depends on" in f and f["Depends on"] != "none" and not ids(f["Depends on"]):
+            errs.append(f"{t}: `Depends on:` lists task IDs or says `none`")
+        if "Parallel" in f and f["Parallel"] not in ("yes", "no"):
+            errs.append(f"{t}: `Parallel:` must be yes or no, not `{f['Parallel']}`")
+        if "Tier" in f:
+            m = TIER.match(f["Tier"])
+            if m[1] not in TIERS:
+                errs.append(f"{t}: `{m[1]}` is not cheap, strong, max or frontier")
+            elif not (m[2] or "").strip():
+                errs.append(f"{t}: `Tier: {m[1]}` needs a reason, as `Tier: {m[1]}: <why>`")
+        if "Effort" in f and f["Effort"] not in EFFORTS:
+            errs.append(f"{t}: `Effort:` must be low, med or high, not `{f['Effort']}`")
+        if full and "Test" in f and not ids(f["Test"]):
+            errs.append(f"{t}: on a full spec `Test:` cites the plan's `TC-n`")
+        if "Serves" in f and not [i for i in ids(f["Serves"]) if i.startswith("AC-")] and not (
+                task["fix"] and [i for i in ids(f["Serves"]) if i.startswith("J-")]):
+            errs.append(f"{t} serves no AC")
+    served = {i for task in tasks.values() for i in ids(task["fields"].get("Serves", ""))}
+    errs += [f"{ac} is served by no task" for ac in sorted(acs, key=lambda a: int(a[3:])) if ac not in served]
+    errs += [f"dependency cycle: {' → '.join(c)}" for c in cycles(tasks)]
+    # parallel clashes across the whole spec, unless one task depends on the other (#42 FR-13, FR-48)
+    below = reach(tasks)
+    par = [t for t in tasks if tasks[t]["fields"].get("Parallel") == "yes"]
+    for i, a in enumerate(par):
+        for b in par[i + 1:]:
+            if a in below[b] or b in below[a]:
+                continue
+            for f in sorted(set(files(tasks[a]["fields"].get("Files", ""))) & set(files(tasks[b]["fields"].get("Files", "")))):
+                errs.append(f"parallel clash: {a} and {b} both name `{f}`")
+    # a foundational task serves only ACs its dependents serve (#42 FR-45)
+    above = {t: {u for u in tasks if t in below[u]} for t in tasks}
+    for e in epics:
+        if e["story"] in ("", "Foundation"):
+            for t in e["tasks"]:
+                theirs = {i for u in above[t] for i in ids(tasks[u]["fields"].get("Serves", ""))}
+                errs += [f"{t} serves {ac}, which no task depending on it serves" for ac in ids(tasks[t]["fields"].get("Serves", ""))
+                         if ac.startswith("AC-") and ac not in theirs]
+    # each build-order entry's files and planned tests land in its epic (#42 FR-53)
+    for e in epics:
+        if e["story"] in entries:
+            want_files, want_tcs = entries[e["story"]]
+            named = {f for t in e["tasks"] for f in files(tasks[t]["fields"].get("Files", ""))}
+            cited = {i for t in e["tasks"] for i in ids(tasks[t]["fields"].get("Test", ""))}
+            errs += [f"{e['id']} names `{f}` in no `Files:` line, though its build-order entry delivers it" for f in sorted(want_files - named)]
+            errs += [f"{e['id']} has no task citing {tc}, which its build-order entry lists" for tc in want_tcs if tc not in cited]
+    errs += check_fixes(root, slug, parsed, retired, base)
+    return errs, estimate(parsed)
+
+
+def check_fixes(root, slug, parsed, retired, base="HEAD"):
+    """Fix tasks (#42 FR-27 to FR-30, FR-49, FR-50): a `From:` naming a finding or a change record, the next free ID,
+    and planned tasks frozen once `nio: approve tasks` is committed."""
+    from nio import jury
+    tasks, errs = parsed["tasks"], []
+    planned = [t for t in tasks if not tasks[t]["fix"]]
+    top = max([int(t[2:]) for t in planned] + [int(r[2:]) for r in retired if r.startswith("T-")] + [0])
+    for t, task in tasks.items():
+        if not task["fix"]:
+            continue
+        src = task["fields"].get("From", "")
+        if not src:
+            errs.append(f"{t}: a fix task needs `- From:` naming its finding or change request")
+        elif not FINDING.match(src) and not (CHANGE.fullmatch(src) and jury.change_record(root, src)[0]):
+            errs.append(f"{t}: `From: {src}` names no finding (`J-n (<gate>, round n)`) or change record")
+        if int(t[2:]) <= top:
+            errs.append(f"{t}: a fix task takes the next free ID, T-{top + 1}")
+        top = max(top, int(t[2:]))
+    rel = str(path(root, slug).relative_to(root))
+    sha = (records.git(root, "log", "-1", "--format=%H", "--grep=^nio: approve tasks$", base, "--", rel) or [""])[0]
+    if sha:
+        old = parse("\n".join(records.git(root, "show", f"{sha}:{rel}")))["tasks"]
+        flat = lambda b: " ".join(" ".join(b).split())
+        for t, task in old.items():
+            if task["fix"]:
+                continue
+            if t not in tasks and t not in retired:
+                errs.append(f"{t} was removed after `nio: approve tasks` without being retired")
+            elif t in tasks and flat(tasks[t]["block"]) != flat(task["block"]):
+                errs.append(f"{t} changed after `nio: approve tasks`; planned tasks are frozen after approval")
+    return errs
+
+
+def estimate(parsed):
+    """One row per epic: task count, tier and effort counts, and the parallel tasks; no token or money figure (#42
+    FR-14). Parallel comes only from `Parallel:` (FR-47)."""
+    out = []
+    for e in parsed["epics"]:
+        ts = [parsed["tasks"][t]["fields"] for t in e["tasks"]]
+        tier = lambda f: TIER.match(f.get("Tier", "")).group(1) if f.get("Tier") else ""
+        par = [t for t in e["tasks"] if parsed["tasks"][t]["fields"].get("Parallel") == "yes"]
+        out.append(f"{e['id']}: {len(ts)} tasks; tier " + ", ".join(f"{x} {sum(tier(f) == x for f in ts)}" for x in TIERS)
+                   + "; effort " + ", ".join(f"{x} {sum(f.get('Effort') == x for f in ts)}" for x in EFFORTS)
+                   + f"; parallel: {', '.join(par) or 'none'}")
+    return out
+
+
+def show(root, slug, tid):
+    """The epic's heading and one task's section, nothing else (#42 FR-35)."""
+    p = path(root, slug)
+    if not p.exists():
+        raise ValueError(f"no tasks.md for {slug}")
+    parsed = parse("\n".join(records.parse(p)[1]))
+    if tid not in parsed["tasks"]:
+        raise ValueError(f"no {tid} in tasks.md")
+    task = parsed["tasks"][tid]
+    head = next(e["head"] for e in parsed["epics"] if e["id"] == task["epic"])
+    return [head, ""] + (["#### Fixes", ""] if task["fix"] else []) + task["block"]
+
+
+def approved(root, slug):
+    """(ok, why): may the implement stage start (#42 FR-33, FR-44, FR-56)? The tasks gate approved, or closed by the
+    human, on the current planned tasks, plan and spec; a fix task appended since doesn't withdraw it."""
+    from nio import jury
+    if not path(root, slug).exists():
+        return False, "the tasks must be approved first (there is no tasks.md)"
+    now = jury.standing(root, slug, "tasks")
+    if now == "approved":
+        return True, "the tasks jury approved the tasks"
+    if now == "closed":
+        return True, "the human closed the tasks gate"
+    return False, f"the tasks must be approved first (the tasks jury's outcome is {now})"
+
+
+def finished(states, epic):
+    """(finished, not done): an epic is finished, and ready for the implementation jury, only when every task in it, fix
+    tasks included, is `done` in the CLI's state (#42 FR-25, FR-26; the state machine itself is #45's)."""
+    left = [t for t in epic["tasks"] if states.get(t) != "done"]
+    return not left, left

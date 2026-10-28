@@ -11,7 +11,8 @@ from nio import agents, records, spec
 
 # the plan gate judges its four files against the spec and architecture.md: a change to either withdraws its approval
 GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "quickstart.md", "spec.md", "architecture.md"],
-         "tasks": ["tasks.md"]}
+         # the tasks gate judges the planned tasks against the plan and the spec; `#### Fixes` sections are left out
+         "tasks": ["tasks.md", "plan.md", "contracts.md", "tests.md", "quickstart.md", "spec.md"]}
 KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "inconsistency"}
 SEVERITY = ["minor", "major", "blocker"]  # ascending
 CONTEXT = {"sufficient", "limited", "needs-more"}
@@ -25,7 +26,7 @@ MAX_FINDINGS = 5
 FIELDS = ["cites", "kind", "severity", "evidence", "quote", "situation", "fix"]
 CLOSED = {"refuted", "dropped", "merged", "overruled", "noted"}  # never need a disposition
 VERDICT = re.compile(r"^- (J-\d+):\s*(fixed|not fixed)\b\s*[—–:-]*\s*(.*)$")  # a fix verdict in a re-review (#52 FR-8)
-CORE = {"spec": ["testability", "logic"], "plan": ["test-proof", "architecture-fit"]}  # #47; the tasks gate comes with its stage
+CORE = {"spec": ["testability", "logic"], "plan": ["test-proof", "architecture-fit"], "tasks": ["executability"]}  # #47
 HIGH_RISK = {"auth", "money", "data-deletion", "migration"}
 PLAN_TRIGGERED = {"security", "risk-rollback"}  # the risk lenses the plan gate runs (#57 FR-5, FR-6)
 MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
@@ -129,8 +130,14 @@ def grounded(finding, text, human=""):
 
 
 def artefact(root, slug, gate):
-    """The gate's artefacts as one text, in a fixed order; empty when none exists."""
-    return "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in GATES[gate]) if p.exists())
+    """The gate's artefacts as one text, in a fixed order; empty when none exists. At the tasks gate, tasks.md without its
+    `#### Fixes` sections: work added there after approval doesn't withdraw it (#42 FR-27, FR-50)."""
+    def text(p):
+        if gate != "tasks" or p.name != "tasks.md":
+            return p.read_text()
+        planned = re.sub(r"^#### Fixes$.*?(?=^## |\Z)", "", p.read_text(), flags=re.M | re.S)
+        return re.sub(r"\n\s*\n+", "\n\n", planned).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+    return "\n".join(text(p) for p in (root / ".nio/specs" / slug / n for n in GATES[gate]) if p.exists())
 
 
 LIKE = re.compile(r"^- (?:Binding|Like):\s*`([^`:]+)", re.M)
@@ -195,6 +202,11 @@ def plan(root, slug, gate, extra=()):
         errors, notes = plans.check(root, slug, gate=True)
         if errors:
             return [f"`nio check plan {slug} --gate` fails ({len(errors)} errors): finish the plan first"], False
+    elif gate == "tasks":  # #42 FR-32, FR-42: the check first, then executability alone
+        from nio import tasks
+        errors, notes = tasks.check(root, slug)
+        if errors:
+            return [f"`nio check tasks {slug}` fails ({len(errors)} errors): the check must pass first"], False
     else:
         errors, notes = spec.check(root, slug, gate=True)
         if errors:
@@ -202,7 +214,7 @@ def plan(root, slug, gate, extra=()):
     meta, _ = records.parse(spec.path(root, slug))
     risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
     lenses = {lens: "core" for lens in CORE[gate]}
-    for key, flags in spec.LENSES.items():
+    for key, flags in spec.LENSES.items() if gate != "tasks" else []:
         lens, at_plan = key.removesuffix(" (plan gate)"), key.endswith("(plan gate)")
         if flags & set(risk) and (lens in PLAN_TRIGGERED if gate == "plan" else not at_plan):
             lenses.setdefault(lens, "risk: " + ", ".join(sorted(flags & set(risk))))
@@ -213,7 +225,7 @@ def plan(root, slug, gate, extra=()):
             lenses.setdefault("logic", f"state: {', '.join(stateful)}")
         if re.search(r"^## Data model\s*$", contracts, re.M):
             lenses.setdefault("risk-rollback", "data model")
-    elif spec.SCOPE_NOTE in notes[0]:  # the check's own count, so the two never disagree
+    elif gate == "spec" and spec.SCOPE_NOTE in notes[0]:  # the check's own count, so the two never disagree
         lenses.setdefault("scope", f"more than {spec.SCOPE_FRS} FRs")
     for item in extra:  # the skill's own triggers (#27 FR-27), each with its reason
         lens, _, why = item.partition(":")

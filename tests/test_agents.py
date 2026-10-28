@@ -141,6 +141,39 @@ def test_ac47_it_has_an_at_plan_section_next_to_at_spe():
     print("ok")
 
 
+def test_ac40_executability_exists_with_tier_cheap_an():
+    meta, body = card("executability")
+    assert meta["tier"] == "cheap" and "\n## At tasks\n" in body
+    print("ok")
+
+
+def test_ac44_the_evaluator_card_exists_with_tier_stro():
+    meta, _ = card("evaluator")
+    assert (meta["tier"], meta["effort"]) == ("strong", "med")
+    print("ok")
+
+
+def test_ac58_the_card_runs_on_the_strong_model_and_a():
+    cfg = {"agents": {"tiers": {"codex": {"cheap": "m-cheap", "strong": "m-strong"}}}}
+    tier, model, _, warning = agents.resolve(cfg, "logic", {"tier": "max", "effort": "high"}, "codex")
+    assert (tier, model) == ("max", "m-strong") and warning == "no model for tier `max`; using `strong` (m-strong)", warning
+    root = setup()
+    (root / ".nio/config.json").write_text(json.dumps({"agents": {"hosts": ["codex"], "tiers": {"codex": {"cheap": "m-cheap", "strong": "m-strong"}}}}))
+    out, errors = agents.sync(root)
+    assert not errors and any(l.startswith("WARN  codex: nio-test-proof: no model for tier `max`; using `strong` (m-strong)") for l in out), out
+    assert 'model = "m-strong"' in (root / ".codex/agents/nio-test-proof.toml").read_text()
+    print("ok")
+
+
+def test_ac26_it_runs_on_fable_on_a_host_that_maps_no():
+    task = {"tier": "frontier", "effort": "med"}
+    assert agents.resolve({}, None, task, "claude")[1:] == ("fable", "medium", "")
+    cfg = {"agents": {"tiers": {"codex": {"cheap": "c", "strong": "s", "max": "m"}}}}
+    _, model, _, warning = agents.resolve(cfg, None, task, "codex")
+    assert model == "m" and "`frontier`" in warning and "(m)" in warning, warning
+    print("ok")
+
+
 if __name__ == "__main__":
     test_shipped_cards_are_valid()
     test_sync()
@@ -149,3 +182,7 @@ if __name__ == "__main__":
     test_ac20_architecture_fit_exists_with_an_at_plan()
     test_ac46_risk_rollback_exists_with_an_at_plan_se()
     test_ac47_it_has_an_at_plan_section_next_to_at_spe()
+    test_ac40_executability_exists_with_tier_cheap_an()
+    test_ac44_the_evaluator_card_exists_with_tier_stro()
+    test_ac58_the_card_runs_on_the_strong_model_and_a()
+    test_ac26_it_runs_on_fable_on_a_host_that_maps_no()
