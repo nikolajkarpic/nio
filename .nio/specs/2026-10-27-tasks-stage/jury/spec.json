@@ -1,7 +1,7 @@
 {
   "gate": "spec",
   "subject": "2026-10-27-tasks-stage",
-  "round": 3,
+  "round": 5,
   "tier": "low",
   "expect": [
     "consistency",
@@ -20,7 +20,15 @@
     "R-261027-in64/spec-consistency.md": "38a214a370ccd5c288c62012cbee2dbdf349245a5c48cdf5f05d6cf4e399689c",
     "R-261027-in64/spec-logic.md": "061e1b4f067ff15ce2b06a505acb175d195180a64ce9ac9bf2bbe51d9111a504",
     "R-261027-in64/spec-scope.md": "6081f1568c11c556a1fc8ca6011322d3f35051fc2dcfc95cb39eec50f59fd5b2",
-    "R-261027-in64/spec-testability.md": "7adfccd964433dc90120cd509b4db594c21d1268183f61ba937a191581b9a71f"
+    "R-261027-in64/spec-testability.md": "7adfccd964433dc90120cd509b4db594c21d1268183f61ba937a191581b9a71f",
+    "R-261028-wx3m/spec-consistency.md": "23e844b454ffa9f8d2915e6209cafa92a53bc8b510954b2ddaccf29072a799b6",
+    "R-261028-wx3m/spec-logic.md": "31ce69a3f0a5de2e14ab2be8df94659f861aba28c991110a68b3828e35c0dcef",
+    "R-261028-wx3m/spec-scope.md": "89c2a381b6d88be27eaa2e2452c87b8a204ef603f8d758cd552f0ae5d69230ba",
+    "R-261028-wx3m/spec-testability.md": "e50221442b9d5de1f1fb08243453c3a3f369152fb7a215ac4598500c50096ffe",
+    "R-261028-l6gm/spec-consistency.md": "326a7671382cadb8f2f751660b67aaa85b257b225c786a1e62ab2e824256dc12",
+    "R-261028-l6gm/spec-logic.md": "8173b7b44b11c8c1495ce3e11f360ca016fb09eec04fbe76e3e94af2b1d50d50",
+    "R-261028-l6gm/spec-scope.md": "bf7cbea1777bece0eb3a73ba87c8ab370091988b09bd38c49e0d04090187538a",
+    "R-261028-l6gm/spec-testability.md": "77cb75512ddb93df7c8a9a42e4ae245f967e41ebab9c26df40f3888a88701231"
   },
   "jurors": {
     "spec-consistency": {
@@ -30,9 +38,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
-      "judged": 3
+      "round": 5,
+      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
+      "judged": 5
     },
     "spec-logic": {
       "attempts": 1,
@@ -41,9 +49,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
-      "judged": 3
+      "round": 5,
+      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
+      "judged": 5
     },
     "spec-scope": {
       "attempts": 1,
@@ -52,9 +60,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
-      "judged": 3
+      "round": 5,
+      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
+      "judged": 5
     },
     "spec-testability": {
       "attempts": 1,
@@ -63,9 +71,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "fef2e67a3594214b34eeb72e1733a624922543f8",
-      "judged": 3
+      "round": 5,
+      "version": "36091f8c867a6a5c16a16f366040c7acbec65f61",
+      "judged": 5
     },
     "spec-consistency-2": {
       "attempts": 1,
@@ -783,6 +791,76 @@
       "rounds": 0,
       "first_round": 2,
       "last_round": 2
+    },
+    {
+      "id": "J-20",
+      "title": "AC-42 and AC-1 do not name a route, so on a full spec they contradict FR-2's plan-approval clause",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "AC-42",
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a spec whose jury the human closed with a reason, when the tasks stage starts, then it proceeds.",
+        "For a full spec it SHALL also refuse until `nio check plan <slug> --approved` exits 0, and say the plan must be approved first."
+      ],
+      "fix": "Name the route in the Given of AC-42, AC-1 and AC-2, for example a bug-fix spec, or a full spec whose plan is approved. A fixture that is plainly one or the other would also do.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A full spec has its spec gate closed by the human with a reason, and its plan is not approved. AC-42 says the tasks stage proceeds with no refusal and starts the drafter. FR-2 and AC-59 say it refuses and writes no `tasks.md`. AC-1 has the same problem: \"Given an approved spec with US-1 and US-2 and no shared setup\" names no route, so on a full spec without an approved plan it cannot produce `tasks.md`.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4
+    },
+    {
+      "id": "J-21",
+      "title": "Two Decisions disagree on what a full spec's `Test:` line holds, and the older one is not marked superseded",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "FR-55"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A task's `Test:` line says in words what the test checks; tests carry no spec IDs and the conformance lens matches them to ACs: D-261027-b44u (memory, 2026-10-27).",
+        "On a full spec a task's `Test:` line cites the plan's `TC-n`: D-261028-scwb (grill Q16, 2026-10-28)."
+      ],
+      "fix": "Narrow the D-261027-b44u line to bug-fix specs, or add \"superseded for full specs by D-261028-scwb\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A reader of the Decisions section on a full spec gets two answers for a task's `Test:` line. The first says it describes the test in words. The second says it cites a `TC-n`. AC-62 fails the first reading with \"a full spec's `Test:` cites a `TC-n`\". FR-55 settles it for the build, but the older decision still reads as unconditional.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4
     }
   ],
   "outcome": "approved",
@@ -794,11 +872,21 @@
     [
       3,
       "approved"
+    ],
+    [
+      4,
+      "approved"
+    ],
+    [
+      5,
+      "approved"
     ]
   ],
   "versions": {
     "1": "88a7f5301da2f06244f243fa8b554bce119b5ca1",
     "2": "88a7f5301da2f06244f243fa8b554bce119b5ca1",
-    "3": "fef2e67a3594214b34eeb72e1733a624922543f8"
+    "3": "fef2e67a3594214b34eeb72e1733a624922543f8",
+    "4": "d3038c564cf082053da020215582bf9adab93296",
+    "5": "36091f8c867a6a5c16a16f366040c7acbec65f61"
   }
 }

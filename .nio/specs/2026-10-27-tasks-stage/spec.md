@@ -3,7 +3,7 @@ slug: 2026-10-27-tasks-stage
 route: full
 epic: ""                         # "<epic slug>/R-<n>" when this is a slice of an epic
 risk: []                         # auth | pii | money | external-input | data-deletion | migration | multi-party | public-api
-retired: [OP-1, OP-2, OP-3, OP-4, OP-5, OP-6, OP-7, OP-8, OP-9, OP-12, OP-10, OP-11, OP-13, OP-14, OP-15, OP-16, OP-17, FR-46, AC-47, NFR-2]  # IDs removed from this spec; never reused
+retired: [OP-1, OP-2, OP-3, OP-4, OP-5, OP-6, OP-7, OP-8, OP-9, OP-12, OP-10, OP-11, OP-13, OP-14, OP-15, OP-16, OP-17, FR-46, AC-47, NFR-2, FR-22, AC-7]  # IDs removed from this spec; never reused
 ---
 <!-- Spec template. WHAT and WHY only, never HOW. Every item ends with its provenance: [human] (the grill
 confirmed it), [research: RF-n] (a finding in research.md) or [default] (your proposal; the grill must confirm it).
@@ -22,7 +22,7 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 
 ## Actors and journeys
 - **A-1 Human**: owns the project and its specs; reads the estimate and approves it, or pushes back, before implementation starts. [human]
-- **A-2 Tasks drafter**: the agent the `@nio:tasks` skill runs to write `tasks.md` from the approved spec, the code, and the plan once it exists. [human]
+- **A-2 Tasks drafter**: the agent the `@nio:tasks` skill runs to write `tasks.md` from the approved spec, the code, and, on a full spec, its approved plan. [human]
 - **A-3 Evaluator**: the agent that rates each task's model tier and effort after the drafter is done. [human]
 - **A-4 Tasks jury**: the jury gate (#28) that reviews `tasks.md`, including task sizes and tier and effort ratings, after the check passes. [human]
 - **A-5 Implementation jury**: the gate (#29) that reviews one finished epic at a time and appends fix tasks to it. [human]
@@ -55,20 +55,18 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 - **Why this priority:** without the file there are no epics or tasks for anything else to check, estimate or work.
 - **Independent test:** run the tasks stage on an approved spec with two user stories and read the `tasks.md` it writes.
 
-- **AC-1** (FR-1, FR-3, FR-4) Given an approved spec with US-1 and US-2 and no shared setup, when the tasks stage runs, then it writes one `tasks.md` with one epic per user story. [human]
+- **AC-1** (FR-1, FR-3, FR-4) Given an approved full spec with US-1 and US-2, whose approved plan has a build-order entry for each and no Foundation entry, when the tasks stage runs, then it writes one `tasks.md` with one epic per user story. [human]
   Observable: `.nio/specs/<slug>/tasks.md` exists with exactly two epic sections, `E-1` naming US-1 and `E-2` naming US-2, each with its tasks under it. Level: e2e.
-- **AC-2** (FR-5) Given an approved spec whose two user stories both need the same setup, when the tasks stage runs, then a foundational epic comes first and both story epics depend on it. [human]
+- **AC-2** (FR-5) Given an approved full spec whose approved plan has a Foundation entry that both user stories' entries depend on, when the tasks stage runs, then a foundational epic comes first and both story epics depend on it. [human]
   Observable: the first epic section is the foundational one; every story epic's dependencies reach it. Level: e2e.
 - **AC-3** (FR-2) Given a spec that is not approved, when the tasks stage is asked to run on it, then it refuses. [research: RF-11]
   Observable: no `tasks.md` is written; the message says the spec must be approved first. Level: integration.
 - **AC-4** (FR-39) Given an epic-route spec (a roadmap of slices with no ACs), when the tasks stage is asked to run on it, then it refuses and points to its slices. [research: RF-15]
   Observable: no `tasks.md` is written; the message says to run the tasks stage on each slice's spec. Level: integration.
-- **AC-5** (FR-20) Given an approved spec with a `plan.md`, when the tasks stage runs, then the tasks follow the plan. [human]
-  Observable: every file or component the plan assigns to a story is named in a `Files:` line of that story's epic. Level: e2e.
-- **AC-6** (FR-19, FR-21) Given an approved spec with no `plan.md`, when the tasks stage runs, then every task names its files from the spec and the code. [human]
+- **AC-5** (FR-20, FR-53) Given a full spec whose plan's US-1 entry delivers CT-2 (bound to `src/cart.py`) and lists TC-3, and E-1 for US-1 whose tasks name neither, when `nio check tasks` runs, then it fails. [human]
+  Observable: non-zero exit; one error names E-1 and `src/cart.py`, another names E-1 and TC-3. Level: unit.
+- **AC-6** (FR-19, FR-21) Given an approved bug-fix spec, which has no `plan.md`, when the tasks stage runs, then every task names its files from the spec and the code. [human]
   Observable: every task has a non-empty `Files:` line. Level: e2e.
-- **AC-7** (FR-22) Given a fixture spec that allows two storage options and no `plan.md`, when the drafter has written `tasks.md`, then its choice is a candidate in the run's `promote.md` and named in the epic section. [human]
-  Observable: one decision candidate in `.nio/runs/<run>/promote.md` naming the choice; no new file under `.nio/memory`; the epic section names the option chosen. Level: e2e.
 
 ### US-2 Every task carries seven fields and permanent IDs (P1) [human]
 - **Why this priority:** the coverage, parallel and estimate checks all read these fields; a missing or wrong field breaks them silently.
@@ -115,7 +113,17 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
   Observable: `src/nio/agents/executability.md` with `tier: cheap` and the heading. Level: unit.
 - **AC-41** (FR-42) Given a spec whose `nio check tasks` passes, when `nio jury plan <slug> tasks` runs, then it plans executability as the core lens. [human]
   Observable: the plan lists `executability (core)` and no error about the gate not being built. Level: unit.
-- **AC-42** (FR-2) Given a spec whose jury the human closed with a reason, when the tasks stage starts, then it proceeds. [human]
+- **AC-59** (FR-2) Given a full spec whose spec gate is approved but whose `nio check plan <slug> --approved` exits 1, when the tasks stage starts, then it refuses; given a bug-fix spec whose spec gate is approved, it proceeds. [human]
+  Observable: the first exits non-zero saying the plan must be approved first and writes no `tasks.md`; the second starts the drafter. Level: integration.
+- **AC-60** (FR-54) Given a bug-fix spec whose fix needs a choice between two storage options the spec doesn't make, when the drafter meets it, then it stops and says the spec must become a full spec with a plan. [human]
+  Observable: no `tasks.md` is written; the message names the choice and says to re-route the spec to full. Level: e2e.
+- **AC-61** (FR-5) Given a full spec whose plan's build order has Foundation, US-1, and US-2 with `Depends on: US-1`, when the tasks stage runs, then the epics follow that order and E-3 (US-2) depends on E-2 (US-1). [human]
+  Observable: epic sections in the order foundational, US-1, US-2; E-3's dependencies name E-2. Level: e2e.
+- **AC-62** (FR-55, FR-9) Given a full spec whose task T-4 has `Test: TC-99` and the plan defines no TC-99, when the check runs, then it fails; given a task with `Test: second refund gets 409` on a full spec, it fails too. [human]
+  Observable: non-zero exit; one error names T-4 and TC-99, the other names the task and says a full spec's `Test:` cites a `TC-n`. Level: unit.
+- **AC-63** (FR-56) Given an approved estimate, when the plan's `contracts.md` or the spec changes afterwards, then the tasks approval no longer stands. [human]
+  Observable: the implement stage refuses, saying the tasks must be approved again; `nio jury check <slug> tasks` says `rerun`. Level: integration.
+- **AC-42** (FR-2) Given a full spec whose spec jury the human closed with a reason and whose plan is approved, when the tasks stage starts, then it proceeds. [human]
   Observable: no refusal; the drafter is started. Level: integration.
 - **AC-43** (FR-2) Given a spec whose jury ended `human` because a juror failed twice, and the human never closed it, when the tasks stage starts, then it refuses. [human]
   Observable: non-zero exit; the message says the spec must be approved first. Level: unit.
@@ -202,15 +210,15 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 
 ## Functional requirements
 - **FR-1** WHEN the human starts the tasks stage on an approved spec THE SYSTEM SHALL run the tasks-drafter agent to write `.nio/specs/<slug>/tasks.md`. [human]
-- **FR-2** IF the spec's jury neither approved it nor was closed by the human (`nio jury check --human`, recorded in the spec ledger) THEN THE SYSTEM SHALL refuse to start the tasks stage and say the spec must be approved first; a gate handed to the human but not closed by them does not count. [human]
+- **FR-2** IF the spec's jury neither approved it nor was closed by the human (`nio jury check --human`, recorded in the spec ledger) THEN THE SYSTEM SHALL refuse to start the tasks stage and say the spec must be approved first; a gate handed to the human but not closed by them does not count. For a full spec it SHALL also refuse until `nio check plan <slug> --approved` exits 0, and say the plan must be approved first. [human]
 - **FR-3** THE SYSTEM SHALL keep all of a spec's epics and tasks in one `tasks.md`, one section per epic with its tasks under it, in the style of `spec.md`. [human]
-- **FR-4** THE SYSTEM SHALL make one epic per user story of the spec. [human]
+- **FR-4** THE SYSTEM SHALL make one epic per user story of the spec, on a full spec in the order of the plan's build order. [human]
 - **FR-51** WHEN the spec is a bug-fix (lite) spec THE SYSTEM SHALL make one epic, E-1, holding all its tasks, with no foundational epic. [human]
-- **FR-5** WHEN setup is shared by more than one user story THE SYSTEM SHALL put it in a foundational epic that comes first and that the story epics depend on. [human]
+- **FR-5** WHEN setup is shared by more than one user story (on a full spec, when the plan's build order has a `Foundation` entry) THE SYSTEM SHALL put it in a foundational epic that comes first; each story epic depends on the epics of the entries its build-order entry's `Depends on:` names, or on the foundational epic when there is no plan. [human]
 - **FR-6** THE SYSTEM SHALL number epics `E-n` and tasks `T-n` per spec, tasks across the whole spec, keep a task's ID when it moves to another epic, never renumber or reuse an ID, and list removed IDs in a `retired:` list. [human]
 - **FR-7** THE SYSTEM SHALL require every task to state seven labelled lines in plain markdown: Files, Serves, Test, Depends on, Parallel, Tier and Effort. [human]
 - **FR-8** IF a task lacks one of the seven lines THEN THE SYSTEM SHALL fail `nio check tasks`, naming the task and the line. [human]
-- **FR-9** IF a task cites an AC, task or epic ID that the spec or `tasks.md` doesn't define (a `J-n` allowed by FR-49 excepted) THEN THE SYSTEM SHALL fail the check, naming the task and the ID. [human]
+- **FR-9** IF a task cites an AC, task, epic or plan test (`TC-n`) ID that the spec, the plan or `tasks.md` doesn't define (a `J-n` allowed by FR-49 excepted) THEN THE SYSTEM SHALL fail the check, naming the task and the ID. [human]
 - **FR-10** IF an AC of the spec is served by no task THEN THE SYSTEM SHALL fail the check, naming the AC. [human]
 - **FR-11** IF a task serves no AC, other than a task FR-49 allows to serve a finding, THEN THE SYSTEM SHALL fail the check, naming the task. [human]
 - **FR-12** IF the tasks' dependencies form a cycle THEN THE SYSTEM SHALL fail the check, naming every task in the cycle. [human]
@@ -221,9 +229,12 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 - **FR-17** THE SYSTEM SHALL add a fourth model tier, `frontier`, above `max`, for agent cards and tasks alike; each coding agent maps tiers to its own models in config (Claude: cheap Haiku, strong Sonnet, max Opus, frontier Fable), and a host with no frontier model uses its max model. [human]
 - **FR-18** WHEN the drafter has written `tasks.md` THE SYSTEM SHALL have the evaluator agent rate every task's model tier and effort. [human]
 - **FR-19** THE SYSTEM SHALL have the tasks stage name each task's files from the spec and the code at planning time. [human]
-- **FR-20** WHEN a `plan.md` exists for the spec THE SYSTEM SHALL derive the tasks from it and follow it. [human]
-- **FR-21** WHILE no `plan.md` exists for the spec THE SYSTEM SHALL derive the tasks from the approved `spec.md` and the codebase. [human]
-- **FR-22** WHEN the tasks agent makes a design choice THE SYSTEM SHALL have it append a decision candidate to the run's `promote.md`, which the memory writer records (D-261024-kljr), and name the choice in `tasks.md`'s epic section so the tasks jury can see it. [human]
+- **FR-20** WHEN the spec is a full spec THE SYSTEM SHALL derive the tasks from its approved plan and follow it. [human]
+- **FR-21** WHEN the spec is a bug-fix spec THE SYSTEM SHALL derive the tasks from the approved `spec.md` and the codebase. [human]
+- **FR-53** IF, on a full spec, a contract that a build-order entry delivers has its bound file in no `Files:` line of that entry's epic, or a `TC-n` the entry lists is cited by none of the epic's tasks, THEN THE SYSTEM SHALL fail `nio check tasks`, naming the epic and the file or test. [human]
+- **FR-54** IF the drafter meets a design choice the plan (full spec) or the spec (bug-fix spec) doesn't settle THEN THE SYSTEM SHALL stop without writing `tasks.md`: on a full spec the gap goes back to the plan or the spec through a change request; a bug-fix spec is re-routed to a full spec with a plan. [human]
+- **FR-55** WHEN the spec is a full spec THE SYSTEM SHALL have each task's `Test:` line cite the plan's `TC-n` it writes, and a bug-fix spec's describe the test in words. [human]
+- **FR-56** WHEN the spec or the plan changes after the `nio: approve tasks` commit THE SYSTEM SHALL treat the tasks approval as withdrawn until the tasks jury re-checks what changed, as a spec change withdraws a plan's approval. [human]
 - **FR-23** THE SYSTEM SHALL keep no status or checkbox in `tasks.md`; a task's status lives only in the CLI's state (#45), and only `nio flow` changes it. [human]
 - **FR-24** IF `tasks.md` holds a checkbox or a status line THEN THE SYSTEM SHALL fail the check, naming the task. [derived: FR-23]
 - **FR-25** THE SYSTEM SHALL count a task finished only when it reaches `done` through the guarded steps `pending → ready → claimed → red → green → review → done` of #45, never on an agent's claim. [human]
@@ -300,7 +311,6 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 
 ## Non-goals
 - A token or money figure in the estimate; that waits for the usage estimate (#16). [human]
-- The plan stage (#41); until it exists the tasks come from the spec and the code. [human]
 - The research skill's re-check of a task's files just before a worker starts (#18). [human]
 - A fixed size limit on tasks (file count or AC count). [human]
 - Tasks-jury lenses beyond executability, and the plan-gate coverage checks (#28, #50). [human]
@@ -324,12 +334,15 @@ implementation-jury ledger lives (#29 DF-1, DF-2). [human]
 - Rating is coarse, so a borderline task may get a bigger model or more effort than it needs. [human]
 - File lists can go stale between planning and running, until the research skill (#18) re-checks them. [human]
 - With no size limit, an oversized task costs a jury finding to catch, and runs may size tasks differently. [human]
-- Until the plan stage (#41) exists, design choices are made at task time and reviewed only by the tasks jury. [human]
 
 ## Decisions
 - Tasks are rated with a model tier and an effort, and a `frontier` tier sits above `max`, for agent cards too: D-261027-vi67 (grill Q1, Q2, 2026-10-27).
 - Task IDs were free-form until a template fixed them; this spec's `T-n` per spec is that template: D-261024-4xsd (memory, 2026-10-24).
-- A task's `Test:` line says in words what the test checks; tests carry no spec IDs and the conformance lens matches them to ACs: D-261027-b44u (memory, 2026-10-27).
+- On a bug-fix spec, a task's `Test:` line says in words what the test checks (on a full spec it cites the plan's `TC-n`, D-261028-scwb); tests carry no spec IDs and the conformance lens matches them to ACs: D-261027-b44u (memory, 2026-10-27).
+
+- The tasks stage builds on the plan stage and the plan jury: full specs follow their approved plan's build order, bug fixes come from the spec and the code: C-261028-7njg (change request, 2026-10-28).
+- A bug fix that needs a design choice is re-routed to a full spec with a plan; the tasks drafter never makes one (grill Q15, 2026-10-28).
+- On a full spec a task's `Test:` line cites the plan's `TC-n`: D-261028-scwb (grill Q16, 2026-10-28).
 
 ## Open points
 

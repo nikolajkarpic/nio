@@ -242,3 +242,45 @@ Options:
 3. Refuse to run
 Answer: 1. One tier down, every tier: frontier falls back to max, max to strong, and so on, with a warning, for agent cards and tasks alike, so nothing silently runs on an unknown model. Lost: it changes today's behaviour for existing cards. [human]
 Patched: new FR-52, AC-58
+
+## Session 3 · 2026-10-28 · change request C-261028-7njg (build on the plan stage and the plan jury), accepted by the human
+
+## Patched from C-261028-7njg · 2026-10-28
+Points 1, 2, 4, 5 and 7 of the accepted change request: the plan rules apply to full specs and the no-plan rules to bug-fix specs; a full spec's tasks stage also needs `nio check plan --approved`; epics follow the plan's build order with its dependencies; `nio check tasks` checks that each entry's bound files and planned tests land in its epic; a spec or plan change withdraws the tasks approval.
+Patched: A-2, FR-2, FR-4, FR-5, FR-9, FR-20, FR-21, AC-5, AC-6; added FR-53, FR-56, AC-59, AC-61, AC-63; removed the non-goal on #41 and the risk on design choices at task time
+
+## Asked · Q15 · C-261028-7njg point 3 · 2026-10-28
+Question: Pick one: on a bug-fix spec (which has no plan), may the tasks drafter still make a design choice and log it?
+Context: On a full spec the plan settles the design, so the drafter makes none there. A bug fix has no plan stage, so today the drafter picks, logs it as a memory candidate and names it in the epic for the tasks jury to see. Bug fixes are usually small, but some still need a choice.
+Options: 1. Yes, logged and judged (Recommended): keep today's rule for bug fixes only. 2. No, ask the human: the drafter stops and asks for any design choice on a bug fix. 3. No, it's a full spec then: a bug fix that needs a design choice is re-routed to a full spec with a plan.
+Refs: C-261028-7njg point 3 · FR-22, AC-7
+
+## Q15 · C-261028-7njg point 3 · 2026-10-28
+Facet: change
+Question: On a bug-fix spec (which has no plan), may the tasks drafter still make a design choice and log it?
+Options:
+1. Yes, logged and judged (recommended)
+2. No, ask the human
+3. No, it's a full spec then
+Answer: 3. No, it's a full spec then: a bug fix that needs a design choice is re-routed to a full spec with a plan. Cleanest separation, but costs a whole plan stage for what may be a small fix. [human]
+Patched: FR-22 and AC-7 retired; added FR-54, AC-60
+
+## Asked · Q16 · C-261028-7njg point 6 · 2026-10-28
+Question: Pick one: on a full spec, should each task's `Test:` line cite the plan's test entry (TC-n) instead of describing the test in words?
+Context: The plan now lists one concrete test per acceptance criterion, each with a TC-n ID. On 2026-10-27 tests were decided to carry no spec IDs, and linking tasks to the plan's test list was rejected then only because that format wasn't fixed yet (D-261027-b44u). The ID would sit in tasks.md only; test code still carries none.
+Options: 1. Cite TC-n on full specs (Recommended). 2. TC-n plus a short phrase. 3. Keep words only.
+Refs: C-261028-7njg point 6 · FR-7 · D-261027-b44u
+
+## Q16 · C-261028-7njg point 6 · 2026-10-28
+Facet: verification
+Question: On a full spec, should each task's `Test:` line cite the plan's test entry (TC-n) instead of describing the test in words?
+Options:
+1. Cite TC-n on full specs (recommended)
+2. TC-n plus a short phrase
+3. Keep words only
+Answer: 1. Cite TC-n on full specs: `Test: TC-3`, so `nio check tasks` can prove for free that every planned test lands in a task, and the worker gets the exact test. Bug fixes keep words. [human]
+Patched: added FR-55, AC-62; FR-9 now also covers `TC-n`; decision record D-261028-scwb
+
+## Fix · J-20, J-21 (jury round 4 notes) · 2026-10-28
+The human asked for both notes to be fixed and re-checked. AC-1, AC-2 and AC-42 now name the route: a full spec whose plan is approved. The Decisions line for D-261027-b44u now applies to bug-fix specs, with full specs pointing to D-261028-scwb. Wording only; no behaviour changes.
+Patched: AC-1, AC-2, AC-42, Decisions
