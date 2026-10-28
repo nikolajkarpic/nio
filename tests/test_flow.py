@@ -1029,17 +1029,24 @@ def test_done_refusals():
 # --- the gate commit (CT-11, CT-19) ---
 
 def test_ac19_commit_on_gate():
-    """TC-19: --commit makes one `nio: approve spec` commit holding only the effort folder."""
+    """TC-19: --commit makes one `nio: approve spec` commit holding the effort folder and its verdict record."""
     root = effort("spec_jury")
     approve(root, S, "spec", commit=False)
     flow.start(root, S, by=BY)
     (root / "notes.txt").write_text("mine\n")
+    mem = root / ".nio/memory/project"
+    mem.mkdir(parents=True, exist_ok=True)
+    rec = ".nio/memory/project/V-261028-aaaa-spec-gate.md"
+    (root / rec).write_text(f'---\nid: V-261028-aaaa\nsubject: "spec:{S}"\n---\n')
+    (mem / "V-261028-bbbb-plan-gate.md").write_text(f'---\nid: V-261028-bbbb\nsubject: "plan:{S}"\n---\n')
     code, out = cli(root, "done", "spec_jury", S, "--commit", "--by", "human", by=False)  # only the human approves
     assert code == 0 and f"moved {S}: spec_jury → planning" in out and "skipped arch_grilling (not built)" in out, out
     assert git(root, "log", "-1", "--format=%s").strip() == "nio: approve spec"
     files = git(root, "show", "--name-only", "--format=", "HEAD").split()
     assert f".nio/specs/{S}/history.jsonl" in files and f".nio/specs/{S}/jury/spec.json" in files, files
-    assert all(f.startswith(f".nio/specs/{S}/") for f in files), files
+    assert rec in files, files  # the gate's verdict record goes in the same commit; another gate's does not
+    assert ".nio/memory/project/V-261028-bbbb-plan-gate.md" not in files, files
+    assert all(f.startswith((f".nio/specs/{S}/", ".nio/memory/project/V-")) for f in files), files
     assert "?? notes.txt" in git(root, "status", "--porcelain").splitlines()
     assert "state: planning (working)" in nxt(root)
     print("ok")
