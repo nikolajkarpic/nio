@@ -1,0 +1,1143 @@
+{
+  "gate": "spec",
+  "subject": "2026-10-29-implement-stage",
+  "round": 6,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261029-mf55/spec-adversary.md": "fd287fb5cc191cc57cdc92d06295006ed42f7624520e2a4e8af62fc5babfc6dd",
+    "R-261029-mf55/spec-consistency.md": "be95437356bfe6a3122333d940baab06e7adcc7d30e929e79093c8c85acaa6ed",
+    "R-261029-mf55/spec-logic.md": "5b8704083a0b89022c9fdb5b4592cf5eb7ce20744f3d0741d51cd1ecd57b1550",
+    "R-261029-mf55/spec-scope.md": "e06b4929ea1bd72f4c0aa7ca9c8b7ef50a5ab44b0106e343f0deaa36a1b39ce2",
+    "R-261029-mf55/spec-testability.md": "9043e3f6ddb4f9c46066446b8af7269fee9132dc1cfdc419e0305ed47f40733e",
+    "R-261029-mf55/spec-refuter.md": "1fa2c323774512f211560eac7d7c3c3a700765b918a80e4bea522baac9b5e400",
+    "R-261029-gszg/spec-adversary.md": "e18feb0d90907aa180a16097b3e099c95bcbac2e00b20ffb276ffc5e3b2a50aa",
+    "R-261029-gszg/spec-consistency.md": "ea12f635e37bb6c9e2d6bdfd6db500234bb410b3be8f272769d4326a4dc39c8a",
+    "R-261029-gszg/spec-logic.md": "045e10472fbc93bb40a7593dfb5f7dadaaf52e37ccaac4fa2c96215d166aaa41",
+    "R-261029-gszg/spec-scope.md": "248f0fdd3c5ba78c275921ada4eb33b1e7f9541290357737d1a09c8bdb436a96",
+    "R-261029-gszg/spec-testability.md": "508471e860b734bb837a6f85f22fdf878ec4c7b3bb2afb49439d1e8b1387010d",
+    "R-261029-jqf5/spec-testability.md": "a9b556d40d423ffc2141ad26b7cb44f63cbfd634dee693f7d1f119d52a074b2c",
+    "R-261029-o4pq/spec-adversary.md": "05209b4250cfb5fb774390302e77f9cb0fc6a42e981b619cd5b93e1ab55453b2",
+    "R-261029-o4pq/spec-consistency.md": "f2fadee97b9db535da4a5f363bc2a4802afcdd43d162f0ff84f2513b6963dead",
+    "R-261029-o4pq/spec-logic.md": "a06481efcf1f63300962d8f529cb0db99ec9abc49b66a62ba6b7010c25a54eaa",
+    "R-261029-o4pq/spec-scope.md": "f5e600d3435bdc65b73ebca49496014880dc526b328db6a99dd51a418fb3835b",
+    "R-261029-o4pq/spec-testability.md": "1b9aec736617249eebce1a3c1276767f95e74a7c59e84785cd37d7ae46b74efb",
+    "R-261029-6zoe/spec-adversary.md": "fcc5a6796395c73a4c785418671b313ed41e7b58c034a198ff0e3255442f5343",
+    "R-261029-6zoe/spec-consistency.md": "40a4ca715fdfedb9ba472b7718efba7b8bd8054fdf838bc6fb492c0e9a33770d",
+    "R-261029-6zoe/spec-logic.md": "44301e3c3cd3cdcceaef0daae83f3fdd1e7d4d6b61b0e386316e61b5b30b7a4a",
+    "R-261029-6zoe/spec-scope.md": "58f6a38eccbc77357fa214329c8de47e2022c273605181d8deca63ea75b78e4d",
+    "R-261029-6zoe/spec-testability.md": "3876a9265a3d86d96e71f0ef0facb26574ed0032467313d52eab0887e6a1039f",
+    "R-261029-kshq/spec-adversary.md": "b6f07a7a5ae262eab5d256de91f0a2321a7ec653fbb935aa8dabada6d2d5cb69",
+    "R-261029-kshq/spec-consistency.md": "ab5b99e14b3ee75baa7ca9068667dfc0ddb971d5ab341d6da2d588ec2ad5d925",
+    "R-261029-kshq/spec-logic.md": "46b0c51087c38c5234016a71e0a302b29af42b6a7db19b0c92999a95aae9a69a",
+    "R-261029-kshq/spec-scope.md": "3bf563cbabd4d2eb55a4248cd97bf0c0b32f5f082cac8f0ad536cefd5036378f",
+    "R-261029-kshq/spec-testability.md": "d01764dafcf53ef6e9e7affc4acea555d5ff8a1ec5b1883e1ff280066cbc5a4b"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
+    },
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The red/green command is the worker's choice and nothing ties it to the planned test",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "FR-34",
+        "Decision table: Red (row `non-zero | known | no`)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the red and green command comes from the worker, not from the task",
+        "accept red only when it exits non-zero and its output matches none of the known collection, import or syntax error patterns of that command's test runner"
+      ],
+      "fix": "require the recorded command to run the TC-n named in the task's `Test:` line. Treat \"no tests collected\" and a non-test wrapper as refused for known runners. Say how the runner is detected when the command is wrapped.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "nothing requires the command to run the task's TC-n or any test. A worker names `sh -c 'test -e src/new.py'`. Its runner is unknown, so FR-9 accepts red on exit code alone. Once the code exists, green exits 0, the guard passes, and the task is \"proven\" with no real test. A known runner has the same hole. `pytest -k nothing` exits 5 with \"no tests ran\", which is not in the error patterns, so FR-8 accepts it as red. Wrapping the runner in `bash run.sh` or `npm test` also turns it into an unknown runner and skips the import-error check. FR-34 only says \"telling the runner from the command\" and does not say how.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-8 only checks exit code and error patterns, and the Non-goals say the command \"comes from the worker, not from the task\". Nothing ties the command to the task's TC-n, so `pytest -k nothing` (exit 5, not an error pattern) or a non-test shell command passes red. The Risks section covers only the unknown-runner fallback, not this.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q17: red refuses no tests ran and a command not naming the planned test file (FR-8, FR-43, AC-43)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Review passes when the suite breaks without a named failing test, or when tests are removed",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-14",
+        "FR-17",
+        "Decision table: Review (row `no | yes | no`)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the full test suite with no failure missing from the baseline",
+        "a failing test that the baseline doesn't list"
+      ],
+      "fix": "for known runners too, treat a non-zero suite exit with no failure named in the baseline as a new failure. Also fail the review when the suite's test count drops below the baseline, or when a baseline-passing test is no longer collected.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a worker's change breaks an import in another test module. The suite exits non-zero at collection, with no individually named failing test. Or the worker deletes, skips or xfails an existing test. Under the review rule, \"no failing test missing from the baseline\" holds, so the review passes and the task is committed. FR-36 closes this only for unknown runners (\"any non-zero suite exit\"). For known runners, whether a collection error, crash, timeout or removed test counts as a \"failure\" is unspecified. SC-1's \"passed review\" then means little. A baseline-failing test that now fails for a different reason is also masked, because failures are compared by name.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-14, FR-17 and the Review decision table compare \"failing tests\" by name against the baseline. FR-36 handles only unknown runners (\"any non-zero suite exit\"). For known runners, a collection crash, a removed test or a different failure reason is not addressed anywhere.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q18: the review also fails on a collection or import error or fewer tests than the baseline (FR-14, AC-44)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "The guards rest on history.jsonl and state.json, which a worker can write or unblock, and only the card text forbids it",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-5",
+        "FR-18",
+        "FR-38",
+        "SC-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "The card forbids the worker to edit `state.json` or `history.jsonl`, or to run any other `nio flow` command.",
+        "derive each task's status from history lines",
+        "WHEN the human runs `nio flow unblock <slug> T-n --human`"
+      ],
+      "fix": "make the review fail on a worker-written change to `history.jsonl`, `state.json`, `contracts.md` or `tests.md`. Say how `--human` is made unforgeable by an agent, for example a check the CLI can make about who is calling. Or state that this is an accepted risk in \"Risks and evidence against\".",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a worker has a shell and write access. It appends a green line to `history.jsonl`, or runs `nio flow unblock <slug> T-3 --human`. The unblock resets the attempt count to 0 and drops the frozen files, which undoes both the 3-attempt cap (FR-26) and the test freeze. The CLI cannot tell the worker from the human. Status then reads `done`, SC-1's trace is forged, and the only protection is a prompt line. AC-21 covers handoff text but not a forged history line. FR-25 flags changes to spec, plan or tasks, but not to `state.json` or `history.jsonl`. FR-25's \"plan files\" may also leave out `contracts.md` and `tests.md`, which are in the worker's own pack and which it could weaken.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-5 forbids editing `state.json` or `history.jsonl` only in the card text. FR-25 checks only spec, plan and tasks, and \"plan files\" does not clearly cover `contracts.md` or `tests.md`. FR-38 gives the CLI no way to tell the worker from the human. The accepted risk about hostile `--run` commands does not mention forged state. The point is weak but not refuted.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q19: the review also fails on changes to contracts.md and tests.md (FR-25, AC-45); forged progress files and unblocks accepted as a risk",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "The commit lands wherever HEAD is, or does not land, while the task is already done",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-19",
+        "FR-20",
+        "AC-26",
+        "AC-27"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "mark it done and make one commit with the message `T-n: <title>` on the effort branch",
+        "SHALL never commit a task on the default branch"
+      ],
+      "fix": "check the current branch is `nio/<slug>` at every claim and at commit time, and refuse otherwise. Specify commit failure as a refused or retryable state in which the task is not `done`. Define the order of the history write and the commit.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "(a) the branch is checked only \"WHEN the implement stage starts ... on its default branch\". Say the human checks out main between tasks, the repo starts on another feature branch, or HEAD is detached. The next task's commit then goes onto main or the wrong branch, and FR-20's \"never\" is broken. (b) The commit can fail: a pre-commit hook rejects it, git identity is missing, or the process dies after the history line is written. AC-26 says the commit holds the history line, so the done line and the commit cannot be atomic. The state table has no row for a failed commit, so the task reads `done` with no `T-n` commit and nobody is told.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-20 checks the branch only \"WHEN the implement stage starts while the repo is on its default branch\", yet says \"never commit a task on the default branch\". Later HEAD moves are not covered. FR-19 and AC-26 put the history line inside the commit, and the state table has no failed-commit row.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q20: branch checked at every claim and commit; a failed commit keeps the task green and waits (FR-19, FR-20, AC-46, AC-47)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "A filed spec problem has no human notice or wait, and filing again creates a second record",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-24",
+        "FR-37",
+        "State table: Task (row `blocked`",
+        "column `spec problem filed`)",
+        "UJ-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN the orchestrator files a blocked handoff's change request as a `C-*` record THE SYSTEM SHALL set the task to blocked.",
+        "a task blocked by a spec problem uses no attempt"
+      ],
+      "fix": "on filing, set the effort waiting for the human and name the task and the `C-*` record. Make a repeat filing of the same handoff create no second record. Say what stops a worker from using `blocked` to avoid the attempt cap, for example the human sees each filing, or a limit per task.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "FR-24 sets the task to blocked but does not notify the human or set the effort waiting. Only FR-26 does that, and only for the attempt cap. Independent tasks keep running, dependents of the blocked task never become ready, and the epic never finishes. If nothing else is ready, `next` has no defined answer, so the effort stalls silently with a `pending` change request the human has not been told about. UJ-2 step 3 ends \"the human decides the change\" with no mechanism that gets it to the human. Two further problems:",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-24 only sets the task to blocked. The notify or waiting behaviour is in FR-26 (attempt cap) and FR-28 (epic), not in FR-24. UJ-2 step 3 says \"the human decides\" with no mechanism. The \"Two further problems:\" in the situation is cut off, but the main gap stands.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q21: filing a spec problem sets the effort waiting; a repeat filing makes no second record (FR-24, AC-48)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "Worker card forbids the nio flow calls that single mode needs",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-2",
+        "A-3",
+        "FR-5",
+        "FR-42"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "never run `nio flow` and never edit `state.json` or `history.jsonl`",
+        "it runs `nio flow` only for `red` and `green` on its own task in single mode"
+      ],
+      "fix": "rewrite AC-2's Observable to match FR-5: the card forbids editing `state.json` or `history.jsonl` and any `nio flow` command other than `red` and `green` on its own task in single mode.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the card AC-2 describes tells the worker never to run `nio flow`. A single-mode worker, under A-3, FR-42 and accepted C-261029-rmbs, must run `nio flow red` and `nio flow green` on its own task. A card built to AC-2 blocks the single-mode path the spec requires.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "AC-2 tests that the card says \"never run `nio flow`\". A-3 and FR-42 need the single-mode worker to run `nio flow red` and `nio flow green`. FR-5 says \"any other `nio flow` command\", so it permits those two. Cards exist per tier, not per mode, so one card has to carry both rules. A card that passes AC-2 would stop single mode working (AC-42). A card that supports AC-42 fails AC-2.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-2's Observable says the card tells the worker to \"never run `nio flow`\", while A-3, FR-42 and AC-42 need the single-mode worker to run `nio flow red` and `nio flow green`. FR-5 says \"any other `nio flow` command\".",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-2's Observable now matches FR-5: no nio flow command other than red and green on its own task in single mode",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "State table's claimed row ignores mode, against FR-41",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-41",
+        "state table row `claimed`",
+        "FR-42"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "in split and single mode it SHALL refuse green on a claimed task, saying no failing test came first",
+        "| claimed | ignore | reject: already claimed | → red | → green | ignore | ignore | → blocked | → blocked | ignore | [human] |"
+      ],
+      "fix": "add a mode condition to the claimed row, or a note under the table that FR-41 overrides the red and green columns for each mode.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a split-mode task is claimed and a green report arrives with no red first. The table says green is accepted (`→ green`), while FR-41 says refuse. A direct-mode task is claimed and a red report arrives. The table says red is accepted (`→ red`), while FR-41 says refuse. The table has no mode column, so one implementation cannot satisfy both.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the table sends `claimed` to `green` on a green report and to `red` on a red report, with no mode condition. FR-41 refuses green on `claimed` in split and single mode, and red in direct mode. So the table is wrong for two of three modes in each case. There is a second problem in direct mode.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The `claimed` row of the Task state table has `→ red` and `→ green` with no mode column. FR-41 refuses green on `claimed` in split and single mode, and refuses red in direct mode. Nothing says FR-41 overrides the table.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q22: modes note under the state table; a direct-mode failed review goes back to claimed (FR-45, AC-50)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "Attempt cap: AC-23 gives a fourth attempt, the Attempt entity blocks on the third",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-23",
+        "FR-26",
+        "FR-37",
+        "Key entities (Attempt)",
+        "Summary"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a task that has used 3 attempts, when its next attempt fails, then it is blocked",
+        "the third blocks the task",
+        "WHEN a task has failed 3 attempts THE SYSTEM SHALL set it to blocked"
+      ],
+      "fix": "pick one count. If the third failure blocks, reword AC-23 to \"has used 2 attempts, when its next attempt fails\".",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "attempts 1, 2 and 3 all fail. Under AC-23 the task has used 3 attempts, so a fourth attempt runs before it blocks. Under the Attempt entity the third failure blocks it. Under FR-26 it blocks once it has \"failed 3 attempts\", which is after the third failure. An implementer following AC-23 will allow a fourth attempt, and one following the entity will not.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-26 and the Attempt entity block the task at the third failed attempt. The state \"3 attempts used, task still open\" in AC-23's Given therefore cannot occur, because the task was blocked when the third attempt failed. AC-23 only works if the fourth failure blocks. With attempts 0, 1, 2 used and the third failing, FR-26 says the task is blocked now. Read literally, AC-23 says it is not blocked until a fourth.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "A task fails three times. Key entities and FR-26 (\"failed 3 attempts\") block it at the third failure. AC-23 starts from 3 attempts already used and blocks on the next failure, which is the fourth. A test written from AC-23 passes an implementation that gives a fourth try. A test written from the entity definition fails that same implementation. AC-36 and AC-37 count attempts in `state.json`, so the off-by-one shows in their expected values as well.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-23 starts from \"has used 3 attempts\" and blocks on the next failure, which is the fourth. FR-26 and the Attempt entity (\"the third blocks the task\") block at the third failure. The \"3 attempts used, still open\" state cannot occur under FR-37 and FR-26.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-23 now starts from 2 attempts used, the third failure blocks, matching FR-26 and the Attempt entity",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "AC-16 sends the status to a `review` state the table doesn't have",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-16",
+        "state table (Task)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "status leaves `review` as the state table says"
+      ],
+      "fix": "name the status AC-16 expects, for example \"status stays `green`\", and check it against the green row.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the Task state table has no `review` state. Its states are pending, ready, claimed, red, green, done and blocked, and review is a column of events on the green row. Read literally, AC-16 names a state the table does not define, so a tester cannot tell whether the expected status is `green`, `red` or `done`.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "The Task state table has the states pending, ready, claimed, red, green, done and blocked. `review` is not one of them. A failed review goes green → red, and the table only gives that transition for a review failure. A test can't assert \"leaves review\". The AC also doesn't say which status the task ends in, and that status is the thing under test.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-16's Observable says \"status leaves `review` as the state table says\", but the Task state table has no `review` state. Its states are pending, ready, claimed, red, green, done and blocked, and the green row's `review fails` column gives `→ red`. A tester cannot tell the expected end status from the AC. J-21 was merged into this finding.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-16's Observable now names the end status, red with the attempt count up by 1, from the state table's green row",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "FR-40 relies on a Mode line that the evaluator and the tasks template don't produce",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-40",
+        "Non-goals (C-261029-4cev)",
+        "FR-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the mode its `Mode:` line names"
+      ],
+      "fix": "name C-261029-4cev as a prerequisite of this stage, or add an AC that a claim on a task with no `Mode:` line is refused.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`src/nio/agents/evaluator.md` rates only `Tier:` and `Effort:`, and `src/nio/templates/tasks.md` has no `Mode:` line; nothing in `src/nio` writes one. FR-40 treats the `Mode:` line as existing input and the evaluator as already rating it. The spec doesn't say the change to the evaluator and template (C-261029-4cev, accepted) must land first. A claim on any task without a `Mode:` line has nothing to read.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-40 now names change request C-261029-4cev as what adds the Mode line",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "The attempt cap is three in one place and four in another",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-23",
+        "FR-26",
+        "FR-37",
+        "Attempt entity"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a task that has used 3 attempts, when its next attempt fails, then it is blocked",
+        "WHEN a task has failed 3 attempts THE SYSTEM SHALL set it to blocked",
+        "the third blocks the task"
+      ],
+      "fix": "state the count once. For example, \"Given a task with 2 attempts used, when its next attempt fails (the third), then it is blocked\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "FR-26 and the Attempt entity block the task at the third failed attempt. The state \"3 attempts used, task still open\" in AC-23's Given therefore cannot occur, because the task was blocked when the third attempt failed. AC-23 only works if the fourth failure blocks. With attempts 0, 1, 2 used and the third failing, FR-26 says the task is blocked now. Read literally, AC-23 says it is not blocked until a fourth.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "\"done\" is final, but a changed done task must run again under the same ID",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "state table row `done`",
+        "AC-39",
+        "FR-39",
+        "FR-18",
+        "FR-32"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "### State table: Task (start: pending; final: done)",
+        "reject: task is done",
+        "T-1 stays done and T-2's new version is the next task",
+        "only tasks the re-approved `tasks.md` adds or changes run, as new tasks"
+      ],
+      "fix": "say how a changed task gets its identity (new T-n, or a versioned key in history). Say how the table treats it, since `done` is final.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "T-2 is done with a `done` history line, and the human re-approves a `tasks.md` that changes T-2's block. FR-18 derives status from history lines by task. The table row `done` rejects claim, red and green with \"task is done\". AC-39 expects \"T-2's new version\" to be the next task and claimable. The spec does not say whether the new version has a new ID or whether a version resets the history. With the same ID, the claim is refused and the epic cannot finish. With a new ID, \"T-2's new version\" and the \"T-2\" the ACs use are not the same task.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The `done` row rejects claim, red and green for the task. FR-39 and AC-39 expect \"T-2's new version\" to run, \"as new tasks\". The spec never says whether the changed task gets a new T-n or a versioned key in history.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q23: a changed done task comes back under the next free T-n (FR-39, AC-39)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "The state table ignores Mode, so direct mode contradicts it",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "state table rows `claimed`",
+        "`red` and `green`",
+        "FR-41",
+        "FR-12",
+        "FR-40"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "| claimed | ignore | reject: already claimed | → red | → green |",
+        "in split and single mode it SHALL refuse green on a claimed task, saying no failing test came first, and in direct mode it SHALL refuse red",
+        "→ done | → red"
+      ],
+      "fix": "add Mode to the table, or add a direct-mode review-fail row (back to `claimed`). Say what FR-12 does when no command was recorded.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the table sends `claimed` to `green` on a green report and to `red` on a red report, with no mode condition. FR-41 refuses green on `claimed` in split and single mode, and red in direct mode. So the table is wrong for two of three modes in each case. There is a second problem in direct mode.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-7",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "\"Every file changed since the claim\" is wider than the test phase's work",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-10",
+        "FR-11",
+        "FR-14",
+        "FR-25",
+        "AC-15",
+        "AC-26"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "every file changed since the claim (the test phase's work)",
+        "replace the frozen command and hashes",
+        "it holds the task's changes and the effort's history line"
+      ],
+      "fix": "define the frozen set as the test files the test phase changed, as distinct from the files the whole task changed. Exclude the CLI's own bookkeeping files from the changed-files checks.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "two cases follow from this wording.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-10 freezes \"every file changed since the claim\". After a failed review sends the task back to red (FR-11), that set includes the code phase's files. It also includes bookkeeping files in the effort folder, such as `history.jsonl` and `state.json`. The \"(the test phase's work)\" gloss and the Frozen test file entity do not settle this. The situation text is truncated, but the gap is real.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q24: the frozen set is the files changed before the first red, outside the effort folder, and never grows (FR-10, FR-11)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "One effort carries five separable deliverables and 42 FRs",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-1 to FR-42",
+        "US-1 to US-5",
+        "Non-goals (routes)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "multi-slice (`epic`) routes, which `nio flow` doesn't drive yet",
+        "Most flexible; costs a change request to the tasks spec.\" (answers.md, Q14, a change request is what the human accepted for the three modes)"
+      ],
+      "fix": "either confirm with the human that one effort of this size is wanted, or cut the spec into slices (guards and machine; packs, cards and modes; branch, commit and epic hand-off), each with its own gate.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the spec bundles the task machine and guards (FR-3, FR-8 to FR-13, FR-17, FR-18, FR-26, FR-32, FR-37, FR-38), worker packs and cards (FR-4 to FR-7, FR-40 to FR-42), the commit and branch (FR-19 to FR-22), the baseline and suite (FR-16, FR-17, FR-35, FR-36), and the epic and effort hand-off (FR-27 to FR-31). The check ran the scope lens only because it has more than 8 FRs. If the first slice (guards and the task machine) fails, the rest of the spec has nothing to stand on, and the human can't approve a part. The non-goal that would let the spec become an epic with slices is the route `nio flow` doesn't drive yet, so the spec can't be split without that work.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "SC-1 says every done task has an accepted red, but direct mode has none",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "SC-1",
+        "FR-41",
+        "AC-41"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Every task marked done traces to history lines with an accepted red, an accepted green on the same command, a passed review, and its `T-n` commit.",
+        "the history holds no red line for T-3"
+      ],
+      "fix": "change SC-1 to name direct-mode tasks (green on the same command, no red, and a reason in the history line), or add the direct exception to it.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "T-3 is in direct mode. AC-41 and FR-41 accept green with no red line and let it reach done. SC-1 says a done task must have an accepted red, so T-3 fails the spec's own success criterion, and a check written from SC-1 would reject a task that FR-41 says is done.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SC-1 requires every done task to have \"an accepted red\". FR-41 and AC-41 let a direct-mode task reach done with no red line.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "SC-1 now says direct-mode tasks have no red, as FR-41 already states",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-17",
+      "title": "FR-10 freezes every changed file, not the test file the human chose",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-10",
+        "FR-13",
+        "Decisions (freeze line)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "freeze, until the task is done, every file changed since the claim (the test phase's work)",
+        "the test file is frozen at red. If it changed, green is refused until the worker runs red again\" (intake.md, brainstorm answer 8)",
+        "IF a frozen test file's hash differs from the one recorded at red"
+      ],
+      "fix": "freeze only the test files, as the human said, or state in FR-10 and FR-13 that the wider freeze was confirmed and what happens to a non-test frozen file the code phase must touch.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "a test phase adds a helper to a shared module `src/models.py` as well as its test in `tests/test_x.py`. The code phase then has to edit `src/models.py` to make green pass. FR-10 freezes that file too, so FR-13 refuses green and the task spends an attempt on a change the human never asked to freeze. FR-13 says \"a frozen test file\" while FR-10 freezes every file, and the spec doesn't say which governs. The Decisions line cites grill Q2 for the wider freeze, and I can't see that answer.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "A `tests.suite` config key is required and nobody asked for it",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-35",
+        "FR-36",
+        "AC-34",
+        "AC-35"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a baseline of failing tests is recorded before the first task\" (intake.md, brainstorm answer 10, no config is mentioned)",
+        "with the command the project's NIO config names as `tests.suite`, and IF it isn't set THEN set the effort waiting for the human"
+      ],
+      "fix": "list `tests.suite` as a new setting the human must confirm, with its default and what happens without it, or derive the suite command from the project's existing test setup and drop the wait.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "a project with no such key gets a stage that waits for the human before it has done any work, on every brownfield project. The human asked for a baseline and a no-new-failures check, not a new setting or a new wait. Of the config, only `implement.mode` traces to the answers (Q14, \"a project setting can force one\"). If the suite command has to come from config, the spec must say that the human agreed to a new key.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-19",
+      "title": "A claim is refused for unrelated uncommitted changes, which nobody asked for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-22",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a task is claimed while there are uncommitted changes outside the effort folder THEN THE SYSTEM SHALL refuse the claim and list them",
+        "nio makes one commit per task, `T-n: <title>`, on an effort branch, never main.\" (intake.md, brainstorm answer 6, says nothing about refusing claims)"
+      ],
+      "fix": "keep the clean commit (commit only the task's `Files:` and the effort folder) and drop the refusal, or mark FR-22 as a new rule the human must confirm.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human has a half-finished edit to `README.md` and asks for the next task. The claim is refused until the human stashes or commits it. The commit could be kept clean by committing only the task's own files, so the refusal is a choice the human didn't make.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "Attempt cap: blocked at the 3rd failure or the 4th",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-23",
+        "FR-26",
+        "Key entities (Attempt)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a task that has used 3 attempts, when its next attempt fails, then it is blocked",
+        "the third blocks the task"
+      ],
+      "fix": "pick one boundary (block when the count reaches 3) and rewrite AC-23 as \"used 2 attempts, third fails, then blocked\".",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "A task fails three times. Key entities and FR-26 (\"failed 3 attempts\") block it at the third failure. AC-23 starts from 3 attempts already used and blocks on the next failure, which is the fourth. A test written from AC-23 passes an implementation that gives a fourth try. A test written from the entity definition fails that same implementation. AC-36 and AC-37 count attempts in `state.json`, so the off-by-one shows in their expected values as well.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-21",
+      "title": "AC-16 Observable names a status the state table lacks",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-16",
+        "state table Task"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "status leaves `review` as the state table says"
+      ],
+      "fix": "state the expected status, \"status reads `red` and the attempt count rises by 1\", and drop the reference to `review`.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "The Task state table has the states pending, ready, claimed, red, green, done and blocked. `review` is not one of them. A failed review goes green → red, and the table only gives that transition for a review failure. A test can't assert \"leaves review\". The AC also doesn't say which status the task ends in, and that status is the thing under test.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-9",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-22",
+      "title": "No timeout or limit on commands the CLI runs",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "FR-12",
+        "FR-14",
+        "FR-16"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THE SYSTEM SHALL run the command itself and accept red only when it exits non-zero"
+      ],
+      "fix": "add an FR with a number (for example \"a command running longer than N seconds is killed and counts as a failure\"). Add an AC for a hung command and one for a missing binary.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "The worker supplies the `--run` command, and the CLI runs it for red and green. A hanging test, or a command that waits on stdin, never exits. The CLI blocks, no exit code exists, and no AC says what happens. The full suite at baseline and at each review has the same problem. There are also no ACs for a command that is not found, or for a crash by signal. The spec gives no duration, so no test can set the limit or check the outcome.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-8, FR-12, FR-14 and FR-16 run commands with no timeout, kill or missing-binary behaviour. No FR, AC or NFR mentions any of these.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q25: a 10-minute limit, tests.timeout in config; a timeout or missing program is refused (FR-44, AC-49)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-23",
+      "title": "AC-21 Observable is an unbounded negative",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-21",
+        "FR-33"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the handoff text is not cited as evidence anywhere"
+      ],
+      "fix": "name the places: no history line or `nio flow status` output contains the handoff text. Or drop the clause and keep the status assertion.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "\"Anywhere\" has no finite set of places to check. A test can assert that status reads `red`, but it can't assert the absence of a citation in every output and log. An implementation that echoes the handoff text into the history note still passes the status check. The status check, on the other hand, is already testable.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-21's Observable now names the places checked: history lines and nio flow status output",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-24",
+      "title": "NFR-1 check doesn't prove zero model calls",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "NFR-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "checked by running those steps with network access blocked"
+      ],
+      "fix": "use fixture tests with no network need, and assert directly that no model client is invoked (for example, the model-call entry point is stubbed and its call count is 0).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "Red, green and review run the project's own test command. It may need the network, for example for fixtures or package fetches. Blocking the network then fails the steps for reasons unrelated to model calls. In the other direction, a model reached through a local endpoint or a cached socket is not blocked, so the check passes while a call is made. The check does not tell the two cases apart.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "spec-testability: NFR-1 now says the check runs on fixture tests that need no network. That removes the false failures from test commands that need the network. It still proves zero model calls only by blocking the network. A model reached through a local endpoint or a socket that is already open would not be blocked, so the check could pass while a call is made. I asked for a direct assertion, such as stubbing the model-call entry point and expecting a call count of 0. That is not in the text.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "human",
+      "note": "Q26: NFR-1's check also asserts no model or HTTP client module is loaded in the nio process",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-25",
+      "title": "Modes note sits between rows of the state table",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "state table row `green`",
+        "state table row `done`",
+        "state table row `blocked`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Modes (FR-41): `red accepted` never happens in direct mode, and `green accepted` on a claimed task happens only in direct mode",
+        "| done | ignore | reject: task is done | reject: task is done | reject: task is done |"
+      ],
+      "fix": "move the note below the last row (`blocked`), or run `nio check` to confirm the table still parses with all seven rows.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the note is a plain line between the `green` row and the `done` row, so the `done` and `blocked` rows follow the note instead of continuing the table. A markdown or `nio check` table parser that ends the table at the first non-table line would see only five rows, and the table's declared final state `done` and the `blocked` state would have no row. The pack may only be laying out text outside items this way, so I can't confirm it from the pack. The `nio check` output is not in the pack.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-26",
+      "title": "AC-7 still refuses a claim over memory-record changes that FR-22 now exempts",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-22",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given uncommitted changes outside the effort folder, when a task is claimed, then the claim is refused and names the files.",
+        "outside the effort folder and nio's own memory records (`.nio/memory/`, C-261029-xttl)"
+      ],
+      "fix": "add \"and nio's memory records\" to AC-7's Given, and add a case where only a memory record changed and the claim succeeds.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the only uncommitted change is a new file under `.nio/memory/`, and a task is claimed. FR-22 says no refusal, because memory records are exempt. AC-7 read literally says the claim is refused and names the file, because the file is outside the effort folder. A test written from AC-7 contradicts one written from FR-22.",
+          "severity": "minor",
+          "round": 5
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 5,
+      "last_round": 5
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ],
+    [
+      4,
+      "approved"
+    ],
+    [
+      5,
+      "approved"
+    ],
+    [
+      6,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "e0a4a505bfec34ecd07f6758f617691b38f2ab22",
+    "2": "95f3e63d000869be0adff795f6e09a92d179bd39",
+    "3": "f9638f51c4772e5b4336c776977c2c330f7a33e6",
+    "4": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
+    "5": "329b6a6821a746f5e045af882b39defd15e6f341",
+    "6": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-24"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}

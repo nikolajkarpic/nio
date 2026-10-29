@@ -25,12 +25,15 @@ Rate the work, not the task's length: a short task with subtle logic needs more 
   Strong: ordinary logic with clear tests. Max: subtle state, concurrency, security or data that can't be undone.
   Frontier: only what max would likely get wrong.
 - `Effort: <low|med|high>`: how hard the model should think.
+- `Mode: <split|single|direct>: <one-line reason>`. Split: one worker writes the failing test, another the code (the
+  default). Single: one worker does both, still proving red and green. Direct: no test first, for a task a test
+  can't lead (config, docs, wiring).
 - Never change any other line, and never decide `Parallel:` from the tier or the effort.
 
 ## Output format
 
-`tasks.md` with every `Tier:` and `Effort:` line rated. Then one line per epic with its counts by tier and effort.
+`tasks.md` with every `Tier:`, `Effort:` and `Mode:` line rated. Then one line per epic with its counts by tier and effort.
 
 ## Stop when
 
-Every task has a rated `Tier:` with a reason and an `Effort:`.
+Every task has a rated `Tier:` with a reason, an `Effort:` and a `Mode:` with a reason.

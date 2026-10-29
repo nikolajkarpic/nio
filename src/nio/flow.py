@@ -288,8 +288,10 @@ def guard(root, slug, stage, evidence=True):
         elif stage == "tasking":
             paths = rel("spec.md", *plan.FILES, "tasks.md")
             output = [f"ERROR {e}" for e in tasks.check(root, slug)[0]]
-        elif stage == "implementing":
-            output = ["the implement stage isn't built: it waits for the human"]  # FR-22: never passes
+        elif stage == "implementing":  # implement CT-14
+            from nio import implement
+            paths = rel("tasks.md")
+            output = implement.left(root, slug, load(root, slug)[1])
         else:
             gate = GATES[stage][0]
             paths = rel(*jury.GATES[gate], f"jury/{gate}.json")
@@ -367,10 +369,12 @@ def pick(root, slug=None):
 # --- where an effort is (CT-6) and the commands (CT-9, CT-10, CT-13) ---
 
 SKILL = {"intake": "@nio:spec", "drafting": "@nio:spec", "grilling": "@nio:grill", "spec_jury": "@nio:jury",
-         "planning": "@nio:plan", "plan_jury": "@nio:jury", "tasking": "@nio:tasks", "tasks_jury": "@nio:jury"}
+         "planning": "@nio:plan", "plan_jury": "@nio:jury", "tasking": "@nio:tasks", "tasks_jury": "@nio:jury",
+         "implementing": "@nio:implement"}
 INPUTS = {"intake": [], "drafting": ["intake.md"], "grilling": ["spec.md", "research.md", "grill.md"],
           "planning": ["spec.md", "architecture.md", "research.md", "grill.md"],
-          "tasking": ["spec.md", "architecture.md", "plan.md", "contracts.md", "tests.md", "quickstart.md"]}
+          "tasking": ["spec.md", "architecture.md", "plan.md", "contracts.md", "tests.md", "quickstart.md"],
+          "implementing": ["tasks.md"]}
 EXIT = {  # the decision table "Guards", word for word
     "intake": "`intake.md` exists",
     "drafting": "`spec.md` exists and every template section is filled or has an open point",
@@ -380,7 +384,7 @@ EXIT = {  # the decision table "Guards", word for word
     "plan_jury": "`nio check plan --approved` exits 0",
     "tasking": "`nio check tasks` passes: every AC has a task and every task an AC",
     "tasks_jury": "`nio check tasks --approved` exits 0 (the tasks ledger approved, or the human closed it with a reason)",
-    "implementing": "not built today: waits for the human (FR-22)"}
+    "implementing": "every task is done and every epic has its `epic` line"}
 ASKED = re.compile(r"^## Asked · (Q\d+)\b", re.M)
 ANSWERED = re.compile(r"^## (Q\d+)\b", re.M)
 
@@ -583,7 +587,7 @@ def where(root, slug, state=None, lines=None):
     from nio import jury
     if state is None:
         state, lines = load(root, slug)
-    stage, why, ready, results, ledgers, approved, sent_by = "done", "", None, {}, {}, [], None
+    stage, why, ready, results, ledgers, approved, sent_by, task = "done", "", None, {}, {}, [], None, ""
     passes = lambda s: results[s] if s in results else results.setdefault(s, guard(root, slug, s, evidence=False)[0])
     ledger = lambda s: ledgers[s] if s in ledgers else ledgers.setdefault(s, jury.load(root, slug, GATES[s][0]))
 
@@ -643,14 +647,23 @@ def where(root, slug, state=None, lines=None):
         status, command = f"{state['pause']['kind']}: {state['pause']['why']}", f"nio flow start {slug} --by human"
     elif state["waiting"]:
         status, command = f"waiting_for_human: {state['waiting']['why']}", f"nio flow start {slug} --by human"
+        if state["waiting"]["why"].startswith("commit failed"):  # CT-9: the retry re-runs the review and the commit
+            command = f"nio flow green {slug} {state['waiting']['task']} {by_arg(None)}"
+        elif state["waiting"].get("task"):  # CT-10, CT-11: a blocked task goes on when the human unblocks it
+            command = f'nio flow unblock {slug} {state["waiting"]["task"]} --human "<reason>" --by human'
     elif pending:
         status, command = f"waiting_for_human: {pending[0]['change']} pending", ""
     elif asked:
         status, command = f"waiting_for_human: {asked}", ""
     elif ready == "pass":
         status, command = f"waiting_for_human: approve {GATES[stage][0]}", f"nio flow done {stage} --commit {slug} --by human"
-    elif stage == "implementing":
-        status, command = "waiting_for_human: implement not built", ""
+    elif stage == "implementing":  # implement CT-14: the claimed task, else the next ready one
+        from nio import implement
+        tid = state["claims"].get("task")
+        t = next((t for t in implement.tasks_of(root, slug) if t["id"] == tid), None) if tid else \
+            implement.next_ready(root, slug, lines)
+        status, command = "working", "" if tid or not t else f"nio flow claim {slug}"
+        task = f"{t['id']} {t['title']}" + " (claimed)" * bool(tid) if t else ""
     elif stage == "done":
         status, command = "done", ""
     else:
@@ -659,7 +672,7 @@ def where(root, slug, state=None, lines=None):
             "inputs": [rel(n) for n in names if (folder / n).exists()], "exit": EXIT.get(stage, ""),
             "command": command, "skipped": skipped, "changes": entries, "overrides": unseen(lines),
             "unreadable": unreadable, "refs": pending[0]["record"] if pending else "",
-            "gate": sent_by or (stage if stage in GATES else None), "ready": ready}
+            "gate": sent_by or (stage if stage in GATES else None), "ready": ready, "task": task}
 
 
 def jury_files(stage):
@@ -731,7 +744,9 @@ def talk(slug, here):
         ("waiting_for_human: C-", "Settle the change request {q}", ""),
         ("waiting_for_human: Q", "Answer the grill's question {q}", "grill.md"),
         ("waiting_for_human: approve", "Approve or push back: run the command below", "jury/"),
-        ("waiting_for_human: implement", "Nothing to run: the implement stage isn't built", "tasks.md"),
+        ("waiting_for_human: commit failed", "Fix what git refused, then run the command below", "history.jsonl"),
+        ("waiting_for_human: spec problem", "Settle the change request, then run the command below", "spec.md"),
+        ("waiting_for_human: T-", "Look at the task's saved changes, then run the command below", "history.jsonl"),
         ("done", "Nothing needed: the effort is done", "history.jsonl")] if status.startswith(key)),
         ("Run this command to resume", "state.json"))
     out = [first.format(q=status.split(": ", 1)[-1].split()[0]), f"effort: {slug}", f"state: {here['stage']} ({status})"]
@@ -784,8 +799,10 @@ def next_step(root, slug=None, by=None):
         here = where(root, slug, state, lines)
     if here["status"] == "working":
         out = [f"effort: {slug}", f"state: {here['stage']} (working{': ' + here['why'] if here['why'] else ''})",
-               f"skill: {here['skill']}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}",
-               f"done: {here['command']} {by_arg(by)}"]
+               f"skill: {here['skill']}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}"]
+        out += [f"task: {here['task']}"] * bool(here["task"])
+        label = "claim" if here["stage"] == "implementing" else "done"
+        out += [f"{label}: {here['command']} {by_arg(by)}"] * bool(here["command"])
         out += [f"skipped: {', '.join(here['skipped'])} (not built)"] * bool(here["skipped"]) + overridden(here)
     else:
         out = talk(slug, here)

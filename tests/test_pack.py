@@ -189,6 +189,17 @@ def test_empty_memory():
     print("ok")
 
 
+def test_worker_pack_leaves_out_the_closing_instructions():
+    """A task's worker pack (implement-stage CT-6): no `How to use this` and no @nio:remember; the default keeps them."""
+    root, id = memory()
+    out, *_ = run(root, "add a session store", paths=["src/session/store.py"])
+    assert "## How to use this" in out and "@nio:remember" in out, out
+    out, _ = pack.build(root, "add a session store", paths=["src/session/store.py"], worker=False)
+    assert id["s"] in out and "## How to use this" not in out and "@nio:remember" not in out, out
+    assert "## Standings in this pack" in out, out
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
