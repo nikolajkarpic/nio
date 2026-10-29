@@ -336,3 +336,46 @@ Patched: FR-44, AC-49
 Question: Should the spec prove that nio makes no model calls with a direct check?
 Answer: 1. Fix it: the check also asserts that nio loads no model or web client while running those steps. [human]
 Patched: NFR-1
+
+## Q27 · architecture note · 2026-10-29
+Question: Approve the architecture note for the implement stage?
+Answer: 1. Approve: the plan builds on it, and the plan jury checks the plan against it. [human]
+Patched: architecture.md approved; plan.md architecture: approved
+
+Session 3 (2026-10-29): plan jury round-1 findings that change behaviour, asked of the human.
+
+## Asked · Q28 · J-13 · 2026-10-29
+Question: What happens to a blocked task's unfinished edits?
+Context: When a task is blocked (3 failed tries or a spec problem), its test and code edits sit uncommitted, and nio refuses the next task while the tree is dirty. The plan never says whether they're kept or thrown away (rollback review, confirmed).
+Options: 1. Save as a patch, clean the tree (Recommended). 2. Leave them; you clean up. 3. Discard them.
+Refs: J-13, CT-5, CT-10, CT-11, CT-12, FR-22, FR-38
+
+## Asked · Q29 · J-8 · 2026-10-29
+Question: What if the test suite is already broken (a module fails to import) before the first task?
+Context: The spec fails a task's check on any collection or import error, with no allowance for one that was there from the start, so every task would fail and block (logic review, confirmed). Fixing it changes a spec rule, so it needs a small change request and a quick spec-jury recheck of that one change.
+Options: 1. Pause at the start (Recommended). 2. Count only new broken modules. 3. Leave as is.
+Refs: J-8, FR-14, FR-16, FR-36, CT-3, CT-5
+
+## Asked · Q30 · J-12 · 2026-10-29
+Question: How should task lists approved before the mode line existed be treated?
+Context: Once every task needs a mode line, older approved task lists fail the tasks check, and adding the line counts as editing an approved list (rollback review, confirmed). The flow-state effort's list is one of them.
+Options: 1. Missing mode means two workers (Recommended). 2. Re-approve old lists. 3. Use the project setting, else refuse.
+Refs: J-12, CT-16, CT-4, FR-40, C-261029-4cev
+
+## Q28 · J-13 · 2026-10-29
+Question: What happens to a blocked task's unfinished edits?
+Answer: 1. Save as patch: nio saves the task's unfinished changes as a patch file in the run folder, then restores a clean tree so the next task can start. Nothing is lost; you can apply the patch by hand. [human]
+Patched: CT-10, CT-11, TC-23, TC-36
+
+## Q29 · J-8 · 2026-10-29
+Question: What if the test suite is already broken (a module fails to import) before the first task?
+Answer: 1. Pause at the start: like an unknown runner with failing tests, the stage waits for you before the first task, naming the broken module. You fix the suite, then it starts. [human]
+Patched: C-261029-kubi (against spec.md); CT-5
+
+## Q30 · J-12 · 2026-10-29
+Question: How should task lists approved before the mode line existed be treated?
+Answer: 1. Missing mode = two workers: a task with no mode line runs with two workers and test-first. The check requires the line only on lists approved after this is built; the accepted tasks-spec change request gets a small amendment. [human]
+Patched: C-261029-nbrg (supersedes C-261029-4cev); CT-4, CT-16
+
+## Patched · C-261029-kubi · 2026-10-29
+Applied the accepted change request from Q29: FR-46, AC-51, a Decisions line. [human]

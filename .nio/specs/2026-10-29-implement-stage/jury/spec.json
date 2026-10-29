@@ -1,7 +1,7 @@
 {
   "gate": "spec",
   "subject": "2026-10-29-implement-stage",
-  "round": 3,
+  "round": 4,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -22,7 +22,12 @@
     "R-261029-gszg/spec-logic.md": "045e10472fbc93bb40a7593dfb5f7dadaaf52e37ccaac4fa2c96215d166aaa41",
     "R-261029-gszg/spec-scope.md": "248f0fdd3c5ba78c275921ada4eb33b1e7f9541290357737d1a09c8bdb436a96",
     "R-261029-gszg/spec-testability.md": "508471e860b734bb837a6f85f22fdf878ec4c7b3bb2afb49439d1e8b1387010d",
-    "R-261029-jqf5/spec-testability.md": "a9b556d40d423ffc2141ad26b7cb44f63cbfd634dee693f7d1f119d52a074b2c"
+    "R-261029-jqf5/spec-testability.md": "a9b556d40d423ffc2141ad26b7cb44f63cbfd634dee693f7d1f119d52a074b2c",
+    "R-261029-o4pq/spec-adversary.md": "05209b4250cfb5fb774390302e77f9cb0fc6a42e981b619cd5b93e1ab55453b2",
+    "R-261029-o4pq/spec-consistency.md": "f2fadee97b9db535da4a5f363bc2a4802afcdd43d162f0ff84f2513b6963dead",
+    "R-261029-o4pq/spec-logic.md": "a06481efcf1f63300962d8f529cb0db99ec9abc49b66a62ba6b7010c25a54eaa",
+    "R-261029-o4pq/spec-scope.md": "f5e600d3435bdc65b73ebca49496014880dc526b328db6a99dd51a418fb3835b",
+    "R-261029-o4pq/spec-testability.md": "1b9aec736617249eebce1a3c1276767f95e74a7c59e84785cd37d7ae46b74efb"
   },
   "jurors": {
     "spec-adversary": {
@@ -32,20 +37,20 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "95f3e63d000869be0adff795f6e09a92d179bd39",
-      "judged": 2
+      "round": 4,
+      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
+      "judged": 4
     },
     "spec-consistency": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "consistency",
       "by": "juror / claude-code / haiku",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "95f3e63d000869be0adff795f6e09a92d179bd39",
-      "judged": 2
+      "round": 4,
+      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
+      "judged": 4
     },
     "spec-logic": {
       "attempts": 1,
@@ -54,9 +59,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "95f3e63d000869be0adff795f6e09a92d179bd39",
-      "judged": 2
+      "round": 4,
+      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
+      "judged": 4
     },
     "spec-scope": {
       "attempts": 1,
@@ -65,9 +70,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "95f3e63d000869be0adff795f6e09a92d179bd39",
-      "judged": 2
+      "round": 4,
+      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
+      "judged": 4
     },
     "spec-testability": {
       "attempts": 1,
@@ -76,9 +81,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "f9638f51c4772e5b4336c776977c2c330f7a33e6",
-      "judged": 3
+      "round": 4,
+      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
+      "judged": 4
     }
   },
   "findings": [
@@ -1060,12 +1065,17 @@
     [
       3,
       "approved"
+    ],
+    [
+      4,
+      "approved"
     ]
   ],
   "versions": {
     "1": "e0a4a505bfec34ecd07f6758f617691b38f2ab22",
     "2": "95f3e63d000869be0adff795f6e09a92d179bd39",
-    "3": "f9638f51c4772e5b4336c776977c2c330f7a33e6"
+    "3": "f9638f51c4772e5b4336c776977c2c330f7a33e6",
+    "4": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8"
   },
   "list": {
     "round": 2,
