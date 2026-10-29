@@ -132,6 +132,8 @@ reported to the human until it is built. [human]
   Observable: the first names the time limit, the second the missing program; the attempt count rises by 2; no command is left running. Level: unit.
 - **AC-50** (FR-45) Given a direct-mode T-3 that is green, when its review finds a new failure, then T-3 is claimed again with 1 attempt used. [human]
   Observable: status `claimed`; attempt count 1; no red line for T-3. Level: unit.
+- **AC-51** (FR-46) Given a repo where `tests/test_old.py` fails to import before the first task, when the first task is claimed, then the effort waits for the human naming that module, and after the import is fixed the next claim records the baseline. [human]
+  Observable: first: `waiting_for_human` naming `tests/test_old.py`, no `baseline` line, no claim; second: a `baseline` line, then a `claim` line. Level: integration.
 - **AC-33** (FR-10) Given T-1 and T-2 whose tests both live in `tests/test_x.py` and T-1 is done, when T-2's test phase adds its test to that file and red runs, then red is accepted. [human]
   Observable: exit 0; T-2's red history line holds the new hash of `tests/test_x.py`. Level: unit.
 - **AC-34** (FR-35) Given a project whose NIO config has no `tests.suite`, when the implement stage starts, then the effort waits for the human. [human]
@@ -218,6 +220,7 @@ reported to the human until it is built. [human]
 - **FR-36** IF the full suite's runner is unknown THEN THE SYSTEM SHALL require a baseline run that exits 0, set the effort waiting for the human when it doesn't, and treat any non-zero suite exit at review as a new failure. [human]
 - **FR-37** THE SYSTEM SHALL count one attempt for the claimed task each time its guard refuses red or green and each time its review fails; a task blocked by a spec problem uses no attempt. [human]
 - **FR-39** WHEN a change request sends the effort back from implementing THE SYSTEM SHALL keep its done tasks and their commits on the effort branch; when the effort returns to implementing, only tasks the re-approved `tasks.md` adds or changes run, a changed done task coming back under the next free T-n while the old one stays done. [human]
+- **FR-46** IF the full suite run for the baseline shows a collection or import error, passes the time limit, or its program isn't found THEN THE SYSTEM SHALL set the effort waiting for the human, naming the error, record no baseline, and run the baseline again at the next claim. [human]
 - **FR-43** WHEN red is reported THE SYSTEM SHALL refuse a command that doesn't name a test file from the TC-n entries of the task's `Test:` line. [human]
 - **FR-44** WHEN a command it runs passes the time limit (`tests.timeout` in the project's NIO config, 10 minutes when unset) or its program isn't found THE SYSTEM SHALL stop it and treat it as a refused red or green, or as a failed review for the full suite, naming the cause. [human]
 - **FR-45** WHEN a direct-mode task's review fails THE SYSTEM SHALL set it back to claimed, so its next worker reports green again. [human]
@@ -310,6 +313,7 @@ Modes (FR-41): `red accepted` never happens in direct mode, and `green accepted`
 - Red freezes every file the test phase changed until the task is done, since planned tests share one file (grill Q2, agent, 2026-10-29).
 - One `nio-worker-<tier>` card per tier and host, because only Claude Code picks a model per call: D-261029-ti54 (memory, 2026-10-29).
 - A failed review sends the task back to red, settling the tasks-stage spec's DF-1 (grill Q10, agent, 2026-10-29).
+- A suite broken before the first task pauses the stage instead of failing every task: C-261029-kubi (memory, 2026-10-29), from plan jury finding J-8.
 - Done tasks and their commits survive a change request; only tasks the re-approved `tasks.md` adds or changes run again: D-261029-nayw (memory, 2026-10-29).
 - The 3-attempt cap applies whether or not the effort's auto flag is on, unlike the flow's stop list (grill Q9, agent, 2026-10-29).
 

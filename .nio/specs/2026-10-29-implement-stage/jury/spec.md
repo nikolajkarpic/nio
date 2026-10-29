@@ -1,7 +1,7 @@
 ---
 gate: spec
 subject: 2026-10-29-implement-stage
-round: 3
+round: 4
 outcome: approved
 ---
 # Spec jury: 2026-10-29-implement-stage
@@ -236,8 +236,8 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| spec-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| spec-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 2 | 2 |
-| spec-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| spec-scope | scope | juror / claude-code / haiku | sufficient | yes | 1 | 2 |
-| spec-testability | testability | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
+| spec-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
+| spec-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 4 |
+| spec-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
+| spec-scope | scope | juror / claude-code / haiku | sufficient | yes | 1 | 4 |
+| spec-testability | testability | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
