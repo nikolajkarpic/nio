@@ -1,8 +1,8 @@
 ---
 gate: plan
 subject: 2026-10-29-implement-stage
-round: 1
-outcome: rerun
+round: 4
+outcome: approved
 ---
 # Plan jury: 2026-10-29-implement-stage
 
@@ -10,25 +10,27 @@ outcome: rerun
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | contradiction | CT-5, CT-9, CT-10, CT-11 | architecture-fit | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-2 | major | gap | CT-4, CT-7, CT-8, CT-11 | architecture-fit | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-3 | major | contradiction | CT-9, FR-19 | architecture-fit, logic, risk-rollback | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-4 | major | gap | CT-10, CT-12, CT-14, AC-23 | architecture-fit | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-5 | major | inconsistency | CT-6, AC-1, CT-15, FR-23 | architecture-fit | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-6 | major | gap | FR-19, AC-47, state table row `green` | logic | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-7 | major | contradiction | FR-36, FR-16, AC-35 | logic | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-8 | major | gap | FR-14, FR-16, AC-44 | logic | confirmed | disposed | spec-change (human) | new, 0 |
+| J-1 | major | contradiction | CT-5, CT-9, CT-10, CT-11 | architecture-fit | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-2 | major | gap | CT-4, CT-7, CT-8, CT-11 | architecture-fit | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-3 | major | contradiction | CT-9, FR-19 | architecture-fit, logic, risk-rollback | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-4 | major | gap | CT-10, CT-12, CT-14, AC-23 | architecture-fit | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-5 | major | inconsistency | CT-6, AC-1, CT-15, FR-23 | architecture-fit | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-6 | major | gap | FR-19, AC-47, state table row `green` | logic | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-7 | major | contradiction | FR-36, FR-16, AC-35 | logic | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-8 | major | gap | FR-14, FR-16, AC-44 | logic | confirmed | fixed | spec-change (human) | absent, 0 |
 | J-9 | major | inconsistency | FR-19, AC-47, CT-9 | logic | merged | merged |  | new, 0 |
 | J-10 | major | contradiction | FR-44, FR-9, AC-49, Decision table Red row 4 | logic | refuted | refuted |  | new, 0 |
 | J-11 | major | ambiguity | CT-9, TC-47 | risk-rollback | merged | merged |  | new, 0 |
-| J-12 | major | gap | CT-16, CT-4 | risk-rollback | confirmed | disposed | plan-fix (grill) | new, 0 |
-| J-13 | major | gap | CT-5, CT-10, CT-11, CT-12, TC-36 | risk-rollback | confirmed | disposed | plan-fix (grill) | new, 0 |
-| J-14 | minor | risk | CT-11 | risk-rollback | grounded | disposed | plan-fix (agent) | new, 0 |
-| J-15 | major | inconsistency | TC-38, TC-40, TC-35, AC-38, AC-40, AC-35 | test-proof | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-16 | major | ambiguity | TC-9, TC-17, AC-9, AC-17 | test-proof | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-17 | major | contradiction | TC-32, TC-54, AC-32 | test-proof | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-18 | major | gap | TC-28, AC-28 | test-proof | confirmed | disposed | plan-fix (agent) | new, 0 |
-| J-19 | major | untestable | TC-36, AC-36 | test-proof | confirmed | disposed | plan-fix (agent) | new, 0 |
+| J-12 | major | gap | CT-16, CT-4 | risk-rollback | confirmed | fixed | plan-fix (agent) | absent, 1 |
+| J-13 | major | gap | CT-5, CT-10, CT-11, CT-12, TC-36 | risk-rollback | confirmed | fixed | plan-fix (grill) | absent, 0 |
+| J-14 | minor | risk | CT-11 | risk-rollback | grounded | fixed | plan-fix (agent) | absent, 0 |
+| J-15 | major | inconsistency | TC-38, TC-40, TC-35, AC-38, AC-40, AC-35 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-16 | major | ambiguity | TC-9, TC-17, AC-9, AC-17 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-17 | major | contradiction | TC-32, TC-54, AC-32 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-18 | major | gap | TC-28, AC-28 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-19 | major | untestable | TC-36, AC-36 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-20 | blocker | inconsistency | TC-41, TC-10, TC-43, TC-8, TC-28, TC-50, AC-41, AC-10, AC-43 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 0 |
+| J-21 | blocker | contradiction | TC-41, TC-10, TC-43, TC-8, TC-28, TC-50, AC-41, AC-10, AC-43 | test-proof | merged | merged |  | new, 0 |
 
 ### J-1 `waiting` is set to a bare string, but `flow.py` reads it as a dict
 - quote: "sets `waiting` to `tests.suite not set` and stops (FR-35)"
@@ -127,8 +129,8 @@ outcome: rerun
 - quote: "`mode` is `implement.mode` from the config when set, else the task's `Mode:` value (FR-40)."
 - situation (risk-rollback): an effort whose `tasks.md` was committed as `nio: approve tasks` before this change has no `Mode:` lines. `nio check tasks` now rejects every task with "needs `- Mode:`". Adding the lines makes `check_fixes` report "changed after `nio: approve tasks`". CT-4 gives no mode when the line is missing and `implement.mode` is unset. The effort can't move forward or be repaired without going back and re-approving. The shared fixture `tests/fixtures/tasks/tasks.md` also has no `Mode:` line (the `impl()` helper has to add it), so suites already using it may fail too. No TC covers a `tasks.md` approved before the change.
 - fix: state the migration. Either require `Mode` only for tasks not yet frozen at approval and default a missing mode (for example `split`) in CT-4, or ignore the added `Mode:` line in the frozen-block comparison. Add a TC that claims a task from a `tasks.md` approved without `Mode:`, and say how the fixture and existing tests change.
-- validation: confirmed: `tasks.py:169` rejects any task missing a `FIELDS` entry, so `Mode` makes every earlier `tasks.md` invalid. `check_fixes` (tasks.py:263) compares the frozen planned-task blocks, so adding `Mode:` lines after `nio: approve tasks` reports "changed after". The plan states no migration, and efforts approved before this change are currently parked at "implement not built".
-- disposition: plan-fix by grill: Q30: a missing Mode runs split; Mode required only on lists approved later (C-261029-nbrg; CT-4, CT-16)
+- validation: confirmed: plan-risk-rollback: CT-4 defaults a missing mode to `split`, but CT-16's exemption depends on an approval commit that "predates this change", with no stated way for `check` to tell. No TC claims from a `tasks.md` approved without `Mode:`, because `impl()` always adds the line.
+- disposition: plan-fix by agent: the exemption is checkable: the approve commit's committer date before tasks.MODE_SINCE (CT-16); TC-56 claims from a list approved without Mode and checks a later one is refused
 
 ### J-13 Nothing says what happens to a blocked or failed task's uncommitted work
 - quote: "uncommitted changes outside `.nio/specs/<slug>/` → `error: uncommitted changes outside the effort folder:` and one line per file (FR-22)"
@@ -192,11 +194,39 @@ outcome: rerun
 - validation: confirmed: TC-36 asserts only that "the new red line's `frozen` is computed afresh". Its setup changes no test file between the old and the new red, so a stale and a fresh `frozen` map are identical. The assert cannot catch the stale-frozen bug.
 - disposition: plan-fix by agent: TC-36 checks green is refused before red and the new frozen hash differs
 
+### J-20 Tests that never write the planned test still run it, now that impl() commits none
+- quote: "It commits no test for the tasks."
+- quote: "tests call it after the claim, as a test phase would."
+- quote: "- Setup: `impl(modes={"T-1": "direct"})`; claim; add `refund`."
+- quote: "the red exits 1 naming `direct mode`; the green exits 0; no `red` line for T-1."
+- quote: "- Setup: `impl()`; claim T-1; `app.py` already defines `refund`, so the test passes."
+- quote: "the first exits 1 with `no tests ran`; the second exits 1 naming `tests/test_refund.py`; status `claimed`."
+- situation (test-proof): after the J-16 fix only `write_test` creates `tests/test_refund.py`. TC-41, TC-10, TC-43, TC-8, TC-28 and TC-50 never call it, yet they run `python -m unittest tests/test_refund.py`. With the module missing, unittest exits 1 on an import error. On correct code:
+- situation (test-proof): after the J-16 fix only `write_test` creates `tests/test_refund.py`, and these tests never call it. The unittest run then exits 1 on an import error. TC-41's "the green exits 0" fails on correct code. TC-10's exit-1 assert is met by the missing module whatever the code does, so a bug that accepts a test that already passes goes uncaught.
+- situation (test-proof): after the J-16 fix, only `write_test` creates `tests/test_refund.py`. TC-41, TC-10, TC-43, TC-8, TC-28 and TC-50 never call it, yet they run `python -m unittest tests/test_refund.py`. With the module missing, unittest exits 1 on an import error. On correct code, "the green exits 0" fails, and the setup "so the test passes" is false. Asserts that expect exit 1 now pass because of the import error, so they can't catch a broken refusal or gate.
+- fix: add `write_test(root)` after the claim in the setup of every test that runs `tests/test_refund.py` without it. That is TC-8, TC-10, TC-28, TC-41, TC-43 and TC-50; check TC-11, TC-12 and TC-33 too. For direct-mode tests, write a passing version or add `refund` after it.
+- validation: confirmed: The current tests.md line 11 says `impl()` commits no test file, and only `write_test` creates `tests/test_refund.py`. Only TC-9 calls `write_test`. TC-10 (line 97), TC-12 (line 114), TC-8 (lines 83-84) and, as quoted in the finding, TC-41 and TC-43 never create the file, yet they run `python -m unittest tests/test_refund.py` or `python tests/test_refund.py`. With the module missing, unittest fails on an import error and the interpreter exits non-zero. TC-10 would be refused for "collection, import or syntax error" instead of "the test passes before the code exists". The direct-mode greens in TC-8 and TC-41 would exit non-zero, not 0. TC-12 would still pass on a missing file, but only by accident. The fixture change for J-16 caused this.
+- disposition: plan-fix by agent: every test that runs tests/test_refund.py now calls write_test after the claim (TC-8, TC-10, TC-12, TC-16, TC-28, TC-30, TC-35, TC-41, TC-42, TC-43, TC-44, TC-47, TC-50); TC-10 and TC-43 also assert the refusal is not an import error
+
+### J-21 Tests that never write the planned test still run it, now that impl() commits none
+- quote: "It commits no test for the tasks."
+- quote: "tests call it after the claim, as a test phase would."
+- quote: "- Setup: `impl(modes={"T-1": "direct"})`; claim; add `refund`."
+- quote: "the red exits 1 naming `direct mode`; the green exits 0; no `red` line for T-1."
+- quote: "- Setup: `impl()`; claim T-1; `app.py` already defines `refund`, so the test passes."
+- quote: "the first exits 1 with `no tests ran`; the second exits 1 naming `tests/test_refund.py`; status `claimed`."
+- situation (test-proof): after the J-16 fix only `write_test` creates `tests/test_refund.py`, and these tests never call it. The unittest run then exits 1 on an import error. TC-41's "the green exits 0" fails on correct code. TC-10's exit-1 assert is met by the missing module whatever the code does, so a bug that accepts a test that already passes goes uncaught.
+- situation (test-proof): after the J-16 fix, only `write_test` creates `tests/test_refund.py`. TC-41, TC-10, TC-43, TC-8, TC-28 and TC-50 never call it, yet they run `python -m unittest tests/test_refund.py`. With the module missing, unittest exits 1 on an import error. On correct code, "the green exits 0" fails, and the setup "so the test passes" is false. Asserts that expect exit 1 now pass because of the import error, so they can't catch a broken refusal or gate.
+- fix: in every setup that runs `tests/test_refund.py`, add `write_test` after the claim, or have `impl()` take an option that commits the test for those cases.
+- validation: merged: same as J-20
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| plan-architecture-fit | architecture-fit | juror / claude-code / opus | sufficient | yes | 1 | 1 |
-| plan-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| plan-risk-rollback | risk-rollback | juror / claude-code / opus | sufficient | yes | 1 | 1 |
-| plan-test-proof | test-proof | juror / claude-code / opus | sufficient | yes | 1 | 1 |
+| plan-architecture-fit | architecture-fit | juror / claude-code / opus | sufficient | yes | 1 | 2 |
+| plan-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| plan-risk-rollback | risk-rollback | juror / claude-code / opus | sufficient | yes | 1 | 4 |
+| plan-test-proof | test-proof | juror / claude-code / opus | sufficient | yes | 1 | 4 |
+| plan-test-proof-2 | test-proof | juror / claude-code / opus | limited | yes | 1 | 3 |
+| plan-test-proof-3 | test-proof | juror / claude-code / opus | limited | yes | 1 | 3 |
