@@ -1,7 +1,7 @@
 ---
 gate: plan
 subject: 2026-10-29-implement-stage
-round: 4
+round: 5
 outcome: approved
 ---
 # Plan jury: 2026-10-29-implement-stage
@@ -224,9 +224,9 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| plan-architecture-fit | architecture-fit | juror / claude-code / opus | sufficient | yes | 1 | 2 |
-| plan-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| plan-risk-rollback | risk-rollback | juror / claude-code / opus | sufficient | yes | 1 | 4 |
-| plan-test-proof | test-proof | juror / claude-code / opus | sufficient | yes | 1 | 4 |
+| plan-architecture-fit | architecture-fit | juror / claude-code / opus | sufficient | yes | 2 | 5 |
+| plan-logic | logic | juror / claude-code / sonnet | sufficient | yes | 2 | 5 |
+| plan-risk-rollback | risk-rollback | juror / claude-code / opus | limited | yes | 2 | 5 |
+| plan-test-proof | test-proof | juror / claude-code / opus | limited | yes | 2 | 5 |
 | plan-test-proof-2 | test-proof | juror / claude-code / opus | limited | yes | 1 | 3 |
 | plan-test-proof-3 | test-proof | juror / claude-code / opus | limited | yes | 1 | 3 |
