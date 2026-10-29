@@ -4,7 +4,7 @@ import re
 import sys
 from importlib import resources
 
-from nio import agents, flow, hooks, index, jury, pack, plan, query, records, spec, tasks
+from nio import agents, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks
 
 
 def report(errors, warnings, count):
@@ -118,7 +118,20 @@ def main():
         s.add_argument("why")
     fe = fsub.add_parser("seen", help="the human saw the effort's overrides")
     fe.add_argument("slug")
-    for s in (fs, fd, fp, fa, fe):
+    fc = fsub.add_parser("claim", help="implementing: claim the next ready task; prints its mode, worker card, effort and pack")
+    fc.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
+    fr = fsub.add_parser("red", help="implementing: run a task's failing test; accepted, it freezes the task's test files")
+    fg = fsub.add_parser("green", help="implementing: run the red command (direct mode: --run) to pass, then review the task")
+    fu = fsub.add_parser("unblock", help="implementing: the human sets a blocked task ready again, with the reason")
+    fb = fsub.add_parser("block", help="implementing: file a worker's blocked handoff as a pending change request")
+    for s in (fr, fg, fu, fb):
+        s.add_argument("slug")
+        s.add_argument("task", metavar="T-n")
+    fr.add_argument("--run", required=True, metavar="COMMAND", help="the test command, naming the task's test file")
+    fg.add_argument("--run", metavar="COMMAND", help="red's command again, or in direct mode the command that must pass")
+    fu.add_argument("--human", required=True, metavar="REASON", help="why the task can go on")
+    fb.add_argument("--handoff", required=True, metavar="FILE", help="the handoff: status blocked with a change_request")
+    for s in (fs, fd, fp, fa, fe, fc, fr, fg, fu, fb):
         s.add_argument("--by", required=True, **by)
     a = p.parse_args()
 
@@ -265,6 +278,11 @@ def main():
                 "park": lambda: flow.park(root, a.slug, a.why, by=a.by),
                 "abandon": lambda: flow.abandon(root, a.slug, a.why, by=a.by),
                 "seen": lambda: flow.seen(root, a.slug, by=a.by),
+                "claim": lambda: implement.claim(root, a.slug, by=a.by),
+                "red": lambda: implement.red(root, a.slug, a.task, a.run, by=a.by),
+                "green": lambda: implement.green(root, a.slug, a.task, a.run, by=a.by),
+                "block": lambda: implement.block(root, a.slug, a.task, a.handoff, by=a.by),
+                "unblock": lambda: implement.unblock(root, a.slug, a.task, a.human, by=a.by),
             }[a.flow_cmd]()
         except (ValueError, flow.Broken, flow.Busy) as e:
             sys.exit(f"error: {e}")
