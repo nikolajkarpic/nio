@@ -1,7 +1,7 @@
 ---
 gate: tasks
 subject: 2026-10-29-implement-stage
-round: 3
+round: 4
 outcome: approved
 ---
 # Tasks jury: 2026-10-29-implement-stage
@@ -80,6 +80,6 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| tasks-executability | executability | juror / claude-code / haiku | sufficient | yes | 1 | 3 |
+| tasks-executability | executability | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
 | tasks-executability-2 | executability | juror / claude-code / haiku | limited | yes | 1 | 2 |
 | tasks-executability-3 | executability | juror / claude-code / haiku | limited | yes | 1 | 2 |
