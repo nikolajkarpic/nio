@@ -1162,11 +1162,7 @@ for arg in sys.argv[1:]:
 
 
 def test_nfr1_no_model_calls():
-    root = impl()
-    # the fixture holds no memory: a pack that recalls records embeds them, and fastembed loads requests and httpx
-    for p in (root / ".nio/memory/project").glob("*.md"):
-        p.unlink()
-    commit_all(root, "no memory")
+    root = impl()  # with memory records: the pack's recall may load nio's local embedder (C-261029-e54w)
     site = Path(tempfile.mkdtemp())
     (site / "sitecustomize.py").write_text(SITE)
     report = site / "report.json"
@@ -1181,8 +1177,7 @@ def test_nfr1_no_model_calls():
     assert st(root) == "done", st(root)
     got = json.loads(report.read_text())
     assert got["tried"] == [], got["tried"]
-    loaded = [m for m in got["modules"] if m.split(".")[0] in ("anthropic", "openai", "httpx", "requests", "urllib3", "aiohttp")
-              or m == "http.client"]
+    loaded = [m for m in got["modules"] if m.split(".")[0] in ("anthropic", "openai")]  # API model clients (C-261029-e54w)
     assert not loaded, loaded
     print("ok")
 
@@ -1431,8 +1426,7 @@ def demo():
     """quickstart.md's demo effort: the refunds tasks with T-1 split and T-2, T-3 direct; its folder."""
     root = impl(modes={"T-2": "direct", "T-3": "direct"})
     (root / "app.py").write_text("")
-    write_test(root)
-    commit_all(root, "the refund test, failing until app.py defines refund")
+    commit_all(root, "an empty app.py; QS-1's test phase writes the test")
     git(root, "branch", "-M", "main")  # QS-1 checks main is untouched
     return root
 
