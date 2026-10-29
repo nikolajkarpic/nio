@@ -433,10 +433,11 @@ helpers.
   1. Run claim, red and green in one subprocess.
   2. A `sitecustomize` on `PYTHONPATH` blocks `socket.socket.connect` for anything but `AF_UNIX`.
   3. At exit, it prints `sorted(sys.modules)`.
+  The fixture keeps its memory records, and nio's embedding model is cached (C-261029-e54w).
 - Assert: each of these:
   - the task is done;
   - no connect was attempted;
-  - none of `anthropic`, `openai`, `httpx`, `requests`, `urllib3`, `http.client` or `aiohttp` is in the module list.
+  - neither `anthropic` nor `openai` is in the module list.
 
 ## Misuse tests
 

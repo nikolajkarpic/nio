@@ -67,7 +67,7 @@ reported to the human until it is built. [human]
   Observable: non-zero exit naming T-5 as the current claim; the claim in `state.json` is still T-5. Level: unit.
 - **AC-6** (FR-2) Given an effort whose tasks gate passed but has no `nio: approve tasks` commit, when a task is claimed, then the claim is refused. [research: RF-9]
   Observable: non-zero exit naming the missing approval; no history line is added. Level: integration.
-- **AC-7** (FR-22) Given uncommitted changes outside the effort folder, when a task is claimed, then the claim is refused and names the files. [human]
+- **AC-7** (FR-22) Given uncommitted changes outside the effort folder and nio's memory records, when a task is claimed, then the claim is refused and names the files; given only an uncommitted memory record, the claim succeeds (C-261029-xttl). [human]
   Observable: non-zero exit listing the changed files; no claim is recorded. Level: integration.
 - **AC-8** (FR-1) Given an effort whose E-1 has T-1 and T-2 (T-2 depends on T-1) and E-2 has T-3, when tasks are claimed in turn, then they come in the order T-1, T-2, T-3. [human]
   Observable: the next ready task the CLI names after each done is T-2, then T-3. Level: unit.
@@ -203,7 +203,7 @@ reported to the human until it is built. [human]
 - **FR-19** WHEN a task's review passes THE SYSTEM SHALL mark it done and make one commit with the message `T-n: <title>` on the effort branch, the done history line and the commit together; IF the commit fails THEN the task SHALL stay green, with no done line, and the effort SHALL wait for the human, naming git's error. [human]
 - **FR-20** WHEN the implement stage starts THE SYSTEM SHALL create or switch to the effort branch `nio/<slug>`; at every claim and before every commit it SHALL refuse unless the current branch is `nio/<slug>`, and SHALL never commit a task on the default branch. [human]
 - **FR-21** THE SYSTEM SHALL never merge the effort branch; the human merges it. [human]
-- **FR-22** IF a task is claimed while there are uncommitted changes outside the effort folder THEN THE SYSTEM SHALL refuse the claim and list them, so each task's commit holds only its own work. [human]
+- **FR-22** IF a task is claimed while there are uncommitted changes outside the effort folder and nio's own memory records (`.nio/memory/`, C-261029-xttl) THEN THE SYSTEM SHALL refuse the claim and list them, so each task's commit holds only its own work. [human]
 - **FR-23** WHEN a worker finds that the spec, plan or tasks don't match what the code shows THE SYSTEM SHALL have it stop and write its handoff with `status: blocked` and a `change_request:` block (what the spec or plan says, what the code shows, the smallest change it would need), and never edit the spec, plan or tasks. [human]
 - **FR-24** WHEN the orchestrator files a blocked handoff's change request as a `C-*` record THE SYSTEM SHALL set the task to blocked and the effort waiting for the human, naming the task and the record; filing the same handoff again SHALL create no second record. [human]
 - **FR-25** IF a task's changes touch the effort's `spec.md`, any plan-stage file (`contracts.md` and `tests.md` included) or `tasks.md` THEN THE SYSTEM SHALL fail its review and name the file. [human]
@@ -267,7 +267,7 @@ Modes (FR-41): `red accepted` never happens in direct mode, and `green accepted`
 - **Epic report**: what the human gets when an epic finishes: done tasks and commits, files outside each task's list, baseline failures still failing. [human]
 
 ## Non-functional requirements
-- **NFR-1** THE SYSTEM SHALL claim, prove red and green, review and commit a task with zero model calls of its own, checked by running those steps on fixture tests that need no network, with network access blocked, and by asserting that no model or HTTP client module is loaded in the nio process while they run. [human]
+- **NFR-1** THE SYSTEM SHALL claim, prove red and green, review and commit a task with zero model calls of its own, checked by running those steps on fixture tests that need no network, with network access blocked, and asserting that no outgoing connection is attempted and no API model client (`anthropic`, `openai`) is loaded; nio's local embedder may load once its model is cached (C-261029-e54w). [human]
 
 ## Success criteria
 - **SC-1** Every task marked done traces to history lines with an accepted red (none in direct mode), an accepted green on the same command, a passed review, and its `T-n` commit. [human]
@@ -313,6 +313,7 @@ Modes (FR-41): `red accepted` never happens in direct mode, and `green accepted`
 - Red freezes every file the test phase changed until the task is done, since planned tests share one file (grill Q2, agent, 2026-10-29).
 - One `nio-worker-<tier>` card per tier and host, because only Claude Code picks a model per call: D-261029-ti54 (memory, 2026-10-29).
 - A failed review sends the task back to red, settling the tasks-stage spec's DF-1 (grill Q10, agent, 2026-10-29).
+- After the build: the no-model check allows nio's local embedder (C-261029-e54w); memory records don't count as uncommitted work and stay out of task commits (C-261029-xttl); the quickstart writes the test after the claim and settles a spec problem before unblocking (C-261029-aaxx).
 - A suite broken before the first task pauses the stage instead of failing every task: C-261029-kubi (memory, 2026-10-29), from plan jury finding J-8.
 - Done tasks and their commits survive a change request; only tasks the re-approved `tasks.md` adds or changes run again: D-261029-nayw (memory, 2026-10-29).
 - The 3-attempt cap applies whether or not the effort's auto flag is on, unlike the flow's stop list (grill Q9, agent, 2026-10-29).

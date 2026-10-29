@@ -379,3 +379,6 @@ Patched: C-261029-nbrg (supersedes C-261029-4cev); CT-4, CT-16
 
 ## Patched · C-261029-kubi · 2026-10-29
 Applied the accepted change request from Q29: FR-46, AC-51, a Decisions line. [human]
+
+## Patched · J-26 · 2026-10-29
+AC-7 now carries the memory-record exemption of C-261029-xttl (spec jury note J-26). [human]
