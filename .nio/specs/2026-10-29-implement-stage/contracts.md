@@ -64,7 +64,7 @@ retired: []                      # CT IDs removed from this plan; never reused
 - Fails, in this order, each with a non-zero exit, the message below, and nothing recorded:
   - no `nio: approve tasks` commit for the effort → `error: tasks not approved: no "nio: approve tasks" commit` (FR-2)
   - the current branch isn't `nio/<slug>` and the stage has started → `error: on <branch>, not nio/<slug>` (FR-20)
-  - uncommitted changes outside `.nio/specs/<slug>/` → `error: uncommitted changes outside the effort folder:` and one line per file (FR-22)
+  - uncommitted changes outside `.nio/specs/<slug>/`, leaving out `.nio/runs/`, `.nio/cache/` and `.nio/memory/` → `error: uncommitted changes outside the effort folder:` and one line per file (FR-22, C-261029-xttl)
   - a claim already in `state.json` → `error: T-<n> is claimed` (FR-3)
   - no ready task and some task not done → `error: no ready task; T-<n> waits on T-<m>` (FR-3)
 - Rules: the first claim of the stage, when no `baseline` line exists, starts the stage in this order:
@@ -139,7 +139,7 @@ retired: []                      # CT IDs removed from this plan; never reused
 - Rules: in this order:
   1. refuses unless the branch is `nio/<slug>` (FR-20);
   2. writes the `task_done` line and clears `claims`;
-  3. stages the task's changes and the effort's `history.jsonl` and `state.json`;
+  3. stages the task's changes, leaving out `.nio/runs/`, `.nio/cache/` and `.nio/memory/` (C-261029-xttl), and the effort's `history.jsonl` and `state.json`;
   4. commits `T-n: <title>` through `records.git(..., full=True)`.
 - Fails: a non-zero `git commit` → as `flow.commit_gate` does, writes back the bytes of `history.jsonl` and `state.json` kept in memory before step 2 and `read-tree`s the tree saved by `write-tree` before step 3, so no `task_done` line is left and nothing is staged; then writes a `fail` line with git's stderr and sets `waiting` to `{"why": "commit failed: <first stderr line>", "task": "T-n"}`. The task stays `green` (FR-19). [agent]
 - Rules: "THE SYSTEM SHALL never merge the effort branch; the human merges it" (FR-21): no merge, rebase or push is ever run
@@ -198,7 +198,7 @@ retired: []                      # CT IDs removed from this plan; never reused
 - Rules: the tests `test_guards_pass_and_implementing_never_does` and `test_ac23_implement_not_built` in `tests/test_flow.py` change to the built stage. The three tests waiting on #43 there become this spec's task-refusal tests (research RF-20).
 
 ### CT-15 The worker cards (FR-5, FR-6, FR-23, FR-42) [default]
-- Binding: `src/nio/agents/worker.md` (new)
+- Binding: `src/nio/agents/worker.md` (existing)
 - Like: `src/nio/agents/tasks-drafter.md`
 - Kind: file
 - Shape: frontmatter `name: worker`, `description`, `tier: all`, `effort: med`, `tools: [read, edit, shell]`; the body has the card sections `Job`, `Inputs`, `Output format`, `Stop when`
@@ -216,7 +216,7 @@ retired: []                      # CT IDs removed from this plan; never reused
 - Rules: `Mode` joins `FIELDS`. On a `tasks.md` whose `nio: approve tasks` commit's committer date is before `tasks.MODE_SINCE` (a constant set to the date this ships), a missing `Mode:` is allowed and the task runs in `split` (C-261029-nbrg). Otherwise `nio check tasks` rejects a missing value, one outside `split`, `single` and `direct`, or one without a reason, as it does for `Tier:`. The template shows the line, and the evaluator rates it with a reason next to `Tier:` and `Effort:` (C-261029-4cev).
 
 ### CT-17 The `@nio:implement` skill (FR-5, FR-24, FR-28, FR-40) [default]
-- Binding: `skills/implement/SKILL.md` (new)
+- Binding: `skills/implement/SKILL.md` (existing)
 - Like: `skills/tasks/SKILL.md`
 - Kind: file
 - Shape: a skill folder like the others: name and description frontmatter, then inputs, outputs, steps and when to stop

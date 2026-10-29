@@ -1,7 +1,7 @@
 ---
 gate: spec
 subject: 2026-10-29-implement-stage
-round: 4
+round: 6
 outcome: approved
 ---
 # Spec jury: 2026-10-29-implement-stage
@@ -35,6 +35,7 @@ outcome: approved
 | J-23 | minor | untestable | AC-21, FR-33 | testability | grounded | fixed | spec-fix (agent) | absent, 0 |
 | J-24 | minor | untestable | NFR-1 | testability | grounded | fixed | spec-fix (human) | absent, 1 |
 | J-25 | major | inconsistency | state table row `green`, state table row `done`, state table row `blocked` | logic | grounded | noted |  | new, 0 |
+| J-26 | minor | inconsistency | FR-22, AC-7 | logic | grounded | noted |  | new, 0 |
 
 ### J-1 The red/green command is the worker's choice and nothing ties it to the planned test
 - quote: "the red and green command comes from the worker, not from the task"
@@ -232,12 +233,19 @@ outcome: approved
 - fix: move the note below the last row (`blocked`), or run `nio check` to confirm the table still parses with all seven rows.
 - validation: grounded: raised in a re-review below blocker: a note only
 
+### J-26 AC-7 still refuses a claim over memory-record changes that FR-22 now exempts
+- quote: "Given uncommitted changes outside the effort folder, when a task is claimed, then the claim is refused and names the files."
+- quote: "outside the effort folder and nio's own memory records (`.nio/memory/`, C-261029-xttl)"
+- situation (logic): the only uncommitted change is a new file under `.nio/memory/`, and a task is claimed. FR-22 says no refusal, because memory records are exempt. AC-7 read literally says the claim is refused and names the file, because the file is outside the effort folder. A test written from AC-7 contradicts one written from FR-22.
+- fix: add "and nio's memory records" to AC-7's Given, and add a case where only a memory record changed and the claim succeeds.
+- validation: grounded: raised in a re-review below blocker: a note only
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| spec-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
-| spec-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 4 |
-| spec-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
-| spec-scope | scope | juror / claude-code / haiku | sufficient | yes | 1 | 4 |
-| spec-testability | testability | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
+| spec-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
+| spec-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 6 |
+| spec-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
+| spec-scope | scope | juror / claude-code / haiku | sufficient | yes | 1 | 6 |
+| spec-testability | testability | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |

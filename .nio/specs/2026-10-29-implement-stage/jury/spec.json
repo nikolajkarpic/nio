@@ -1,7 +1,7 @@
 {
   "gate": "spec",
   "subject": "2026-10-29-implement-stage",
-  "round": 4,
+  "round": 6,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -27,7 +27,17 @@
     "R-261029-o4pq/spec-consistency.md": "f2fadee97b9db535da4a5f363bc2a4802afcdd43d162f0ff84f2513b6963dead",
     "R-261029-o4pq/spec-logic.md": "a06481efcf1f63300962d8f529cb0db99ec9abc49b66a62ba6b7010c25a54eaa",
     "R-261029-o4pq/spec-scope.md": "f5e600d3435bdc65b73ebca49496014880dc526b328db6a99dd51a418fb3835b",
-    "R-261029-o4pq/spec-testability.md": "1b9aec736617249eebce1a3c1276767f95e74a7c59e84785cd37d7ae46b74efb"
+    "R-261029-o4pq/spec-testability.md": "1b9aec736617249eebce1a3c1276767f95e74a7c59e84785cd37d7ae46b74efb",
+    "R-261029-6zoe/spec-adversary.md": "fcc5a6796395c73a4c785418671b313ed41e7b58c034a198ff0e3255442f5343",
+    "R-261029-6zoe/spec-consistency.md": "40a4ca715fdfedb9ba472b7718efba7b8bd8054fdf838bc6fb492c0e9a33770d",
+    "R-261029-6zoe/spec-logic.md": "44301e3c3cd3cdcceaef0daae83f3fdd1e7d4d6b61b0e386316e61b5b30b7a4a",
+    "R-261029-6zoe/spec-scope.md": "58f6a38eccbc77357fa214329c8de47e2022c273605181d8deca63ea75b78e4d",
+    "R-261029-6zoe/spec-testability.md": "3876a9265a3d86d96e71f0ef0facb26574ed0032467313d52eab0887e6a1039f",
+    "R-261029-kshq/spec-adversary.md": "b6f07a7a5ae262eab5d256de91f0a2321a7ec653fbb935aa8dabada6d2d5cb69",
+    "R-261029-kshq/spec-consistency.md": "ab5b99e14b3ee75baa7ca9068667dfc0ddb971d5ab341d6da2d588ec2ad5d925",
+    "R-261029-kshq/spec-logic.md": "46b0c51087c38c5234016a71e0a302b29af42b6a7db19b0c92999a95aae9a69a",
+    "R-261029-kshq/spec-scope.md": "3bf563cbabd4d2eb55a4248cd97bf0c0b32f5f082cac8f0ad536cefd5036378f",
+    "R-261029-kshq/spec-testability.md": "d01764dafcf53ef6e9e7affc4acea555d5ff8a1ec5b1883e1ff280066cbc5a4b"
   },
   "jurors": {
     "spec-adversary": {
@@ -37,9 +47,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
-      "judged": 4
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
     },
     "spec-consistency": {
       "attempts": 1,
@@ -48,9 +58,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
-      "judged": 4
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
     },
     "spec-logic": {
       "attempts": 1,
@@ -59,9 +69,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
-      "judged": 4
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
     },
     "spec-scope": {
       "attempts": 1,
@@ -70,9 +80,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
-      "judged": 4
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
     },
     "spec-testability": {
       "attempts": 1,
@@ -81,9 +91,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
-      "judged": 4
+      "round": 6,
+      "version": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3",
+      "judged": 6
     }
   },
   "findings": [
@@ -1050,6 +1060,41 @@
       "rounds": 0,
       "first_round": 2,
       "last_round": 2
+    },
+    {
+      "id": "J-26",
+      "title": "AC-7 still refuses a claim over memory-record changes that FR-22 now exempts",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-22",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given uncommitted changes outside the effort folder, when a task is claimed, then the claim is refused and names the files.",
+        "outside the effort folder and nio's own memory records (`.nio/memory/`, C-261029-xttl)"
+      ],
+      "fix": "add \"and nio's memory records\" to AC-7's Given, and add a case where only a memory record changed and the claim succeeds.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the only uncommitted change is a new file under `.nio/memory/`, and a task is claimed. FR-22 says no refusal, because memory records are exempt. AC-7 read literally says the claim is refused and names the file, because the file is outside the effort folder. A test written from AC-7 contradicts one written from FR-22.",
+          "severity": "minor",
+          "round": 5
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 5,
+      "last_round": 5
     }
   ],
   "outcome": "approved",
@@ -1069,13 +1114,23 @@
     [
       4,
       "approved"
+    ],
+    [
+      5,
+      "approved"
+    ],
+    [
+      6,
+      "approved"
     ]
   ],
   "versions": {
     "1": "e0a4a505bfec34ecd07f6758f617691b38f2ab22",
     "2": "95f3e63d000869be0adff795f6e09a92d179bd39",
     "3": "f9638f51c4772e5b4336c776977c2c330f7a33e6",
-    "4": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8"
+    "4": "2ea4db4f2d85fdf30cc3dbe0f1e89124f544f7c8",
+    "5": "329b6a6821a746f5e045af882b39defd15e6f341",
+    "6": "6e5774f9f0cf8c93a59ab536ba35135fa3eb4cf3"
   },
   "list": {
     "round": 2,
