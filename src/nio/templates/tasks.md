@@ -19,6 +19,7 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Parallel: no
 - Tier: strong: <why this model class>
 - Effort: med
+- Mode: split: <why this working mode>   <!-- split | single | direct -->
 
 ## E-2 <what this story delivers> (US-1)
 
@@ -30,6 +31,7 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Parallel: yes
 - Tier: cheap: <why>
 - Effort: low
+- Mode: split: <why>
 
 #### Fixes
 <!-- Tasks added after approval: an implementation-jury finding, a "justify or remove" task, or a change request. -->
@@ -42,3 +44,4 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Parallel: no
 - Tier: cheap: <why>
 - Effort: low
+- Mode: split: <why>
