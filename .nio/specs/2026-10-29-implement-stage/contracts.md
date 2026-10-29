@@ -55,7 +55,7 @@ retired: []                      # CT IDs removed from this plan; never reused
 - Rules: a task whose block changed after its `task_done` line comes back under the next free T-n in the re-approved `tasks.md`; the old ID stays `done`, since `status` reads it from its own lines (FR-39)
 - State: follows the spec's state table Task
 
-### CT-5 Claim the next task (FR-1, FR-2, FR-3, FR-6, FR-7, FR-16, FR-20, FR-22, FR-35, FR-36, FR-40) [default]
+### CT-5 Claim the next task (FR-1, FR-2, FR-3, FR-6, FR-7, FR-16, FR-20, FR-22, FR-35, FR-36, FR-40, FR-46) [default]
 - Binding: `src/nio/implement.py:claim` (new)
 - Like: `src/nio/flow.py:done`
 - Kind: cli
@@ -70,7 +70,7 @@ retired: []                      # CT IDs removed from this plan; never reused
 - Rules: the first claim of the stage, when no `baseline` line exists, starts the stage in this order:
   1. creates or switches to `nio/<slug>` (FR-20);
   2. with no `tests.suite`, sets `waiting` to `{"why": "tests.suite not set"}` and stops (FR-35);
-  3. runs the suite (CT-3). When it is `broken` (a collection or import error, a time limit or a missing program), it sets `waiting` to `{"why": "the suite is broken before the first task: <error>"}`, writes no `baseline` line and stops (C-261029-kubi). When the runner is unknown and the exit is non-zero, it sets `waiting` to `{"why": "the baseline fails and its runner is unknown"}`, writes no `baseline` line and stops (FR-36);
+  3. runs the suite (CT-3). When it is `broken` (a collection or import error, a time limit or a missing program), it sets `waiting` to `{"why": "the suite is broken before the first task: <error>"}`, writes no `baseline` line and stops (FR-46, C-261029-kubi). When the runner is unknown and the exit is non-zero, it sets `waiting` to `{"why": "the baseline fails and its runner is unknown"}`, writes no `baseline` line and stops (FR-36);
   4. otherwise writes the `baseline` line holding its command, exit code, failing names, collected count and runner (FR-16).
   With no `baseline` line, the next claim starts the stage again, so a fixed suite is run afresh. [agent]
 - Rules: on success, writes a `claim` line and `claims: {"task": "T-n"}`, writes the worker pack (CT-6), and names the card for the task's tier and its effort (FR-6, FR-7)
@@ -213,7 +213,7 @@ retired: []                      # CT IDs removed from this plan; never reused
 - Binding: `src/nio/tasks.py:check` (existing)
 - Kind: function
 - Shape: `Mode: <split|single|direct>: <reason>` in each task of `tasks.md`; `tasks.FIELDS`, `src/nio/templates/tasks.md` and `src/nio/agents/evaluator.md` change with it
-- Rules: `Mode` joins `FIELDS`. On a `tasks.md` whose `nio: approve tasks` commit predates this change, a missing `Mode:` is allowed and the task runs in `split` (C-261029-nbrg). Otherwise `nio check tasks` rejects a missing value, one outside `split`, `single` and `direct`, or one without a reason, as it does for `Tier:`. The template shows the line, and the evaluator rates it with a reason next to `Tier:` and `Effort:` (C-261029-4cev).
+- Rules: `Mode` joins `FIELDS`. On a `tasks.md` whose `nio: approve tasks` commit's committer date is before `tasks.MODE_SINCE` (a constant set to the date this ships), a missing `Mode:` is allowed and the task runs in `split` (C-261029-nbrg). Otherwise `nio check tasks` rejects a missing value, one outside `split`, `single` and `direct`, or one without a reason, as it does for `Tier:`. The template shows the line, and the evaluator rates it with a reason next to `Tier:` and `Effort:` (C-261029-4cev).
 
 ### CT-17 The `@nio:implement` skill (FR-5, FR-24, FR-28, FR-40) [default]
 - Binding: `skills/implement/SKILL.md` (new)

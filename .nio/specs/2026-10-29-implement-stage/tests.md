@@ -81,7 +81,7 @@ helpers.
 - File: `tests/test_implement.py:test_ac8_order` (new)
 - Covers: CT-4
 - Setup: `impl(tasks=...)` with E-1 holding T-1 and T-2 (T-2 depends on T-1) and E-2 holding T-3, all in direct mode.
-- Action: three times: `flow(root, "claim", S)`, write passing code, then `flow(root, "green", S, "T-n", "--run", "python -m unittest tests/test_refund.py")`.
+- Action: three times: `flow(root, "claim", S)`, `write_test(root)`, write passing code, then `flow(root, "green", S, "T-n", "--run", "python -m unittest tests/test_refund.py")`.
 - Assert: the claimed tasks are `T-1`, `T-2`, `T-3` in that order.
 
 ### TC-9 red is accepted on an assertion failure (AC-9; unit) [default]
@@ -94,9 +94,9 @@ helpers.
 ### TC-10 red is refused when the test passes (AC-10; unit) [default]
 - File: `tests/test_implement.py:test_ac10_test_passes_first` (new)
 - Covers: CT-7
-- Setup: `impl()`; claim T-1; `app.py` already defines `refund`, so the test passes.
+- Setup: `impl()`; claim T-1; `write_test(root)`; `app.py` already defines `refund`, so the test passes.
 - Action: red with `python -m unittest tests/test_refund.py`.
-- Assert: exit 1; the output contains `the test passes before the code exists`; status `claimed`.
+- Assert: exit 1; the output contains `the test passes before the code exists` and not `collection, import or syntax error`; status `claimed`.
 
 ### TC-11 red is refused for an import, collection or syntax error (AC-11; unit) [default]
 - File: `tests/test_implement.py:test_ac11_wrong_reason` (new)
@@ -111,8 +111,8 @@ helpers.
 ### TC-12 an unknown runner is decided by exit code (AC-12; unit) [default]
 - File: `tests/test_implement.py:test_ac12_unknown_runner` (new)
 - Covers: CT-2, CT-7
-- Setup: `impl()`; claim T-1.
-- Action: red with `python tests/test_refund.py` (not a known runner's command), which exits 1.
+- Setup: `impl()`; claim T-1; `write_test(root)`, whose module ends with `unittest.main()`.
+- Action: red with `python tests/test_refund.py` (not a known runner's command), which exits 1 on the assertion.
 - Assert: exit 0; the red line has `runner: unknown`.
 
 ### TC-13 green on the red command is accepted and review starts (AC-13; unit) [default]
@@ -145,7 +145,7 @@ helpers.
 ### TC-16 a failed review counts only failures new to the baseline (AC-16; unit) [default]
 - File: `tests/test_implement.py:test_ac16_new_failure_only` (new)
 - Covers: CT-3, CT-8
-- Setup: `impl()` with `tests/test_a.py` failing before the first claim, so the baseline lists `test_a`; claim T-1 and red it. The code makes T-1's test pass but also makes a new `tests/test_b.py` fail.
+- Setup: `impl()` with `tests/test_a.py` failing before the first claim, so the baseline lists `test_a`; claim T-1, `write_test(root)`, and red it. The code makes T-1's test pass but also makes a new `tests/test_b.py` fail.
 - Action: green.
 - Assert: the `review` line names `test_b` as a new failure and not `test_a`; status `red`; `state(root)["attempts"]["T-1"] == 1`.
 
@@ -233,7 +233,7 @@ helpers.
 ### TC-28 the branch is never merged (AC-28; integration) [default]
 - File: `tests/test_implement.py:test_ac28_no_merge` (new)
 - Covers: CT-9, CT-13
-- Setup: `impl(tasks=...)` with one direct task; take it to done.
+- Setup: `impl(tasks=...)` with one direct task; claim it, `write_test(root)`, add `refund`, and green it to done.
 - Action: read the last output and git.
 - Assert: `main`'s HEAD is unchanged; the output contains `nio/<S>` as the branch to merge.
 
@@ -247,7 +247,7 @@ helpers.
 ### TC-30 the epic report lists baseline failures and outside files (AC-30; unit) [default]
 - File: `tests/test_implement.py:test_ac30_epic_report` (new)
 - Covers: CT-13
-- Setup: one-task epic; the baseline lists `test_a`; the task also changes `helpers.py`.
+- Setup: one-task epic in direct mode; the baseline lists `test_a`; claim, `write_test(root)`, add `refund`, and change `helpers.py`.
 - Action: the green that finishes the epic.
 - Assert: the report names `test_a` as a baseline failure, and `helpers.py` with `T-1`.
 
@@ -282,7 +282,7 @@ helpers.
 ### TC-35 an unknown runner needs a green baseline (AC-35; unit) [default]
 - File: `tests/test_implement.py:test_ac35_unknown_runner_baseline` (new)
 - Covers: CT-3, CT-5, CT-8
-- Setup: (a) `tests.suite: "python check.py"`, with `check.py` exiting 1; (b) the same with `check.py` exiting 0, then T-1 taken to green while `check.py` exits 1.
+- Setup: (a) `tests.suite: "python check.py"`, with `check.py` exiting 1; (b) the same with `check.py` exiting 0, then T-1 claimed, `write_test(root)`, red, `refund` added, and green run while `check.py` exits 1.
 - Action: claim; then green.
 - Assert: (a) `waiting_for_human` naming the failing baseline; (b) the review fails naming a new failure.
 
@@ -329,28 +329,28 @@ helpers.
 ### TC-41 direct mode: green with no red, and red refused (AC-41; unit) [default]
 - File: `tests/test_implement.py:test_ac41_direct` (new)
 - Covers: CT-7, CT-8
-- Setup: `impl(modes={"T-1": "direct"})`; claim; add `refund`.
+- Setup: `impl(modes={"T-1": "direct"})`; claim; `write_test(root)`; add `refund`.
 - Action: red with any command, then green with `--run "python -m unittest tests/test_refund.py"`.
 - Assert: the red exits 1 naming `direct mode`; the green exits 0; no `red` line for T-1.
 
 ### TC-42 single mode: the worker's own red is accepted (AC-42; unit) [default]
 - File: `tests/test_implement.py:test_ac42_single` (new)
 - Covers: CT-7
-- Setup: `impl(modes={"T-1": "single"})`; claim.
+- Setup: `impl(modes={"T-1": "single"})`; claim; `write_test(root)`.
 - Action: red with `--by "worker / test / test"`.
 - Assert: exit 0; the red line has the same fields as TC-9's, with `who.role == "worker"`.
 
 ### TC-43 a no-test or non-test command is refused (AC-43; unit) [default]
 - File: `tests/test_implement.py:test_ac43_no_test_command` (new)
 - Covers: CT-2, CT-7
-- Setup: claim T-1 (TC-1 is in `tests/test_refund.py`).
+- Setup: `impl()`; claim T-1 (TC-1 is in `tests/test_refund.py`); `write_test(root)`.
 - Action: red with `python -m unittest tests/test_refund.py -k nothing`, then red with `test -e src/new.py`.
-- Assert: the first exits 1 with `no tests ran`; the second exits 1 naming `tests/test_refund.py`; status `claimed`.
+- Assert: the first exits 1 with `no tests ran` and not `collection, import or syntax error`; the second exits 1 naming `tests/test_refund.py`; status `claimed`.
 
 ### TC-44 a broken suite or fewer tests fails the review (AC-44; unit) [default]
 - File: `tests/test_implement.py:test_ac44_broken_or_fewer` (new)
 - Covers: CT-3, CT-8
-- Setup: a baseline of 40 collected, none failing (40 small tests in `tests/test_many.py`). Then two cases: (a) the code makes another module fail to import; (b) the code deletes two tests.
+- Setup: a baseline of 40 collected, none failing (40 small tests in `tests/test_many.py`); claim T-1, `write_test(root)`, red it, add `refund`. Then two cases: (a) the code makes another module fail to import; (b) the code deletes two tests.
 - Action: green in each.
 - Assert: (a) the review names the import error; (b) it names `38` against `40`.
 
@@ -371,7 +371,7 @@ helpers.
 ### TC-47 a rejected commit keeps the task green (AC-47; integration) [default]
 - File: `tests/test_implement.py:test_ac47_commit_rejected` (new)
 - Covers: CT-9
-- Setup: `.git/hooks/pre-commit` that prints `hook-says-no-T1` and exits 1; T-1 at red with passing code; keep the bytes of `history.jsonl` and `state.json` before the green.
+- Setup: `.git/hooks/pre-commit` that prints `hook-says-no-T1` and exits 1; TC-9's red, then `refund` added; keep the bytes of `history.jsonl` and `state.json` before the green.
 - Action: green.
 - Assert: each of these:
   - no commit starting `T-1:`;
@@ -402,9 +402,26 @@ helpers.
 ### TC-50 a direct task's failed review goes back to claimed (AC-50; unit) [default]
 - File: `tests/test_implement.py:test_ac50_direct_review_fail` (new)
 - Covers: CT-8, CT-10
-- Setup: `impl(modes={"T-1": "direct"})`; claim; code that passes T-1's test but breaks `tests/test_c.py`.
+- Setup: `impl(modes={"T-1": "direct"})`; claim; `write_test(root)`; code that passes T-1's test but breaks `tests/test_c.py`.
 - Action: green.
 - Assert: status `claimed`; `attempts["T-1"] == 1`; no `red` line for T-1.
+
+### TC-55 a suite broken before the first task pauses the stage (AC-51; integration) [default]
+- File: `tests/test_implement.py:test_ac51_broken_baseline` (new)
+- Covers: CT-5, CT-3
+- Setup: `impl()` with `tests/test_old.py` holding `import nosuchmodule`, committed.
+- Action: `flow(root, "claim", S)`; then fix the import, commit, and claim again.
+- Assert: each of these:
+  - the first claim exits 1, and `flow(root, "next", S)` contains `waiting_for_human` and `tests/test_old.py`;
+  - after the first claim there is no `baseline` and no `claim` line;
+  - after the second claim a `baseline` line comes before a `claim` line for T-1.
+
+### TC-56 a task list approved before Mode existed still runs (AC-40; unit) [default]
+- File: `tests/test_implement.py:test_ac40_legacy_list_without_mode` (new)
+- Covers: CT-4, CT-16
+- Setup: `impl(tasks=...)` with the refunds fixture as is (no `Mode:` line), its `nio: approve tasks` commit made with `GIT_COMMITTER_DATE` one day before `tasks.MODE_SINCE`; a second repo the same but approved one day after.
+- Action: `nio check tasks <S>` in each, then `flow(root, "claim", S)` in the first.
+- Assert: the first check passes and its claim prints `mode: split`; the second check fails with `needs - Mode:` for each task.
 
 ## Quality tests
 

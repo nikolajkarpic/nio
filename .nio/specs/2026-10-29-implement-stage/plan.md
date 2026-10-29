@@ -14,7 +14,7 @@ retired: []                      # OP IDs removed from this plan; never reused
 ### US-1 Each task runs in a fresh worker with only its pack
 - Depends on: Foundation
 - Delivers: CT-5, CT-6, CT-15, CT-17
-- Tests: TC-1, TC-2, TC-3, TC-4, TC-5, TC-6, TC-7, TC-19, TC-27, TC-34, TC-40, TC-46
+- Tests: TC-1, TC-2, TC-3, TC-4, TC-5, TC-6, TC-7, TC-19, TC-27, TC-34, TC-40, TC-46, TC-55, TC-56
 
 ### US-2 Red and green are proven by the CLI, not claimed
 - Depends on: US-1
@@ -81,12 +81,13 @@ retired: []                      # OP IDs removed from this plan; never reused
 | FR-37 | CT-7, CT-8, CT-10 | TC-37 |
 | FR-38 | CT-12 | TC-36 |
 | FR-39 | CT-4 | TC-39 |
-| FR-40 | CT-4, CT-5, CT-16, CT-17 | TC-40 |
+| FR-40 | CT-4, CT-5, CT-16, CT-17 | TC-40, TC-56 |
 | FR-41 | CT-7, CT-8 | TC-41 |
 | FR-42 | CT-7, CT-15 | TC-42 |
 | FR-43 | CT-2, CT-7 | TC-43 |
 | FR-44 | CT-1, CT-7 | TC-49 |
 | FR-45 | CT-8 | TC-50 |
+| FR-46 | CT-5 | TC-55 |
 | AC-1 | CT-6 | TC-1 |
 | AC-2 | CT-5, CT-15, CT-17 | TC-2 |
 | AC-3 | CT-5, CT-15 | TC-3 |
@@ -126,7 +127,7 @@ retired: []                      # OP IDs removed from this plan; never reused
 | AC-37 | CT-7, CT-8, CT-10 | TC-37 |
 | AC-38 | CT-2 | TC-38 |
 | AC-39 | CT-4 | TC-39 |
-| AC-40 | CT-4, CT-5, CT-16, CT-17 | TC-40 |
+| AC-40 | CT-4, CT-5, CT-16, CT-17 | TC-40, TC-56 |
 | AC-41 | CT-7, CT-8 | TC-41 |
 | AC-42 | CT-7, CT-15 | TC-42 |
 | AC-43 | CT-1, CT-2, CT-7 | TC-43 |
@@ -137,6 +138,7 @@ retired: []                      # OP IDs removed from this plan; never reused
 | AC-48 | CT-11, CT-17 | TC-48 |
 | AC-49 | CT-1, CT-7 | TC-49 |
 | AC-50 | CT-8 | TC-50 |
+| AC-51 | CT-5 | TC-55 |
 | NFR-1 | CT-8 | TC-51 |
 
 ## Decisions
