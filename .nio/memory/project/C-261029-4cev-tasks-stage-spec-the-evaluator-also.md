@@ -11,6 +11,7 @@ outcome: accepted          # pending | accepted | rejected
 paths: [".nio/specs/2026-10-27-tasks-stage/spec.md", "src/nio/agents/evaluator.md", "src/nio/templates/tasks.md", "src/nio/tasks.py"]
 tags: [tasks-stage, implement-stage, evaluator]
 supersedes: []
+outdated_by: [C-261029-nbrg]
 ---
 ## What is wrong
 The tasks-stage spec (approved 2026-10-27) fixes a task's fields, and its evaluator rates only `Tier:` and `Effort:`. The implement-stage grill (Q14, 2026-10-29) decided that a task is worked in one of three modes, picked per task when tasks are rated, which needs a new field the approved spec doesn't have.
