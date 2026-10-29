@@ -1,0 +1,311 @@
+{
+  "gate": "tasks",
+  "subject": "2026-10-29-implement-stage",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261029-y6rv/tasks-executability.md": "225e18fdd509fbb3a2506f03948aae9355383e232ecc21d64eb4abd213cc42ae",
+    "R-261029-y6rv/tasks-refuter.md": "b05a90cad93a06de3cd3a47e1d9b7511a4145c22c9107913d5108b856691e24c",
+    "R-261029-y6rv/tasks-executability-2.md": "8c20d9f3479b41d70b34e0660d74166f95c98cbd70c02d4396a8325b6d8ac795",
+    "R-261029-y6rv/tasks-executability-3.md": "0b735844fe7d2cf727140c32a54a5b3f26e49444adb343f311a9a07902963606",
+    "R-261029-ahrr/tasks-executability.md": "e98cbe2345d4f3e3f19d471b5076f5ca4e784de412bca5f05e7cebbeb6978bc2"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "ce4bad08c7cb21ecee81de177ddf00bc16449a9d",
+      "judged": 3
+    },
+    "tasks-executability-2": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / haiku",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "777a2dc26b9d058f0fa5475761ce86e7e28e38cf",
+      "judged": 2
+    },
+    "tasks-executability-3": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / haiku",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "777a2dc26b9d058f0fa5475761ce86e7e28e38cf",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-1's test needs the CLI red command built in T-10 and T-11",
+      "kind": "untestable",
+      "severity": "blocker",
+      "cites": [
+        "T-1",
+        "TC-38",
+        "T-10",
+        "T-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-38",
+        "- Depends on: none",
+        "then red through the CLI with each.",
+        "the cargo red exits 1 naming a compile error, with status `claimed`"
+      ],
+      "fix": "give T-1 a unit test of `run` and `runner`/`wrong_reason` only. Leave the CLI half of TC-38 with T-11, which already lists TC-38.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a worker takes T-1 with no dependencies and its pack says to make TC-38 pass. TC-38 asserts `implement.runner` and `wrong_reason` and also that `red` through the CLI exits 1 for cargo and 0 for mvn. The `red` command is built in T-10, which T-1 does not depend on, so the worker cannot make the test pass and cannot finish T-1.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "tasks-executability-2",
+          "lens": "executability",
+          "situation": "a worker takes T-1 with no dependencies. Its pack says to make TC-38 pass. TC-38 asserts `implement.runner` and `wrong_reason`, and also that `red` through the CLI exits 1 for cargo and 0 for mvn. The `red` command is built in T-10, which T-1 does not depend on, so the worker cannot make TC-38 pass and cannot finish T-1.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-38 (tests.md:306-313) ends with \"then red through the CLI with each\", but T-1 has \"Depends on: none\" and the `red` command is built in T-10/T-11. T-11 already lists TC-38, and nothing else in tasks.md settles which task owns the CLI half.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-1 names direct unit checks of run, runner and wrong_reason; TC-38's CLI red is proved by T-11",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-2",
+      "title": "T-4's test needs the claim command, which T-4 does not depend on",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "T-4",
+        "TC-56",
+        "T-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-56",
+        "then `flow(root, \"claim\", S)` in the first.",
+        "its claim prints `mode: split`"
+      ],
+      "fix": "T-4's `Test:` should cover only the check half (the missing `Mode:` is refused and a legacy list passes). The claim half stays with T-8, which already lists TC-56.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-4 depends on none and is done first in the order. TC-56 runs `nio check tasks` and then `flow claim`, and asserts the claim prints `mode: split`. The claim command is built across T-3, T-5, T-7 and T-8, all after T-4, so the worker can make the check half pass but not the claim half.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-56 (tests.md:419-424) ends with `flow(root, \"claim\", S)` and asserts \"mode: split\". T-4 has \"Depends on: none\" and claim is built in T-7/T-8, which depend on T-4. T-8 already lists TC-56.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-4 names direct checks of tasks.check before and after MODE_SINCE; TC-56's claim half is proved by T-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-3",
+      "title": "T-3's test runs claim and green, which are built in later tasks",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "T-3",
+        "TC-8",
+        "T-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-8",
+        "- Depends on: none",
+        "Action: three times: `flow(root, \"claim\", S)`, `write_test(root)`, write passing code",
+        "Assert: the claimed tasks are `T-1`, `T-2`, `T-3` in that order."
+      ],
+      "fix": "T-3's `Test:` should name a unit test of `status()` and `next_ready()` over fixture history lines. TC-8 stays with T-21, which already lists it and depends on T-20.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-3 is pure status derivation and next-ready selection over history lines (no dependencies). TC-8 drives the whole loop through claim, red-free green and review. Those commands come from T-7, T-8, T-13 and T-14, so a worker for T-3 has no passing way to show done.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-8 (tests.md:80-85) runs claim, `write_test` and green three times. T-3 has \"Depends on: none\", and those commands come from T-7, T-8, T-13 and T-14. T-21 already lists TC-8.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-3 names direct checks of status and next_ready on fixture history; TC-8, TC-32 and TC-39 are proved by T-21 (T-2 changed the same way: TC-44 by T-14)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-4",
+      "title": "T-9's test checks claim output, not the skill file",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "T-9",
+        "TC-40",
+        "CT-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-40",
+        "Assert: `mode: direct`, then `mode: split`.",
+        "it carries the \"Talking to the human\" block word for word"
+      ],
+      "fix": "name a check on the skill file in T-9's `Test:`, for example that it names the five CT-17 steps and passes `tests/test_talk.py`, and add that check to tests.md as its own TC-n.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-9 writes `skills/implement/SKILL.md`, which CT-17 requires to have five steps and the Talking block. TC-40 only checks that claim prints `mode: direct` and `mode: split`. A skill with no steps and no Talking block passes T-9's test, so the worker cannot tell from its test that it is done.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-40 (tests.md:322-327) only asserts the `mode:` line from claim. CT-17 (contracts.md:218-228) requires the skill's steps and the Talking block, and no TC in tests.md checks the steps of `skills/implement/SKILL.md`. `tests/test_talk.py` may cover the Talking block generically, but nothing in the artefact checks the steps, so T-9's test cannot show it is done.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-9's test is tests/test_talk.py plus a direct check of the skill's steps and modes; TC-40 is proved by T-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-5",
+      "title": "T-17 serves AC-24 but does not own the card file it tests",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-17",
+        "T-6",
+        "AC-24",
+        "TC-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Files: `src/nio/implement.py`, `src/nio/cli.py`, `tests/test_implement.py`",
+        "- Serves: AC-25, AC-24",
+        "Action: read `src/nio/agents/worker.md`.",
+        "- Files: `src/nio/agents/worker.md`, `src/nio/agents.py`, `tests/test_agents.py`, `tests/test_implement.py`",
+        "each body contains `never edit` before `state.json` and `history.jsonl`"
+      ],
+      "fix": "either add AC-24 to T-6's `Serves:` and TC-24 to its `Test:`, or add `src/nio/agents/worker.md` to T-17's `Files:`.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "AC-24 is the card's spec-problem rule (`status: blocked`, `change_request:`, no spec edits). T-17 serves it and its test reads `worker.md`, but T-17's Files do not include `worker.md`. T-6 owns that file and serves only AC-2, and its test (TC-2) checks only the `never edit` text. If T-6 left out the blocked rules, the worker for T-17 would fail TC-24 and would have to edit a file it does not name.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-24 (tests.md:205-210) reads `src/nio/agents/worker.md`, but T-17's Files omit that file. T-6 owns the file and serves only AC-2, and TC-2 does not check the blocked-handoff rules. Dependency order does not help: T-17 reaches T-6 through T-11, T-10 and T-8, which only guarantees the file exists, not that it has those rules.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-24 and TC-24 moved to T-6, which owns worker.md; T-17 serves AC-25 and keeps TC-24 passing",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-6",
+      "title": "T-1's test needs the CLI red command built in T-10 and T-11",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "T-1",
+        "TC-38",
+        "T-10",
+        "T-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-38",
+        "- Depends on: none",
+        "then red through the CLI with each.",
+        "the cargo red exits 1 naming a compile error, with status `claimed`"
+      ],
+      "fix": "add T-10 and T-11 to T-1's `Depends on:`, or move the CLI-red assertion out of TC-38 into a test that T-10 or T-11 owns.",
+      "sources": [
+        {
+          "juror": "tasks-executability-2",
+          "lens": "executability",
+          "situation": "a worker takes T-1 with no dependencies. Its pack says to make TC-38 pass. TC-38 asserts `implement.runner` and `wrong_reason`, and also that `red` through the CLI exits 1 for cargo and 0 for mvn. The `red` command is built in T-10, which T-1 does not depend on, so the worker cannot make TC-38 pass and cannot finish T-1.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "rejected"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "777a2dc26b9d058f0fa5475761ce86e7e28e38cf",
+    "2": "777a2dc26b9d058f0fa5475761ce86e7e28e38cf",
+    "3": "ce4bad08c7cb21ecee81de177ddf00bc16449a9d"
+  }
+}
