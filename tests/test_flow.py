@@ -30,9 +30,10 @@ def git(root, *args):
     return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True).stdout
 
 
-def approve(root, slug, gate, commit=True):
-    """A real jury round that approves `gate` (as tests/test_jury.py:approve_spec), then its `nio: approve` commit."""
-    run = f"R-{gate}-{slug}"
+def approve(root, slug, gate, commit=True, run=None):
+    """A real jury round that approves `gate` (as tests/test_jury.py:approve_spec), then its `nio: approve` commit;
+    another `run` makes a later round."""
+    run = run or f"R-{gate}-{slug}"
     path = root / ".nio/runs" / run / "jury" / f"{gate}-{LENS[gate]}.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f"---\nlens: {LENS[gate]}\ngate: {gate}\nsubject: {slug}\nby: \"juror / claude-code / opus\"\n"
@@ -407,16 +408,27 @@ def test_guards_fail_at_their_stage():
     print("ok")
 
 
-def test_guards_pass_and_implementing_never_does():
+def task_line(kind, task, **ev):
+    """A task history line (implement CT-4): from and to `implementing`, its fields under `evidence`."""
+    return {"kind": kind, "from": "implementing", "to": "implementing", "evidence": {"task": task, **ev}}
+
+
+def test_guards_pass_and_implementing_waits_for_its_tasks():
     """Every guard before implementing passes on an effort past them, a gate naming its approval verdict; implementing
-    never passes (FR-22)."""
+    passes only once every task is done and every epic has its `epic` line (implement CT-14)."""
     root = effort("implementing")
     for stage in GUARDED:
         result, output, ev = flow.guard(root, S, stage)
         assert (result, output, ev["output"]) == ("pass", [], ""), (stage, output)
         assert bool(ev["verdict"]) == (stage in flow.GATES) and ev["verdict"][:2] in ("", "V-"), (stage, ev)
     result, output, ev = flow.guard(root, S, "implementing")
-    assert result == "fail" and "isn't built" in output[0], output
+    assert result == "fail" and any(x.startswith("T-1 is ready") for x in output) and "isn't built" not in str(output), output
+    history(root, S, *[task_line("task_done", t) for t in ("T-1", "T-2", "T-3")])
+    result, output, ev = flow.guard(root, S, "implementing")
+    assert result == "fail" and output == ["E-1 has no epic line"], output
+    history(root, S, {"kind": "epic", "from": "implementing", "to": "implementing", "reason": "skipped: not built",
+                      "evidence": {"epic": "E-1"}})
+    assert flow.guard(root, S, "implementing")[:2] == ("pass", [])
     print("ok")
 
 
@@ -810,7 +822,7 @@ def test_ac11_no_hand_edit_instruction():
     command, and none tells an agent to edit, write, append to or change one."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 21, paths
+    assert len(paths) == 23, paths
     for path in paths:
         lines = path.read_text().splitlines()
         assert lines.count(RULE) == 1, path
@@ -1163,10 +1175,12 @@ def test_crash_between_append_and_commit():
 
 # --- gates and rejections as where reads them (CT-6) ---
 
-def test_ac23_implement_not_built():
-    """TC-23: implementing waits for the human, naming no skill."""
+def test_ac23_implementing_names_the_skill():
+    """TC-23, now built (implement CT-14): implementing is working, naming @nio:implement, tasks.md and the next task."""
     out = nxt(effort("implementing"))
-    assert "waiting_for_human: implement not built" in out and "@nio:" not in out, out
+    assert "state: implementing (working)" in out and "skill: @nio:implement" in out, out
+    assert f".nio/specs/{S}/tasks.md" in out and "task: T-1 Refund a paid order in full" in out, out
+    assert "not built" not in out, out
     print("ok")
 
 
@@ -1283,7 +1297,7 @@ def test_ac31_status_five_efforts():
     rows = out.splitlines()
     assert code == 0 and len(rows) == 5 and [x.split(" · ")[0] for x in rows] == [a, b, c, d, e], out
     for row, word in zip(rows, ["working", "waiting_for_human: Q4", "parked: waiting on #43",
-                                "waiting_for_human: implement not built", "2026-10-21 10:00"]):
+                                "implementing · manual · working", "2026-10-21 10:00"]):
         assert word in row, (row, word)
     assert rows[0] == f"{a} · planning · manual · working · 2026-10-25 10:00", rows[0]
     print("ok")
@@ -1745,7 +1759,7 @@ def test_ac39_fix_task_is_not_an_edit():
     root = effort("implementing")
     tasks_md = root / ".nio/specs" / S / "tasks.md"
     tasks_md.write_text(tasks_md.read_text() + "\n#### Fixes\n\n### T-4 Fix the finding\n- Files: `app.py`\n")
-    assert flow.changes(root, S, []) == [] and "implement not built" in nxt(root)
+    assert flow.changes(root, S, []) == [] and "state: implementing (working)" in nxt(root)
     print("ok")
 
 
@@ -2172,26 +2186,41 @@ def test_planned_and_plan_files_come_from_their_modules():
     print("ok")
 
 
-def waits(test):
-    def run():
-        print(f"waits for #43 (task machine): {test.__name__}")
-    run.__name__ = test.__name__
-    return run
+# --- the task machine's refusals (tasks-stage AC-56, AC-57, AC-36), now that implement builds it ---
 
-
-@waits
 def test_ac56_the_change_is_refused():
-    """T-3 claimed, set to done: refused; it stays claimed and the message names red, green and review."""
+    """T-1 claimed, the stage set to done: refused; it stays claimed and the message names red, green and review."""
+    root = effort("implementing")
+    history(root, S, {**task_line("claim", "T-1"), "state": {"claims": {"task": "T-1"}}})
+    code, out = cli(root, "done", "implementing", S)
+    assert code == 1 and "T-1 is claimed: needs red, green and review" in out, out
+    assert flow.load(root, S)[1][-1]["kind"] == "claim" and flow.load(root, S)[0]["claims"] == {"task": "T-1"}
+    print("ok")
 
 
-@waits
 def test_ac57_the_claim_is_refused_and_given_t_5_is_al():
-    """T-4 pending on T-1: its claim is refused ("dependencies not done"); a second claim on T-5: "already claimed"."""
+    """A claim while T-2 waits on T-1 is refused (`waits on`); a claim while T-1 is claimed is refused (`is claimed`).
+    The CLI picks the task, so neither names the one asked for."""
+    root = effort("implementing")
+    history(root, S, task_line("blocked", "T-1", cause="attempts"))
+    code, out = cli(root, "claim", S, "--by", BY)
+    assert code == 1 and "no ready task; T-2 waits on T-1" in out, out
+    history(root, S, {**task_line("unblock", "T-1"), "state": {}}, {**task_line("claim", "T-1"), "state": {"claims": {"task": "T-1"}}})
+    n = len(flow.load(root, S)[1])
+    code, out = cli(root, "claim", S, "--by", BY)
+    assert code == 1 and "T-1 is claimed" in out and len(flow.load(root, S)[1]) == n, out
+    print("ok")
 
 
-@waits
 def test_ac36_the_change_is_refused():
-    """T-3 green, set to done without a review: refused; it stays green and the message names the missing review."""
+    """T-1 green, the stage set to done without a review: refused; it stays green and the message names the review."""
+    root = effort("implementing")
+    history(root, S, *[task_line(k, "T-1") for k in ("claim", "red", "green")])
+    code, out = cli(root, "done", "implementing", S)
+    assert code == 1 and "T-1 is green: needs its review" in out, out
+    from nio import implement
+    assert implement.status(root, S, flow.load(root, S)[1])["T-1"] == "green"
+    print("ok")
 
 
 if __name__ == "__main__":

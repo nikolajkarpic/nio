@@ -50,8 +50,8 @@ def load(root):
 def check(name, meta, body):
     errs = [f"unknown field `{k}`" for k in meta if k not in FIELDS]
     errs += [f"missing `{k}`" for k in ("name", "description", "tier", "effort") if not meta.get(k)]
-    if meta.get("tier") and meta["tier"] not in TIERS:
-        errs.append(f"`tier` must be one of {sorted(TIERS)}")
+    if meta.get("tier") and meta["tier"] not in TIERS | {"all"}:
+        errs.append(f"`tier` must be one of {sorted(TIERS)} or all")
     if meta.get("effort") and meta["effort"] not in EFFORT:
         errs.append(f"`effort` must be one of {sorted(EFFORT)}")
     errs += [f"unknown tool `{t}`, use {sorted(TOOLS)}" for t in meta.get("tools") or [] if t not in TOOLS]
@@ -144,8 +144,11 @@ def sync(root):
         target = root / folder
         target.mkdir(parents=True, exist_ok=True)
         wanted = set()
-        for name, (meta, body, _) in sorted(cards.items()):
-            tier, model, effort, warning = resolve(cfg, name, meta, host)
+        # a `tier: all` card (the task worker) renders once per tier as nio-<name>-<tier>, with no override (CT-15, FR-6)
+        each = [(f"{n}-{t}", n, {**m, "tier": t}, b) if m["tier"] == "all" else (n, n, m, b)
+                for n, (m, b, _) in sorted(cards.items()) for t in (ORDER if m["tier"] == "all" else [None])]
+        for name, card, meta, body in each:
+            tier, model, effort, warning = resolve(cfg, card if card == name else None, meta, host)
             if warning:
                 out.append(f"WARN  {host}: nio-{name}: {warning} (set agents.tiers.{host})")
             path = target / f"nio-{name}{ext}"

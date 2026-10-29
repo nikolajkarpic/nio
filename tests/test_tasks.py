@@ -61,7 +61,7 @@ def approve_tasks(root, run="R-T1"):
     assert jury.check(root, SLUG, "tasks", record=True)[0] == "approved"
 
 
-FIX = "\n#### Fixes\n\n### {tid} Fix the finding\n- From: {src}\n- Files: `{file}`\n- Serves: {serves}\n- Test: TC-1\n- Depends on: T-3\n- Parallel: {par}\n- Tier: cheap: small\n- Effort: low\n"
+FIX = "\n#### Fixes\n\n### {tid} Fix the finding\n- From: {src}\n- Files: `{file}`\n- Serves: {serves}\n- Test: TC-1\n- Depends on: T-3\n- Parallel: {par}\n- Tier: cheap: small\n- Effort: low\n- Mode: split: small\n"
 
 
 def fix(tid="T-4", src="J-4 (implementation-E-1, round 1)", serves="J-4", file="app.py", par="no"):

@@ -6,7 +6,9 @@ from importlib import resources
 
 from nio import records, spec
 
-FIELDS = ["Files", "Serves", "Test", "Depends on", "Parallel", "Tier", "Effort"]
+FIELDS = ["Files", "Serves", "Test", "Depends on", "Parallel", "Tier", "Effort", "Mode"]
+MODES = ["split", "single", "direct"]
+MODE_SINCE = "2026-10-30"  # a list approved before this date may omit `Mode:` and runs in split (C-261029-nbrg)
 TIER = re.compile(r"^(\S+?)(?::\s*(.*))?$")
 TIERS = ["cheap", "strong", "max", "frontier"]
 EFFORTS = ["low", "med", "high"]
@@ -146,6 +148,13 @@ def plan_parts(root, slug):
     return entries, tcs
 
 
+def approved_before(root, slug, since, base="HEAD"):
+    """Was `nio: approve tasks` committed (committer date) before `since`? False when it never was."""
+    rel = str(path(root, slug).relative_to(root))
+    day = (records.git(root, "log", "-1", "--format=%cs", "--grep=^nio: approve tasks$", base, "--", rel) or [""])[0]
+    return bool(day) and day < since
+
+
 def check(root, slug, gate=False, base="HEAD"):
     """(errors, notes): the free checks of tasks.md (#42 FR-6 to FR-16, FR-24, FR-28 to FR-30, FR-34 to FR-38, FR-40,
     FR-45, FR-48 to FR-50, FR-53, FR-55; NFR-1), and the estimate as notes. `gate` is accepted for the CLI's sake."""
@@ -163,10 +172,11 @@ def check(root, slug, gate=False, base="HEAD"):
     errs += [f"{t} is defined {1 + parsed['dupes'].count(t)} times" for t in dict.fromkeys(parsed["dupes"])]
     errs += [f"{e} is defined {n} times" for e, n in collections.Counter(e["id"] for e in epics).items() if n > 1]
     full = kind == "full"
+    old = approved_before(root, slug, MODE_SINCE, base)
     entries, tcs = plan_parts(root, slug) if full else ({}, set())
     for t, task in tasks.items():
         f = task["fields"]
-        errs += [f"{t}: needs `- {name}:`" for name in FIELDS if name not in f]
+        errs += [f"{t}: needs `- {name}:`" for name in FIELDS if name not in f and not (name == "Mode" and old)]
         if any(re.match(r"^- \[[ xX]\]", line) or re.match(r"^- Status:", line) for line in task["block"]):
             errs.append(f"{t} holds a status or a checkbox; status lives in the CLI's state, not tasks.md")
         if t in retired:
@@ -193,6 +203,12 @@ def check(root, slug, gate=False, base="HEAD"):
                 errs.append(f"{t}: `{m[1]}` is not cheap, strong, max or frontier")
             elif not (m[2] or "").strip():
                 errs.append(f"{t}: `Tier: {m[1]}` needs a reason, as `Tier: {m[1]}: <why>`")
+        if "Mode" in f:
+            m = TIER.match(f["Mode"])
+            if m[1] not in MODES:
+                errs.append(f"{t}: `{m[1]}` is not split, single or direct")
+            elif not (m[2] or "").strip():
+                errs.append(f"{t}: `Mode: {m[1]}` needs a reason, as `Mode: {m[1]}: <why>`")
         if "Effort" in f and f["Effort"] not in EFFORTS:
             errs.append(f"{t}: `Effort:` must be low, med or high, not `{f['Effort']}`")
         if full and "Test" in f and not ids(f["Test"]):

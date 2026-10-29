@@ -14,6 +14,7 @@ retired: []
 - Parallel: no
 - Tier: strong: money moves, and the state table guards it
 - Effort: med
+- Mode: split: separate test and code workers
 
 ### T-2 Reject a second refund
 - Files: `app.py`
@@ -23,6 +24,7 @@ retired: []
 - Parallel: no
 - Tier: cheap: one guard, following T-1
 - Effort: low
+- Mode: split: separate test and code workers
 
 ### T-3 Refunds stay fast and pay once under load
 - Files: `app.py`
@@ -32,3 +34,4 @@ retired: []
 - Parallel: no
 - Tier: max: concurrent refunds must pay once
 - Effort: high
+- Mode: split: separate test and code workers

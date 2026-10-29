@@ -174,6 +174,25 @@ def test_ac26_it_runs_on_fable_on_a_host_that_maps_no():
     print("ok")
 
 
+def test_tier_all_renders_once_per_tier():
+    """A `tier: all` card renders as nio-<name>-<tier> for each tier, each on that tier's model; others render once."""
+    root = setup()
+    team = root / ".nio/agents"
+    team.mkdir()
+    (team / "helper.md").write_text(CARD.format(name="helper", tier="all"))
+    (team / "triage.md").write_text(CARD.format(name="triage", tier="cheap"))
+    assert agents.check("bad", {"name": "bad", "description": "x", "tier": "every", "effort": "med"}, "") \
+        and not agents.check("helper", *agents.load(root)["helper"][:2])
+    out, errors = agents.sync(root)
+    assert not errors, errors
+    claude = root / ".claude/agents"
+    for tier, model in agents.DEFAULT_TIERS["claude"].items():
+        assert f'model: "{model}"' in (claude / f"nio-helper-{tier}.md").read_text(), tier
+    assert not (claude / "nio-helper.md").exists() and (claude / "nio-triage.md").exists()
+    assert not (claude / "nio-triage-cheap.md").exists()
+    print("ok")
+
+
 if __name__ == "__main__":
     test_shipped_cards_are_valid()
     test_sync()
@@ -186,3 +205,4 @@ if __name__ == "__main__":
     test_ac44_the_evaluator_card_exists_with_tier_stro()
     test_ac58_the_card_runs_on_the_strong_model_and_a()
     test_ac26_it_runs_on_fable_on_a_host_that_maps_no()
+    test_tier_all_renders_once_per_tier()

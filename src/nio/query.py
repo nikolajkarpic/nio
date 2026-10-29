@@ -21,7 +21,7 @@ def search(root, text="", paths=(), limit=10, show_all=False):
         index.build(root)
         db = index.connect(root)
         model, _ = index.settings(root)
-        q = index.embed(model, [text])[0] if text else None
+        q = index.embed(model, [text])[0] if text and db.execute("select 1 from vec limit 1").fetchone() else None  # NFR-1: no records, no model loaded
     except Exception as e:
         print(f"warning: index unavailable ({e}); using the grep fallback", file=sys.stderr)
         return grep(root, text, paths, limit, show_all)
@@ -36,7 +36,7 @@ def search(root, text="", paths=(), limit=10, show_all=False):
     if text:
         fts = db.execute("select id from fts where fts match ? order by rank", (fts_query(text),)).fetchall() if fts_query(text) else []
         # ponytail: brute-force cosine over every vector; a vec0 KNN index once records reach the tens of thousands
-        sims = dict(db.execute("select id, 1 - vec_distance_cosine(vec_int8(embedding), vec_int8(?)) from vec", (q,)))
+        sims = dict(db.execute("select id, 1 - vec_distance_cosine(vec_int8(embedding), vec_int8(?)) from vec", (q,))) if q is not None else {}
         for ranked in ([r[0] for r in fts], sorted(sims, key=sims.get, reverse=True)):
             for i, rid in enumerate(ranked):
                 score[rid] = score.get(rid, 0) + 1 / (RRF_K + i + 1)
