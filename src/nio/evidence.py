@@ -2,6 +2,7 @@
 the repo and the run's results file."""
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -71,3 +72,96 @@ def save(root, run, results):
     p = path(root, run)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(results, indent=2, ensure_ascii=False) + "\n")
+
+
+def misuse(root, slug):
+    """([TC file refs], [TC file refs]): the `file:name` of tests.md's misuse tests, then of its other tests."""
+    p = Path(root) / ".nio/specs" / slug / "tests.md"
+    mis, rest, section = [], [], ""
+    for line in (p.read_text().splitlines() if p.exists() else []):
+        if line.startswith("## "):
+            section = line[3:].strip()
+        elif m := re.match(r"- File: `([^:`]+):([^`]+)`", line):
+            (mis if section == "Misuse tests" else rest).append((m[1], m[2]))
+    return mis, rest
+
+
+def one_test(suite, file, name):
+    """The command that runs one test through the suite's runner, else None (a runner it can't address)."""
+    if m := re.match(r"(.*\bunittest)\b", suite or ""):
+        return f"{m[1]} {file.removesuffix('.py').replace('/', '.')}.{name}"
+    if m := re.match(r"(.*\bpytest)\b", suite or ""):
+        return f"{m[1]} {file}::{name.replace('.', '::')}"
+    return None
+
+
+def journeys(root, slug):
+    """[(QS id, [(step command, [expected lines or None])])]: quickstart.md's `auto` scenarios. Expected is `contains:`
+    lines, or None for exact output."""
+    p = Path(root) / ".nio/specs" / slug / "quickstart.md"
+    out = []
+    for qs, body in re.findall(r"^### (QS-\d+) [^\n]*; auto\)[^\n]*\n(.*?)(?=^### |\Z)", p.read_text() if p.exists() else "", re.M | re.S):
+        steps = re.findall(r"^\d+\. `([^`\n]+)`\s*\n\s*Expected:\s*\n\s*```\n(.*?)```", body, re.M | re.S)
+        out.append((qs, [(c, e) for c, e in steps]))
+    return out
+
+
+def matched(expected, output):
+    lines = [x.strip() for x in expected.strip().splitlines()]
+    if lines and all(x.startswith("contains:") for x in lines):
+        return all(x[9:].strip() in output for x in lines)
+    return output.strip() == expected.strip()
+
+
+def commit_of(root, slug, epic):
+    """The newest commit named `T-n: ...` for a task of the epic (the epic's last commit)."""
+    from nio import implement
+    mine = {t["id"] for t in implement.tasks_of(root, slug) if t["epic"] == epic}
+    for x in records.git(root, "log", "--format=%H %s", "HEAD"):
+        sha, _, subject = x.partition(" ")
+        if subject.split(":")[0] in mine:
+            return sha
+    raise ValueError(f"no commit of epic {epic} found")
+
+
+def collect(root, slug, epic, run):
+    """Run the epic's tests, lint, type check, misuse tests and auto journeys, each group in its own throwaway copy at
+    the epic's last commit, and write the run's results (CT-3, FR-3, FR-6, FR-7, FR-11, FR-12). Returns the lines to print.
+    ValueError when the epic isn't finished. ponytail: the findings of CT-4, CT-6 and a failed check go to CT-20 once it exists."""
+    from nio import jury
+    root = Path(root)
+    jury.epic_gate(root, slug, f"implementation-{epic}")
+    cfg = records.config(root)
+    t, limit = cfg.get("tests") or {}, (cfg.get("jury") or {}).get("run_timeout")
+    commit = commit_of(root, slug, epic)
+
+    def runs(commands):
+        """in_copy with `tests.setup` first when set; its own entry is dropped (a failed setup fails what follows)."""
+        out = in_copy(root, commit, ([t["setup"]] if t.get("setup") else []) + commands, limit)
+        return out[bool(t.get("setup")):]
+
+    mis, rest = misuse(root, slug)
+    suite = (runs([t.get("suite")]) if t.get("suite") else [{"result": "not configured", "output": "", "cut": 0}])[0]
+    code_ok = suite["result"] == "passed"
+    # ponytail: a failed suite names a test as failed when its name is in the output, or when the runner can't be read
+    tests = [{"name": name, "file": file, "line": 0,
+              "result": "passed" if code_ok or (implement.runner(t.get("suite", "")) in implement.SUMMARY
+                                                and name.split(".")[-1] not in suite["output"]) else "failed"}
+             for file, name in rest]
+    attack_cmds = [one_test(t.get("suite"), f, n) for f, n in mis]
+    attacks = runs(attack_cmds)
+    for a, (f, n) in zip(attacks, mis):
+        a["command"] = a["command"] or f"{f}:{n}"
+    steps = [(c, e) for _, ss in journeys(root, slug) for c, e in ss]
+    done = iter(runs([c for c, _ in steps]))
+    journeys_out = []
+    for qs, ss in journeys(root, slug):
+        rs = [next(done) for _ in ss]
+        ok = all(r["result"] == "passed" and matched(e, r["output"]) for r, (_, e) in zip(rs, ss))
+        journeys_out.append({"command": " && ".join(c for c, _ in ss), "result": "passed" if ok else "failed",
+                             "output": "\n".join(r["output"] for r in rs), "cut": sum(r["cut"] for r in rs)})
+    results = {**load(root, run), "commit": commit, "tests": tests, "checks": runs([t.get("lint"), t.get("typecheck")]),
+               "attacks": attacks, "journeys": journeys_out}
+    save(root, run, results)
+    return [str(path(root, run).relative_to(root))] + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
+                                                       if c["result"] == "not configured"]

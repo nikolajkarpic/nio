@@ -4,7 +4,7 @@ import re
 import sys
 from importlib import resources
 
-from nio import agents, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks
+from nio import agents, evidence, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks
 
 
 def report(errors, warnings, count):
@@ -94,6 +94,10 @@ def main():
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
     jd.add_argument("--note", required=True)
     jd.add_argument("--change", default="", metavar="C-ID", help="spec-change only: the change record the finding waits on")
+    je = jsub.add_parser("evidence", help="run an epic's tests, checks, attacks and journeys in a throwaway copy and write the run's results.json")
+    je.add_argument("slug")
+    je.add_argument("epic", metavar="E-n")
+    je.add_argument("--run", required=True)
     jl = jsub.add_parser("files", help="the files a juror at this gate reads, and the only files its quotes may come from")
     jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
     jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
@@ -250,9 +254,11 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "jury":
         try:
-            if a.jury_cmd != "answers" and a.gate.startswith("implementation"):
+            if a.jury_cmd not in ("answers", "evidence") and a.gate.startswith("implementation"):
                 jury.epic_gate(root, a.slug, a.gate)
-            if a.jury_cmd == "answers":
+            if a.jury_cmd == "evidence":
+                print("\n".join(evidence.collect(root, a.slug, a.epic, a.run)))
+            elif a.jury_cmd == "answers":
                 print("\n".join(jury.answers(root, a.slug)))
             elif a.jury_cmd == "template":
                 print(resources.files("nio").joinpath("templates/lens-output.md").read_text(), end="")

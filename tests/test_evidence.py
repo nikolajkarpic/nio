@@ -62,7 +62,7 @@ def human():
 def snapshot(root):
     """All TC-41 says must not change: the tree byte for byte, the refs, the config, the worktrees, and git's status."""
     tree = {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*")
-            if p.is_file() and ".git" not in p.relative_to(root).parts}
+            if p.is_file() and ".git" not in p.relative_to(root).parts and p.relative_to(root).parts[:2] != (".nio", "runs")}
     return {"tree": tree, "refs": git(root, "for-each-ref"), "head": (root / ".git/HEAD").read_text(),
             "config": (root / ".git/config").read_text(), "worktrees": git(root, "worktree", "list", "--porcelain"),
             "status": git(root, "status", "--porcelain"), "log": git(root, "log", "--all", "--format=%H")}
@@ -284,6 +284,174 @@ def test_it_refuses_again():
     root = epic_repo(["T-1", "T-2"])
     refuses(root, "implementation", "epic")
     refuses(root, "implementation-E-9", "epic")
+    print("ok")
+
+
+# --- T-5: the gate collects evidence (CT-3, CT-2, CT-7) ---
+
+MISUSE = """---
+slug: s
+retired: []
+---
+# Tests: s
+
+## Misuse tests
+
+### TC-1 The agent attacks (UJ-1 misuse; integration) [derived: FR-2]
+- File: `tests/test_attack.py:AttackTest.test_refused` (new)
+- Covers: CT-1
+- Setup: x
+- Action: y
+- Assert: z
+"""
+QUICKSTART = """---
+slug: s
+retired: []
+---
+# Quickstart: s
+
+## Prerequisites
+- none
+
+## Scenarios
+
+### QS-1 Run it (UJ-1; auto) [derived: UJ-1]
+
+1. `echo journey ran`
+   Expected:
+   ```
+   contains: journey ran
+   ```
+- Pass when: every step matched
+
+### QS-2 Look at it (UJ-2; manual) [derived: UJ-2]
+
+1. `echo never run`
+   Expected:
+   ```
+   never run
+   ```
+- Pass when: a person sees it
+"""
+ATTACK_TEST = "import unittest\n\n\nclass AttackTest(unittest.TestCase):\n    def test_refused(self):\n        print('MISUSE-RAN')\n        self.assertTrue(False)\n"
+TYPECHECK = 'echo "b.py:3: error: Incompatible types" >&2; exit 1'
+
+
+def gate_repo(lint=None, typecheck=None, timeout=None, remote=False):
+    """A finished epic E-1 whose commits are `T-1: One` and `T-2: Two`, with a misuse test in tests.md, an auto and a
+    manual scenario in quickstart.md, and the given checks in the config. (root, last commit); with `remote`, also the
+    bare repo `origin` points at."""
+    root = epic_repo(["T-1", "T-2"])
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    tests = {"suite": "python3 -m unittest discover -s tests -t .", "lint": lint, "typecheck": typecheck}
+    cfg = {"tests": {k: v for k, v in tests.items() if v}, "jury": {"run_timeout": timeout} if timeout else {}}
+    (root / ".nio/config.json").write_text(json.dumps(cfg))
+    (root / ".gitignore").write_text(".nio/runs/\n")
+    (root / ".nio/specs/s/tests.md").write_text(MISUSE)
+    (root / ".nio/specs/s/quickstart.md").write_text(QUICKSTART)
+    (root / "tests").mkdir()
+    (root / "tests/test_attack.py").write_text(ATTACK_TEST)
+    (root / "app.txt").write_text("one\n")
+    (root / "big.bin").write_bytes(BIG)
+    (root / "a.py").write_text("a = 1\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-1: One")
+    (root / "b.py").write_text("b = 1\n# line 3\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Two")
+    bare = Path(tempfile.mkdtemp(prefix="nio-origin-"))
+    if remote:
+        git(bare, "init", "-q", "--bare", "-b", "main")
+        git(root, "remote", "add", "origin", str(bare))
+        git(root, "push", "-q", "origin", "main")
+    return (root, git(root, "rev-parse", "HEAD").strip(), bare) if remote else (root, git(root, "rev-parse", "HEAD").strip())
+
+
+def start(root, run="R-1"):
+    """The gate starts on epic E-1 of spec `s`; the run's results."""
+    e = evidence()
+    assert hasattr(e, "collect"), "evidence.collect doesn't exist yet"
+    e.collect(root, "s", "E-1", run)
+    return e.load(root, run)
+
+
+def entry(results, kind, command):
+    found = [x for x in results[kind] if x["command"] == command]
+    assert len(found) == 1, f"{kind} holds {len(found)} entries for {command!r}: {results[kind]}"
+    return found[0]
+
+
+def test_the_results_record_the_failed_check_and_its_output():
+    import subprocess
+    import sys
+    root, last = gate_repo(typecheck=TYPECHECK)
+    out = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "jury", "evidence", "s", "E-1", "--run", "R-1"],
+                         cwd=root, capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    assert "results.json" in out.stdout and "not configured" in out.stdout, out.stdout  # the path; lint is unset
+    results = evidence().load(root, "R-1")
+    assert results["commit"] == last, results["commit"]
+    failed = entry(results, "checks", TYPECHECK)
+    assert failed["result"] == "failed" and "b.py:3" in failed["output"], failed
+    assert any(c["result"] == "not configured" for c in results["checks"]), results["checks"]
+    print("ok")
+
+
+def test_both_are_run_and_their_results_are_recorded():
+    root, _ = gate_repo()
+    results = start(root)
+    assert len(results["attacks"]) == 1, results["attacks"]  # tests.md's one misuse test
+    attack = results["attacks"][0]
+    assert attack["result"] == "failed" and "MISUSE-RAN" in attack["output"], attack
+    assert len(results["journeys"]) == 1, results["journeys"]  # the auto scenario; the manual one is for the human
+    journey = results["journeys"][0]
+    assert journey["result"] == "passed" and "journey ran" in journey["output"], journey
+    assert "never run" not in json.dumps(results), "a manual scenario was run"
+    print("ok")
+
+
+def test_it_is_stopped_at_the_time_limit_recorded_as():
+    root, _ = gate_repo(lint="sleep 60", typecheck="echo next", timeout=1)
+    began = time.monotonic()
+    results = start(root)
+    assert time.monotonic() - began < 45, "the limit didn't stop the run"
+    stuck = entry(results, "checks", "sleep 60")
+    assert stuck["result"] == "failed" and re.search(r"timed out after 1\b", stuck["output"]), stuck
+    nxt = entry(results, "checks", "echo next")
+    assert nxt["result"] == "passed" and "next" in nxt["output"], nxt
+    assert (root / ".nio/runs/R-1/results.json").exists(), "the gate didn't reach its results"
+    print("ok")
+
+
+def test_only_the_throwaway_copy_is_touched():
+    for what, command, timeout in (("a normal run", ATTACK, None), ("a timeout", f"{ATTACK}; sleep 60", 3)):
+        root, _, bare = gate_repo(lint=command, timeout=timeout, remote=True)
+        before, origin = snapshot(root), git(bare, "for-each-ref")
+        assert before["tree"]["app.txt"] == b"one\n" and "pwned" not in origin
+        out = entry(start(root), "checks", command)
+        assert "deleted" in out["output"] and "attacked" in out["output"], f"{what}: the attack didn't run: {out}"
+        same(root, before, what)
+        assert git(bare, "for-each-ref") == origin, f"{what}: origin changed"
+        where = Path(out["output"].splitlines()[0])
+        assert where != root and not where.exists(), f"{what}: the copy outlived the run: {where}"
+    assert out["result"] == "failed" and "timed out after 3" in out["output"], out
+    print("ok")
+
+
+def test_the_result_holds_its_first_and_last_100_kb():
+    e = evidence()
+    text = BIG.decode()
+    shown, n = e.cut(text)
+    assert n == 800_000 and "cut 800000 bytes" in shown, (n, shown[100_000:100_050])
+    assert shown.startswith(text[:100_000]) and shown.endswith(text[-100_000:]), "the ends are not kept"
+    root, _ = gate_repo(lint="cat big.bin")
+    results = start(root)
+    out = entry(results, "checks", "cat big.bin")
+    assert out["cut"] == 800_000 and "cut 800000 bytes" in out["output"], out["cut"]
+    assert out["output"].startswith(text[:100_000]) and out["output"].endswith(text[-100_000:]), "the ends are not kept"
+    size = (root / ".nio/runs/R-1/results.json").stat().st_size
+    assert 200_000 <= size < 260_000, f"{size} bytes on disk"
     print("ok")
 
 
