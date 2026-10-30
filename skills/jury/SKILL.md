@@ -152,6 +152,30 @@ it as a `spec-fix` on the tasks, as you would at the spec gate). When the outcom
 the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approve tasks` commit; `nio check tasks <slug>
 --approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later don't withdraw it.
 
+## At the implementation gate
+
+Run this for one epic (`implementation-E-n`) once every task of it is done. The lenses judge the epic's diff and its
+test results, not the spec text alone. In order:
+1. `nio jury evidence <slug> E-n --run <run>` runs the epic's tests, checks, attacks and journeys in a throwaway copy
+   and writes the run's `results.json`.
+2. `nio jury plan <slug> implementation-E-n` lists the lenses. Over the cap, show the human the planned runs and let
+   them pick, then plan again with `--pick <lens,lens>`. Conformance and correctness always run.
+3. Each planned lens gets its own fresh pack from `nio jury pack <slug> implementation-E-n --lens <lens> --run <run>`,
+   with the lens output format (`nio jury template`). Run the lenses as in step 2 above.
+4. Collect with `nio jury collect <slug> implementation-E-n --run <run> --tier <tier>` and one `--expect` per lens.
+   When it prints a refuter batch, run `nio-refuter` on it and collect again. Then run
+   `nio jury check <slug> implementation-E-n --record`.
+5. When the outcome is `approved` or the human closed the gate, run
+   `nio flow done implementation-E-n <slug> --by "<role / host / model>"`.
+
+Other outcomes:
+- **rejected:** the epic goes back to the implement stage. Its fix tasks are appended under `#### Fixes`; run
+  `nio flow next <slug>` and show the human its `next:` line.
+- **waiting on a change request:** the epic waits. Show the human each change request and wait for their ruling on
+  each one before you check again.
+- **a noted major:** a major the jury raised after the first review is a note, not a blocker. Show it to the human, who
+  decides whether it goes to a fix. Never fix it yourself.
+
 ## When to stop
 
 Stop when the outcome is `approved` and the human has been told, or when the outcome is `human` and the decision is

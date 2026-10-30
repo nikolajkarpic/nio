@@ -100,10 +100,13 @@ def main():
     je.add_argument("epic", metavar="E-n")
     je.add_argument("--run", required=True)
     jl = jsub.add_parser("files", help="the files a juror at this gate reads, and the only files its quotes may come from")
+    jpk = jsub.add_parser("pack", help="print one lens's pack at an implementation gate: the epic's diff, its ACs and the run's results")
+    jpk.add_argument("--lens", required=True)
+    jpk.add_argument("--run", required=True)
     jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
     jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
     jk.add_argument("--human", default="", metavar="REASON", help="the human closes the gate themselves: outcome human, with their reason")
-    for s in (jp, jg, jf, jc, jk, jl):  # dispose takes them first, before the finding
+    for s in (jp, jg, jf, jc, jk, jl, jpk):  # dispose takes them first, before the finding
         s.add_argument("slug")
         s.add_argument("gate", type=jury.gate_arg, metavar="GATE")
     f = sub.add_parser("flow", help="where an effort is, what to do next, and moving it on only when its guards pass")
@@ -271,6 +274,8 @@ def main():
                 ids, rerun, near, secs = jury.changed(root, a.slug, a.gate)
                 print(f"changed: {', '.join(ids) or 'nothing'}\nsections: {', '.join(secs) or 'nothing'}\n"
                       f"neighbours: {', '.join(near) or 'nothing'}\nre-run: {', '.join(rerun) or 'nothing'}")
+            elif a.jury_cmd == "pack":
+                print(evidence.pack(root, a.slug, a.gate, a.lens, a.run), end="")
             elif a.jury_cmd == "files":
                 print("\n".join(str(f.relative_to(root)) for f in jury.sources(root, a.slug, a.gate)))
             elif a.jury_cmd == "fixcheck":
