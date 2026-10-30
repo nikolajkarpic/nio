@@ -17,8 +17,8 @@ KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "in
 SEVERITY = ["minor", "major", "blocker"]  # ascending
 CONTEXT = {"sufficient", "limited", "needs-more"}
 EVIDENCE = {"observed", "inferred"}
-DISPOSITIONS = {"spec-fix", "plan-fix", "spec-change", "open-question", "accepted-risk", "out-of-scope", "overruled"}
-FIXES = {"spec-fix", "plan-fix", "spec-change", "open-question"}  # settled by changing the judged artefact; a lens checks each
+DISPOSITIONS = {"spec-fix", "plan-fix", "spec-change", "open-question", "accepted-risk", "out-of-scope", "overruled", "fix-task"}
+FIXES = {"spec-fix", "plan-fix", "spec-change", "open-question", "fix-task"}  # settled by changing the judged artefact; a lens checks each
 PLAN_ONLY = {"plan-fix", "spec-change"}  # spec-change: a plan finding rooted in the spec, sent to a change request
 HUMAN_ONLY = {"accepted-risk", "out-of-scope", "overruled"}  # overruled: a final-check `not fixed` the human overrides (#58)
 BY = {"agent", "grill", "human"}  # grill: the human answered a grill question
@@ -46,16 +46,21 @@ def gate_arg(name):
 
 def epic_gate(root, slug, gate):
     """The epic `implementation-E-n` names, when every task in it, fix tasks included, is done; else ValueError (CT-1)."""
-    from nio import flow, implement
+    from nio import implement
     m = re.fullmatch(r"implementation-(E-\d+)", gate)
-    ts = [t for t in implement.tasks_of(root, slug) if m and t["epic"] == m.group(1)]
-    if not ts:
+    if not (m and any(t["epic"] == m.group(1) for t in implement.tasks_of(root, slug))):
         raise ValueError(f"the subject of the implementation gate must be an epic from tasks.md as implementation-E-n, not {gate!r}")
-    states = implement.status(root, slug, flow.read(root, slug)[1])
-    left = [t["id"] for t in ts if states.get(t["id"]) != "done"]
+    left = undone(root, slug, m.group(1))
     if left:
         raise ValueError(f"epic {m.group(1)} is not finished: {', '.join(left)} not done")
     return m.group(1)
+
+
+def undone(root, slug, epic):
+    """The epic's tasks, fix tasks included, that aren't done."""
+    from nio import flow, implement
+    states = implement.status(root, slug, flow.read(root, slug)[1])
+    return [t["id"] for t in implement.tasks_of(root, slug) if t["epic"] == epic and states.get(t["id"]) != "done"]
 
 
 def folder(root, slug):
@@ -798,10 +803,16 @@ def dispose(root, slug, gate, fid, disposition, by, note, change=""):
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
     if disposition not in DISPOSITIONS or by not in BY or not note.strip():
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
-    if f.get("tampering") and by != "human":
+    if f.get("tampering") and by != "human" and disposition != "fix-task":  # a task repairs the test; only accepting it is the human's
         raise ValueError(f"{fid} is test tampering; only the human disposes of it (--by human)")
     if disposition in PLAN_ONLY and gate != "plan":
         raise ValueError(f"`{disposition}` belongs to the plan gate")
+    if disposition == "fix-task":
+        from nio import tasks
+        if not gate.startswith("implementation"):
+            raise ValueError("`fix-task` belongs to the implementation gate")
+        if not tasks.fixes_of(root, slug, gate, fid):
+            raise ValueError(f"`fix-task` needs a task whose `From:` names {fid}; the rejected outcome appends it")
     if disposition == "spec-change":  # #57 FR-34, FR-41: the change record the finding waits on
         path, meta = change_record(root, change)
         if not path:
@@ -917,14 +928,34 @@ def compose(led, current):
     return "approved", [], []
 
 
+def to_task(f):
+    """Does the decision table send this finding to a fix task (FR-26, FR-30, FR-43)? Code that is right goes to a change request."""
+    return f["status"] == "open" and f["severity"] != "minor" and f["validation"] == "confirmed" and not (f.get("gap") == "contradicts" and f.get("right") == "code")
+
+
+def version_now(root, slug, gate):
+    """The version the gate would judge now: the epic's last commit, as `collect` judges, or the artefact's blob."""
+    if gate.startswith("implementation"):
+        return evidence.commits_of(root, slug, gate.removeprefix("implementation-"))[0]
+    return blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
+
+
+def composed(root, slug, gate, led, current):
+    """`compose`, and never approved while a task of the epic, a fix task above all, isn't done (FR-26)."""
+    outcome, reasons, listed = compose(led, current)
+    if outcome == "approved" and gate.startswith("implementation") and (left := undone(root, slug, gate.removeprefix("implementation-"))):
+        return "rejected", [f"tasks not done: {', '.join(left)}"], []
+    return outcome, reasons, listed
+
+
 def check(root, slug, gate, record=False, human=""):
     """Compose the outcome, save it, and with `record` write the verdict record once per round and outcome.
     `human` is the human closing the gate themselves, with their reason: the outcome is `human`, never `approved`.
     Returns (outcome, lines to print)."""
     led = load(root, slug, gate)
     reopened = reopen_dropped(root, led) if gate == "plan" else []
-    current = blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
-    outcome, reasons, listed = compose(led, current)
+    current = version_now(root, slug, gate)
+    outcome, reasons, listed = composed(root, slug, gate, led, current)
     if human.strip():
         if record:  # only a recorded closure sticks; an unrecorded --human counts for this call alone
             led["closed"] = [led["round"], current, human.strip()]
@@ -933,9 +964,16 @@ def check(root, slug, gate, record=False, human=""):
     closed = led.get("closed") or (human.strip() and [led["round"], current, human.strip()])
     if closed:
         outcome, reasons = "human", [f"the human closed the gate: {closed[2]}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
+    appended = []
+    if record and outcome == "rejected" and not closed and gate.startswith("implementation"):
+        from nio import tasks
+        save(root, led)  # append_fix disposes through the saved ledger
+        appended = [(f["id"], tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)) for f in led["findings"] if to_task(f)]
+        led = load(root, slug, gate)
     led["outcome"] = outcome
     unresolved = sum(f["status"] == "open" for f in led["findings"])
     lines = [f"outcome: {outcome}", f"round: {led['round']}", f"unresolved: {unresolved}", *[f"- {r}" for r in reasons], *reopened]
+    lines += [f"fix task {tid} for {fid}" for fid, tid in appended if tid]
     lines += [f"vote {lens}: {', '.join(f'{n}={v}' for n, v in js)}" for lens, js in votes(led).items()]
     notes = [f for f in led["findings"] if f["status"] == "noted"]  # raised below blocker after the first review (#52 FR-12)
     lines += ["notes (no ruling needed):"] * bool(notes) + [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}" for f in notes]
@@ -974,8 +1012,8 @@ def change_record(root, cid):
 def standing(root, slug, gate):
     """The gate's outcome on its current artefact, as `check` would print it, without saving anything."""
     led = load(root, slug, gate)
-    current = blob(root, artefact(root, slug, gate))
-    outcome = compose(led, current)[0]
+    current = version_now(root, slug, gate)
+    outcome = composed(root, slug, gate, led, current)[0]
     closed = led.get("closed") or []
     return "closed" if closed[:2] == [led["round"], current] and outcome != "approved" else outcome
 
