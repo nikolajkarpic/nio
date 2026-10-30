@@ -1182,7 +1182,7 @@ def verdict(root, led, outcome, reasons):
             who = [p.strip() for p in led["jurors"][name]["by"].split("/")] + ["", "", ""]  # role / host / model
             body.append(f"| {lens} | {who[1]} | {who[2]} | {vote} |")
     body += ["## Reasons", *[f"- {r}" for r in reasons[:6]]]  # the record body stays under 40 lines
-    body += [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}: {f['status']} {f['disposition']}".rstrip() for f in open_[:8]]
+    body += [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}: {f['status']} {f['disposition']}".rstrip() for f in [f for f in open_ if f['severity'] != 'minor'][:8] + [f for f in open_ if f['severity'] == 'minor']]  # never cut a minor (FR-31, FR-33)
     if not reasons and not open_:
         body.append("- Every lens approved and no finding is open.")
     body += [f"- Dropped lenses (the human's pick): {', '.join(led['dropped'])}."] if led.get("dropped") else []
