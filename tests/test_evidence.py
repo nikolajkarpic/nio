@@ -994,9 +994,10 @@ def has_line(text, *words):
     return any(all(w in line.lower() for w in words) for line in text.splitlines())
 
 
-def gate_findings(root):
+def gate_findings(root, cli=False):
+    """The gate's findings; the CLI's own (lens `cli`, e.g. an AC with no evidence) only when `cli`."""
     from nio import jury
-    return jury.load(root, "s", "implementation-E-1")["findings"]
+    return [f for f in jury.load(root, "s", "implementation-E-1")["findings"] if cli or f["sources"][0]["lens"] != "cli"]
 
 
 def test_it_holds_the_diff_the_text_of_ac_3():
@@ -1351,7 +1352,7 @@ def test_cli_findings_skip_the_refuter():
     start(root, "R-2")
     lens_out(root, "conformance", "none", rnd="R-2")
     said = jury.collect(root, "s", GATE, "R-2")
-    (f,) = gate_findings(root)
+    (f,) = [x for x in gate_findings(root, cli=True) if x.get("tampering")]
     assert f["sources"][0]["lens"] == "cli" and f["validation"] == "confirmed" and f["tampering"] is True, f
     assert not any(x.startswith("### " + f["id"]) for x in said), said
     try:
@@ -1359,7 +1360,7 @@ def test_cli_findings_skip_the_refuter():
         raise AssertionError("an agent accepted tampering")
     except ValueError:
         pass
-    assert gate_findings(root)[0]["status"] == "open"
+    assert f["status"] == "open"
     print("ok")
 
 
@@ -1460,7 +1461,7 @@ def joined(root, *lines):
     start(root)
     matches_out(root, *lines)
     jury.collect(root, "s", GATE, "R-1")
-    return evidence().load(root, "R-1"), [f for f in gate_findings(root) if f["severity"] == "blocker"]
+    return evidence().load(root, "R-1"), [f for f in gate_findings(root, cli=True) if f["severity"] == "blocker"]
 
 
 def missing_for(blockers, *acs):
@@ -1532,6 +1533,71 @@ def test_a_lens_cant_claim_a_pass():
     first, second = results["evidence"]
     assert first == {"ac": "AC-1", "file": "tests/test_calc.py", "line": times, "result": "failed"}, first
     assert second["ac"] == "AC-2" and second["result"] != "passed", second
+    print("ok")
+
+
+# --- T-19: the epic's outcome (CT-13, AC-49) ---
+
+def composed(root):
+    from nio import jury
+    led = jury.load(root, "s", GATE)
+    return jury.compose(led, led["versions"][str(led["round"])])
+
+
+def invalid_out(root, lens, extra=""):
+    """A `lens` output missing its required fields, so it is invalid; `extra` makes each write a new file."""
+    path = root / f".nio/runs/R-1/jury/{GATE}-{lens}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\nlens: {lens}\n---\nnot an output {extra}\n")
+
+
+def test_it_is_rerun_and_never_approved_after_a_second():
+    from nio import jury
+    root = pack_repo({})
+    start(root)
+    lens_out(root, "conformance", "none")
+    jury.collect(root, "s", GATE, "R-1", expect=("conformance", "correctness"))  # correctness has no output
+    outcome, reasons, _ = composed(root)
+    assert outcome == "rerun" and any("correctness" in r for r in reasons), (outcome, reasons)
+    invalid_out(root, "correctness", "1")  # an invalid output
+    jury.collect(root, "s", GATE, "R-1")
+    outcome, reasons, _ = composed(root)
+    assert outcome == "rerun" and any("correctness" in r for r in reasons), (outcome, reasons)
+    invalid_out(root, "correctness", "2")  # invalid a second time
+    jury.collect(root, "s", GATE, "R-1")
+    outcome, reasons, _ = composed(root)
+    assert outcome == "human" and any("correctness" in r for r in reasons), (outcome, reasons)
+    print("ok")
+
+
+def test_a_cli_finding_found_not_fixed_counts_as_unresolved():
+    from nio import jury
+    root = pack_repo({TEST_FILE: "def test_keeps():\n    assert 1\n"}, before={TEST_FILE: STRONG + "\n\ndef test_keeps():\n    assert 1\n"})
+    start(root, "R-1")
+    lens_out(root, "conformance", "none")
+    jury.collect(root, "s", GATE, "R-1")
+    (f,) = [x for x in gate_findings(root, cli=True) if x.get("tampering")]
+    assert f["sources"][0]["lens"] == "cli", f
+    led = jury.load(root, "s", GATE)
+    f = next(x for x in led["findings"] if x["id"] == f["id"])  # the CLI marked it not fixed after a fix: open again, with no juror's verdict on it
+    f.update(status="open", baseline="unchanged", disposition="", by="", note="", reason="not fixed: the assertion is still gone")
+    jury.save(root, led)
+    outcome, reasons, _ = composed(root)
+    assert outcome != "approved" and any(f["id"] in r for r in reasons), (outcome, reasons)
+    print("ok")
+
+
+def test_no_matches_section_leaves_each_ac_with_a_finding_and_the_epic_unapproved():
+    from nio import jury
+    root, _ = join_repo()
+    start(root)
+    path = root / f".nio/runs/R-1/jury/{GATE}-conformance.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f'---\nlens: conformance\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+                    "## Reasoning\nChecked.\n\n## Findings\nnone\n")  # no `## Matches` at all
+    jury.collect(root, "s", GATE, "R-1")
+    missing_for([f for f in gate_findings(root, cli=True) if f["severity"] == "blocker"], "AC-1", "AC-2")  # SC-1: evidence or a finding
+    assert composed(root)[0] != "approved", composed(root)
     print("ok")
 
 
