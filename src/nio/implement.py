@@ -70,13 +70,13 @@ SUMMARY = {
 }
 
 
-def suite(root, cfg):
+def suite(root, cfg, command=None):
     """A full-suite run read into {"command", "code", "cause", "runner", "failing", "collected", "broken",
     "output_hash", "output"} (CT-3, FR-14, FR-16, FR-35, FR-44). `failing` and `collected` are None for a runner without a reader."""
     t = cfg.get("tests") or {}
     if not t.get("suite"):
         raise ValueError("no `tests.suite` in the NIO config")
-    command = t["suite"]
+    command = command or t["suite"]
     code, out, cause = run(root, command, t.get("timeout") or DEFAULT_LIMIT)
     name = runner(command)
     failing = collected = None
@@ -441,10 +441,18 @@ def red(root, slug, tid, command, by):
     return 0, [f"red: {tid} accepted", "frozen:"] + [f"  {p}" for p in frozen]
 
 
+def closes(root, slug, task, lines):
+    """(whether this task closes its epic, whether it closes the last one): every other task there is done."""
+    st, ts = status(root, slug, lines), [t for t in tasks_of(root, slug) if t["id"] != task["id"]]
+    return all(st[t["id"]] == "done" for t in ts if t["epic"] == task["epic"]), all(st[t["id"]] == "done" for t in ts)
+
+
 def review(root, slug, task, lines):
     """The review line of a green task, checks only and no model call (CT-8, FR-14, FR-15, FR-17, FR-25, FR-36), in the
     order of the decision table Review; the first failing row decides. Files outside the task's list are recorded:
-    changed, and in neither `Files:` nor the red line's `frozen`."""
+    changed, and in neither `Files:` nor the red line's `frozen`. Tests beyond the task's own run only for the task
+    closing an epic, so that task answers for a failure any of the epic's tasks caused: `tests.epic` when set, and the
+    full suite for the last epic or when it isn't."""
     tid = task["id"]
     mine = since_claim(lines, tid)
     paths = changed(root, mine[0]["evidence"].get("commit") or "HEAD")
@@ -455,9 +463,13 @@ def review(root, slug, task, lines):
                if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
     reasons = reasons or [f"{p} changed since red" for p, h in frozen.items() if digest(root, p) != h]
     new, still = [], []
-    if not reasons:
+    # #66: the full suite took about half the worker time on every task; the task's own test already ran at green
+    epic_closes, all_close = closes(root, slug, task, lines)
+    if not reasons and epic_closes:
         base = next((x["evidence"] for x in reversed(lines) if x["kind"] == "baseline"), {})
-        r = suite(root, records.config(root))
+        cfg = records.config(root)
+        quick = None if all_close else (cfg.get("tests") or {}).get("epic")  # a slow suite runs in full only at the end
+        r = suite(root, cfg, quick)
         if r["broken"]:
             reasons.append(f"the suite is broken: {r['cause'] or wrong_reason(r['runner'], r['code'], r['output'])}")
         elif r["runner"] is None or r["failing"] is None:
@@ -467,7 +479,7 @@ def review(root, slug, task, lines):
         still = [f for f in r["failing"] or [] if f in (base.get("failing") or [])]
         if new:
             reasons.append("new failures: " + ", ".join(new))
-        if r["collected"] is not None and base.get("collected") is not None and r["collected"] < base["collected"]:
+        if not quick and r["collected"] is not None and base.get("collected") is not None and r["collected"] < base["collected"]:
             reasons.append(f"{r['collected']} tests collected against the baseline's {base['collected']}")
     out = [p for p in outside(slug, paths) if p not in task["files"] and p not in frozen]
     return entry("review", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out)
