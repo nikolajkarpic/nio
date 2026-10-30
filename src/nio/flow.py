@@ -588,6 +588,7 @@ def where(root, slug, state=None, lines=None):
     from nio import jury
     if state is None:
         state, lines = load(root, slug)
+    skill = ""
     stage, why, ready, results, ledgers, approved, sent_by, task = "done", "", None, {}, {}, [], None, ""
     passes = lambda s: results[s] if s in results else results.setdefault(s, guard(root, slug, s, evidence=False)[0])
     ledger = lambda s: ledgers[s] if s in ledgers else ledgers.setdefault(s, jury.load(root, slug, GATES[s][0]))
@@ -665,11 +666,17 @@ def where(root, slug, state=None, lines=None):
             implement.next_ready(root, slug, lines)
         status, command = "working", "" if tid or not t else f"nio flow claim {slug}"
         task = f"{t['id']} {t['title']}" + " (claimed)" * bool(tid) if t else ""
+        gate = None if tid else implement.open_gate(root, slug, lines)
+        if gate:  # CT-17: the epic waits on its gate
+            gate = f"implementation-{gate}"
+            held = [p for p in jury.gate_changes(root, slug, gate) if re.search(r"^outcome: pending", (root / p).read_text(), re.M)]
+            task = f"{gate} is open" + (f" (held on a change request: {held[0]})" if held else "")
+            skill, command = "@nio:jury", f"nio flow done {gate} {slug}"
     elif stage == "done":
         status, command = "done", ""
     else:
         status = "working"
-    return {"stage": stage, "status": status, "why": why, "skill": SKILL.get(stage, ""),
+    return {"stage": stage, "status": status, "why": why, "skill": skill or SKILL.get(stage, ""),
             "inputs": [rel(n) for n in names if (folder / n).exists()], "exit": EXIT.get(stage, ""),
             "command": command, "skipped": skipped, "changes": entries, "overrides": unseen(lines),
             "unreadable": unreadable, "refs": pending[0]["record"] if pending else "",
@@ -808,7 +815,8 @@ def next_step(root, slug=None, by=None):
         out = [f"effort: {slug}", f"state: {here['stage']} (working{': ' + here['why'] if here['why'] else ''})",
                f"skill: {here['skill']}", f"next: run {typed(here['skill'])}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}"]
         out += [f"task: {here['task']}"] * bool(here["task"])
-        label = "claim" if here["stage"] == "implementing" else "done"
+        label = "claim" if here["command"].startswith("nio flow claim") else "done"
+        out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines)]
         out += [f"{label}: {here['command']} {by_arg(by)}"] * bool(here["command"])
         out += [f"skipped: {', '.join(here['skipped'])} (not built)"] * bool(here["skipped"]) + overridden(here)
     else:
@@ -819,6 +827,11 @@ def next_step(root, slug=None, by=None):
     if owed and by is None:
         out.append(f"would record: {', '.join(dict.fromkeys(owed))} (run with --by to record)")
     return 0, out
+
+
+def never_reviewed(root, slug, lines):
+    """Epics closed by an old `skipped: not built` line (CT-17)."""
+    return [x["evidence"]["epic"] for x in lines if x["kind"] == "epic" and x.get("reason") == "skipped: not built"]
 
 
 def start(root, slug, by):

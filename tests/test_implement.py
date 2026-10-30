@@ -1283,24 +1283,35 @@ def epics(root):
     return [x for x in lines(root) if x["kind"] == "epic"]
 
 
+def close(root, eid, reason="approved"):
+    """What `nio flow done implementation-<eid>` writes once the gate is approved."""
+    test_flow.history(root, S, {"kind": "epic", "from": "implementing", "to": "implementing", "reason": reason,
+                                "evidence": {"epic": eid}})
+
+
 def test_ac8_order():
     root = impl(tasks=TWO)
     for tid, nxt in (("T-1", "T-2"), ("T-2", "T-3"), ("T-3", None)):
         finish(root, tid)
+        if tid == "T-2":
+            close(root, "E-1")
         if nxt:
             assert f"task: {nxt} " in flow(root, "next", S)[1], flow(root, "next", S)
     print("ok")
 
 
-def test_ac29_epic_skipped():
+def test_ac29_epic_waits_on_its_gate():
     root = impl(tasks=TWO)
     finish(root, "T-1")
     assert not epics(root)
     out = finish(root, "T-2")
-    got = epics(root)
-    assert len(got) == 1 and got[0]["evidence"]["epic"] == "E-1" and got[0]["reason"] == "skipped: not built", got
-    assert any(x.startswith("notify:") and "E-1" in x for x in out.splitlines()), out
-    assert "skipped: not built" in out and "merge:" not in out and lines(root)[-1]["to"] == "implementing", out
+    assert not epics(root) and "skipped: not built" not in out and "merge:" not in out, (epics(root), out)
+    assert any(x.startswith("next:") and "implementation-E-1" in x for x in out.splitlines()), out
+    assert lines(root)[-1]["to"] == "implementing", out
+    assert "@nio:jury" in flow(root, "next", S)[1], flow(root, "next", S)
+    code, out = flow(root, "claim", S)
+    assert code == 1 and "E-1" in out and "implementation-E-1" in out, (code, out)
+    close(root, "E-1")
     code, out = flow(root, "claim", S)
     assert code == 0 and "task: T-3 " in out, out
     print("ok")
@@ -1362,18 +1373,15 @@ def one_done():
 def test_ac28_no_merge():
     root, head, out = one_done()
     assert git(root, "rev-parse", "main").strip() == head and git(root, "branch", "--show-current").strip() == f"nio/{S}"
-    assert f"merge: nio/{S}" in out.splitlines(), out
+    assert f"merge: nio/{S}" not in out.splitlines() and not epics(root), out
     print("ok")
 
 
 def test_ac31_effort_done():
     root, _, _ = one_done()
     out = flow(root, "next", S)[1]
-    assert "state: done" in out, out
-    row = next(x for x in flow(root, "status")[1].splitlines() if x.startswith(S))
-    assert " · done · " in row, row
-    last = lines(root)[-1]
-    assert (last["kind"], last["from"], last["to"]) == ("pass", "implementing", "done"), last
+    assert "state: implementing" in out and "@nio:jury" in out, out  # done only after `flow done implementation-E-1`
+    assert lines(root)[-1]["kind"] != "pass", lines(root)[-1]
     folder = f".nio/specs/{S}"
     assert git(root, "status", "--porcelain", "--", f"{folder}/history.jsonl", f"{folder}/state.json") == ""  # in T-1's commit
     print("ok")
