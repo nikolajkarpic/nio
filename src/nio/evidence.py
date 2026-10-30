@@ -336,7 +336,7 @@ def collect(root, slug, epic, run):
     for file, tname in rest:
         short = tname.split(".")[-1]
         line = defs.setdefault(file, asserts_in(root, commit, file)).get(short, (0,))[0]
-        result = ("unknown" if not fail else "didn't run" if crashed or not line
+        result = (("unknown" if code_ok else "failed") if not fail else "didn't run" if crashed or not line
                   else "failed" if any(re.search(rf"\b{re.escape(short)}\b", x) for x in failing)
                   else "passed" if code_ok or failing else "unknown")
         tests.append({"name": tname, "file": file, "line": line, "result": result})
@@ -380,14 +380,14 @@ def join(root, slug, epic, matches, results):
     for ac in acs:
         for _, file, line in [m for m in found if m[0] == ac] or [(ac, "", 0)]:
             t = tests.get((file, line))
-            result = "no match" if not file else "didn't run" if not t else "no assertion" if t["result"] == "passed" and (file, line) in hinted else t["result"]
+            result = "no match" if not file else "didn't run" if not t else "no assertion" if t["result"] in ("passed", "unknown") and (file, line) in hinted else t["result"]
             entries.append({"ac": ac, "file": t["file"] if t else "", "line": t["line"] if t else 0, "result": result,
                             "_name": t["name"] if t else ""})
     results["evidence"] = [{k: v for k, v in e.items() if k != "_name"} for e in entries]
     out = []
     for ac in acs:
         mine = [e for e in entries if e["ac"] == ac]
-        if not any(e["result"] == "passed" for e in mine):
+        if not any(e["result"] in ("passed", "unknown") for e in mine):
             why = "; ".join(f"{e['_name'] or e['file'] or 'no test'} {e['result']}" for e in mine)
             out.append({"title": f"{ac} has no passing evidence", "severity": "blocker", "gap": "missing", "cite": ac, "where": mine[0]["file"] or ", ".join(dict.fromkeys(f for t in implement.tasks_of(root, slug) if t["epic"] == epic and ac in t["serves"] for f in t["files"])) or ac,
                         "situation": f"no passing test proves {ac}: {why}", "fix": f"add or fix a test that proves {ac}"})

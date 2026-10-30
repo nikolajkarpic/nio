@@ -1563,6 +1563,25 @@ def test_a_lens_cant_claim_a_pass():
     print("ok")
 
 
+def test_an_unreadable_runner_s_passing_suite_blocks_no_matched_ac():
+    # the split quotes keep the runner's name out of the command's words, so NIO reads no runner in it
+    loop = "for d in tests; do " + JOIN_SUITE.replace("unittest", 'unit""test') + "; done"
+    for product, passes in ((4, True), (5, False)):
+        root, source = join_repo(product=product)
+        (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": loop}}))
+        adds = def_line(source, "test_adds_two_numbers")
+        results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{adds}")  # AC-2 has no match
+        ac1 = [x for x in results["evidence"] if x["ac"] == "AC-1"]
+        if passes:
+            assert [x["result"] for x in ac1] == ["unknown"], results["evidence"]
+            missing_for(blockers, "AC-2")
+            for lens in PACK_LENSES:
+                assert has_line(pack(root, lens), "unknown", "per-test"), f"no unknown-results warning in the {lens} pack"
+        else:
+            missing_for(blockers, "AC-1", "AC-2")
+    print("ok")
+
+
 # --- T-19: the epic's outcome (CT-13, AC-49) ---
 
 def composed(root):
