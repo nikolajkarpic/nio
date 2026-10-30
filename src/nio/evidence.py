@@ -199,6 +199,78 @@ def tampering(root, base, head):
     return out
 
 
+ASSERT = re.compile(r"\bassert|\bexpect\(|\.should\b|\bt\.(?:Error|Fatal|Fail)")
+STRING = re.compile(r"\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'")
+
+
+def added_lines(root, base, head):
+    """{file: {line numbers the diff adds}}."""
+    out, file = {}, ""
+    for line in records.git(root, "diff", "-U0", base, head):
+        if line.startswith("+++ "):
+            file = line[6:] if line.startswith("+++ b/") else ""
+        elif m := re.match(r"@@ -\S+ \+(\d+)(?:,(\d+))? @@", line):
+            out.setdefault(file, set()).update(range(int(m[1]), int(m[1]) + int(m[2] or 1)))
+    return out
+
+
+def asserts_in(root, rev, f):
+    """{test name: (def line, [its assertion lines])}, read line by line like `tests_in`."""
+    text = records.git(root, "show", f"{rev}:{f}", full=True)
+    out, cur = {}, None
+    for n, line in enumerate(text[1].splitlines() if not text[0] else [], 1):
+        if m := TEST_DEF.match(line):
+            cur = m[1] or m[2]
+            out[cur] = (n, [])
+        elif cur and ASSERT.search(line):
+            out[cur][1].append(line.strip())
+    return out
+
+
+def hints(root, base, head):
+    """[hint]: possible stubs, uncertain references, tests with no assertion, changed or removed assertion lines in the
+    epic's diff (CT-5, FR-9, FR-13, FR-36, FR-39). Never findings: a lens that confirms one raises it.
+    ponytail: stubs are read for Python only; assertions and references by regex, not parsed."""
+    import ast
+
+    def hint(kind, file, name, line, interpretive, note):
+        return {"kind": kind, "file": file, "name": name, "line": line, "interpretive": interpretive, "note": note}
+
+    out, added = [], added_lines(root, base, head)
+    for f, lines in added.items():
+        if f.endswith(".py"):
+            code = records.git(root, "show", f"{head}:{f}", full=True)
+            try:
+                tree = ast.parse(code[1]) if not code[0] else None
+            except SyntaxError:
+                tree = None
+            for node in ast.walk(tree) if tree else []:
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.lineno in lines and all(
+                        isinstance(s, ast.Pass) or (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant))
+                        or (isinstance(s, ast.Raise) and "NotImplementedError" in ast.dump(s)) for s in node.body):
+                    out.append(hint("possible stub", f, node.name, node.lineno, True, "its body is empty or only a TODO"))
+        if re.search(r"(^|[/_.-])tests?([/_.-]|$)|\.(test|spec)\.", f):
+            after = asserts_in(root, head, f)
+            before = asserts_in(root, base, f) if records.git(root, "cat-file", "-e", f"{base}:{f}", full=True)[0] == 0 else {}
+            for name, (line, found) in after.items():
+                if name not in before and not found:
+                    out.append(hint("test with no assertion", f, name, line, False, "no assertion in a test the diff adds"))
+                elif name in before and set(before[name][1]) - set(found):
+                    out.append(hint("changed assertion", f, name, line, False, "the diff changes or removes an assertion line"))
+    defined = []
+    for f, lines in added.items():
+        text = records.git(root, "show", f"{head}:{f}", full=True)
+        for n, line in enumerate(text[1].splitlines() if not text[0] else [], 1):
+            if n in lines and (m := DEFINES.match(line)) and not (m[1].startswith("test_") or m[1].startswith("__")):
+                defined.append((m[1], f, n))
+    for name, f, n in defined:
+        hits = [x.split(":", 3)[-1] for x in records.git(root, "grep", "-nwF", "-e", name, head)]
+        uses = [x for x in hits if not ((m := DEFINES.match(x)) and m[1] == name)]
+        if uses and not any(re.search(rf"\b{name}\b", STRING.sub('""', x)) for x in uses):
+            out.append(hint("uncertain reference", f, name, n, True, "uncertain: it is only mentioned in strings, maybe called dynamically"))
+    return out
+
+
 def collect(root, slug, epic, run):
     """Run the epic's tests, lint, type check, misuse tests and auto journeys, each group in its own throwaway copy at
     the epic's last commit, and write the run's results (CT-3, FR-3, FR-6, FR-7, FR-11, FR-12). Returns the lines to print.
