@@ -348,12 +348,12 @@ def changed(root, slug, gate):
     with a finding citing a changed ID; after it, every lens with a fix to check. Once the gate was approved or closed,
     every lens that judged it re-checks the change."""
     led, _, _, ids, secs, neighbours = diff(root, slug, gate)
-    lenses = {s["lens"] for f in led["findings"] for s in f["sources"] if s["lens"] != "deferred"}
+    lenses = {s["lens"] for f in led["findings"] for s in f["sources"] if s["lens"] not in ("deferred", "cli")}
     if any(o == "rejected" for _, o in led["recorded"]):  # a re-review or the final check is next
         rerun = {lens for lens in lenses if pack_ids(led, lens)}
     else:
         rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
-        rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] != "deferred"}
+        rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] not in ("deferred", "cli")}
     if not rerun and (ids or secs) and led["recorded"] and led["recorded"][-1][1] in ("approved", "human", "closed"):
         # an approved or closed gate whose artefact changed since (a change request, #57 FR-35, FR-47): every lens that
         # judged it re-checks only what changed, from its fix-check pack
@@ -663,6 +663,26 @@ def add(led, f, juror, lens, rnd, text, human="", review=False):
     return f"{match['baseline']:<7} {match['id']} [{match['severity']}/{match['kind']}] {match['title']} (+{lens})"
 
 
+def record_cli(root, slug, gate, findings):
+    """Put the CLI's own findings in the ledger as confirmed (CT-20, FR-24): no refuter and no vote, since they are observed
+    and no juror raised them. A repeat with the same title adds none. The new entries' IDs."""
+    led = load(root, slug, gate)
+    out = []
+    for f in findings:
+        if any(g["title"] == f["title"] and any(s["lens"] == "cli" for s in g["sources"]) for g in led["findings"]):
+            continue
+        out.append(f"J-{len(led['findings']) + 1}")
+        led["findings"].append({
+            "id": out[-1], "title": f["title"], "kind": "gap", "severity": f["severity"], "cites": [c.strip() for c in f["cite"].split(",") if c.strip()],
+            "evidence": "observed", "quotes": [], "fix": f.get("fix", ""), "gap": f["gap"], "where": f["where"], "tampering": bool(f.get("tampering")),
+            "sources": [{"juror": "cli", "lens": "cli", "situation": f["gap"], "severity": f["severity"], "round": led["round"]}],
+            "validation": "confirmed", "reason": "the CLI's own check; no refuter", "status": "open", "disposition": "", "by": "", "note": "",
+            "baseline": "new", "rounds": 0, "first_round": led["round"], "last_round": led["round"]})
+    if out:
+        save(root, led)
+    return out
+
+
 def refute(led, path):
     out, by_id = [], {f["id"]: f for f in led["findings"]}
     for head, f in blocks(path.read_text().splitlines()):
@@ -697,6 +717,8 @@ def dispose(root, slug, gate, fid, disposition, by, note, change=""):
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
     if disposition not in DISPOSITIONS or by not in BY or not note.strip():
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
+    if f.get("tampering") and by != "human":
+        raise ValueError(f"{fid} is test tampering; only the human disposes of it (--by human)")
     if disposition in PLAN_ONLY and gate != "plan":
         raise ValueError(f"`{disposition}` belongs to the plan gate")
     if disposition == "spec-change":  # #57 FR-34, FR-41: the change record the finding waits on

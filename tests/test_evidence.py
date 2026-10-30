@@ -59,13 +59,18 @@ def human():
     return root, first, last, hooked
 
 
+JURY = r"\.nio/specs/[^/]+/jury/\S*"  # the gate's own ledger isn't the human's tree (C-261030-aemp)
+
+
 def snapshot(root):
     """All TC-41 says must not change: the tree byte for byte, the refs, the config, the worktrees, and git's status."""
     tree = {str(p.relative_to(root)): p.read_bytes() for p in root.rglob("*")
-            if p.is_file() and ".git" not in p.relative_to(root).parts and p.relative_to(root).parts[:2] != (".nio", "runs")}
+            if p.is_file() and ".git" not in p.relative_to(root).parts and p.relative_to(root).parts[:2] != (".nio", "runs")
+            and not re.fullmatch(JURY, p.relative_to(root).as_posix())}
+    status = [x for x in git(root, "status", "--porcelain").splitlines() if not re.fullmatch(rf"\s*\S+\s+{JURY}", x)]
     return {"tree": tree, "refs": git(root, "for-each-ref"), "head": (root / ".git/HEAD").read_text(),
             "config": (root / ".git/config").read_text(), "worktrees": git(root, "worktree", "list", "--porcelain"),
-            "status": git(root, "status", "--porcelain"), "log": git(root, "log", "--all", "--format=%H")}
+            "status": status, "log": git(root, "log", "--all", "--format=%H")}
 
 
 def same(root, before, what):
@@ -596,6 +601,100 @@ def test_a_test_with_no_assertion_and_a_changed_assertion_are_flagged():
     assert len(naming(found, "test_empty")) == 1, found
     assert len(naming(found, "test_weak")) == 1, found
     assert not naming(found, "test_firm"), found
+    print("ok")
+
+
+# --- T-9: the CLI's findings in the ledger (CT-20, TC-42, TC-62, TC-63) ---
+
+# 500 error lines, and the command's text doesn't say "type check": only the gate can name the check
+MANY_ERRORS = "seq 1 500 | sed 's/.*/b.py:&: error: Incompatible types/' >&2; exit 1"
+MODEL_CLIENTS = ("anthropic", "openai", "litellm", "cohere", "mistralai", "ollama", "groq", "google.generativeai", "google.genai")
+BLOCKED_COLLECT = f"""
+import json, sys
+tried = []
+class Block:
+    def find_spec(self, name, path=None, target=None):
+        if any(name == m or name.startswith(m + ".") for m in {MODEL_CLIENTS!r}):
+            tried.append(name)
+            raise ImportError(name + " is blocked")
+sys.meta_path.insert(0, Block())
+from nio import evidence
+evidence.collect(".", "s", "E-1", "R-1")
+print(json.dumps(tried))
+"""
+
+
+def ledger(root):
+    """The findings in the ledger of the gate on epic E-1 of spec `s`, each checked to be the CLI's own."""
+    from nio import jury
+    found = jury.load(root, "s", "implementation-E-1")["findings"]
+    for f in found:
+        assert [s["lens"] for s in f["sources"]] == ["cli"], f
+        assert f["kind"] == "gap" and f["validation"] == "confirmed", f
+    return found
+
+
+def gate_cli(root):
+    import subprocess
+    import sys
+    return subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "jury", "evidence", "s", "E-1", "--run", "R-1"],
+                          cwd=root, capture_output=True, text=True)
+
+
+def type_check_findings(found):
+    return [f for f in found if re.search(r"type ?check", json.dumps(f), re.I)]
+
+
+def test_a_major_finding_names_the_check_and_its_first():
+    root, _ = gate_repo(lint="echo clean", typecheck=MANY_ERRORS)
+    start(root)
+    mine = type_check_findings(ledger(root))
+    assert len(mine) == 1, ledger(root)
+    assert mine[0]["severity"] == "major", mine[0]
+    text = json.dumps(mine[0])
+    assert "b.py:1: error: Incompatible types" in text, mine[0]
+    assert "b.py:500:" not in text, f"the finding holds the whole output, not the first errors: {mine[0]}"
+    assert not naming(ledger(root), "lint"), "a check that passed has a finding"
+    print("ok")
+
+
+def test_cli_checks_make_no_model_calls():
+    import ast
+    import subprocess
+    import sys
+    root, _ = gate_repo(typecheck=TYPECHECK)
+    out = subprocess.run([sys.executable, "-c", BLOCKED_COLLECT], cwd=root, capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    assert json.loads(out.stdout.splitlines()[-1]) == [], f"tried to import a model client: {out.stdout}"
+    assert (root / ".nio/runs/R-1/results.json").exists(), "the gate didn't reach its results"
+    assert len(type_check_findings(ledger(root))) == 1, "the gate didn't reach the ledger"
+    imported = []
+    for node in ast.walk(ast.parse(Path(evidence().__file__).read_text())):
+        if isinstance(node, ast.Import):
+            imported += [a.name for a in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            imported.append(node.module or "")
+    assert not [m for m in imported if any(m == c or m.startswith(c + ".") for c in MODEL_CLIENTS)], imported
+    print("ok")
+
+
+def test_the_gate_refuses_an_unfinished_epic_whose_lens_would_take_done_as_proof():
+    # T-2 isn't done: refused by name, and nothing is written
+    root = epic_repo(["T-1"])
+    out = gate_cli(root)
+    assert out.returncode != 0 and "T-2" in out.stderr, (out.returncode, out.stderr)
+    assert not (root / ".nio/specs/s/jury").exists(), "a ledger was written"
+    assert not (root / ".nio/runs/R-1/results.json").exists(), "results were written"
+    # T-2 is done in the history, but the file it names was never written
+    root, _ = gate_repo()
+    (root / ".nio/specs/s/tasks.md").write_text(EPICS.replace("`b.py`", "`src/gone.py`"))
+    git(root, "commit", "-qa", "--amend", "--no-edit")
+    out = gate_cli(root)
+    assert out.returncode == 0, out.stderr
+    found = ledger(root)
+    mine = naming(found, "T-2", "src/gone.py")
+    assert len(mine) == 1 and mine[0]["severity"] == "major", found
+    assert not naming(found, "a.py"), f"T-1's file is real and in the epic's diff, whose first commit has no parent: {found}"
     print("ok")
 
 
