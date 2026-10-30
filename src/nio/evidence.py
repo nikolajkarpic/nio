@@ -329,7 +329,7 @@ def collect(root, slug, epic, run):
         journeys_out.append({"command": " && ".join(c for c, _ in ss), "result": "passed" if ok else "failed",
                              "output": "\n".join(r["output"] for r in rs), "cut": sum(r["cut"] for r in rs)})
     results = {**load(root, run), "commit": commit, "tests": tests, "checks": runs([t.get("lint"), t.get("typecheck")]),
-               "attacks": attacks, "journeys": journeys_out}
+               "attacks": attacks, "journeys": journeys_out, "hints": hints(root, base, commit)}
     save(root, run, results)
     named = zip(("lint check", "type check"), results["checks"])
     jury.record_cli(root, slug, f"implementation-{epic}", [
@@ -337,3 +337,56 @@ def collect(root, slug, epic, run):
         *[check_finding(name, c) for name, c in named if c["result"] == "failed"]])
     return [str(path(root, run).relative_to(root))] + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"]
+
+
+def items(root, slug):
+    """{ID: its text} for the spec's ACs and FRs and the contracts' CTs, in file order, with each CT's bound file."""
+    from nio import jury
+    d = Path(root) / ".nio/specs" / slug
+    read = lambda n: (d / n).read_text() if (d / n).exists() else ""
+    out = dict(jury.parts(read("spec.md"))[0])
+    bound = {}
+    for m in re.finditer(r"^### (CT-\d+)\b.*?(?=^#{2,3} |\Z)", read("contracts.md"), re.M | re.S):
+        out[m[1]] = m[0].rstrip()
+        if b := re.search(r"^- Binding:\s*`([^`:]+)", m[0], re.M):
+            bound[m[1]] = b[1]
+    return out, bound
+
+
+def pack(root, slug, gate, lens, run):
+    """A lens's pack at the implementation gate (CT-9, FR-17, FR-18): the epic's diff, the text of the ACs, FRs and CTs the
+    diff touches and no others, the run's results and the hints. In a re-review it is a fix check: the lens's own findings
+    and the diff since the commit the last round judged.
+    ponytail: the last round's commit is the newest `versions` entry of the ledger, which the gate's collect must write."""
+    from nio import jury
+    root = Path(root)
+    epic = jury.epic_gate(root, slug, gate)
+    commits = commits_of(root, slug, epic)
+    base, head = parent_of(root, commits[-1]), commits[0]
+    results = load(root, run)
+    led = jury.load(root, slug, gate)
+    out = [f"# Pack: {lens}, {gate} gate of {slug}", "",
+           "You may open any file of the project to read it. You have no way to write files or run commands.", ""]
+    if led.get("versions") and jury.phase(led) in ("re-review", "final"):
+        judged = led["versions"][max(led["versions"], key=int)]
+        by_id = {f["id"]: f for f in led["findings"]}
+        out += ["This is a fix check, not a review. Give one verdict per finding below, `- J-<n>: fixed | not fixed - <reason>`, "
+                "from the diff since the commit the last round judged. Raise a new finding only if it is a blocker.", "",
+                "## Your findings to check", *(["None: give no verdicts.", ""] if not jury.pack_ids(led, lens) else [])]
+        for i in jury.pack_ids(led, lens):
+            f = by_id[i]
+            out += [f"### {f['id']} {f['title']}", f"- cites: {', '.join(f['cites'])}", f"- fix asked: {f['fix']}",
+                    f"- what was done: {f['note']}", ""]
+        out += [f"## Diff since {judged[:8]}", "", *records.git(root, "diff", judged, head)]
+        return "\n".join(out) + "\n"
+    diff = records.git(root, "diff", base, head)
+    names = set(records.git(root, "diff", "--name-only", base, head))
+    text, bound = items(root, slug)
+    serves = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
+    touched = serves | {c for c, f in bound.items() if f in names}
+    out += ["## Diff", "", *diff, "", "## Items the diff touches", "", *[text[i] + "\n" for i in text if i in touched],
+            "## Results", "", json.dumps({k: v for k, v in results.items() if k != "hints"}, indent=2, ensure_ascii=False), "",
+            "## Hints (not findings: raise one only if you confirm it)", "", *([
+                f"- {h['kind']}{' (interpretive)' if h['interpretive'] else ''}: {h['name']} at {h['file']}:{h['line']}, {h['note']}"
+                for h in results.get("hints") or []] or ["None."])]
+    return "\n".join(out) + "\n"

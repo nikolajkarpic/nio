@@ -581,6 +581,16 @@ def test_it_is_flagged_as_a_possible_stub_marked_interpretive():
         mine = naming(found, name)
         assert len(mine) == 1 and mine[0]["interpretive"] is True and mine[0]["file"] == "src/mod.py", found
     assert not naming(found, "real"), found
+    # the gate starts: every lens's pack carries the hint, marked interpretive, and the ledger holds no finding for it
+    root = pack_repo({"src/mod.py": src, "src/use.py": "hollow(); todo_only(); real()\n"})
+    start(root)
+    for lens in PACK_LENSES:
+        text = pack(root, lens)
+        for name in ("hollow", "todo_only"):
+            assert has_line(text, name, "interpretive"), f"{lens}: no interpretive hint naming {name}:\n{text}"
+        assert not has_line(text, "real", "interpretive"), f"{lens}: a real function is hinted"
+    for name in ("hollow", "todo_only"):
+        assert not naming(gate_findings(root), name), f"{name} is in the ledger: {gate_findings(root)}"
     print("ok")
 
 
@@ -590,6 +600,12 @@ def test_it_is_flagged_not_passed():
                                                   "src/use.py": 'import mod\ngetattr(mod, "handler")()\n'})])
     found = naming(hints(root, base, head), "handler")
     assert len(found) == 1 and "uncertain" in json.dumps(found[0]).lower(), found
+    root = pack_repo({"src/mod.py": "def handler():\n    return 1\n", "src/use.py": 'import mod\ngetattr(mod, "handler")()\n'})
+    start(root)
+    for lens in PACK_LENSES:
+        text = pack(root, lens)
+        assert has_line(text, "handler", "uncertain"), f"{lens}: no hint naming handler and saying the check was uncertain:\n{text}"
+    assert not naming(gate_findings(root), "handler"), f"handler is in the ledger: {gate_findings(root)}"
     print("ok")
 
 
@@ -871,6 +887,145 @@ def test_the_dropped_lens_is_named_in_the_verdict():
     said = [x for x in path.read_text().splitlines() if "dropped" in x.lower()]
     assert any("risk-rollback" in x for x in said), path.read_text()
     assert not any(c in x for x in said for c in CORE_TWO), said
+    print("ok")
+
+
+# --- T-14: a lens's pack (CT-9, CT-5, CT-10, AC-10, AC-16, AC-24, AC-25) ---
+
+PACK_LENSES = ("conformance", "correctness", "security")  # a hint is in every lens's pack, whichever lens
+PACK_SPEC = """---
+slug: s
+retired: []
+---
+# s
+
+## Functional requirements
+- **FR-1** THE SYSTEM SHALL do FR1_TEXT. [human]
+- **FR-2** THE SYSTEM SHALL do FR2_TEXT. [human]
+
+## User stories
+### US-1 Story (P1) [human]
+- **AC-1** Given AC1_TEXT, when it runs, then it holds. [human]
+  Observable: AC1_OBSERVABLE. Level: unit.
+- **AC-3** Given AC3_TEXT, when it runs, then it holds. [human]
+  Observable: AC3_OBSERVABLE. Level: unit.
+"""
+PACK_CONTRACTS = """---
+slug: s
+retired: []
+---
+# Contracts: s
+
+## Contracts
+
+### CT-1 First (FR-2) [derived: FR-2]
+- Binding: `src/one.py:f`
+- Rules: CT1_TEXT
+
+### CT-2 Second (FR-1) [derived: FR-1]
+- Binding: `src/two.py:g`
+- Rules: CT2_TEXT
+"""
+PACK_TASKS = """---
+slug: s
+retired: []
+---
+# Tasks: s
+
+## E-1 First (Foundation)
+
+### T-1 One
+- Files: {files}
+- Serves: AC-3, FR-2
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: cheap: x
+- Effort: low
+
+## E-2 Second (Foundation)
+
+### T-2 Two
+- Files: `src/two.py`
+- Serves: AC-1, FR-1
+- Test: TC-2
+- Depends on: T-1
+- Parallel: no
+- Tier: cheap: x
+- Effort: low
+"""
+
+
+def pack_repo(files):
+    """A finished epic E-1 (T-1) in spec `s`, whose one commit adds `files` ({path: text}) and src/one.py; epic E-2 is for
+    AC-1, FR-1 and CT-2, which T-1 and its diff never touch. Lint is `echo RESULT-MARK-7`."""
+    root = epic_repo(["T-1"])
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    files = {"src/one.py": "DIFF_MARK = 42\n\n\ndef f():\n    return DIFF_MARK\n", **files}
+    d = root / ".nio/specs/s"
+    (d / "tasks.md").write_text(PACK_TASKS.format(files=", ".join(f"`{x}`" for x in files)))
+    (d / "spec.md").write_text(PACK_SPEC)
+    (d / "contracts.md").write_text(PACK_CONTRACTS)
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"lint": "echo RESULT-MARK-7"}}))
+    (root / ".gitignore").write_text(".nio/runs/\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "before the epic")
+    for name, text in files.items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(text)
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-1: One")
+    return root
+
+
+def pack(root, lens):
+    e = evidence()
+    assert hasattr(e, "pack"), "evidence.pack doesn't exist yet"
+    text = e.pack(root, "s", "implementation-E-1", lens, "R-1")
+    assert isinstance(text, str) and text.strip(), text
+    return text
+
+
+def has_line(text, *words):
+    return any(all(w in line.lower() for w in words) for line in text.splitlines())
+
+
+def gate_findings(root):
+    from nio import jury
+    return jury.load(root, "s", "implementation-E-1")["findings"]
+
+
+def test_it_holds_the_diff_the_text_of_ac_3():
+    root = pack_repo({})
+    start(root)
+    text = pack(root, "conformance")
+    assert "DIFF_MARK = 42" in text, f"the diff is not in the pack:\n{text}"
+    for mark in ("AC3_TEXT", "FR2_TEXT", "CT1_TEXT"):
+        assert mark in text, f"{mark} (an item the diff touches) is not in the pack:\n{text}"
+    assert "RESULT-MARK-7" in text, f"the run results are not in the pack:\n{text}"
+    for mark in ("AC1_TEXT", "AC1_OBSERVABLE", "FR1_TEXT", "CT2_TEXT"):
+        assert mark not in text, f"{mark} (an item the diff doesn't touch) is in the pack:\n{text}"
+    print("ok")
+
+
+def test_it_can_open_any_project_file_and_can_t():
+    from nio import agents, records
+    shipped = Path(__file__).resolve().parent.parent / "src/nio/agents"
+    assert agents.TOOLS["read"] == ["Read", "Grep", "Glob"], agents.TOOLS["read"]
+    for name in ("conformance", "correctness", "risk-rollback", "security", "adversary", "consistency"):
+        meta, body = records.parse(shipped / f"{name}.md")
+        assert "## At implementation" in body, f"{name} has no ## At implementation section"
+        assert meta["tools"] == ["read"], f"{name}: tools are {meta['tools']}, not read-only"
+        assert 'tools: "Read, Grep, Glob"' in agents.render_claude(name, meta, "\n".join(body), "sonnet", "medium"), name
+        assert "shell_tool = false" in agents.render_codex(name, meta, "\n".join(body), "gpt", "medium"), name
+    # the pack tells the lens it may open any project file, and building it writes nothing the human would see
+    root = pack_repo({})
+    start(root)
+    before = snapshot(root)
+    text = pack(root, "conformance")
+    assert re.search(r"any (project )?file", text, re.I), f"the pack doesn't say the lens may open any project file:\n{text}"
+    same(root, before, "building a pack")
     print("ok")
 
 
