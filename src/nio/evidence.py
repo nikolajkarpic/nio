@@ -124,6 +124,41 @@ def commit_of(root, slug, epic):
     raise ValueError(f"no commit of epic {epic} found")
 
 
+DEFINES = re.compile(r"^\s*(?:async\s+)?(?:def|class|function)\s+(\w+)")
+
+
+def phantoms(root, tasks, base, head):
+    """[finding]: one major finding per missing file, file outside the epic's diff, or symbol the diff defines that nothing
+    else mentions (CT-4, FR-6, FR-7, FR-8). Read from git at `head`, never from a task's status.
+    ponytail: a symbol's own recursive call or a hit in a string or comment counts as a use; CT-5 hints the latter."""
+    def finding(title, gap, cite, where):
+        return {"title": title, "severity": "major", "gap": gap, "cite": cite, "where": where}
+
+    in_diff = set(records.git(root, "diff", "--name-only", base, head))
+    out = []
+    for t in tasks:
+        cite = ", ".join(t.get("serves") or [])
+        for f in t.get("files") or []:
+            if records.git(root, "cat-file", "-e", f"{head}:{f}", full=True)[0]:
+                out.append(finding(f"{t['id']}: {f} doesn't exist", f"{t['id']} names {f}, which is not in the repo at {head[:8]}", cite, f))
+            elif f not in in_diff:
+                out.append(finding(f"{t['id']}: {f} isn't in the epic's diff", f"{t['id']} names {f}, which no commit of the epic changed", cite, f))
+    defined, file = [], ""
+    for line in records.git(root, "diff", "-U0", base, head):
+        if line.startswith("+++ "):
+            file = line[6:] if line.startswith("+++ b/") else ""
+        elif line.startswith("+") and (m := DEFINES.match(line[1:])):
+            name = m[1]
+            if not (name.startswith("test_") or (name.startswith("__") and name.endswith("__"))):
+                defined.append((name, file))
+    for name, file in dict.fromkeys(defined):
+        hits = [x.split(":", 3)[-1] for x in records.git(root, "grep", "-nwF", "-e", name, head)]
+        if not [x for x in hits if not (m := DEFINES.match(x)) or m[1] != name]:
+            cite = next((", ".join(t.get("serves") or []) for t in tasks if file in (t.get("files") or [])), "")
+            out.append(finding(f"{name} in {file} is never used", f"{name} is defined in {file} and mentioned nowhere else", cite, file))
+    return out
+
+
 def collect(root, slug, epic, run):
     """Run the epic's tests, lint, type check, misuse tests and auto journeys, each group in its own throwaway copy at
     the epic's last commit, and write the run's results (CT-3, FR-3, FR-6, FR-7, FR-11, FR-12). Returns the lines to print.
