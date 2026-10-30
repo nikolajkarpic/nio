@@ -733,6 +733,12 @@ def held(state):
     return state["abandon"] is not None or bool(state["pause"]) or bool(state["waiting"])
 
 
+def typed(skill):
+    """What the human types to run a skill on this host; a host we can't identify gets the plain name."""
+    # ponytail: only Claude Code is detected; add a host's form here once it is verified on that host
+    return f"/{skill[1:]}" if os.environ.get("CLAUDECODE") else f"the {skill[1:]} skill"
+
+
 def by_arg(by):
     return '--by "<role> / <host> / <model>"' if by is None else "--by human" if by == "human" else f'--by "{by}"'
 
@@ -799,7 +805,7 @@ def next_step(root, slug=None, by=None):
         here = where(root, slug, state, lines)
     if here["status"] == "working":
         out = [f"effort: {slug}", f"state: {here['stage']} (working{': ' + here['why'] if here['why'] else ''})",
-               f"skill: {here['skill']}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}"]
+               f"skill: {here['skill']}", f"next: run {typed(here['skill'])}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}"]
         out += [f"task: {here['task']}"] * bool(here["task"])
         label = "claim" if here["stage"] == "implementing" else "done"
         out += [f"{label}: {here['command']} {by_arg(by)}"] * bool(here["command"])
@@ -967,6 +973,8 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         return 0, [f"{slug}: the {GATES[stage][0]} gate passes; nothing is recorded until the human approves it:",
                    command]  # FR-48
     out = [f"moved {slug}: {stage} → {to}"] + [f"skipped {s['from']} (not built)" for s in skips]
+    if to in SKILL:
+        out.append(f"next: run {typed(SKILL[to])}")
     with lock(root, slug):
         state, now = load(root, slug)
         if now != lines:

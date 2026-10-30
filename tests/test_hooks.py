@@ -1,6 +1,8 @@
 """Self-check for nio hooks and the cross-branch merge check. Run: uv run python tests/test_hooks.py"""
+import json
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -100,7 +102,34 @@ def test_checks_block_commit_and_push():
     print("ok")
 
 
+def test_allow():
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / ".claude").mkdir()
+        local = root / ".claude/settings.local.json"
+        local.write_text('{"model": "opus", "permissions": {"allow": ["Bash(git log:*)"]}}')
+        assert hooks.allow(root, False) == local
+        hooks.allow(root, False)  # twice adds nothing
+        cfg = json.loads(local.read_text())
+        rules = cfg["permissions"]["allow"]
+        assert cfg["model"] == "opus" and "Bash(git log:*)" in rules and len(rules) == len(set(rules))
+        assert "Bash(nio flow next:*)" in rules and "Bash(uv run nio flow next:*)" in rules
+        assert not (root / ".claude/settings.json").exists()
+        # commands that run anything, or are the human's alone, are never allowed
+        for cmd in ("flow red", "flow green", "flow seen", "flow abandon", "flow unblock", "hooks"):
+            assert not any(cmd in r for r in rules), cmd
+        assert "Bash(nio *human*)" in cfg["permissions"]["ask"] and "Bash(nio flow done *--c*)" in cfg["permissions"]["ask"]
+        assert hooks.allow(root, True) == root / ".claude/settings.json"
+        local.write_text("{broken")
+        try:
+            hooks.allow(root, False)
+            assert False, "broken settings must be refused"
+        except ValueError:
+            assert local.read_text() == "{broken"
+
+
 if __name__ == "__main__":
     test_install()
+    test_allow()
     test_checks_block_commit_and_push()
     test_two_branches_supersede_the_same_decision()

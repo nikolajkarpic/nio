@@ -484,6 +484,9 @@ def test_cli_errors():
 
 # --- where an effort is and what to do next (CT-6, CT-9) ---
 
+os.environ.pop("CLAUDECODE", None)  # expected output below is the plain form, wherever the tests run
+
+
 def nxt(root, slug=S, by=None):
     code, out = flow.next_step(root, slug, by=by)
     assert code == 0, out
@@ -498,6 +501,13 @@ def test_ac1_next_names_planning():
     assert "spec.md" in next(x for x in out.splitlines() if x.startswith("inputs: ")), out
     assert any(x.startswith(f"done: nio flow done planning {S} --by") for x in out.splitlines()), out
     assert "skipped: arch_grilling (not built)" in out and len(out.splitlines()) <= 12, out
+    os.environ["CLAUDECODE"] = "1"  # #56: the next command as this host types it, else the plain name
+    try:
+        assert "next: run /nio:plan\n" in nxt(root) + "\n", out
+        del os.environ["CLAUDECODE"]
+        assert "next: run the nio:plan skill\n" in nxt(root) + "\n", out
+    finally:
+        os.environ.pop("CLAUDECODE", None)
     assert not flow_files(root)  # next without history writes nothing
     print("ok")
 
@@ -822,7 +832,7 @@ def test_ac11_no_hand_edit_instruction():
     command, and none tells an agent to edit, write, append to or change one."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 23, paths
+    assert len(paths) == 24, paths
     for path in paths:
         lines = path.read_text().splitlines()
         assert lines.count(RULE) == 1, path
@@ -877,7 +887,7 @@ def test_ac13_done_grilling_passes():
     flow.start(root, S, by=BY)
     gate_ready(root)
     n = count(root)
-    assert flow.done(root, "grilling", S, by=BY) == (0, [f"moved {S}: grilling → spec_jury"])
+    assert flow.done(root, "grilling", S, by=BY) == (0, [f"moved {S}: grilling → spec_jury", "next: run the nio:jury skill"])
     assert "state: spec_jury" in nxt(root)
     new = lines_of(root)[n:]
     assert len(new) == 1 and (new[0]["kind"], new[0]["from"], new[0]["to"]) == ("pass", "grilling", "spec_jury"), new
@@ -966,7 +976,7 @@ def test_ac22_skips_not_built():
     n = count(root)
     code, out = flow.done(root, "drafting", S, by=BY)
     assert code == 0 and out == [f"moved {S}: drafting → grilling", "skipped researching (not built)",
-                                 "skipped advocate_walking (not built)"], out
+                                 "skipped advocate_walking (not built)", "next: run the nio:grill skill"], out
     new = [(x["kind"], x["from"], x["to"], x.get("reason")) for x in lines_of(root)[n:]]
     assert new == [("pass", "drafting", "researching", None),
                    ("skip", "researching", "advocate_walking", "skipped: not built"),

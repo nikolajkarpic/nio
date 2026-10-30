@@ -179,4 +179,4 @@ point, but never closes its jury finding: `--by grill` means the human answered.
 ## When to stop
 
 Stop when the human (or the delegated agent) chooses finish at the finish gate, or the session ends early with every
-unsettled point deferred. Then tell the human, in the shape above, that the next stage is the spec jury.
+unsettled point deferred. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the spec jury.
