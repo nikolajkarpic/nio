@@ -10,6 +10,8 @@ from nio import implement, records
 
 RESULTS = "results.json"  # CT-7, under .nio/runs/<run>/
 KEEP = 100_000  # FR-41: bytes kept at each end of a run's output
+FIRST_ERRORS = 5  # FR-42: lines of a failed check's output its finding holds
+FIRST_CHARS = 2_000  # the same, for a check that prints very long lines
 
 
 def cut(output):
@@ -113,15 +115,26 @@ def matched(expected, output):
     return output.strip() == expected.strip()
 
 
-def commit_of(root, slug, epic):
-    """The newest commit named `T-n: ...` for a task of the epic (the epic's last commit)."""
-    from nio import implement
+def commits_of(root, slug, epic):
+    """The commits named `T-n: ...` for a task of the epic, newest first. The walk stops at the commit that added the
+    spec's tasks.md, since an earlier effort has its own T-1."""
     mine = {t["id"] for t in implement.tasks_of(root, slug) if t["epic"] == epic}
+    added = records.git(root, "log", "-1", "--format=%H", "--diff-filter=A", "--", f".nio/specs/{slug}/tasks.md")
+    out = []
     for x in records.git(root, "log", "--format=%H %s", "HEAD"):
         sha, _, subject = x.partition(" ")
         if subject.split(":")[0] in mine:
-            return sha
-    raise ValueError(f"no commit of epic {epic} found")
+            out.append(sha)
+        if [sha] == added:
+            break
+    if not out:
+        raise ValueError(f"no commit of epic {epic} found")
+    return out
+
+
+def parent_of(root, commit):
+    """The commit's parent; for a root commit, the empty tree, so a diff from it holds everything the commit added."""
+    return (records.git(root, "rev-parse", "-q", "--verify", f"{commit}^") or records.git(root, "hash-object", "-t", "tree", "/dev/null"))[0]
 
 
 DEFINES = re.compile(r"^\s*(?:async\s+)?(?:def|class|function)\s+(\w+)")
@@ -271,16 +284,24 @@ def hints(root, base, head):
     return out
 
 
+def check_finding(name, check):
+    """The major finding of a failed lint or type check, naming it and holding its first errors (FR-42). Its title stays
+    the same from run to run, so a repeat adds none (CT-20)."""
+    first = "\n".join([x for x in check["output"].splitlines() if x.strip()][:FIRST_ERRORS])[:FIRST_CHARS]
+    return {"title": f"the {name} failed", "severity": "major", "gap": f"`{check['command']}` failed:\n{first}", "cite": "", "where": check["command"]}
+
+
 def collect(root, slug, epic, run):
     """Run the epic's tests, lint, type check, misuse tests and auto journeys, each group in its own throwaway copy at
-    the epic's last commit, and write the run's results (CT-3, FR-3, FR-6, FR-7, FR-11, FR-12). Returns the lines to print.
-    ValueError when the epic isn't finished. ponytail: the findings of CT-4, CT-6 and a failed check go to CT-20 once it exists."""
+    the epic's last commit, write the run's results and send the findings of CT-4, CT-6 and a failed check to the ledger
+    (CT-3, FR-3, FR-6, FR-7, FR-11, FR-12, FR-42). Returns the lines to print. ValueError when the epic isn't finished."""
     from nio import jury
     root = Path(root)
     jury.epic_gate(root, slug, f"implementation-{epic}")
     cfg = records.config(root)
     t, limit = cfg.get("tests") or {}, (cfg.get("jury") or {}).get("run_timeout")
-    commit = commit_of(root, slug, epic)
+    commits = commits_of(root, slug, epic)
+    commit, base = commits[0], parent_of(root, commits[-1])
 
     def runs(commands):
         """in_copy with `tests.setup` first when set; its own entry is dropped (a failed setup fails what follows)."""
@@ -310,5 +331,9 @@ def collect(root, slug, epic, run):
     results = {**load(root, run), "commit": commit, "tests": tests, "checks": runs([t.get("lint"), t.get("typecheck")]),
                "attacks": attacks, "journeys": journeys_out}
     save(root, run, results)
+    named = zip(("lint check", "type check"), results["checks"])
+    jury.record_cli(root, slug, f"implementation-{epic}", [
+        *phantoms(root, [x for x in implement.tasks_of(root, slug) if x["epic"] == epic], base, commit), *tampering(root, base, commit),
+        *[check_finding(name, c) for name, c in named if c["result"] == "failed"]])
     return [str(path(root, run).relative_to(root))] + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"]
