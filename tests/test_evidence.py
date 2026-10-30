@@ -890,6 +890,33 @@ def test_the_dropped_lens_is_named_in_the_verdict():
     print("ok")
 
 
+def test_a_lens_isn_t_dropped_without_the_human():
+    import subprocess
+    import sys
+    from nio import jury
+    root = capped()  # the plan holds five runs, the cap is four, and no pick is recorded
+    four = ["conformance", "correctness", "security", "adversary"]
+    jury_dir = root / ".nio/runs/R-1/jury"
+    jury_dir.mkdir(parents=True)
+    for lens in four:  # four lens outputs, the fifth lens (risk-rollback) never reports
+        (jury_dir / f"{GATE}-{lens}.md").write_text(
+            f'---\nlens: {lens}\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+            "## Reasoning\nChecked.\n\n## Findings\nnone\n")
+    for expect in ([], ["risk-rollback"], four, four + ["risk-rollback"]):
+        args = [sys.executable, "-c", "from nio.cli import main; main()", "jury", "collect", "s", GATE, "--run", "R-1"]
+        for lens in expect:
+            args += ["--expect", lens]
+        out = subprocess.run(args, cwd=root, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60)
+        assert out.returncode != 0 and "--pick" in out.stderr and "pick" in out.stderr, (expect, out.returncode, out.stderr)
+        assert "invalid choice" not in out.stderr, out.stderr
+    led = jury.load(root, "s", GATE)
+    assert not led["collected"] and not led["findings"], "a refused collect merged outputs"
+    assert "picked" not in led and "dropped" not in led, led
+    outcome, reasons, _ = jury.compose(led, "no version judged yet")
+    assert outcome != "approved", (outcome, reasons)
+    print("ok")
+
+
 # --- T-14: a lens's pack (CT-9, CT-5, CT-10, AC-10, AC-16, AC-24, AC-25) ---
 
 PACK_LENSES = ("conformance", "correctness", "security")  # a hint is in every lens's pack, whichever lens
@@ -1598,6 +1625,39 @@ def test_no_matches_section_leaves_each_ac_with_a_finding_and_the_epic_unapprove
     jury.collect(root, "s", GATE, "R-1")
     missing_for([f for f in gate_findings(root, cli=True) if f["severity"] == "blocker"], "AC-1", "AC-2")  # SC-1: evidence or a finding
     assert composed(root)[0] != "approved", composed(root)
+    print("ok")
+
+
+# --- T-20: refuse a lens output the human didn't pick (CT-8, AC-22, FR-16) ---
+
+def test_a_lens_the_human_didn_t_pick_is_refused():
+    from nio import jury
+    root = capped()
+    four = ["conformance", "correctness", "security", "adversary"]
+    jury.plan(root, "s", GATE, pick=",".join(four))  # the human picks four; risk-rollback is dropped
+    assert jury.load(root, "s", GATE)["dropped"] == ["risk-rollback"], jury.load(root, "s", GATE)
+    jury_dir = root / ".nio/runs/R-1/jury"
+    jury_dir.mkdir(parents=True)
+
+    def write(lens):
+        (jury_dir / f"{GATE}-{lens}.md").write_text(
+            f'---\nlens: {lens}\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+            "## Reasoning\nChecked.\n\n## Findings\nnone\n")
+
+    write("risk-rollback")  # a dropped lens's output, which the human never picked
+    try:
+        jury.collect(root, "s", GATE, "R-1")
+        raise AssertionError("collect took a lens output from a lens the human dropped")
+    except ValueError as e:
+        assert "risk-rollback" in str(e), e
+    led = jury.load(root, "s", GATE)
+    assert not led["collected"] and not led["findings"], "a refused lens output reached the ledger"
+    (jury_dir / f"{GATE}-risk-rollback.md").unlink()
+    for lens in four:
+        write(lens)
+    jury.collect(root, "s", GATE, "R-1")  # the picked lenses still collect
+    led = jury.load(root, "s", GATE)
+    assert {k.split("/")[-1] for k in led["collected"]} == {f"{GATE}-{x}.md" for x in four}, led["collected"]
     print("ok")
 
 

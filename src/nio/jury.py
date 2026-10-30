@@ -509,6 +509,10 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         led = load(root, slug, gate)
         if "picked" not in led and any("over the cap" in x for x in plan(root, slug, gate)[0]):
             raise ValueError(f"{gate} plans more runs than the cap: record the human's pick first (nio jury plan {slug} {gate} --pick <lens,lens>)")
+        for path in sorted((root / ".nio/runs" / run / "jury").glob(f"{gate}-*.md")):  # T-20: a lens the human didn't pick is refused (FR-16)
+            lens = re.sub(r"-\d+$", "", path.stem[len(gate) + 1:])  # an escalation juror (-2, -3) counts as its lens
+            if "picked" in led and lens != "refuter" and lens not in led["picked"]:
+                raise ValueError(f"{path.name}: lens {lens} was not picked for {gate} (picked: {', '.join(led['picked'])})")
         # a round judges the epic's last commit; the cites are checked against the spec and contracts (CT-12)
         commit = evidence.commits_of(root, slug, epic)[0]
         text = ground = "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in ("spec.md", "contracts.md")) if p.exists())
