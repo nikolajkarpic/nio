@@ -159,6 +159,46 @@ def phantoms(root, tasks, base, head):
     return out
 
 
+TEST_DEF = re.compile(r"^\s*(?:async\s+)?def\s+(test\w*)|^\s*(?:it|test|describe)(?:\.\w+)?\(\s*['\"`]([^'\"`]+)")
+SKIP = re.compile(r"pytest\.mark\.skip|pytest\.skip\(|unittest\.skip|\bskipTest\(|\.skip\(|\bx(?:it|test|describe)\(|@Disabled|#\[ignore\]")
+
+
+def tests_in(root, rev, f):
+    """{test name: count of skip markers on it}: its decorators and body, or the skip call on its own line."""
+    text = records.git(root, "show", f"{rev}:{f}", full=True)
+    out, pending, cur = {}, 0, None
+    for line in text[1].splitlines() if not text[0] else []:
+        s = len(SKIP.findall(line))
+        if m := TEST_DEF.match(line):
+            cur = m[1] or m[2]
+            out[cur] = out.get(cur, 0) + pending + s
+            pending = 0
+        elif line.lstrip().startswith("@"):
+            pending += s
+        elif cur:
+            out[cur] += s
+    return out
+
+
+def tampering(root, base, head):
+    """[finding]: one major finding per test the epic's diff deletes or newly skips (CT-6, FR-10). Marked `tampering`.
+    ponytail: a renamed test reads as a deleted one; skip markers are regexes per known runner, not parsed."""
+    out = []
+    for line in records.git(root, "diff", "--name-status", "--no-renames", base, head):
+        status, _, f = line.partition("\t")
+        if not re.search(r"(^|[/_.-])tests?([/_.-]|$)|\.(test|spec)\.", f) or status == "A":
+            continue
+        before, after = tests_in(root, base, f), tests_in(root, head, f)
+        for name, n in before.items():
+            if name not in after:
+                out.append({"title": f"test tampering: {name} in {f} is deleted", "severity": "major", "tampering": True,
+                            "gap": f"the diff deletes the test {name} from {f}", "cite": "", "where": f})
+            elif after[name] > n:
+                out.append({"title": f"test tampering: {name} in {f} is skipped", "severity": "major", "tampering": True,
+                            "gap": f"the diff adds a skip to the test {name} in {f}", "cite": "", "where": f})
+    return out
+
+
 def collect(root, slug, epic, run):
     """Run the epic's tests, lint, type check, misuse tests and auto journeys, each group in its own throwaway copy at
     the epic's last commit, and write the run's results (CT-3, FR-3, FR-6, FR-7, FR-11, FR-12). Returns the lines to print.

@@ -526,6 +526,36 @@ def test_it_is_flagged_as_dead_code():
     print("ok")
 
 
+# --- T-7: test tampering (CT-6, AC-11, AC-12) ---
+
+def tampering(root, base, head):
+    e = evidence()
+    assert hasattr(e, "tampering"), "evidence.tampering doesn't exist yet"
+    found = e.tampering(root, base, head)
+    for f in found:
+        assert f["severity"] == "major", f
+    return found
+
+
+def test_it_is_flagged_as_test_tampering():
+    tests = "def test_keeps():\n    assert 1\n\n\ndef test_doomed():\n    assert 2\n"
+    root, base, head = phantom_repo({"tests/test_app.py": tests}, [("T-1", {"tests/test_app.py": tests.split("\n\n\n")[0] + "\n"})])
+    found = tampering(root, base, head)
+    assert len(naming(found, "tampering", "test_doomed")) == 1, found
+    assert not naming(found, "test_keeps"), found
+    print("ok")
+
+
+def test_it_is_flagged_as_test_tampering_again():
+    tests = "def test_keeps():\n    assert 1\n\n\ndef test_shaky():\n    assert 2\n"
+    skipped = tests.replace("def test_shaky", "@pytest.mark.skip\ndef test_shaky")
+    root, base, head = phantom_repo({"tests/test_app.py": tests}, [("T-1", {"tests/test_app.py": skipped})])
+    found = tampering(root, base, head)
+    assert len(naming(found, "tampering", "test_shaky")) == 1, found
+    assert not naming(found, "test_keeps"), found
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
