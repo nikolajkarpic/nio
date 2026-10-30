@@ -563,6 +563,14 @@ def collect(root, slug, gate, run, expect=(), tier=None):
             led["collected"][f"{run}/{refuter.name}"] = sha
             out += refute(led, refuter)
     save(root, led)
+    for path in new if impl else []:  # the conformance lens's matches are joined to the results (CT-21)
+        matches = re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", path.read_text(), re.M | re.S)
+        # ponytail: an output with no `## Matches` heading at all claims nothing, so it joins nothing
+        if matches and path.stem == f"{gate}-conformance" and led["jurors"][path.stem]["valid"]:
+            results = evidence.load(root, run)
+            evidence.join(root, slug, epic, matches[1].splitlines(), results)
+            evidence.save(root, run, results)
+    led = load(root, slug, gate) if impl else led
     pending = [f for f in led["findings"] if f["validation"] == "pending" and f["status"] in ("open", "disposed")]
     if pending:
         out += ["", f"## Refuter batch: confirm or refute each, in .nio/runs/{run}/jury/{gate}-refuter.md", ""]
@@ -745,7 +753,7 @@ def record_cli(root, slug, gate, findings):
         led["findings"].append({
             "id": out[-1], "title": f["title"], "kind": "gap", "severity": f["severity"], "cites": [c.strip() for c in f["cite"].split(",") if c.strip()],
             "evidence": "observed", "quotes": [], "fix": f.get("fix", ""), "gap": f["gap"], "where": f["where"], "tampering": bool(f.get("tampering")),
-            "sources": [{"juror": "cli", "lens": "cli", "situation": f["gap"], "severity": f["severity"], "round": led["round"]}],
+            "sources": [{"juror": "cli", "lens": "cli", "situation": f.get("situation", f["gap"]), "severity": f["severity"], "round": led["round"]}],
             "validation": "confirmed", "reason": "the CLI's own check; no refuter", "status": "open", "disposition": "", "by": "", "note": "",
             "baseline": "new", "rounds": 0, "first_round": led["round"], "last_round": led["round"]})
     if out:
