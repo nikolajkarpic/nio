@@ -62,7 +62,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | --- | --- | --- |
 | [`@nio:remember`](skills/remember/SKILL.md) | ✅ built | Writes memory records: decisions, lessons, change requests and jury verdicts. Dedups against existing records, and lets any agent leave candidates that a single memory writer promotes at the end of a run. |
 | [`@nio:recall`](skills/recall/SKILL.md) | ✅ built | Looks memory up in three steps (find IDs, follow links, read at most 5 records) and tells the agent how to act on each record's standing: follow it, verify it, or ask the human. |
-| `@nio:install` | 🗺️ planned | Asks which subscriptions you have, checks each host CLI and writes the config. |
+| [`@nio:install`](skills/install/SKILL.md) | ✅ built | Installs the git hooks and agents, and asks whether stage commands run without permission prompts, for you or the whole repo. Still planned: asking which subscriptions you have and writing the config. |
 | `@nio:onboard` | 🗺️ planned | Captures what the project is and what you want before any other stage runs. |
 | [`@nio:spec`](skills/spec/SKILL.md) | 🚧 draft stage built | Records your words verbatim, then the spec-drafter agent (Opus) writes a first spec that never guesses: what you didn't say becomes a `[default]` proposal or an open point, and every sentence you wrote is traced to spec IDs. The grill settles it next. |
 | [`@nio:grill`](skills/grill/SKILL.md) | ✅ built | Settles a draft spec one question at a time: looks facts up, asks only decisions (3 options, one recommended), writes in what follows, makes the small calls as `[agent]` for you to review, and stops when `nio check spec --gate` passes and you confirm. You can delegate a session to an agent. Ending early defers what's unsettled to `## Deferred`; the jury turns each deferred point into a finding only you close. |
@@ -109,6 +109,7 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio get <ID>...` | Print records by ID |
 | `nio pack "<work>" [--path F] [--ac A] [--diff REF] [--run R]` | The memory that applies to a piece of work, for an agent to read before it starts |
 | `nio hooks` | Install git hooks: refresh the index and agent files after pulls, checkouts and rebases; run the CI check before commits and pushes |
+| `nio allow --personal\|--shared` | Let agents run stage commands without a permission prompt on Claude Code, in the gitignored or the committed settings file. The human's decisions, `nio flow red` and `green` still prompt |
 | `nio agents sync` | Render the agent cards (shipped, `~/.nio/agents/`, `.nio/agents/`) as `.claude/agents/nio-*` and `.codex/agents/nio-*`, with each tier's model from config |
 | `nio agents verify` | Check that recent Claude runs of `nio-*` agents used the model their tier maps to |
 | `nio jury plan <slug> <gate> [--add lens:reason]` | The lenses a gate needs and why, the risk tier, the run budget; fails if the spec isn't gated or a card is missing |

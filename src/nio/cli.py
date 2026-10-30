@@ -58,6 +58,10 @@ def main():
     k.add_argument("--diff", metavar="REF", help="juror pack: add the files changed since REF and judge against the records")
     k.add_argument("--run", help="also save the pack to .nio/runs/<run>/packs/")
     sub.add_parser("hooks", help="install git hooks: refresh the index and agent files after pulls, checkouts and rebases; check memory before commits and pushes")
+    al = sub.add_parser("allow", help="let agents run stage commands without a prompt on Claude Code; the human's decisions still prompt")
+    scope = al.add_mutually_exclusive_group(required=True)
+    scope.add_argument("--personal", action="store_true", help="this clone only: .claude/settings.local.json, gitignored")
+    scope.add_argument("--shared", action="store_true", help="everyone on the repo: .claude/settings.json, to commit")
     sub.add_parser("status", help="index freshness: indexed commit against HEAD, model, store")
     r = sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
     r.add_argument("slug", nargs="?", help="the effort the run serves (.nio/specs/<slug>/)")
@@ -220,6 +224,11 @@ def main():
                 print(f"saved {pack.save(root, a.run, name, text).relative_to(root)}", file=sys.stderr)
             query.log(root, "pack", name, ids, text)
             print(text, end="")
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+    elif a.cmd == "allow":
+        try:
+            print(f"wrote {hooks.allow(root, a.shared).relative_to(root)}; other hosts keep their own prompts")
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "hooks":

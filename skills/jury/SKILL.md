@@ -91,7 +91,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    | `human`, the final fix check flagged | show every flagged finding in one message, each with fix, accept as risk, or overrule (it is already fixed: the human says why, recorded with `overruled --by human`), saying a confirmed blocker may be among them and that no further check follows; record each with `nio jury dispose`, then check again: the jury then ends |
    | `human`, other reasons | show each reason with its findings in plain words (their IDs in `Refs:`), and wait for the human |
    | `rejected` | dispose of each open finding (step 7), then re-review (step 8) |
-   | `approved` | tell the human the outcome and the next stage (the plan); show the dispositions you made as a long list (see the block above), with the verdict record and their IDs in `Refs:` |
+   | `approved` | tell the human the outcome and give the next step (see When to stop); show the dispositions you made as a long list (see the block above), with the verdict record and their IDs in `Refs:` |
 
    Show refuted findings too, in plain words with the refuter's reason; never hide them. Show the notes `nio jury
    check` lists (findings below blocker raised after the first review) as one line each; they need no ruling.
@@ -155,7 +155,7 @@ the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approv
 ## When to stop
 
 Stop when the outcome is `approved` and the human has been told, or when the outcome is `human` and the decision is
-theirs. Every ruling is recorded by `--record`, once per round.
+theirs. Every ruling is recorded by `--record`, once per round. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the plan after the spec gate, the tasks after the plan gate, the implement stage after the tasks gate.
 
 Only the human can close a gate the jury hasn't approved, for example when re-review rounds keep finding new edge
 cases: `nio jury check <slug> spec --record --human "<their reason>"` records outcome `human` with that reason. Offer it as an option saying what it costs (the record shows the gate closed by the human, not approved by the jury).
