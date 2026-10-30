@@ -1,7 +1,7 @@
 {
   "gate": "spec",
   "subject": "2026-10-27-implementation-jury",
-  "round": 3,
+  "round": 4,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -21,7 +21,8 @@
     "R-261027-xyvc/spec-consistency.md": "a495736b2b75d913db638433ff533b24fe40a4087e3718abd799151aa57066d1",
     "R-261027-xyvc/spec-logic.md": "74ae14e9dcd88072dc5cc549bfda8c07238ceffe6e60603be727ccaf96170a7b",
     "R-261027-xyvc/spec-scope.md": "56de94aff04612304dd9f9e691254afcd77b03d9243e515b836b58104936bfed",
-    "R-261027-xyvc/spec-testability.md": "7f8c22b4ff16a4e014425672f985d93befa83985649ad6a3f05bf91f43b09b96"
+    "R-261027-xyvc/spec-testability.md": "7f8c22b4ff16a4e014425672f985d93befa83985649ad6a3f05bf91f43b09b96",
+    "R-261030-dodj/spec-consistency.md": "fe61c24b694022a55311a7df2709f3429b687cde88e0eaf21201baba04a9fb40"
   },
   "jurors": {
     "spec-adversary": {
@@ -38,15 +39,13 @@
     "spec-consistency": {
       "attempts": 2,
       "lens": "consistency",
-      "by": "juror / claude-code / haiku",
+      "by": "juror / claude-code / haiku-5-5",
       "context": "sufficient",
-      "valid": false,
-      "errors": [
-        "J-6 is not in the fix-check pack"
-      ],
-      "round": 3,
-      "version": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
-      "judged": 1
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "f33dd557169d51cc8d3e3a3d03b03addc4453c00",
+      "judged": 4
     },
     "spec-logic": {
       "attempts": 1,
@@ -350,14 +349,15 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "spec-fix",
       "by": "agent",
       "note": "AC-17: the missing-evidence findings come after the conformance lens; the CLI only records the crash",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 4
     },
     {
       "id": "J-8",
@@ -383,14 +383,15 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "spec-fix",
       "by": "agent",
       "note": "FR-21: gap type is its own field beside the lens output's kind",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 4
     },
     {
       "id": "J-9",
@@ -1009,7 +1010,7 @@
       "last_round": 1
     }
   ],
-  "outcome": "human",
+  "outcome": "approved",
   "recorded": [
     [
       1,
@@ -1018,16 +1019,16 @@
     [
       3,
       "human"
+    ],
+    [
+      4,
+      "approved"
     ]
   ],
   "versions": {
     "1": "2f07a30d6668cd313d2d29cb79f36bf55707ec48",
     "2": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
-    "3": "fe88aa0fb9a81dc623738830ff55d4bc8606f904"
-  },
-  "closed": [
-    3,
-    "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
-    "All findings fixed; four lenses approved; consistency said fixed twice but its retry was rejected because another lens closed J-6 in the same round (pack bookkeeping bug)"
-  ]
+    "3": "fe88aa0fb9a81dc623738830ff55d4bc8606f904",
+    "4": "f33dd557169d51cc8d3e3a3d03b03addc4453c00"
+  }
 }
