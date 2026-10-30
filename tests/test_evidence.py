@@ -2774,6 +2774,14 @@ def test_flow_done_on_the_last_epic_writes_the_pass_line_and_prints_merge():
     print("ok")
 
 
+def test_the_cli_prints_the_pack():
+    root = pack_repo({})
+    start(root)
+    done = nio(root, "jury", "pack", "s", GATE, "--lens", "conformance", "--run", "R-1")
+    assert done.returncode == 0 and "DIFF_MARK = 42" in done.stdout, done.stdout + done.stderr
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
