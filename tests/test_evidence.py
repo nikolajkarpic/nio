@@ -1385,6 +1385,156 @@ def test_a_tampering_lens_finding_that_merges_stays_tampering():
     print("ok")
 
 
+# --- T-18: the conformance lens's matches are joined to the results (CT-21, CT-3, CT-7, AC-4, AC-5, AC-6, AC-17, AC-51) ---
+
+JOIN_SPEC = PACK_SPEC.replace("AC-3", "AC-2").replace("AC3_", "AC2_")
+JOIN_SUITE = "python3 -m unittest discover -s tests -t ."
+JOIN_TESTS_MD = "---\nslug: s\nretired: []\n---\n# Tests: s\n\n## Tests\n\n" + "".join(
+    f"### TC-{n} Checks {name} (AC-1; unit) [derived: AC-1]\n- File: `tests/test_calc.py:CalcTest.{name}` (new)\n- Covers: CT-1\n"
+    "- Setup: x\n- Action: y\n- Assert: z\n\n" for n, name in enumerate(
+        ("test_adds_two_numbers", "test_multiplies_two_numbers", "test_subtracts_two_numbers", "test_lists_the_items"), 1))
+CALC = '''import unittest
+
+
+class CalcTest(unittest.TestCase):
+    def test_adds_two_numbers(self):
+        """Adding two numbers gives their sum."""
+        self.assertEqual(1 + 1, 2)
+
+    def test_multiplies_two_numbers(self):
+        """Multiplying two numbers gives their product."""
+        self.assertEqual(2 * 2, {product})
+
+    def test_subtracts_two_numbers(self):
+        """Subtracting a number from another gives the difference."""
+        self.assertEqual(3 - 1, {difference})
+
+    def test_lists_the_items(self):
+        """Lists the items of an order."""
+        items = [1, 2]
+        len(items)
+'''
+
+
+def join_repo(product=4, difference=2, header=""):
+    """A finished epic E-1 (T-1 serves AC-1, T-2 serves AC-2) whose tests/test_calc.py holds four tests, all named in
+    tests.md and none carrying a spec ID: multiplies passes or fails by `product`, subtracts by `difference` (a wrong
+    number makes it fail), adds always passes, and lists has no assertion. `header` goes above the file. (root, the
+    file's text)"""
+    root = epic_repo(["T-1", "T-2"])
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    d = root / ".nio/specs/s"
+    (d / "spec.md").write_text(JOIN_SPEC)
+    (d / "tests.md").write_text(JOIN_TESTS_MD)
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": JOIN_SUITE}}))
+    (root / ".gitignore").write_text(".nio/runs/\n")
+    source = header + CALC.format(product=product, difference=difference)
+    (root / "tests").mkdir()
+    (root / "tests/__init__.py").write_text("")
+    (root / "tests/test_calc.py").write_text(source)
+    (root / "a.py").write_text("a = 1\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-1: One")
+    (root / "b.py").write_text("b = 1\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Two")
+    return root, source
+
+
+def def_line(source, name):
+    return next(n for n, x in enumerate(source.splitlines(), 1) if re.match(rf"\s*def {name}\(", x))
+
+
+def matches_out(root, *lines):
+    """The conformance lens's fixed output: only `## Matches` lines and no findings."""
+    path = root / f".nio/runs/R-1/jury/{GATE}-conformance.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f'---\nlens: conformance\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+                    "## Reasoning\nRead the tests.\n\n## Matches\n" + "".join(f"- {x}\n" for x in lines) + "\n## Findings\nnone\n")
+
+
+def joined(root, *lines):
+    """The gate collects evidence, then the lens's matches are collected. (the run's results, the blocker findings)"""
+    from nio import jury
+    start(root)
+    matches_out(root, *lines)
+    jury.collect(root, "s", GATE, "R-1")
+    return evidence().load(root, "R-1"), [f for f in gate_findings(root) if f["severity"] == "blocker"]
+
+
+def missing_for(blockers, *acs):
+    """Exactly one blocker per AC in `acs`, each a CLI missing-evidence finding citing it, never sent to the refuter."""
+    assert sorted(c for f in blockers for c in f["cites"]) == sorted(acs), [(f["title"], f["cites"]) for f in blockers]
+    for f in blockers:
+        assert f["gap"] == "missing" and len(f["cites"]) == 1, f
+        assert f["sources"][0]["lens"] == "cli" and f["validation"] == "confirmed" and f["status"] == "open", f
+
+
+def test_the_results_list_each_ac_with_that_test_s():
+    root, source = join_repo(difference=5)  # a third test of the same suite fails, so the suite as a whole fails
+    assert "AC-" not in source, "the tests carry spec IDs"
+    adds, times = def_line(source, "test_adds_two_numbers"), def_line(source, "test_multiplies_two_numbers")
+    results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{adds}", f"AC-2 -> tests/test_calc.py:{times}")
+    assert results["evidence"] == [{"ac": "AC-1", "file": "tests/test_calc.py", "line": adds, "result": "passed"},
+                                   {"ac": "AC-2", "file": "tests/test_calc.py", "line": times, "result": "passed"}], results["evidence"]
+    assert not blockers, [f["title"] for f in blockers]
+    print("ok")
+
+
+def test_a_missing_evidence_finding_is_recorded_for_it():
+    root, source = join_repo()
+    results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{def_line(source, 'test_adds_two_numbers')}")  # AC-2 has no test
+    missing_for(blockers, "AC-2")
+    assert not [x for x in results["evidence"] if x["ac"] == "AC-2" and x["result"] == "passed"], results["evidence"]
+    print("ok")
+
+
+def test_a_missing_evidence_finding_is_recorded_for_it_again():
+    root, source = join_repo(product=5)  # test_multiplies fails; the suite's other tests pass
+    adds, times = def_line(source, "test_adds_two_numbers"), def_line(source, "test_multiplies_two_numbers")
+    results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{adds}", f"AC-2 -> tests/test_calc.py:{times}")
+    missing_for(blockers, "AC-2")
+    assert "test_multiplies_two_numbers" in json.dumps(blockers[0]), f"the finding doesn't name the failing test: {blockers[0]}"
+    assert results["evidence"] == [{"ac": "AC-1", "file": "tests/test_calc.py", "line": adds, "result": "passed"},
+                                   {"ac": "AC-2", "file": "tests/test_calc.py", "line": times, "result": "failed"}], results["evidence"]
+    print("ok")
+
+
+def test_every_ac_is_recorded_without_passing_evidence_the_cli():
+    root, source = join_repo(header="import no_such_module_for_crash\n")  # the suite dies on import; no test runs
+    adds, times = def_line(source, "test_adds_two_numbers"), def_line(source, "test_multiplies_two_numbers")
+    results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{adds}", f"AC-2 -> tests/test_calc.py:{times}")
+    missing_for(blockers, "AC-1", "AC-2")
+    assert "no_such_module_for_crash" in json.dumps(results), f"the crash output is not in the results: {json.dumps(results)[:500]}"
+    assert [x["ac"] for x in results["evidence"]] == ["AC-1", "AC-2"] and not [x for x in results["evidence"] if x["result"] == "passed"], results["evidence"]
+    print("ok")
+
+
+def test_the_packs_hold_a_hint_naming_it_and_a():
+    root, source = join_repo()
+    adds, lists = def_line(source, "test_adds_two_numbers"), def_line(source, "test_lists_the_items")
+    results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{adds}", f"AC-2 -> tests/test_calc.py:{lists}")
+    ran = [t for t in results["tests"] if t["name"].endswith("test_lists_the_items")]
+    assert len(ran) == 1 and ran[0]["result"] == "passed", f"the no-assertion test should have run and passed: {results['tests']}"
+    for lens in PACK_LENSES:
+        assert has_line(pack(root, lens), "test_lists_the_items", "no assertion"), f"no hint naming the test in the {lens} pack"
+    missing_for(blockers, "AC-2")  # it passed, but a test that asserts nothing is not evidence
+    assert [x["result"] for x in results["evidence"] if x["ac"] == "AC-2"] != ["passed"], results["evidence"]
+    print("ok")
+
+
+def test_a_lens_cant_claim_a_pass():
+    root, source = join_repo(product=5)
+    times = def_line(source, "test_multiplies_two_numbers")
+    results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{times} (passed)", "AC-2 -> tests/test_ghost.py:3 (passed)")
+    missing_for(blockers, "AC-1", "AC-2")  # the second test is in no results: it didn't run
+    first, second = results["evidence"]
+    assert first == {"ac": "AC-1", "file": "tests/test_calc.py", "line": times, "result": "failed"}, first
+    assert second["ac"] == "AC-2" and second["result"] != "passed", second
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):

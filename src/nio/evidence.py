@@ -317,11 +317,22 @@ def collect(root, slug, epic, run):
     mis, rest = misuse(root, slug)
     suite = (runs([t.get("suite")]) if t.get("suite") else [{"result": "not configured", "output": "", "cut": 0}])[0]
     code_ok = suite["result"] == "passed"
-    # ponytail: a failed suite names a test as failed when its name is in the output, or when the runner can't be read
-    tests = [{"name": name, "file": file, "line": 0,
-              "result": "passed" if code_ok or (implement.runner(t.get("suite", "")) in implement.SUMMARY
-                                                and name.split(".")[-1] not in suite["output"]) else "failed"}
-             for file, name in rest]
+    # ponytail: a test is failed when a failing-test line of the runner's summary names it, never found in the output otherwise;
+    # a suite that crashed ran none, and a runner without a reader gives "unknown" (exit code and output stay in `suite`)
+    name = implement.runner(t.get("suite") or "")
+    fail, _ = implement.SUMMARY.get(name, (None, None))
+    failing = re.findall(fail, suite["output"], re.M) if fail else []
+    crashed = bool(implement.wrong_reason(name, 0 if code_ok else 1, suite["output"])) or "\ntimed out after" in suite["output"] \
+        or (fail is not None and suite["result"] != "passed" and not re.search(implement.SUMMARY[name][1], suite["output"], re.M))
+    defs = {}
+    tests = []
+    for file, tname in rest:
+        short = tname.split(".")[-1]
+        line = defs.setdefault(file, asserts_in(root, commit, file)).get(short, (0,))[0]
+        result = ("unknown" if not fail else "didn't run" if crashed or not line
+                  else "failed" if any(re.search(rf"\b{re.escape(short)}\b", x) for x in failing)
+                  else "passed" if code_ok or failing else "unknown")
+        tests.append({"name": tname, "file": file, "line": line, "result": result})
     attack_cmds = [one_test(t.get("suite"), f, n) for f, n in mis]
     attacks = runs(attack_cmds)
     for a, (f, n) in zip(attacks, mis):
@@ -334,7 +345,7 @@ def collect(root, slug, epic, run):
         ok = all(r["result"] == "passed" and matched(e, r["output"]) for r, (_, e) in zip(rs, ss))
         journeys_out.append({"command": " && ".join(c for c, _ in ss), "result": "passed" if ok else "failed",
                              "output": "\n".join(r["output"] for r in rs), "cut": sum(r["cut"] for r in rs)})
-    results = {**load(root, run), "commit": commit, "tests": tests, "checks": runs([t.get("lint"), t.get("typecheck")]),
+    results = {**load(root, run), "commit": commit, "tests": tests, "suite": suite, "checks": runs([t.get("lint"), t.get("typecheck")]),
                "attacks": attacks, "journeys": journeys_out, "hints": hints(root, base, commit)}
     save(root, run, results)
     named = zip(("lint check", "type check"), results["checks"])
@@ -343,6 +354,37 @@ def collect(root, slug, epic, run):
         *[check_finding(name, c) for name, c in named if c["result"] == "failed"]])
     return [str(path(root, run).relative_to(root))] + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"]
+
+
+def join(root, slug, epic, matches, results):
+    """Join the conformance lens's `AC-n -> file:line` lines to the results (CT-21, FR-4, FR-5, FR-39). Sets
+    `results["evidence"]`, one entry per match and one per AC with none, with the file, line and result read from the
+    results, never from the lens; the caller saves them. Sends one blocker missing-evidence finding per AC with no
+    passing entry to the ledger, and returns them.
+    ponytail: a match counts only when its line is a test's own `def` line in the results."""
+    from nio import jury
+    acs = sorted({s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"] if s.startswith("AC-")},
+                 key=lambda a: int(a[3:]))
+    found = [(m[1], m[2], int(m[3])) for x in matches if (m := re.search(r"(AC-\d+)\s*->\s*`?([^\s:`]+):(\d+)", x))]
+    hinted = {(h["file"], h["line"]) for h in results.get("hints") or [] if h["kind"] == "test with no assertion"}
+    tests = {(t["file"], t["line"]): t for t in results.get("tests") or []}
+    entries = []
+    for ac in acs:
+        for _, file, line in [m for m in found if m[0] == ac] or [(ac, "", 0)]:
+            t = tests.get((file, line))
+            result = "no match" if not file else "didn't run" if not t else "no assertion" if t["result"] == "passed" and (file, line) in hinted else t["result"]
+            entries.append({"ac": ac, "file": t["file"] if t else "", "line": t["line"] if t else 0, "result": result,
+                            "_name": t["name"] if t else ""})
+    results["evidence"] = [{k: v for k, v in e.items() if k != "_name"} for e in entries]
+    out = []
+    for ac in acs:
+        mine = [e for e in entries if e["ac"] == ac]
+        if not any(e["result"] == "passed" for e in mine):
+            why = "; ".join(f"{e['_name'] or e['file'] or 'no test'} {e['result']}" for e in mine)
+            out.append({"title": f"{ac} has no passing evidence", "severity": "blocker", "gap": "missing", "cite": ac, "where": mine[0]["file"] or ac,
+                        "situation": f"no passing test proves {ac}: {why}", "fix": f"add or fix a test that proves {ac}"})
+    jury.record_cli(root, slug, f"implementation-{epic}", out)
+    return out
 
 
 def known_tests(root, slug):
@@ -451,7 +493,9 @@ def pack(root, slug, gate, lens, run):
     serves = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
     touched = serves | {c for c, f in bound.items() if f in names}
     out += ["## Diff", "", *diff, "", "## Items the diff touches", "", *[text[i] + "\n" for i in text if i in touched],
-            "## Results", "", json.dumps({**{k: v for k, v in results.items() if k != "hints"}, "requests": asked(results)}, indent=2, ensure_ascii=False), "",
+            "## Results", "",
+            *(["Per-test results are unknown: the suite's runner can't be read per test; the exit code and output are in `suite`.", ""]
+              if any(t["result"] == "unknown" for t in results.get("tests") or []) else []), json.dumps({**{k: v for k, v in results.items() if k != "hints"}, "requests": asked(results)}, indent=2, ensure_ascii=False), "",
             "## Hints (not findings: raise one only if you confirm it)", "", *([
                 f"- {h['kind']}{' (interpretive)' if h['interpretive'] else ''}: {h['name']} at {h['file']}:{h['line']}, {h['note']}"
                 for h in results.get("hints") or []] or ["None."])]
