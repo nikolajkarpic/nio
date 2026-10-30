@@ -1054,6 +1054,11 @@ def check(root, slug, gate, record=False, human=""):
         elif not led.get("list"):
             led["list"] = {"round": led["round"], "ids": listed, "final": None, "flagged": []}
     save(root, led)
+    if record and outcome != "approved" and gate.startswith("implementation"):  # approved: `nio flow done` makes its commit (CT-17)
+        from nio import flow
+        with flow.lock(root, slug):
+            if flow.uncommitted(root, slug, gate):
+                lines += flow.commit_gate(root, slug, "implementing", [], None, None, [], gate, f"nio: jury {gate} round {led['round']}")[1]
     return outcome, lines
 
 
@@ -1078,6 +1083,15 @@ def change_for(root, slug, gate, fid):
         if meta.get("type") == "change" and f"/{slug}/spec.md" in str(meta.get("against")) and named(text, fid, r"\d") and named(text, gate, r"[\w-]"):
             return path, meta
     return None, {}
+
+
+def gate_changes(root, slug, gate):
+    """The change requests against `slug`'s spec that name this epic gate, as paths from the root; [] at any other gate."""
+    if not gate.startswith("implementation"):
+        return []
+    named = re.compile(rf"(?<![\w-]){gate}(?![\w-])")
+    return [str(p.relative_to(root)) for p in sorted((root / ".nio/memory").rglob("C-*.md"))
+            if f"/{slug}/spec.md" in str(records.parse(p)[0].get("against")) and named.search(p.read_text())]
 
 
 def raise_change(root, slug, gate, finding):
