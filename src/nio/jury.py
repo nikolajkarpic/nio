@@ -119,6 +119,8 @@ def parse_lens(path, gate, slug):
         if bad:
             errs.append(f"{m[1]}: " + "; ".join(bad))
             continue
+        if f.get("run"):  # joined: two `run:` lines aren't a TC, so the human hears of them, where keeping one would lose one
+            one["run"] = ", ".join(f["run"])
         if one["evidence"] == "inferred" and one["severity"] == "blocker":
             one["severity"] = "major"  # an inferred finding can't block on its own
         findings.append(one)
@@ -659,6 +661,8 @@ def same(g, f):
 
 def add(led, f, juror, lens, rnd, text, human="", review=False):
     source = {"juror": juror, "lens": lens, "situation": f["situation"], "severity": f["severity"], "round": rnd}
+    if f.get("run"):  # on the source: two jurors on one finding may each ask for a run, and each round has its own (CT-11)
+        source["run"] = f["run"]
     # same kind and the same cited IDs; near-duplicates are the refuter's `same-as`. One juror's findings in one round
     # are distinct problems by construction, so they never merge with each other.
     match = next((g for g in led["findings"] if g["status"] != "merged" and same(g, f)

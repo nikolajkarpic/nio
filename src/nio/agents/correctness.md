@@ -26,7 +26,7 @@ The context pack from the jury skill, and nothing else:
 - Does each test assert something the code could get wrong? An assert that passes whatever the code does is a finding.
 - Stay on the epic's diff and what it calls; do not review untouched code.
 
-Each finding has `gap` (what is wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (the command that would show it, for the human; you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
+Each finding has `gap` (what is wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
 
 ## Stop when
 

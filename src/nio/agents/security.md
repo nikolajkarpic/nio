@@ -45,7 +45,7 @@ The context pack from the jury skill, and nothing else:
 - Read the epic's diff for each place an actor is checked, a secret is issued or stored, or personal data is read, returned, logged or deleted.
 - Does the code let an actor the spec forbids reach that data or action, through a list, a search, an export, an error message or a log?
 - Does the code return, log or keep a secret or personal data the spec says to keep from that caller, or delete data the spec says to keep?
-- Each finding has `gap` (what is wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (the command that would show it, for the human; you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
+- Each finding has `gap` (what is wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
 
 ## Output format
 

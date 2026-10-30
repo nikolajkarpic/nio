@@ -37,7 +37,7 @@ The context pack from the jury skill, and nothing else:
 - Read the epic's diff against the decisions in the pack: does the code contradict an `approved` or `current` decision, without a change request against it?
 - Does the code use a name for something that an earlier decision or the spec already names differently?
 - Does the code repeat an approach memory records as rejected, or a lesson's known failure?
-- Each finding has `gap` (what is wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (the command that would show it, for the human; you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
+- Each finding has `gap` (what is wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
 
 ## Output format
 
