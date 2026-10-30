@@ -556,6 +556,49 @@ def test_it_is_flagged_as_test_tampering_again():
     print("ok")
 
 
+# --- T-8: hints (CT-5, AC-10, AC-16) ---
+
+def hints(root, base, head):
+    e = evidence()
+    assert hasattr(e, "hints"), "evidence.hints doesn't exist yet"
+    found = e.hints(root, base, head)
+    for h in found:
+        assert {"kind", "file", "name", "line", "interpretive"} <= set(h), h
+        assert "severity" not in h, f"a hint is not a ledger finding: {h}"
+    return found
+
+
+def test_it_is_flagged_as_a_possible_stub_marked_interpretive():
+    src = "def hollow():\n    pass\n\n\ndef todo_only():\n    # TODO\n    ...\n\n\ndef real():\n    return 1\n"
+    root, base, head = phantom_repo({}, [("T-1", {"src/mod.py": src, "src/use.py": "hollow(); todo_only(); real()\n"})])
+    found = hints(root, base, head)
+    for name in ("hollow", "todo_only"):
+        mine = naming(found, name)
+        assert len(mine) == 1 and mine[0]["interpretive"] is True and mine[0]["file"] == "src/mod.py", found
+    assert not naming(found, "real"), found
+    print("ok")
+
+
+def test_it_is_flagged_not_passed():
+    # the only hit for `handler` outside its definition is a string, as with a dynamic call
+    root, base, head = phantom_repo({}, [("T-1", {"src/mod.py": "def handler():\n    return 1\n",
+                                                  "src/use.py": 'import mod\ngetattr(mod, "handler")()\n'})])
+    found = naming(hints(root, base, head), "handler")
+    assert len(found) == 1 and "uncertain" in json.dumps(found[0]).lower(), found
+    print("ok")
+
+
+def test_a_test_with_no_assertion_and_a_changed_assertion_are_flagged():
+    before = "def test_weak():\n    assert 1 == 1\n\n\ndef test_firm():\n    assert 2 == 2\n"
+    after = "def test_weak():\n    assert 1\n\n\ndef test_firm():\n    assert 2 == 2\n\n\ndef test_empty():\n    x = 1\n"
+    root, base, head = phantom_repo({"tests/test_app.py": before}, [("T-1", {"tests/test_app.py": after})])
+    found = hints(root, base, head)
+    assert len(naming(found, "test_empty")) == 1, found
+    assert len(naming(found, "test_weak")) == 1, found
+    assert not naming(found, "test_firm"), found
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
