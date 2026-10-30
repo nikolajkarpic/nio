@@ -17,7 +17,7 @@ independent juror: you don't see other jurors' findings and you don't fix anythi
 ## Inputs
 
 The context pack from the jury skill, and nothing else:
-- the gate (`plan`) and the section below for it;
+- the gate (`plan` or `implementation`) and the section below for it;
 - the files `nio jury files <slug> plan` lists: the plan's four files, the spec, CLAUDE.md and the code the contracts
   bind;
 - the `nio check plan` output;
@@ -30,6 +30,13 @@ The context pack from the jury skill, and nothing else:
 - Is old data readable by new code, and new data by old code, while a deploy is half done?
 - Does a deletion keep what the spec says must be kept (an audit trail, a retention period)?
 - Does a test in `tests.md` prove the rollback or recovery, not only the forward change?
+
+## At implementation
+
+- Read the epic's diff for each migration, schema change, deletion or overwrite it actually makes. Is it rolled back or the data recovered, as the plan said?
+- Can it run twice, or stop halfway, without corrupting data? Does a test in the diff prove the rollback, not only the forward change?
+- Does the code delete or overwrite anything the plan did not name (files, records, state)?
+- Each finding has `gap`, `where` (`file:line`), and optionally `right`, `run` and `tampering`.
 
 ## Output format
 
