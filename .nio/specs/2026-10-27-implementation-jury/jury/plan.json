@@ -1,7 +1,7 @@
 {
   "gate": "plan",
   "subject": "2026-10-27-implementation-jury",
-  "round": 3,
+  "round": 4,
   "tier": "medium",
   "expect": [
     "architecture-fit",
@@ -20,7 +20,11 @@
     "R-261030-vrcl/plan-risk-rollback.md": "963a02970fe112ff7c01b243c3fae51019536236365008611f2600edef2e80ef",
     "R-261030-vrcl/plan-test-proof.md": "acc73eb8adb3f47102e47b32cc0af67df7bae7ab4db45a5b1c18c5d131329c97",
     "R-261030-vrcl/plan-refuter.md": "667760fac4900d56204d3d2407dac843277d16d4babd7d7127ee9c6bc6b3d347",
-    "R-261030-tk6r/plan-architecture-fit.md": "3d4bf6bafb9a842aa8bf6ef5e79b6133d50449a74f4948543a1d7d19ebfd68b1"
+    "R-261030-tk6r/plan-architecture-fit.md": "3d4bf6bafb9a842aa8bf6ef5e79b6133d50449a74f4948543a1d7d19ebfd68b1",
+    "R-261030-ixxn/plan-architecture-fit.md": "bb8b60a1e364080b643da2222c238c99ee313bdde9e981e5dfefc894800676c2",
+    "R-261030-ixxn/plan-logic.md": "0fef1315c6a4927c91c2d2172f600e7eba823a9d2c65c7a49ec54bd3dba88a22",
+    "R-261030-ixxn/plan-risk-rollback.md": "8412371ccdb84ff5455d36c1b695efca7f1198796630b84184950fac14598689",
+    "R-261030-ixxn/plan-test-proof.md": "c822328723d56297ab109ae583ac9ca28e20d8ac464482ca63ea845e59461ce2"
   },
   "jurors": {
     "plan-architecture-fit": {
@@ -30,20 +34,20 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "8c2e1624f935c01235f19636c98097712df8c115",
-      "judged": 3
+      "round": 4,
+      "version": "bd1ee7713b94af1861166face8a9e5621b9cf065",
+      "judged": 4
     },
     "plan-logic": {
       "attempts": 1,
       "lens": "logic",
-      "by": "juror / claude-code / claude-sonnet-5-5",
+      "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "f5efba40ba2e8305ab8d3d7d725cf2bc4df82250",
-      "judged": 2
+      "round": 4,
+      "version": "bd1ee7713b94af1861166face8a9e5621b9cf065",
+      "judged": 4
     },
     "plan-risk-rollback": {
       "attempts": 1,
@@ -52,9 +56,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "f5efba40ba2e8305ab8d3d7d725cf2bc4df82250",
-      "judged": 2
+      "round": 4,
+      "version": "bd1ee7713b94af1861166face8a9e5621b9cf065",
+      "judged": 4
     },
     "plan-test-proof": {
       "attempts": 1,
@@ -63,9 +67,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "f5efba40ba2e8305ab8d3d7d725cf2bc4df82250",
-      "judged": 2
+      "round": 4,
+      "version": "bd1ee7713b94af1861166face8a9e5621b9cf065",
+      "judged": 4
     }
   },
   "findings": [
@@ -970,11 +974,16 @@
     [
       3,
       "approved"
+    ],
+    [
+      4,
+      "approved"
     ]
   ],
   "versions": {
     "1": "1a7438714d5c69cf7d5b0367ad63bca962f88992",
     "2": "f5efba40ba2e8305ab8d3d7d725cf2bc4df82250",
-    "3": "8c2e1624f935c01235f19636c98097712df8c115"
+    "3": "8c2e1624f935c01235f19636c98097712df8c115",
+    "4": "bd1ee7713b94af1861166face8a9e5621b9cf065"
   }
 }

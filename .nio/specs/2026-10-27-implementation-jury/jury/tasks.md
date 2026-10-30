@@ -1,7 +1,7 @@
 ---
 gate: tasks
 subject: 2026-10-27-implementation-jury
-round: 2
+round: 3
 outcome: approved
 ---
 # Tasks jury: 2026-10-27-implementation-jury
@@ -15,6 +15,8 @@ outcome: approved
 | J-3 | major | gap | T-5, CT-2, CT-3, DF-4 | executability | refuted | refuted |  | new, 0 |
 | J-4 | major | ambiguity | T-7, T-15, CT-6, CT-11, TC-12 | executability | refuted | refuted |  | new, 0 |
 | J-5 | major | gap | T-12, T-21, T-2, CT-8, TC-48 | executability | refuted | refuted |  | new, 0 |
+| J-6 | blocker | gap | T-4, T-27, T-28, CT-17, CT-19, TC-69, TC-70, TC-72, AC-1 | executability | refuted | refuted |  | new, 0 |
+| J-7 | blocker | gap | T-29, QS-1, QS-2, QS-3, QS-4, TC-23, TC-50, TC-54 | executability | refuted | refuted |  | new, 0 |
 
 ### J-1 T-15 cannot read a finding's run request, because its owner comes after it
 - quote: "Depends on: T-5, T-14"
@@ -56,8 +58,20 @@ outcome: approved
 - fix: Name the secrets row of IMPL_LENSES as part of T-12's test list and Files, or state that IMPL_LENSES is read from the spec's trigger table at runtime and show that in T-12.
 - validation: refuted: The spec's trigger table (spec.md line 299) has a `secrets` → security row, and CT-8 makes `IMPL_LENSES` that table "row for row", so T-12 builds it with that row. T-2 adds the flag (CT-18), and T-21 proves TC-48 after depending on both T-2 and T-12, so ownership is covered.
 
+### J-6 The flow and skill wiring, CT-17 and CT-19, has no task after T-4, T-27 and T-28 were removed
+- quote: "- Delivers: CT-14, CT-15, CT-16, CT-17, CT-19"
+- situation (executability): Build order still has the E-8 story deliver CT-17 and CT-19 and test TC-69, TC-70 and TC-72. The five E-8 tasks left list none of those tests, and their Files lines don't include `skills/jury/SKILL.md` or `src/nio/hooks.py`. An implementer finishing every task would leave four things undone. The flow would not print the gate as next or refuse the next claim while it is open. Outcomes would not be committed, and `nio flow done implementation-E-n` would not write the epic and pass lines. The jury skill would have no implementation gate, and `jury evidence` would not be in `hooks.ALLOW`. The gate could be built but not reached through the flow, and TC-69, TC-70 and TC-72 would have no task to make them pass.
+- fix: Either add tasks that cover this work under new IDs, since the retired IDs can't be reused, with dependencies on T-23 and T-25. Or take CT-17, CT-19 and their tests and scenarios out of Build order and scope through a recorded change to the spec and plan.
+- validation: refuted: The `#### Fixes` section at the end of tasks.md already has the missing work. T-30 handles the flow-done writes and commits (TC-72, TC-69). T-31 adds the jury skill and the `jury evidence` allow-list entry (TC-1). T-33 makes the flow wait on the gate (TC-69, TC-70). All three carry `From: C-261030-abpr`, and they depend on T-23 and T-25 or later tasks. The reviewer did not see these fixes. The only loose end is that plan.md line 48 (Delivers CT-17, CT-19) is not mapped to a task by name. Even so, the tasks cover the TCs that plan.md links to those CTs (TC-69, TC-70, TC-72, TC-1).
+
+### J-7 The quickstart scenarios have no task to provide the demo runs after T-29 was removed
+- quote: "- Scenario: QS-2, QS-3"
+- situation (executability): T-29 was the task that added the `--demo approved|rejected|stale|cap` runs the quickstart scenarios call, and its Test line had QS-1 to QS-4 print their expected lines. Build order still names QS-1, QS-2, QS-3 and QS-4 as story scenarios, all marked auto, but no task shown now adds those demo runs. Each scenario would call a `--demo` mode that doesn't exist, so the scenario check can't pass at the end of its story.
+- fix: Add a task under a new ID that provides the four `--demo` runs, depending on the tasks they exercise. Or change QS-1 to QS-4 and Build order so the scenarios no longer rely on `--demo`, through a recorded spec and plan change.
+- validation: refuted: T-32 in the `#### Fixes` section ("Add the `--demo approved|rejected|stale|cap` runs the quickstart scenarios call") provides the four demos. It serves AC-1, AC-22, AC-32 and AC-36, and tests TC-1, TC-23, TC-50 and TC-54 as the QS-1 to QS-4 demos. It depends on T-20, T-24 and T-30, which are the tasks the demos exercise. This replaces the removed T-29, so the finding's own suggested fix is already in the file. One flaw is that T-32 lists only `tests/test_evidence.py` under Files, with no source file for `--demo`. That is a separate and smaller question than the finding raised.
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| tasks-executability | executability | juror / claude-code / claude-haiku-5-5 | limited | yes | 1 | 2 |
+| tasks-executability | executability | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 3 |
