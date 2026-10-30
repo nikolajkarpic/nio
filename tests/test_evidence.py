@@ -2782,7 +2782,24 @@ def test_the_cli_prints_the_pack():
     print("ok")
 
 
+def demo(which):
+    """Print what quickstart.md's scenario `which` expects; the real path, fixed lens outputs, no model."""
+    if which == "cap":
+        print("\n".join(__import__("nio.jury", fromlist=["plan"]).plan(capped(), "s", GATE)[0]))
+        return
+    root = fix_repo()
+    fix_gate(root, *({"approved": [], "rejected": [{"title": "a missing one"}], "stale": [code_right()]}[which]))
+    out = recorded(root)[1]
+    print(out)
+    if "state: waiting-on-change" in out:
+        print("the epic is waiting on change")  # the CLI's `state: waiting-on-change`, said in words
+
+
 if __name__ == "__main__":
+    import sys
+    if "--demo" in sys.argv:
+        demo(sys.argv[sys.argv.index("--demo") + 1])
+        sys.exit()
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
             test()
