@@ -2424,6 +2424,173 @@ def test_a_fix_tasks_pack_holds_the_errors_of_the_check_it_fixes():
     print("ok")
 
 
+# --- T-24: a code-is-right finding becomes a change request and holds the epic (CT-15; AC-36, AC-58, AC-59, FR-44) ---
+
+def code_right(n=1):
+    """A contradicts finding whose code is the right side. n=1 cites AC-2, n=2 cites AC-1 (a second, separate finding)."""
+    one = {"title": "the code is right", "gap": "contradicts", "right": "code", "cites": "AC-2", "where": "src/two.py", "quote": '"TWO_MARK"'}
+    two = {"title": "the code is right too", "gap": "contradicts", "right": "code", "cites": "AC-1"}
+    return one if n == 1 else two
+
+
+def cr_files(root):
+    return sorted((root / ".nio/memory").rglob("C-*.md"))
+
+
+def cr_one(root, found=None):
+    found = cr_files(root) if found is None else found
+    assert len(found) == 1, f"expected one change request, found {len(found)}"
+    return found[0]
+
+
+def cr_rule(root, path, outcome):
+    """The human rules on a change request: its `outcome:` line."""
+    path.write_text(re.sub(r"^outcome: \w+", f"outcome: {outcome}", path.read_text(), count=1, flags=re.M))
+
+
+def cr_state(out):
+    """The epic's state, from the `state:` line `nio jury check` prints at this gate as it does at the plan gate."""
+    m = re.search(r"^state: (\S+)", out, re.M)
+    assert m, f"`nio jury check` prints no `state:` line for the epic:\n{out}"
+    return m[1]
+
+
+def cr_naming(root, fid="J-1"):
+    """The change records whose text names the finding and the gate."""
+    return [p for p in cr_files(root) if re.search(rf"(?<![\w-]){fid}(?!\d)", p.read_text()) and GATE in p.read_text()]
+
+
+def waiting_repo(*findings):
+    """Round 1 of E-1 with `findings` confirmed, recorded: the epic waits on change. (root, spec.md's bytes before)"""
+    root = fix_repo()
+    fix_gate(root, *findings)
+    spec_md = root / ".nio/specs/s/spec.md"
+    before = spec_md.read_bytes()
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out and cr_state(out) == "waiting-on-change", f"the epic isn't waiting on change: {code}\n{out}"
+    return root, before
+
+
+def test_the_epic_waits_on_the_change_request_and_no():
+    from nio import flow, implement
+    root = fix_repo()
+    fix_gate(root, code_right())
+    tasks = task_file(root).read_bytes()
+    code, out = looked(root)
+    assert code == 1 and cr_state(out) == "waiting-on-change", f"the only open major is a code-is-right finding: {code}\n{out}"
+    assert not cr_files(root), "a check that records nothing raised a change request"
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out and cr_state(out) == "waiting-on-change", (code, out)
+    path = cr_one(root)
+    assert path.name[:13] in out, f"the outcome doesn't name the change request it waits on: {out}"
+    assert task_file(root).read_bytes() == tasks and not fix_tasks_for(root), "a fix task was appended while a change request is open"
+    assert implement.next_ready(root, "s", flow.read(root, "s")[1]) is None, "the epic is back with the implement stage"
+    code, out = recorded(root)  # asked again with the change request still pending: held, never approved
+    assert code != 0 and "outcome: approved" not in out and cr_state(out) == "waiting-on-change", (code, out)
+    print("ok")
+
+
+def test_a_fix_task_citing_the_finding_is_appended_and():
+    from nio import flow, implement
+    root, _ = waiting_repo(code_right())
+    path = cr_one(root)
+    cr_rule(root, path, "rejected")
+    code, out = recorded(root)
+    assert code == 1 and cr_state(out) == "implementing", f"the ruling is recorded: the epic goes back to implementing:\n{code}\n{out}"
+    by = fix_tasks_for(root)
+    assert sorted(by) == ["J-1"] and len(by["J-1"]) == 1, f"exactly one new task, citing J-1, not {by}"
+    tasks_pass(root)
+    tid = by["J-1"][0]["id"]
+    assert tid in out and implement.next_ready(root, "s", flow.read(root, "s")[1])["id"] == tid, "the epic isn't back with the implement stage"
+    recorded(root)  # a repeat appends no second task
+    assert len(fix_tasks_for(root)["J-1"]) == 1 and len(cr_files(root)) == 1, "a repeat appended a second task or raised a second request"
+    print("ok")
+
+
+def test_a_change_request_is_raised_and_spec_md_is():
+    from nio import jury
+    root = fix_repo()
+    fix_gate(root, code_right())
+    spec_md = root / ".nio/specs/s/spec.md"
+    before = spec_md.read_bytes()
+    recorded(root)
+    path = cr_one(root)
+    meta = jury.change_record(root, path.name[:13])[1]
+    text = path.read_text()
+    assert meta.get("type") == "change" and meta.get("outcome") == "pending", f"the request isn't a pending change record: {meta}"
+    assert "spec.md" in meta.get("against", ""), f"it isn't against the spec: {meta}"
+    assert "J-1" in text and GATE in text and "AC-2" in text, f"the record doesn't cite the finding, the gate and the spec item:\n{text}"
+    assert spec_md.read_bytes() == before, "spec.md changed"
+    print("ok")
+
+
+def test_the_spec_is_never_edited_to_match_the_code():
+    root = fix_repo()
+    fix_gate(root, code_right())
+    spec_dir = root / ".nio/specs/s"
+    before = {n: (spec_dir / n).read_bytes() for n in ("spec.md", "contracts.md", "tests.md", "plan.md")}
+    code, out = recorded(root)
+    assert code == 1, (code, out)
+    assert {n: (spec_dir / n).read_bytes() for n in before} == before, "the spec or the plan changed to match the code"
+    path = cr_one(root, cr_naming(root))
+    assert re.search(r"^outcome: pending", path.read_text(), re.M) and len(cr_files(root)) == 1, "not exactly one pending change request"
+    print("ok")
+
+
+def test_a_repeat_raises_no_second_change_request():
+    from nio import jury
+    root = fix_repo()
+    fix_gate(root, code_right())
+    real = jury.save
+
+    def flaky(r, led):  # the ledger save fails once the change request is raised
+        if cr_files(r):
+            raise OSError("disk full")
+        real(r, led)
+
+    jury.save = flaky
+    try:
+        jury.check(root, "s", GATE, record=True)
+        raise AssertionError("the save never failed: no change request was raised before the ledger save")
+    except OSError:
+        pass
+    finally:
+        jury.save = real
+    assert len(cr_naming(root)) == 1, f"a stop before the ledger save lost or doubled the request: {cr_files(root)}"
+    for _ in range(2):  # twice more through the CLI, as the human runs it
+        code, out = recorded(root)
+        assert code == 1 and cr_state(out) == "waiting-on-change", (code, out)
+    assert len(cr_files(root)) == 1 and len(cr_naming(root)) == 1, f"a repeat raised a second change request: {cr_files(root)}"
+    print("ok")
+
+
+def test_two_change_requests_hold_the_epic_until_the_human_rules_on_each():
+    root, before = waiting_repo(code_right(1), code_right(2))
+    assert len(cr_naming(root, "J-1")) == 1 and len(cr_naming(root, "J-2")) == 1 and set(cr_files(root)) == {*cr_naming(root, "J-1"), *cr_naming(root, "J-2")}, \
+        "not one change request per finding"
+    cr_rule(root, cr_naming(root, "J-1")[0], "accepted")
+    code, out = recorded(root)
+    assert cr_state(out) == "waiting-on-change" and "outcome: approved" not in out and not fix_tasks_for(root), \
+        f"one request ruled, one still pending: the epic stays held\n{code}\n{out}"
+    cr_rule(root, cr_naming(root, "J-2")[0], "rejected")
+    code, out = recorded(root)
+    assert cr_state(out) == "implementing", f"both ruled, one rejected: the epic goes back to implementing\n{code}\n{out}"
+    assert sorted(fix_tasks_for(root)) == ["J-2"] and len(fix_tasks_for(root)["J-2"]) == 1, \
+        f"only the rejected request's finding becomes a task: {sorted(fix_tasks_for(root))}"
+    assert (root / ".nio/specs/s/spec.md").read_bytes() == before, "spec.md changed"
+    print("ok")
+
+
+def test_every_change_request_accepted_releases_the_epic_with_no_task():
+    root, before = waiting_repo(code_right(1), code_right(2))
+    for path in cr_files(root):
+        cr_rule(root, path, "accepted")
+    code, out = recorded(root)
+    assert "waiting-on-change" not in out and not fix_tasks_for(root), f"every request accepted: the gate composes again, with no task\n{code}\n{out}"
+    assert (root / ".nio/specs/s/spec.md").read_bytes() == before, "spec.md changed"
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):

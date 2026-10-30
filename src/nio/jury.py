@@ -963,9 +963,14 @@ def compose(led, current):
     return "approved", [], []
 
 
-def to_task(f):
-    """Does the decision table send this finding to a fix task (FR-26, FR-30, FR-43)? Code that is right goes to a change request."""
-    return f["status"] == "open" and f["severity"] != "minor" and f["validation"] == "confirmed" and not (f.get("gap") == "contradicts" and f.get("right") == "code")
+def code_right(f):
+    return f.get("gap") == "contradicts" and f.get("right") == "code"
+
+
+def to_task(f, rejected=()):
+    """Does the decision table send this finding to a fix task (FR-26, FR-30, FR-43)? Code that is right goes to a change
+    request, and to a task only once the human has rejected that request (`rejected` holds those findings' IDs, FR-44)."""
+    return f["status"] == "open" and f["severity"] != "minor" and f["validation"] == "confirmed" and (not code_right(f) or f["id"] in rejected)
 
 
 def version_now(root, slug, gate):
@@ -975,7 +980,7 @@ def version_now(root, slug, gate):
     return blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
 
 
-def composed(root, slug, gate, led, current):
+def composed(root, slug, gate, led, current, rejected=()):
     """`compose`, and at the implementation gate: never approved while a task of the epic, a fix task above all, isn't done
     or a fix has no verdict yet (FR-26); and human, not a dead end, when rejected has no new work to send back, since a
     finding `not fixed` with its task done can't get a second one (FR-26)."""
@@ -991,7 +996,7 @@ def composed(root, slug, gate, led, current):
             return "rerun", [f"no fix verdict yet on {', '.join(waiting)}: run `nio jury evidence`, then the lenses `nio jury changed` names"], []
     elif not left:
         from nio import tasks
-        routed = [f["id"] for f in led["findings"] if to_task(f)]
+        routed = [f["id"] for f in led["findings"] if to_task(f, rejected)]
         if routed and all(tasks.fixes_of(root, slug, gate, i) for i in routed):
             return "human", [f"not fixed, with its fix task done and no second task allowed; fix or accept each as risk: {', '.join(routed)}"], routed
     return outcome, reasons, listed
@@ -1004,7 +1009,9 @@ def check(root, slug, gate, record=False, human=""):
     led = load(root, slug, gate)
     reopened = reopen_dropped(root, led) if gate == "plan" else []
     current = version_now(root, slug, gate)
-    outcome, reasons, listed = composed(root, slug, gate, led, current)
+    held, rejected, raised = settle(root, slug, gate, led, record and not human.strip() and not led.get("closed")) \
+        if gate.startswith("implementation") else ([], [], [])
+    outcome, reasons, listed = composed(root, slug, gate, led, current, [] if held else rejected)
     if human.strip():
         if record:  # only a recorded closure sticks; an unrecorded --human counts for this call alone
             led["closed"] = [led["round"], current, human.strip()]
@@ -1017,11 +1024,14 @@ def check(root, slug, gate, record=False, human=""):
     if record and outcome == "rejected" and not closed and gate.startswith("implementation"):
         from nio import tasks
         save(root, led)  # append_fix disposes through the saved ledger
-        appended = [(f["id"], tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)) for f in led["findings"] if to_task(f)]
+        appended = [(f["id"], tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)) for f in led["findings"] if to_task(f, [] if held else rejected)]  # a pending request holds its own finding and the rejected ones
         led = load(root, slug, gate)
     led["outcome"] = outcome
     unresolved = sum(f["status"] == "open" for f in led["findings"])
     lines = [f"outcome: {outcome}", f"round: {led['round']}", f"unresolved: {unresolved}", *[f"- {r}" for r in reasons], *reopened]
+    if held or rejected and outcome == "rejected":  # CT-15: the epic waits on the human, or goes back to the implement stage
+        lines.insert(1, "state: waiting-on-change" if held else "state: implementing")
+        lines += [f"- {fid} waits on the change request {cid}" for fid, cid in held if cid] + [f"- {x}" for x in raised]
     lines += [f"fix task {tid} for {fid}" for fid, tid in appended if tid]
     lines += [f"vote {lens}: {', '.join(f'{n}={v}' for n, v in js)}" for lens, js in votes(led).items()]
     notes = [f for f in led["findings"] if f["status"] == "noted"]  # raised below blocker after the first review (#52 FR-12)
@@ -1056,6 +1066,61 @@ def change_record(root, cid):
         if meta.get("type") == "change":
             return path, meta
     return None, {}
+
+
+def change_for(root, slug, gate, fid):
+    """(path, meta) of the change request that names finding `fid` at `gate` of `slug`, or (None, {})."""
+    named = lambda text, name, end: re.search(rf"(?<![\w-]){name}(?!{end})", text)
+    for path in sorted((root / ".nio/memory").rglob("C-*.md")):
+        meta, _ = records.parse(path)
+        text = path.read_text()
+        if meta.get("type") == "change" and f"/{slug}/spec.md" in str(meta.get("against")) and named(text, fid, r"\d") and named(text, gate, r"[\w-]"):
+            return path, meta
+    return None, {}
+
+
+def raise_change(root, slug, gate, finding):
+    """The pending change request against the spec for a contradicts finding whose code is right: the existing one when a
+    request already names the finding and the gate, so a repeat or a stop before the ledger save raises no second (CT-15,
+    FR-30). spec.md is never touched."""
+    path = change_for(root, slug, gate, finding["id"])[0]
+    if not path:
+        areas = records.areas(root)
+        path = records.new(root, "change", "project" if "project" in areas else areas[0],
+                           f"Code is right, spec is stale: {finding['id']} at {gate}", by="jury")
+        head = path.read_text().partition("\n---\n")[0]
+        head = re.sub(r"^against: .*$", f'against: ".nio/specs/{slug}/spec.md"', head, flags=re.M)
+        cites = ", ".join(finding["cites"])
+        wrong = f"{finding['id']} at {gate} says the code contradicts {cites}, and the code is the right side: {finding['title']}."
+        path.write_text(f"{head}\n---\n## What is wrong\n{wrong}\n" + "".join(f"- situation ({s['lens']}): {s['situation']}\n" for s in finding["sources"])
+                        + f"## Proposed change\nChange {cites} in spec.md to match the code. Reject it and a fix task changes the code instead.\n"
+                        + f"## Human decision\nPending.\n")
+    return path.name[:13]
+
+
+def settle(root, slug, gate, led, raising=False):
+    """Walk the gate's confirmed code-is-right blockers and majors against their change requests (CT-15, FR-44), raising the
+    missing ones when `raising`. Returns (held [(finding, request or None)], rejected [finding IDs], what was raised). A
+    pending or missing request holds the epic; an accepted one settles its finding (`accepted-risk`: the spec changes, the
+    code stays); a rejected one sends its finding to a fix task."""
+    held, rejected, raised = [], [], []
+    for f in led["findings"]:
+        if not (code_right(f) and f["severity"] != "minor" and f["validation"] == "confirmed" and (f["status"] == "open" or f["disposition"] == "fix-task")):
+            continue
+        path, meta = change_for(root, slug, gate, f["id"])
+        cid = path.name[:13] if path else None
+        if not path and raising and f["status"] == "open":
+            cid = raise_change(root, slug, gate, f)
+            raised.append(f"raised {cid} for {f['id']}")
+            meta = {"outcome": "pending"}
+        outcome = meta.get("outcome")
+        if outcome == "rejected":
+            rejected.append(f["id"])
+        elif outcome == "accepted" and f["status"] == "open":
+            f.update(status="disposed", disposition="accepted-risk", by="human", note=f"{cid}: the human accepted the change request")
+        elif outcome != "accepted" and f["status"] == "open":
+            held.append((f["id"], cid))
+    return held, rejected, raised
 
 
 def standing(root, slug, gate):
