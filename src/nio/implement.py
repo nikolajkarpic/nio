@@ -161,6 +161,18 @@ def defs(path):
     return {i: ls for i, ls in spec.items(records.parse(path)[1])} if path.exists() else {}
 
 
+def finding_lines(root, slug, shown):
+    """What a fix task's worker has to go on: its finding's situations (a CLI finding's hold the check's errors) and the
+    fix asked, indented so an error line can't read as a heading. Nothing when `shown` has no `From:` a ledger holds."""
+    from nio import jury
+    m = next((m for x in shown if x.startswith("- From: ") and (m := tasks.FINDING.match(x[8:]))), None)
+    f = m and next((g for g in jury.load(root, slug, m[2])["findings"] if g["id"] == m[1]), None)
+    if not f:
+        return []
+    said = [f"- situation ({s['lens']}): " + s["situation"].replace("\n", "\n  ") for s in f["sources"]]
+    return ["", "#### The finding", *said, *[f"- fix asked: {f['fix']}"] * bool(f["fix"])]
+
+
 def worker_pack(root, slug, task):
     """The task's worker pack (CT-6, FR-4): exactly five `## ` parts, in order: its memory pack (no closing
     instructions, CT-15 replaces them), its section of tasks.md, the ACs it serves, the CT-n blocks its TC-n entries
@@ -170,11 +182,11 @@ def worker_pack(root, slug, task):
     acs, cts, tcs = defs(folder / "spec.md"), defs(folder / "contracts.md"), defs(folder / "tests.md")
     tests = [t for t in task["tests"] if t in tcs]
     covers = list(dict.fromkeys(c for t in tests for c in tasks.ids(plan.field(tcs[t], "Covers")) if c in cts))
-    block = lambda ids, found: [x for i in ids for x in found[i] if i in found]
+    block = lambda ids, found: [x for i in ids if i in found for x in found[i]]
     body = lambda name, lines: [f"## {name}", ""] + nest("\n".join(lines).strip().splitlines()) + [""]
     shown = [x for x in tasks.show(root, slug, task["id"]) if not x.startswith("- Mode:")]  # claim prints the mode
     out = nest(memory.rstrip().splitlines()) + [""]  # the pack's `# Memory for T-n` becomes its part's heading
-    return "\n".join(out + body("Task", shown) + body("Acceptance criteria", block(task["serves"], acs))
+    return "\n".join(out + body("Task", shown + finding_lines(root, slug, shown)) + body("Acceptance criteria", block(task["serves"], acs))
                      + body("Contracts", block(covers, cts)) + body("Tests", block(tests, tcs))).rstrip() + "\n"
 
 
