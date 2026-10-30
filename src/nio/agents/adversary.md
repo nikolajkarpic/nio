@@ -36,7 +36,7 @@ The context pack from the jury skill, and nothing else:
 - Read the epic's diff for each place the outside world reaches the code: inputs, requests, handlers, retries and timers.
 - For each such entry, what happens with hostile input (oversized, malformed, empty, duplicated, out of order, replayed), and does the code reject or contain it?
 - Where can the code fail without anyone noticing: a swallowed error, a partial write, a dropped message treated as success?
-- Each finding has `gap` (what is wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
+- Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding: which of the two is wrong; unset means the spec is right), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering: yes` (set when the finding is about a deleted, skipped or weakened test).
 
 ## Output format
 
