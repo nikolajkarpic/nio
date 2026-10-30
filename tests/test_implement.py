@@ -310,17 +310,20 @@ def commit_all(root, message, date=None):
                    capture_output=True, env=env)
 
 
-def impl(modes=None, cfg=None, tasks=None, commit=True, date=None):
+def impl(modes=None, cfg=None, tasks=None, commit=True, date=None, alone=False):
     """A repo at implementing: the refunds effort, TC-1 naming `tests/test_refund.py:test_refund` before the plan is
     approved, `tasks` (else the refunds list with `modes`) approved with its commit (`commit=False`: committed as `wip`;
     `date`: the commit's date), `tests.suite` set (merged with `cfg`; a None value removes the key), one passing test
     so the baseline runs clean, `__pycache__/` ignored as a project would, and a `start` line."""
+    tasks = tasks or with_modes(modes=modes)
+    if alone:  # T-1 closes its epic, so its review runs the full suite
+        tasks = tasks.replace("### T-2", "## E-9 The rest (US-2)\n\n### T-2", 1)
     root = test_flow.effort("plan_jury")
     folder = root / ".nio/specs" / S
     tp = folder / "tests.md"
     tp.write_text(tp.read_text().replace("tests/test_refunds.py:test_full_refund", "tests/test_refund.py:test_refund"))
     test_flow.approve(root, S, "plan")
-    (folder / "tasks.md").write_text((tasks or with_modes(modes=modes)).replace("slug: checkout-refunds", f"slug: {S}"))
+    (folder / "tasks.md").write_text(tasks.replace("slug: checkout-refunds", f"slug: {S}"))
     conf = records.merge({"memory": {"areas": ["auth", "project"]}, "tests": {"suite": SUITE}}, cfg or {})
     conf = {k: {x: y for x, y in v.items() if y is not None} if isinstance(v, dict) else v for k, v in conf.items()}
     (root / ".nio/config.json").write_text(json.dumps(conf))
@@ -946,7 +949,7 @@ def test_green_retry_reruns_review():
 # --- T-14: the review (CT-8, decision table Review) ---
 
 def test_ac16_new_failure_only():
-    root = impl()
+    root = impl(alone=True)
     failing(root, "test_a")
     commit_all(root, "test_a fails")
     assert flow(root, "claim", S)[0] == 0
@@ -988,7 +991,7 @@ def test_ac18_spec_edited():
 
 
 def test_ac35_unknown_runner_review():
-    root = impl(cfg={"tests": {"suite": "python check.py"}})
+    root = impl(cfg={"tests": {"suite": "python check.py"}}, alone=True)
     (root / "check.py").write_text("import sys\nsys.exit(0)\n")
     commit_all(root, "check")
     assert flow(root, "claim", S)[0] == 0
@@ -1002,7 +1005,7 @@ def test_ac35_unknown_runner_review():
 
 
 def test_ac37_review_fail_to_red():
-    root = red_one()
+    root = red_one(alone=True)
     frozen = of(root, "red")[-1]["evidence"]["frozen"]
     code_with(root)
     failing(root, "test_c")
@@ -1017,7 +1020,7 @@ def test_ac44_broken_or_fewer():
     many = "import unittest\n\n\nclass M(unittest.TestCase):\n" + "".join(
         f"    def test_{i}(self):\n        pass\n\n" for i in range(40))
     for case in ("import", "fewer"):
-        root = impl()
+        root = impl(alone=True)
         (root / "tests/test_base.py").unlink()
         (root / "tests/test_many.py").write_text(many)
         commit_all(root, "40 tests")
@@ -1038,7 +1041,7 @@ def test_ac44_broken_or_fewer():
 
 
 def test_ac50_direct_review_fail():
-    root = claimed(modes={"T-1": "direct"})
+    root = claimed(modes={"T-1": "direct"}, alone=True)
     write_test(root)
     code_with(root)
     failing(root, "test_c")
@@ -1303,6 +1306,52 @@ def test_ac29_epic_skipped():
     assert "skipped: not built" in out and "merge:" not in out and lines(root)[-1]["to"] == "implementing", out
     code, out = flow(root, "claim", S)
     assert code == 0 and "task: T-3 " in out, out
+    print("ok")
+
+
+def test_full_suite_waits_for_the_epic_to_close():
+    """#66: T-1 breaks another test and still passes its review; the task closing the epic answers for it."""
+    root = impl(tasks=TWO)
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    code_with(root)
+    failing(root, "test_b")
+    code, out = flow(root, "green", S, "T-1", "--run", RUN)
+    assert code == 0 and "review: passed" in out, out
+    assert flow(root, "claim", S)[0] == 0
+    code, out = flow(root, "green", S, "T-2", "--run", RUN)
+    assert code == 1 and "review: failed" in out and "test_b" in out, out
+    assert not epics(root), epics(root)
+    (root / "tests/test_b.py").unlink()
+    code, out = flow(root, "green", S, "T-2", "--run", RUN)
+    assert code == 0 and "review: passed" in out, out
+    assert len(epics(root)) == 1, epics(root)
+    print("ok")
+
+
+def test_tests_epic_replaces_the_suite_until_the_last_epic():
+    """#66: `tests.epic` closes E-1 past a break only the full suite sees; the last epic's close still catches it."""
+    root = impl(tasks=TWO, cfg={"tests": {"epic": "python -m unittest tests/test_base.py"}})
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    code_with(root)
+    failing(root, "test_b")
+    assert flow(root, "green", S, "T-1", "--run", RUN)[0] == 0
+    finish(root, "T-2")
+    assert len(epics(root)) == 1, epics(root)  # E-1 closed: fewer tests collected than the baseline is no failure here
+    while True:
+        code, out = flow(root, "claim", S)
+        assert code == 0, out
+        tid = re.search(r"task: (T-\d+)", out)[1]
+        write_test(root)
+        code_with(root)
+        code, out = flow(root, "green", S, tid, "--run", RUN)
+        if code:
+            break
+    assert "review: failed" in out and "test_b" in out and len(epics(root)) == 1, out
+    (root / "tests/test_b.py").unlink()
+    code, out = flow(root, "green", S, tid, "--run", RUN)
+    assert code == 0 and len(epics(root)) == 2 and lines(root)[-1]["to"] == "done", out
     print("ok")
 
 
