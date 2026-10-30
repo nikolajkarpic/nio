@@ -38,6 +38,19 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 - Effort: med
 - Mode: split: clear tests lead the code
 
+#### Fixes
+
+### T-34 Keep an unreadable runner's passing suite from blocking every acceptance test
+- From: C-261030-gk3z
+- Files: `src/nio/evidence.py`, `tests/test_evidence.py`
+- Serves: AC-4, AC-6
+- Test: TC-4, TC-6, plus a direct check that a suite exiting 0 on an unreadable runner gives no blocker for a matched AC and one exiting non-zero does
+- Depends on: T-3
+- Parallel: no
+- Tier: strong: a small rule in the evidence join
+- Effort: low
+- Mode: split: a clear test leads the code
+
 ## E-3 The CLI collects observed evidence before any lens runs (US-2)
 
 ### T-5 Run the tests, lint, type check, scripted attacks and journey runs and write the results with `nio jury evidence`
