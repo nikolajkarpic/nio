@@ -707,6 +707,15 @@ def test_conformance_correctness_and_risk_and_rollback_cards_exist_each():
     print("ok")
 
 
+def test_each_has_an_at_implementation_section():
+    agents = Path(__file__).resolve().parent.parent / "src/nio/agents"
+    for name in ("security", "adversary", "consistency"):
+        card = agents / f"{name}.md"
+        assert card.is_file(), f"{card} is missing"
+        assert "\n## At implementation\n" in card.read_text(), f"{name} has no ## At implementation section"
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
