@@ -2774,6 +2774,46 @@ def test_flow_done_on_the_last_epic_writes_the_pass_line_and_prints_merge():
     print("ok")
 
 
+def test_the_last_epics_gate_ends_the_effort():
+    """TC-69. ponytail: one approving round; the reject-and-fix round is covered by the T-26 tests."""
+    from nio import flow, implement
+    root, _ = approved_with_minors()
+    assert epic_done(root).returncode == 0
+    task = next(t for t in implement.tasks_of(root, "s") if t["id"] == "T-4")
+    entries, report = implement.epic_end(root, "s", task, {})
+    assert not [e for e in entries if e["kind"] in ("epic", "pass")], entries
+    assert not any(x.startswith("merge:") for x in report) and any("implementation-E-2" in x for x in report), report
+    fix_gate(root, epic="E-2")
+    code, out = recorded(root, "implementation-E-2")
+    assert code == 0 and "outcome: approved" in out and "merge:" not in out, (code, out)
+    assert not [x for x in flow_lines(root, "epic") if x["evidence"]["epic"] == "E-2"] and not flow_lines(root, "pass")
+    done = epic_done(root, "implementation-E-2")
+    assert done.returncode == 0 and "merge:" in done.stdout, done.stdout + done.stderr
+    (e2,) = [x for x in flow_lines(root, "epic") if x["evidence"]["epic"] == "E-2"]
+    assert e2["reason"] == "approved" and len(flow_lines(root, "pass")) == 1
+    assert flow_lines(root, "pass")[0]["to"] == "done", flow_lines(root, "pass")
+    print("ok")
+
+
+def test_an_old_skipped_epic_stays_closed():
+    """TC-70."""
+    import test_flow
+    import test_implement as ti
+    from nio import implement
+    root = ti.impl(tasks=ti.TWO)
+    ti.finish(root, "T-1")
+    ti.finish(root, "T-2")
+    if not ti.epics(root):
+        test_flow.history(root, ti.S, {"kind": "epic", "from": "implementing", "to": "implementing",
+                                       "reason": "skipped: not built", "evidence": {"epic": "E-1"}})
+    out = ti.flow(root, "next", ti.S)[1]
+    assert "E-1" in out and "never reviewed" in out, out
+    code, out = ti.flow(root, "claim", ti.S)
+    assert code == 0 and "task: T-3 " in out, out
+    assert not any("E-1" in x for x in implement.left(root, ti.S, ti.lines(root))), implement.left(root, ti.S, ti.lines(root))
+    print("ok")
+
+
 def test_the_cli_prints_the_pack():
     root = pack_repo({})
     start(root)
