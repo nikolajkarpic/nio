@@ -34,7 +34,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Steps
 
-1. Run `nio hooks`, then `nio agents sync`.
+1. Run `nio hooks`, then `nio agents sync`. On Claude Code also run `nio usage install --personal`, so runs record what they spend.
 2. On Claude Code, ask once, per repo, in the shape above, and run what they pick. Elsewhere skip this and say prompts stay.
    - **Just me (recommended):** `nio allow --personal`. Applies to this clone only and changes nothing to commit;
      teammates keep their prompts.
