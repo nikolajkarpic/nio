@@ -2835,6 +2835,23 @@ def demo(which):
         print("the epic is waiting on change")  # the CLI's `state: waiting-on-change`, said in words
 
 
+def test_a_later_open_gate_doesnt_hold_a_fix_in_an_earlier_epic():
+    """C-261030-gk3z: an earlier epic with work left comes first, whatever a later epic's gate says."""
+    from nio import implement
+    status, tasks_of = implement.status, implement.tasks_of
+    ts = [{"id": "T-1", "epic": "E-1"}, {"id": "T-2", "epic": "E-2"}]
+    implement.tasks_of = lambda root, slug: ts
+    try:
+        implement.status = lambda root, slug, lines: {"T-1": "ready", "T-2": "done"}
+        assert implement.open_gate(None, "s", []) is None
+        implement.status = lambda root, slug, lines: {"T-1": "done", "T-2": "done"}
+        assert implement.open_gate(None, "s", []) == "E-1"
+        assert implement.open_gate(None, "s", [{"kind": "epic", "evidence": {"epic": "E-1"}}]) == "E-2"
+    finally:
+        implement.status, implement.tasks_of = status, tasks_of
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
