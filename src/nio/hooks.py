@@ -64,13 +64,18 @@ ALLOW = ["check", "query", "get", "pack", "status", "index", "new", "run", "task
 ASK = ["*human*", "flow done *--c*", "flow done *--h*", "jury check *--h*"]
 
 
-def allow(root, shared):
-    """Merge the rules into Claude Code's settings for this repo, keeping what is there. Returns the file's path."""
+def settings(root, shared):
+    """(path, parsed contents) of Claude Code's settings file for this repo."""
     path = root / ".claude" / ("settings.json" if shared else "settings.local.json")
     try:
-        cfg = json.loads(path.read_text()) if path.exists() else {}
+        return path, json.loads(path.read_text()) if path.exists() else {}
     except ValueError as e:
         raise ValueError(f"{path} is not valid JSON, so nothing was changed: {e}")
+
+
+def allow(root, shared):
+    """Merge the rules into Claude Code's settings for this repo, keeping what is there. Returns the file's path."""
+    path, cfg = settings(root, shared)
     perms = cfg.setdefault("permissions", {})
     for key, rules in (("allow", [f"{r}:*" for r in ALLOW]), ("ask", ASK)):
         new = [f"Bash({run} {r})" for run in ("nio", "uv run nio") for r in rules]

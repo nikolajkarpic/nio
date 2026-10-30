@@ -110,6 +110,7 @@ For what skills can't do reliably. Install with `uv tool install .`, or run in t
 | `nio pack "<work>" [--path F] [--ac A] [--diff REF] [--run R]` | The memory that applies to a piece of work, for an agent to read before it starts |
 | `nio hooks` | Install git hooks: refresh the index and agent files after pulls, checkouts and rebases; run the CI check before commits and pushes |
 | `nio allow --personal\|--shared` | Let agents run stage commands without a permission prompt on Claude Code, in the gitignored or the committed settings file. The human's decisions, `nio flow red` and `green` still prompt |
+| `nio usage install --personal\|--shared` | Install the Claude Code hooks that timestamp each agent and shell call; a finished effort commits `usage.json` with its time, tokens and attempts |
 | `nio agents sync` | Render the agent cards (shipped, `~/.nio/agents/`, `.nio/agents/`) as `.claude/agents/nio-*` and `.codex/agents/nio-*`, with each tier's model from config |
 | `nio agents verify` | Check that recent Claude runs of `nio-*` agents used the model their tier maps to |
 | `nio jury plan <slug> <gate> [--add lens:reason]` | The lenses a gate needs and why, the risk tier, the run budget; fails if the spec isn't gated or a card is missing |
