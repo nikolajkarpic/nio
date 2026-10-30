@@ -579,11 +579,15 @@ def left(root, slug, lines):
 
 def open_gate(root, slug, lines):
     """The first epic whose tasks are all done and that has no `epic` line (an old skipped one counts as closed): its gate
-    is open (CT-17); None when there is none."""
+    is open (CT-17); None when there is none, or when an earlier epic has work left (a fix task reopened it)."""
     st, ts = status(root, slug, lines), tasks_of(root, slug)
     shut = {x["evidence"].get("epic") for x in lines if x["kind"] == "epic"}
-    return next((e for e in dict.fromkeys(t["epic"] for t in ts)
-                 if e not in shut and all(st[t["id"]] == "done" for t in ts if t["epic"] == e)), None)
+    for e in dict.fromkeys(t["epic"] for t in ts):
+        if any(st[t["id"]] != "done" for t in ts if t["epic"] == e):
+            return None
+        if e not in shut:
+            return e
+    return None
 
 
 def green(root, slug, tid, command, by):
