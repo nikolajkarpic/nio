@@ -67,7 +67,7 @@ record's ID) and the seven lines. A task made pointless is removed and its ID li
 
 ## When to stop
 
-Stop after step 7, or when step 1 or 2 stops. Don't start the implement stage.
+Stop after step 7, or when step 1 or 2 stops. Don't start the implement stage. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the implement stage.
 
 ## When `nio` is missing or fails
 

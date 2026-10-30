@@ -111,12 +111,11 @@ catches the mechanical cases (a new folder, or a new data model entry, with `arc
     - every proposal (`[default]`) that changes what a user can do or sees, or what data is kept, then a count of the
       rest. `nio check plan` lists them.
 
-    Then say the next stage is the plan jury.
 
 ## When to stop
 
 Stop after step 11, or when the plan stops for architecture (step 4). Don't start the plan jury and don't break the
-plan into tasks.
+plan into tasks. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the plan jury.
 
 ## When `nio` is missing or fails
 
