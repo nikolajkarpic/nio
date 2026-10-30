@@ -16,9 +16,9 @@ ROUTES = {
 }
 OPTIONAL = ["Rules", "Key entities", "Non-functional requirements", "Success criteria", "Glossary", "Risks and evidence against",
             "Decisions", "Open points", "Deferred"]
-RISKS = {"auth", "pii", "money", "external-input", "data-deletion", "migration", "multi-party", "public-api"}
+RISKS = {"auth", "secrets", "pii", "money", "external-input", "data-deletion", "migration", "multi-party", "public-api"}
 # #47's triggers; `money` isn't in its mapping, so it brings in the adversary (abuse of payments)
-LENSES = {"adversary": {"external-input", "multi-party", "public-api", "money"}, "security": {"auth", "pii"},
+LENSES = {"adversary": {"external-input", "multi-party", "public-api", "money"}, "security": {"auth", "pii", "secrets"},
           "risk-rollback (plan gate)": {"migration", "data-deletion"}}
 SCOPE_FRS = 8  # more FRs than this triggers the scope lens (#47)
 SCOPE_NOTE = f"scope (more than {SCOPE_FRS} FRs)"  # `nio jury plan` reads this from the check's notes
