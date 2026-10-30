@@ -698,6 +698,15 @@ def test_the_gate_refuses_an_unfinished_epic_whose_lens_would_take_done_as_proof
     print("ok")
 
 
+def test_conformance_correctness_and_risk_and_rollback_cards_exist_each():
+    agents = Path(__file__).resolve().parent.parent / "src/nio/agents"
+    for name in ("conformance", "correctness", "risk-rollback"):
+        card = agents / f"{name}.md"
+        assert card.is_file(), f"{card} is missing"
+        assert "\n## At implementation\n" in card.read_text(), f"{name} has no ## At implementation section"
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
