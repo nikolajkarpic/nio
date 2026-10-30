@@ -455,6 +455,77 @@ def test_the_result_holds_its_first_and_last_100_kb():
     print("ok")
 
 
+# --- T-6: phantom completion (CT-4, AC-7, AC-8, AC-9) ---
+
+def phantom_repo(before, epic):
+    """A repo with `before` ({path: text}) committed first, then one commit per `epic` entry (task id, {path: text}) as
+    `T-n: work`. (root, base, head): base is the parent of the first T-n commit, head the last."""
+    root = Path(tempfile.mkdtemp(prefix="nio-phantom-"))
+    git(root, "init", "-q", "-b", "main")
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+
+    def commit(files, subject):
+        for name, text in files.items():
+            (root / name).parent.mkdir(parents=True, exist_ok=True)
+            (root / name).write_text(text)
+        git(root, "add", "-A")
+        git(root, "commit", "-q", "--allow-empty", "-m", subject)
+
+    commit(before, "before")
+    base = git(root, "rev-parse", "HEAD").strip()
+    for tid, files in epic:
+        commit(files, f"{tid}: work")
+    return root, base, git(root, "rev-parse", "HEAD").strip()
+
+
+def task(tid, *files, serves=("AC-1",)):
+    return {"id": tid, "title": "t", "epic": "E-1", "fix": False, "deps": [], "files": list(files), "serves": list(serves),
+            "tests": [], "tier": "cheap", "effort": "low", "mode": "split"}
+
+
+def phantoms(root, tasks, base, head):
+    e = evidence()
+    assert hasattr(e, "phantoms"), "evidence.phantoms doesn't exist yet"
+    found = e.phantoms(root, tasks, base, head)
+    for f in found:
+        assert f["severity"] == "major", f
+    return found
+
+
+def naming(found, *words):
+    return [f for f in found if all(w in json.dumps(f) for w in words)]
+
+
+def test_the_task_is_flagged_as_phantom_completion_despite_its_status():
+    # T-1's commit exists and its work is real, but it also names src/gone.py, which was never written
+    root, base, head = phantom_repo({}, [("T-1", {"src/real.py": "def real():\n    return 1\n\n\nreal()\n"})])
+    found = phantoms(root, [task("T-1", "src/real.py", "src/gone.py")], base, head)
+    assert len(naming(found, "T-1", "src/gone.py")) == 1, found
+    assert not naming(found, "src/real.py"), found
+    print("ok")
+
+
+def test_it_is_flagged():
+    # src/old.py exists, but no commit of the epic touched it
+    root, base, head = phantom_repo({"src/old.py": "x = 1\n"}, [("T-1", {"src/new.py": "y = 2\n"})])
+    found = phantoms(root, [task("T-1", "src/old.py", "src/new.py")], base, head)
+    assert len(naming(found, "T-1", "src/old.py")) == 1, found
+    assert not naming(found, "src/new.py"), found
+    print("ok")
+
+
+def test_it_is_flagged_as_dead_code():
+    code = "def used_one():\n    return 1\n\n\ndef orphan_helper():\n    return 2\n"
+    caller = "from mod import used_one\n\nprint(used_one())\n"
+    root, base, head = phantom_repo({}, [("T-1", {"src/mod.py": code, "src/caller.py": caller})])
+    found = phantoms(root, [task("T-1", "src/mod.py", "src/caller.py")], base, head)
+    assert len(naming(found, "orphan_helper", "src/mod.py")) == 1, found
+    assert not naming(found, "used_one"), found
+    assert len(found) == 1, found
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
