@@ -2679,6 +2679,101 @@ def test_a_fix_task_for_it_is_appended_to_the():
     print("ok")
 
 
+def epic_done(root, gate=GATE):
+    """`nio flow done <gate> s --by human`, as the human runs it."""
+    done = nio(root, "flow", "done", gate, "s", "--by", "human")
+    assert "Traceback" not in done.stderr, done.stderr
+    return done
+
+
+def flow_lines(root, kind):
+    from nio import flow
+    return [x for x in flow.read(root, "s")[1] if x["kind"] == kind]
+
+
+def gate_files_clean(root):
+    """Nothing of the ledger, tasks.md or a verdict record is left uncommitted."""
+    dirty = [x for x in git(root, "status", "--porcelain", "--untracked-files=all").splitlines()
+             if "/jury/" in x or "tasks.md" in x or "/V-" in x]
+    assert not dirty, f"left uncommitted: {dirty}"
+
+
+def test_each_recorded_outcome_is_committed():
+    root = fix_repo()
+    fix_gate(root, {"title": "a missing one"})
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out, (code, out)
+    assert f"nio: jury {GATE} round 1" in git(root, "log", "--format=%s"), "the rejected outcome isn't committed"
+    gate_files_clean(root)
+    assert "tasks.md" in git(root, "show", "--name-only", "--format=", "HEAD"), "the commit doesn't hold the new task"
+    tasks_pass(root)
+    print("ok")
+
+
+def test_an_approved_outcome_is_committed_by_flow_done_not_by_the_check():
+    root, _ = approved_with_minors()
+    assert "nio: jury" not in git(root, "log", "--format=%s"), "an approved outcome took a `nio: jury` commit"
+    done = epic_done(root)
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert f"nio: approve {GATE}" in git(root, "log", "--format=%s"), "no approval commit"
+    gate_files_clean(root)
+    print("ok")
+
+
+def test_flow_done_writes_the_epic_line_with_the_outcome_as_its_reason():
+    root, _ = approved_with_minors()
+    assert not flow_lines(root, "epic")
+    done = epic_done(root)
+    assert done.returncode == 0, done.stdout + done.stderr
+    (line,) = flow_lines(root, "epic")
+    assert line["evidence"]["epic"] == "E-1" and line["reason"] == "approved", line
+    assert not flow_lines(root, "pass") and "merge:" not in done.stdout, f"E-2 isn't closed yet:\n{done.stdout}"
+    again = epic_done(root)
+    assert len(flow_lines(root, "epic")) == 1, f"a second call wrote a second line:\n{again.stdout}"
+    print("ok")
+
+
+def test_flow_done_takes_a_gate_the_human_closed():
+    root = fix_repo()
+    fix_gate(root, {"title": "a missing one"})
+    closed = nio(root, "jury", "check", "s", GATE, "--human", "good enough", "--record")
+    assert closed.returncode == 3 or "outcome: human" in closed.stdout, closed.stdout + closed.stderr
+    done = epic_done(root)
+    assert done.returncode == 0, done.stdout + done.stderr
+    (line,) = flow_lines(root, "epic")
+    assert line["evidence"]["epic"] == "E-1" and line["reason"] == "human", line
+    print("ok")
+
+
+def test_flow_done_refuses_while_the_gate_is_not_approved_or_closed():
+    untouched = fix_repo()  # no gate has run
+    rejected = fix_repo()
+    fix_gate(rejected, {"title": "a missing one"})
+    recorded(rejected)
+    for root in (untouched, rejected):
+        head, history = git(root, "rev-parse", "HEAD"), (root / ".nio/specs/s/history.jsonl").read_bytes()
+        done = epic_done(root)
+        said_ = done.stdout + done.stderr
+        assert done.returncode != 0 and "invalid choice" not in said_ and GATE in said_, f"not a refusal naming the gate:\n{said_}"
+        assert (root / ".nio/specs/s/history.jsonl").read_bytes() == history and git(root, "rev-parse", "HEAD") == head, "a refusal wrote something"
+    print("ok")
+
+
+def test_flow_done_on_the_last_epic_writes_the_pass_line_and_prints_merge():
+    root, _ = approved_with_minors()
+    assert epic_done(root).returncode == 0
+    fix_gate(root, epic="E-2")
+    code, out = recorded(root, "implementation-E-2")
+    assert code == 0 and "outcome: approved" in out, (code, out)
+    done = epic_done(root, "implementation-E-2")
+    assert done.returncode == 0, done.stdout + done.stderr
+    assert [(x["evidence"]["epic"], x["reason"]) for x in flow_lines(root, "epic")] == [("E-1", "approved"), ("E-2", "approved")]
+    (line,) = flow_lines(root, "pass")
+    assert (line["from"], line["to"]) == ("implementing", "done"), line
+    assert "merge:" in done.stdout, done.stdout
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):

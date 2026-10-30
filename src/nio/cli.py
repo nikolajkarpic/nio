@@ -115,7 +115,7 @@ def main():
     fs = fsub.add_parser("start", help="start an effort, or resume a parked, suspended or abandoned one")
     fs.add_argument("slug")
     fd = fsub.add_parser("done", help="report a stage done: its guard decides; at a gate, --commit approves it")
-    fd.add_argument("stage", choices=list(flow.STAGES))
+    fd.add_argument("stage", type=flow.stage_arg, metavar="STAGE", help="a stage, or an epic's gate as implementation-E-n")
     fd.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
     fd.add_argument("--commit", action="store_true", help="at a gate: make the `nio: approve <gate>` commit")
     fd.add_argument("--human", metavar="REASON", help="the human passes a failing check, with their reason")
@@ -284,7 +284,7 @@ def main():
                 outcome, lines = jury.check(root, a.slug, a.gate, a.record, a.human)
                 print("\n".join(lines))
                 sys.exit({"approved": 0, "rejected": 1, "human": 3}.get(outcome, 2))
-        except ValueError as e:
+        except (ValueError, flow.Busy) as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "flow":
         try:
