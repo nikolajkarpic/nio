@@ -24,6 +24,7 @@ HUMAN_ONLY = {"accepted-risk", "out-of-scope", "overruled"}  # overruled: a fina
 BY = {"agent", "grill", "human"}  # grill: the human answered a grill question
 MAX_FINDINGS = 5
 FIELDS = ["cites", "kind", "severity", "evidence", "quote", "situation", "fix"]
+GAPS = ["missing", "partial", "contradicts", "unrequested"]  # the implementation gate's `gap` (CT-12); it also needs `where`
 CLOSED = {"refuted", "dropped", "merged", "overruled", "noted"}  # never need a disposition
 VERDICT = re.compile(r"^- (J-\d+):\s*(fixed|not fixed)\b\s*[—–:-]*\s*(.*)$")  # a fix verdict in a re-review (#52 FR-8)
 CORE = {"spec": ["testability", "logic"], "plan": ["test-proof", "architecture-fit"], "tasks": ["executability"]}  # #47
@@ -104,18 +105,26 @@ def parse_lens(path, gate, slug):
     if "Findings" not in secs:
         errs.append("section `## Findings` is missing")
     lines = body[body.index("## Findings") + 1:] if "## Findings" in body else []
-    findings = []
+    findings, impl = [], gate.startswith("implementation")
     for head, f in blocks(lines):
         m = re.match(r"^(F\d+)\s+(.+)$", head)
-        missing = [k for k in FIELDS if not f.get(k)]
+        missing = [k for k in FIELDS + ["gap", "where"] * impl if not f.get(k)]
         if not m or missing:
             errs.append(f"finding `{head}`: needs `### F<n> <title>` and {missing or 'all fields'}")
             continue
         one = {k: f[k][0] for k in FIELDS if k != "quote"}
         one.update(ref=m[1], title=m[2], quotes=[unquote(q) for q in f["quote"]],
                    cites=[c.strip() for c in one["cites"].split(",") if c.strip()])
-        bad = [f"{k} `{one[k]}` must be one of {', '.join(sorted(allowed))}" for k, allowed in
-               (("kind", KINDS), ("severity", SEVERITY), ("evidence", EVIDENCE)) if one[k] not in allowed]
+        checks = [("kind", KINDS), ("severity", SEVERITY), ("evidence", EVIDENCE)]
+        if impl:  # a finding traces to an AC, FR or CT, and says what is wrong (gap) and where (CT-12)
+            one.update(gap=f["gap"][0], where=f["where"][0], tampering=f.get("tampering", [""])[0] == "yes")
+            checks.append(("gap", GAPS))
+            if f.get("right"):
+                one["right"] = f["right"][0]
+                checks.append(("right", ["spec", "code"]))
+        bad = [f"{k} `{one[k]}` must be one of {', '.join(sorted(allowed))}" for k, allowed in checks if one[k] not in allowed]
+        if impl and not any(re.fullmatch(r"(AC|FR|CT)-\d+", c) for c in one["cites"]):
+            bad.append("cites must hold an AC, FR or CT ID")
         if bad:
             errs.append(f"{m[1]}: " + "; ".join(bad))
             continue
@@ -146,14 +155,18 @@ def parse_lens(path, gate, slug):
 ID = re.compile(r"^[A-Z][A-Z0-9]*-\d+$")  # FR-1, AC-12, SC-3; anything else in `cites` is a label, e.g. a table row
 
 
-def grounded(finding, text, human=""):
+def undefined(finding, text):
+    """The IDs the finding cites that `text` doesn't hold."""
+    return [c for c in finding["cites"] if ID.match(c) and not re.search(rf"(?<![\w-]){re.escape(c)}(?![\w-])", text)]
+
+
+def grounded(finding, text, human="", quotes=True):
     """Every cited ID is in the gate's artefacts, and every quote is in them or in the human's own words (the intake and
     their grill answers, which the scope lens quotes). Whitespace-insensitive for quotes. Labels aren't checked: the
-    quotes ground them, and every finding has at least one."""
+    quotes ground them, and every finding has at least one. At the implementation gate (`quotes` off) a quote is code,
+    often abbreviated, so only the IDs count (CT-12, FR-23)."""
     flat = " ".join(text.split()) + "\n" + " ".join(human.split())
-    ids = [c for c in finding["cites"] if ID.match(c)]
-    return all(re.search(rf"(?<![\w-]){re.escape(c)}(?![\w-])", text) for c in ids) and all(
-        " ".join(q.split()) in flat for q in finding["quotes"])
+    return not undefined(finding, text) and (not quotes or all(" ".join(q.split()) in flat for q in finding["quotes"]))
 
 
 def planned(name, text):
@@ -490,21 +503,27 @@ def answers(root, slug):
 def collect(root, slug, gate, run, expect=(), tier=None):
     """Merge the run's new lens outputs into the ledger, then apply the refuter's output if present.
     Returns lines to print, ending with the refuter batch when blocker or major findings still need validating."""
-    if gate.startswith("implementation"):
-        epic_gate(root, slug, gate)
+    impl = gate.startswith("implementation")
+    if impl:
+        epic = epic_gate(root, slug, gate)
         led = load(root, slug, gate)
         if "picked" not in led and any("over the cap" in x for x in plan(root, slug, gate)[0]):
             raise ValueError(f"{gate} plans more runs than the cap: record the human's pick first (nio jury plan {slug} {gate} --pick <lens,lens>)")
-        raise ValueError("collecting an implementation gate's lens outputs is not built yet")
-    if gate not in GATES:
+        # a round judges the epic's last commit; the cites are checked against the spec and contracts (CT-12)
+        commit = evidence.commits_of(root, slug, epic)[0]
+        text = ground = "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in ("spec.md", "contracts.md")) if p.exists())
+        human = ""
+    elif gate not in GATES:
         raise ValueError(f"gate must be one of {sorted(GATES)}")
-    led = load(root, slug, gate)
+    else:
+        led = load(root, slug, gate)
+        text = artefact(root, slug, gate)
+        if not text:
+            raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
+        human, ground = human_words(root, slug), grounding(root, slug, gate)
     led["expect"] = sorted(set(led["expect"]) | set(expect))
     led["tier"] = tier or led["tier"]
-    text = artefact(root, slug, gate)
-    if not text:
-        raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
-    human, ground = human_words(root, slug), grounding(root, slug, gate)
+    judged = lambda write=False: commit if impl else blob(root, text, write)
     jury = root / ".nio/runs" / run / "jury"
     out, new = [], []
     for path in sorted(jury.glob(f"{gate}-*.md")):
@@ -517,20 +536,20 @@ def collect(root, slug, gate, run, expect=(), tier=None):
     # a retry: every new file re-runs a juror that failed (invalid, or asked for more context) in this round, on this
     # same version. It joins the round its juror failed in instead of starting one (#55).
     jj = led["jurors"]
-    retry = new and all(p.stem in jj and jj[p.stem]["round"] == led["round"] and jj[p.stem]["version"] == blob(root, text)
+    retry = new and all(p.stem in jj and jj[p.stem]["round"] == led["round"] and jj[p.stem]["version"] == judged()
                         and (not jj[p.stem]["valid"] or jj[p.stem]["context"] == "needs-more") for p in new)
     if new and retry:
         out += merge(led, new, gate, slug, ground, human)
     elif new:
         led["round"] += 1
         # the artefact this round judges, kept in git's object store so a later round can tell what changed (FR-23)
-        led.setdefault("versions", {})[str(led["round"])] = blob(root, text, write=True)
+        led.setdefault("versions", {})[str(led["round"])] = judged(write=True)
         if fixes(led) and not led["list"].get("final"):  # the round that starts the one final fix check (#52 FR-24)
             led["list"]["final"] = led["round"]
         out += merge(led, new, gate, slug, ground, human)
     review = phase(led) in ("re-review", "final")
     for f in led["findings"]:  # what the grounding sources now hold may ground a finding dropped earlier
-        if f["status"] == "dropped" and grounded(f, ground, human):
+        if f["status"] == "dropped" and grounded(f, ground, human, not impl):
             f.update(status="open", reason="", validation="pending" if f["severity"] != "minor" else "grounded")
             if review and f["severity"] != "blocker":  # after the first review, a note (#52 FR-12)
                 f.update(status="noted", validation="grounded")
@@ -551,6 +570,9 @@ def collect(root, slug, gate, run, expect=(), tier=None):
             out += [f"### {f['id']} {f['title']}", f"- kind: {f['kind']}, severity: {f['severity']}, cites: {', '.join(f['cites'])}"]
             out += [f'- quote: "{q}"' for q in f["quotes"]]
             out += [f"- situation ({s['lens']}): {s['situation']}" for s in f["sources"]] + [f"- fix: {f['fix']}", ""]
+    if impl:  # the runs the findings asked for are made now; the ones that weren't are the human's to see (CT-11)
+        out += [f"listed for the human: {r['request']} (finding {r['finding']}): {r['why']}"
+                for r in evidence.requested(root, led, run)[1] if r["round"] == led["round"]]
     return out
 
 
@@ -660,6 +682,7 @@ def same(g, f):
 
 
 def add(led, f, juror, lens, rnd, text, human="", review=False):
+    impl = led["gate"].startswith("implementation")
     source = {"juror": juror, "lens": lens, "situation": f["situation"], "severity": f["severity"], "round": rnd}
     if f.get("run"):  # on the source: two jurors on one finding may each ask for a run, and each round has its own (CT-11)
         source["run"] = f["run"]
@@ -668,18 +691,19 @@ def add(led, f, juror, lens, rnd, text, human="", review=False):
     match = next((g for g in led["findings"] if g["status"] != "merged" and same(g, f)
                   and not any(s["juror"] == juror and s.get("round") == rnd for s in g["sources"])), None)
     if not match:
-        ok = grounded(f, text, human)
+        ok = grounded(f, text, human, not impl)
         g = {"id": f"J-{len(led['findings']) + 1}", **{k: f[k] for k in ("title", "kind", "severity", "cites", "evidence", "quotes", "fix")},
              "sources": [source], "validation": ("pending" if f["severity"] != "minor" else "grounded") if ok else "ungrounded",
-             "reason": "" if ok else "a cited ID or quote is not in the artefact", "status": "open" if ok else "dropped",
+             "reason": "" if ok else f"{', '.join(undefined(f, text))} not defined by the spec or contracts" if impl else "a cited ID or quote is not in the artefact", "status": "open" if ok else "dropped",
              "disposition": "", "by": "", "note": "", "baseline": "new", "rounds": 0, "first_round": rnd, "last_round": rnd}
+        g.update({k: f[k] for k in ("gap", "where", "tampering", "right") if k in f})  # the implementation gate's (CT-12)
         if ok and review and f["severity"] != "blocker":  # after the first review only a blocker counts (#52 FR-12)
             g.update(status="noted", validation="grounded", reason="raised in a re-review below blocker: a note only")
         led["findings"].append(g)
         label = "new    " if g["status"] == "open" else g["status"]
         return f"{label} {g['id']} [{g['severity']}/{g['kind']}] {g['title']}" + (" (ungrounded)" if not ok else " (a note only)" * (g["status"] == "noted"))
     if match["status"] == "dropped":  # reported again: it stays dropped unless the artefact now grounds it
-        if not grounded(f, text, human):
+        if not grounded(f, text, human, not impl):
             match["last_round"] = rnd
             return f"dropped {match['id']} {match['title']} (still ungrounded)"
         match.update({k: f[k] for k in ("cites", "quotes")}, status="open", reason="",

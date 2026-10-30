@@ -24,9 +24,9 @@ The context pack from the jury skill, and nothing else:
 - For each AC the epic covers, find the test(s) that prove it, by file and line. Judge each test by its name and description, then confirm from its body that it really exercises the AC. Tests carry no spec IDs; do not look for them.
 - Take the test's result from the evidence file. An AC with no matching test, or whose test did not run or did not pass, is a missing-evidence finding at severity blocker.
 - A test that matches by name but whose body asserts nothing about the AC does not count as a match: say so in a finding.
-- Check the tampering hints the pack carries (a deleted test, a newly skipped test, a changed assertion); a finding that rests on one carries `tampering`.
+- Check the tampering hints the pack carries (a deleted test, a newly skipped test, a changed assertion); a finding that rests on one carries `tampering: yes`.
 
-Start your answer with a `## Matches` section, one line per AC matched: `- AC-n -> file:line`. Then the findings. Each finding has `gap` (what is missing or wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
+Start your answer with a `## Matches` section, one line per AC matched: `- AC-n -> file:line`. Then the findings. Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding: which of the two is wrong; unset means the spec is right), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering: yes` (set when the finding is about a deleted, skipped or weakened test).
 
 ## Stop when
 

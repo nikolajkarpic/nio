@@ -1199,6 +1199,58 @@ def test_only_3_are_run_and_the_fourth_is_listed():
     print("ok")
 
 
+# --- T-16: a finding's gap, where and cites are read and grounded (CT-12, AC-28, AC-29, AC-30, AC-47) ---
+
+def finding_collected(**fields):
+    """Collect one conformance finding (on AC-3, in src/one.py, gap missing) with `fields` replacing or, when None,
+    removing its lines. (the lines collect printed, the gate's findings)"""
+    from nio import jury
+    root = pack_repo({})
+    lines = {"cites": "AC-3", "kind": "gap", "severity": "major", "evidence": "observed", "gap": "missing", "where": "src/one.py",
+             "quote": '"return DIFF_MARK"', "situation": "x", "fix": "y", **fields}
+    body = "".join(f"- {k}: {v}\n" for k, v in lines.items() if v is not None)
+    path = root / f".nio/runs/R-1/jury/{GATE}-conformance.md"
+    path.parent.mkdir(parents=True)
+    path.write_text(f'---\nlens: conformance\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+                    f"## Reasoning\nChecked.\n\n## Findings\n### F1 the finding\n{body}")
+    return jury.collect(root, "s", GATE, "R-1"), gate_findings(root)
+
+
+def invalid_naming(field, **fields):
+    said, found = finding_collected(**fields)
+    assert any("INVALID" in x and field in x for x in said), (field, said)
+    assert not found, found  # an invalid output adds nothing to the ledger
+
+
+def test_the_output_is_invalid():
+    invalid_naming("gap", gap=None)
+    print("ok")
+
+
+def test_it_is_dropped_as_ungrounded():
+    said, found = finding_collected(cites="FR-99")
+    assert not any("INVALID" in x for x in said), said
+    (f,) = found
+    assert f["status"] == "dropped" and "FR-99" in f["reason"], f
+    print("ok")
+
+
+def test_it_is_kept():
+    said, found = finding_collected(quote='"def f(): … return the constant, not computed"')
+    assert not any("INVALID" in x for x in said), said
+    (f,) = found
+    assert f["status"] == "open", f
+    assert f["gap"] == "missing", f  # the gap type is on the ledger entry (CT-12)
+    print("ok")
+
+
+def test_the_output_is_invalid_again():
+    invalid_naming("cites", cites=None)
+    invalid_naming("cites", cites="a label, no ID")
+    invalid_naming("where", where=None)
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
