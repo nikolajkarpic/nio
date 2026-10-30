@@ -75,7 +75,7 @@ def config(root):
 
 
 def areas(root):
-    return config(root)["memory"]["areas"]
+    return config(root).get("memory", {}).get("areas", ["project"])  # verdicts file under project, so a bare config still works
 
 
 def parse(path, text=None):

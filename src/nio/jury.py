@@ -222,7 +222,7 @@ def rung(risk):
     return "low" if not risk else "high" if set(risk) & HIGH_RISK else "medium"
 
 
-def plan(root, slug, gate, extra=()):
+def plan(root, slug, gate, extra=(), pick=None):
     """(lines, ok): the lens runs this gate needs, why each runs, the tier, and the run budget. Not ok when the gate's
     own check fails or a lens has no card; over the cap is reported for the human to choose, not refused."""
     impl = gate.startswith("implementation")
@@ -279,9 +279,24 @@ def plan(root, slug, gate, extra=()):
     missing = [lens for lens in lenses if lens not in cards]
     cap = records.config(root).get("jury", {}).get("max_runs", MAX_RUNS)
     tier = rung(risk)
+    over = len(lenses) > cap
+    if pick is not None:  # the human's choice over the cap: the core lenses always run, the rest may be dropped (CT-8)
+        picked = [x.strip() for x in pick.split(",") if x.strip()]
+        core = [lens for lens, why in lenses.items() if why == "core"]
+        unknown = [x for x in picked if x not in lenses]
+        if unknown or [c for c in core if c not in picked]:
+            raise ValueError(f"--pick {pick}: " + (f"not planned: {', '.join(unknown)}" if unknown else
+                             f"cannot drop {', '.join(c for c in core if c not in picked)} (a core lens always runs)"))
+        led = load(root, slug, gate)
+        led.update(picked=picked, dropped=[x for x in lenses if x not in picked])
+        save(root, led)
     out = [f"tier: {tier}" + (f" ({', '.join(sorted(set(risk) & HIGH_RISK) or risk)})" if risk else ""),
            "lenses: " + ", ".join(f"{lens} ({why})" for lens, why in lenses.items()),
            f"runs: {len(lenses)} of {cap}" + (" — over the cap: the human chooses what runs" if len(lenses) > cap else "")]
+    if over:
+        cfg = records.config(root)
+        out += [f"run: {lens} ({why}) — {agents.resolve(cfg, lens, cards[lens][0], 'claude')[0]}" for lens, why in lenses.items() if lens in cards]
+        out.append("choices: run all, or pick a set with --pick (no hit rates recorded yet)")
     if missing:
         out.append(f"missing cards: {', '.join(missing)} — the gate is blocked until they exist")
     return out, not missing
@@ -473,6 +488,12 @@ def answers(root, slug):
 def collect(root, slug, gate, run, expect=(), tier=None):
     """Merge the run's new lens outputs into the ledger, then apply the refuter's output if present.
     Returns lines to print, ending with the refuter batch when blocker or major findings still need validating."""
+    if gate.startswith("implementation"):
+        epic_gate(root, slug, gate)
+        led = load(root, slug, gate)
+        if "picked" not in led and any("over the cap" in x for x in plan(root, slug, gate)[0]):
+            raise ValueError(f"{gate} plans more runs than the cap: record the human's pick first (nio jury plan {slug} {gate} --pick <lens,lens>)")
+        raise ValueError("collecting an implementation gate's lens outputs is not built yet")
     if gate not in GATES:
         raise ValueError(f"gate must be one of {sorted(GATES)}")
     led = load(root, slug, gate)
@@ -964,6 +985,7 @@ def verdict(root, led, outcome, reasons):
     body += [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}: {f['status']} {f['disposition']}".rstrip() for f in open_[:8]]
     if not reasons and not open_:
         body.append("- Every lens approved and no finding is open.")
+    body += [f"- Dropped lenses (the human's pick): {', '.join(led['dropped'])}."] if led.get("dropped") else []
     body += ["## What was rejected", *([f"- {f['id']} {f['title']}: {f['status']} ({f['reason']})" for f in turned[:6]] or ["Nothing."])]
     path.write_text(head + "\n---\n" + "\n".join(body) + "\n")
     return path

@@ -723,9 +723,9 @@ ROWS = {"auth": "security", "pii": "security", "secrets": "security", "external-
         "public-api": "adversary", "money": None, "migration": "risk-rollback", "data-deletion": "risk-rollback"}  # the spec's table
 
 
-def lens_plan(risk=(), modify_old=False):
-    """(lens names the gate plans for epic E-1, the plan's lines, ok): spec `s` flagged `risk`; T-1 and T-2 either only add
-    files or also change old.py, which a commit before the epic added."""
+def lens_repo(risk=(), modify_old=False):
+    """A finished epic E-1 in spec `s` flagged `risk`; T-1 and T-2 either only add files or also change old.py, which a
+    commit before the epic added."""
     root = epic_repo(["T-1", "T-2"])
     git(root, "config", "user.name", "t")
     git(root, "config", "user.email", "t@t")
@@ -741,6 +741,12 @@ def lens_plan(risk=(), modify_old=False):
     (root / "b.py").write_text("b = 1\n")
     git(root, "add", "-A")
     git(root, "commit", "-qm", "T-2: Two")
+    return root
+
+
+def lens_plan(risk=(), modify_old=False):
+    """(lens names the gate plans for epic E-1, the plan's lines, ok)."""
+    root = lens_repo(risk, modify_old)
     from nio import jury
     lines, ok = jury.plan(root, "s", "implementation-E-1")
     line = next((x for x in lines if x.startswith("lenses: ")), "")
@@ -799,6 +805,72 @@ def test_secrets_brings_no_security_lens_at_the_plan_gate():
         lines, ok = jury.plan(plan_repo(risk), PSLUG, "plan")
         line = next(x for x in lines if x.startswith("lenses: "))
         assert ("security (" in line) == want, (risk, line)
+    print("ok")
+
+
+# --- T-13: over the cap, the human picks (CT-8, CT-16, AC-22, AC-23) ---
+
+GATE = "implementation-E-1"
+FIVE = ["conformance", "correctness", "security", "adversary", "risk-rollback"]
+
+
+def capped():
+    """Epic E-1 whose plan holds the five runs in FIVE, with jury.max_runs at 4."""
+    root = lens_repo(["auth", "external-input", "migration"])
+    (root / ".nio/config.json").write_text('{"jury": {"max_runs": 4}}')
+    return root
+
+
+def test_no_lens_runs_until_the_human_picks_and_the():
+    from nio import jury
+    root = capped()
+    lines, ok = jury.plan(root, "s", GATE)
+    text = "\n".join(lines)
+    assert ok, lines
+    for lens in FIVE:
+        assert any(re.search(rf"\b{lens}\b", x) and re.search(r"\b(cheap|medium|strong|max)\b", x) for x in lines), (lens, text)
+    assert "over the cap" in text and "all" in text and "pick" in text, text
+    assert "hit rate" not in text.lower() or "no hit rates" in text.lower(), text  # none are recorded yet
+    out = root / ".nio/runs/R-1/jury"
+    out.mkdir(parents=True)
+    (out / f"{GATE}-conformance.md").write_text("# conformance\n")
+    try:
+        jury.collect(root, "s", GATE, "R-1")
+        raise AssertionError("collect took a lens output with no pick")
+    except ValueError as e:
+        assert "pick" in str(e), e
+    print("ok")
+
+
+def test_a_pick_that_drops_a_core_lens_is_refused():
+    from nio import jury
+    root = capped()
+    for lens in sorted(CORE_TWO):
+        keep = [x for x in FIVE if x != lens][:4]
+        try:
+            jury.plan(root, "s", GATE, pick=",".join(keep))
+            raise AssertionError("a pick without " + lens + " was taken")
+        except ValueError as e:
+            assert lens in str(e), e
+    assert not (root / ".nio/specs/s/jury").exists(), "a refused pick wrote a ledger"
+    print("ok")
+
+
+def test_the_dropped_lens_is_named_in_the_verdict():
+    import subprocess
+    import sys
+    from nio import jury
+    root = capped()
+    keep = ["conformance", "correctness", "security", "adversary"]
+    out = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "jury", "plan", "s", GATE,
+                          "--pick", ",".join(keep)], cwd=root, capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    led = jury.load(root, "s", GATE)
+    assert led["picked"] == keep and led["dropped"] == ["risk-rollback"], led
+    path = jury.verdict(root, led, "approved", [])
+    said = [x for x in path.read_text().splitlines() if "dropped" in x.lower()]
+    assert any("risk-rollback" in x for x in said), path.read_text()
+    assert not any(c in x for x in said for c in CORE_TWO), said
     print("ok")
 
 
