@@ -1,7 +1,7 @@
 {
   "gate": "tasks",
   "subject": "2026-10-27-implementation-jury",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "executability"
@@ -9,19 +9,21 @@
   "collected": {
     "R-261030-lops/tasks-executability.md": "c966adad38d334ae4884e2889f6f21e65f5ed90422a6ea2e5461091083daa3cc",
     "R-261030-lops/tasks-refuter.md": "cd9f7d0078323a7c143f164829e88a38721288bbb967dfd6cdb48c3c7fc12fea",
-    "R-261030-kglb/tasks-executability.md": "01b58425a0f63db5d5156dd3d9fe666272343ed241ebdf2cf5a515d85b181228"
+    "R-261030-kglb/tasks-executability.md": "01b58425a0f63db5d5156dd3d9fe666272343ed241ebdf2cf5a515d85b181228",
+    "R-261030-fvh7/tasks-executability.md": "8f2b247c1bc382ce6c926ba2e948ce04c1dbd89087c5825e0aecd1d1d7373db9",
+    "R-261030-fvh7/tasks-refuter.md": "965367df81e62a3144a19c403f358303336837aa661d81f6e70b9acc738d1631"
   },
   "jurors": {
     "tasks-executability": {
       "attempts": 1,
       "lens": "executability",
-      "by": "juror / claude-code / claude-haiku-5-5",
-      "context": "limited",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "cdd8e29f77ecf1c170c509a46b450bf35cce0a57",
-      "judged": 2
+      "round": 3,
+      "version": "818d6ead11a3b1603e3b5cf0864854358754dea4",
+      "judged": 3
     }
   },
   "findings": [
@@ -212,6 +214,87 @@
       "rounds": 0,
       "first_round": 1,
       "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "The flow and skill wiring, CT-17 and CT-19, has no task after T-4, T-27 and T-28 were removed",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "T-4",
+        "T-27",
+        "T-28",
+        "CT-17",
+        "CT-19",
+        "TC-69",
+        "TC-70",
+        "TC-72",
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Delivers: CT-14, CT-15, CT-16, CT-17, CT-19"
+      ],
+      "fix": "Either add tasks that cover this work under new IDs, since the retired IDs can't be reused, with dependencies on T-23 and T-25. Or take CT-17, CT-19 and their tests and scenarios out of Build order and scope through a recorded change to the spec and plan.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "Build order still has the E-8 story deliver CT-17 and CT-19 and test TC-69, TC-70 and TC-72. The five E-8 tasks left list none of those tests, and their Files lines don't include `skills/jury/SKILL.md` or `src/nio/hooks.py`. An implementer finishing every task would leave four things undone. The flow would not print the gate as next or refuse the next claim while it is open. Outcomes would not be committed, and `nio flow done implementation-E-n` would not write the epic and pass lines. The jury skill would have no implementation gate, and `jury evidence` would not be in `hooks.ALLOW`. The gate could be built but not reached through the flow, and TC-69, TC-70 and TC-72 would have no task to make them pass.",
+          "severity": "blocker",
+          "round": 3
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The `#### Fixes` section at the end of tasks.md already has the missing work. T-30 handles the flow-done writes and commits (TC-72, TC-69). T-31 adds the jury skill and the `jury evidence` allow-list entry (TC-1). T-33 makes the flow wait on the gate (TC-69, TC-70). All three carry `From: C-261030-abpr`, and they depend on T-23 and T-25 or later tasks. The reviewer did not see these fixes. The only loose end is that plan.md line 48 (Delivers CT-17, CT-19) is not mapped to a task by name. Even so, the tasks cover the TCs that plan.md links to those CTs (TC-69, TC-70, TC-72, TC-1).",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-7",
+      "title": "The quickstart scenarios have no task to provide the demo runs after T-29 was removed",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "T-29",
+        "QS-1",
+        "QS-2",
+        "QS-3",
+        "QS-4",
+        "TC-23",
+        "TC-50",
+        "TC-54"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Scenario: QS-2, QS-3"
+      ],
+      "fix": "Add a task under a new ID that provides the four `--demo` runs, depending on the tasks they exercise. Or change QS-1 to QS-4 and Build order so the scenarios no longer rely on `--demo`, through a recorded spec and plan change.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-29 was the task that added the `--demo approved|rejected|stale|cap` runs the quickstart scenarios call, and its Test line had QS-1 to QS-4 print their expected lines. Build order still names QS-1, QS-2, QS-3 and QS-4 as story scenarios, all marked auto, but no task shown now adds those demo runs. Each scenario would call a `--demo` mode that doesn't exist, so the scenario check can't pass at the end of its story.",
+          "severity": "blocker",
+          "round": 3
+        }
+      ],
+      "validation": "refuted",
+      "reason": "T-32 in the `#### Fixes` section (\"Add the `--demo approved|rejected|stale|cap` runs the quickstart scenarios call\") provides the four demos. It serves AC-1, AC-22, AC-32 and AC-36, and tests TC-1, TC-23, TC-50 and TC-54 as the QS-1 to QS-4 demos. It depends on T-20, T-24 and T-30, which are the tasks the demos exercise. This replaces the removed T-29, so the finding's own suggested fix is already in the file. One flaw is that T-32 lists only `tests/test_evidence.py` under Files, with no source file for `--demo`. That is a separate and smaller question than the finding raised.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
     }
   ],
   "outcome": "approved",
@@ -219,10 +302,15 @@
     [
       2,
       "approved"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "92385d44b7ee3db0abe2de71526853bc31ff9240",
-    "2": "cdd8e29f77ecf1c170c509a46b450bf35cce0a57"
+    "2": "cdd8e29f77ecf1c170c509a46b450bf35cce0a57",
+    "3": "818d6ead11a3b1603e3b5cf0864854358754dea4"
   }
 }

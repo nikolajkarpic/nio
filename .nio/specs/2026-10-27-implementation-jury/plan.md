@@ -13,8 +13,8 @@ retired: []                      # OP IDs removed from this plan; never reused
 
 ### US-1 The gate runs only on an implemented epic
 - Depends on: Foundation
-- Delivers: CT-1, CT-17
-- Tests: TC-2, TC-3, TC-70
+- Delivers: CT-1
+- Tests: TC-2, TC-3
 - Scenario: QS-1
 
 ### US-2 The CLI collects observed evidence before any lens runs
@@ -45,8 +45,8 @@ retired: []                      # OP IDs removed from this plan; never reused
 
 ### US-6 Findings become appended tasks or change requests, and the outcome follows the spec jury
 - Depends on: US-5
-- Delivers: CT-14, CT-15, CT-16, CT-19
-- Tests: TC-24, TC-38, TC-44, TC-46, TC-47, TC-50, TC-51, TC-52, TC-53, TC-54, TC-55, TC-56, TC-57, TC-58, TC-59, TC-64, TC-65, TC-69, TC-71, TC-72, TC-74, TC-75
+- Delivers: CT-14, CT-15, CT-16, CT-17, CT-19
+- Tests: TC-24, TC-38, TC-44, TC-46, TC-47, TC-50, TC-51, TC-52, TC-53, TC-54, TC-55, TC-56, TC-57, TC-58, TC-59, TC-64, TC-65, TC-69, TC-70, TC-71, TC-72, TC-74, TC-75
 - Scenario: QS-2, QS-3
 
 ## Coverage

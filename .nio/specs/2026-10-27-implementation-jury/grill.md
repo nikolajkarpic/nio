@@ -389,3 +389,10 @@ Patched: architecture.md; contracts.md CT-17
 Question: If a re-review of an epic's code finds a new serious problem, and nothing else is open, what should happen?
 Answer: 1. Comes to you: the epic waits for the human's ruling, fix it or accept the risk. [human]
 Patched: spec.md FR-32; contracts.md CT-13
+
+Session (2026-10-30): a build-order fault the implement stage found.
+
+## Q30 · the wait rule's place · 2026-10-30
+Question: The next task would block this build, so how should we fix it?
+Answer: 1. Move it to the end: the wait rule is built last, after the command that closes reviews exists; earlier epics keep being marked skipped. [human]
+Patched: plan.md US-1, US-6; tasks.md T-4, T-27, T-28, T-29 retired, T-30 to T-33 added (C-261030-abpr)

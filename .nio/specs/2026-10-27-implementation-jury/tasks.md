@@ -1,6 +1,6 @@
 ---
 slug: 2026-10-27-implementation-jury
-retired: []                      # task IDs removed from this file; never reused
+retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Implementation jury
 
@@ -36,16 +36,6 @@ retired: []                      # task IDs removed from this file; never reused
 - Parallel: no
 - Tier: strong: gate-name parsing and a state check with clear tests
 - Effort: med
-- Mode: split: clear tests lead the code
-
-### T-4 Make the flow wait on the gate: print it as next, refuse the next claim while it is open, report old skipped epics
-- Files: `src/nio/implement.py`, `src/nio/flow.py`, `tests/test_implement.py`, `tests/test_flow.py`, `tests/test_evidence.py`
-- Serves: AC-1
-- Test: TC-70
-- Depends on: T-3
-- Parallel: no
-- Tier: strong: flow-state rules across two modules, testable
-- Effort: high
 - Mode: split: clear tests lead the code
 
 ## E-3 The CLI collects observed evidence before any lens runs (US-2)
@@ -280,32 +270,52 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: med
 - Mode: split: clear tests lead the code
 
-### T-27 Commit each recorded outcome and let `nio flow done implementation-E-n` write the epic line and, after the last epic, the pass line
+#### Fixes
+
+### T-30 Commit each recorded outcome and let `nio flow done implementation-E-n` write the epic line and, after the last epic, the pass line
+- From: C-261030-abpr
 - Files: `src/nio/flow.py`, `src/nio/jury.py`, `src/nio/cli.py`, `tests/test_flow.py`, `tests/test_evidence.py`
 - Serves: AC-32, AC-40
-- Test: TC-69, TC-72
-- Depends on: T-4, T-23, T-25
+- Test: TC-72, plus direct unit checks that `nio flow done implementation-E-n` writes the epic line and, after the last epic, the pass line and `merge:`; TC-69 proved later by T-33
+- Depends on: T-23, T-25
 - Parallel: no
 - Tier: max: writes flow history and commits; wrong writes can't be undone
 - Effort: high
 - Mode: split: clear tests lead the code
 
-### T-28 Add the implementation gate to the jury skill and allow `nio jury evidence`
+
+### T-31 Add the implementation gate to the jury skill and allow `nio jury evidence`
+- From: C-261030-abpr
 - Files: `skills/jury/SKILL.md`, `src/nio/hooks.py`, `tests/test_hooks.py`
 - Serves: AC-1
 - Test: TC-1, plus direct checks that `jury evidence` is in `hooks.ALLOW` and that the skill's shared talk block is unchanged (`tests/test_talk.py`)
-- Depends on: T-27
+- Depends on: T-30
 - Parallel: yes
 - Tier: cheap: skill text and one allow-list entry
 - Effort: low
 - Mode: direct: docs and wiring, no test can lead
 
-### T-29 Add the `--demo approved|rejected|stale|cap` runs the quickstart scenarios call
+
+### T-32 Add the `--demo approved|rejected|stale|cap` runs the quickstart scenarios call
+- From: C-261030-abpr
 - Files: `tests/test_evidence.py`
 - Serves: AC-1, AC-22, AC-32, AC-36
 - Test: TC-1, TC-23, TC-50, TC-54 as the four demos QS-1 to QS-4 print their expected lines
-- Depends on: T-20, T-24, T-27
+- Depends on: T-20, T-24, T-30
 - Parallel: yes
 - Tier: strong: four scripted scenarios over the whole gate
 - Effort: med
 - Mode: direct: the demos are the test, nothing to lead
+
+
+### T-33 Make the flow wait on the gate: print it as next, refuse the next claim while it is open, report old skipped epics
+- From: C-261030-abpr
+- Files: `src/nio/implement.py`, `src/nio/flow.py`, `tests/test_implement.py`, `tests/test_flow.py`, `tests/test_evidence.py`
+- Serves: AC-1, AC-40
+- Test: TC-69, TC-70
+- Depends on: T-3, T-30, T-31, T-32
+- Parallel: no
+- Tier: strong: flow-state rules across two modules, testable
+- Effort: high
+- Mode: split: clear tests lead the code
+
