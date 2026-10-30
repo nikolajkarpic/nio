@@ -1,6 +1,18 @@
 {
   "memory": {
-    "areas": ["records", "index", "sync", "tooling", "project"],
-    "index": { "model": "BAAI/bge-small-en-v1.5", "drift": 0.3 }
+    "areas": [
+      "records",
+      "index",
+      "sync",
+      "tooling",
+      "project"
+    ],
+    "index": {
+      "model": "BAAI/bge-small-en-v1.5",
+      "drift": 0.3
+    }
+  },
+  "tests": {
+    "suite": "for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done"
   }
 }
