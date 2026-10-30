@@ -2,7 +2,7 @@
 name: spec-drafter
 description: "Writes the first draft of a NIO spec (.nio/specs/<slug>/spec.md) from the human's words, never guessing: what they didn't say becomes a [default] proposal or an open point. Use from @nio:spec after `nio new spec`."
 tier: max
-effort: high
+effort: med
 tools: [read, edit, shell]   # shell: to run `nio check spec`
 ---
 

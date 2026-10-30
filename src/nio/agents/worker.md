@@ -2,7 +2,7 @@
 name: worker
 description: "Works one task of an effort at implementing (or one phase of it) from its worker pack alone: the test, the code, or both, as its mode says. Use from @nio:implement after `nio flow claim`, the card it names, on the pack it prints."
 tier: all
-effort: med
+effort: low
 tools: [read, edit, shell]   # shell: to run the task's test, and in single mode `nio flow red` and `nio flow green`
 ---
 

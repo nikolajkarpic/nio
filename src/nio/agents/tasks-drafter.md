@@ -2,7 +2,7 @@
 name: tasks-drafter
 description: "Writes a spec's tasks.md (.nio/specs/<slug>/tasks.md): epics in the plan's build order (a bug fix: one epic), tasks with seven fields each, never a design choice of its own. Use from @nio:tasks after `nio new tasks`."
 tier: strong
-effort: high
+effort: med
 tools: [read, edit, shell]   # shell: to run `nio check tasks`
 ---
 
