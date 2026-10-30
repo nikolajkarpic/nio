@@ -1029,6 +1029,176 @@ def test_it_can_open_any_project_file_and_can_t():
     print("ok")
 
 
+# --- T-15: a juror's requested run (CT-11, CT-7, AC-26, AC-27, AC-44, AC-45) ---
+
+ASKED_TCS = {"TC-2": "test_two", "TC-3": "test_three", "TC-4": "test_four", "TC-5": "test_five", "TC-6": "test_six"}
+ASKED_ACCEPTANCE = "".join(
+    f"### {tc} Asked ({tc}; unit) [derived: FR-1]\n- File: `tests/test_asked.py:AskedTest.{name}` (new)\n- Covers: CT-1\n"
+    f"- Setup: x\n- Action: y\n- Assert: z\n\n" for tc, name in ASKED_TCS.items())
+ASKED_TEST = """import unittest
+from pathlib import Path
+
+
+def ran(tc):
+    with open({log!r}, "a") as f:
+        f.write(tc + "\\n")
+    Path("left-behind.txt").write_text(tc)  # a run in the human's tree shows
+    print("ASKED-" + "MARK-" + tc)  # split, so the epic's diff doesn't hold what only a run prints
+
+
+class AskedTest(unittest.TestCase):
+""" + "".join(f"    def {name}(self):\n        ran({tc!r})\n\n" for tc, name in ASKED_TCS.items())
+ASKED_SPEC = "---\nslug: s\nretired: []\n---\n# s\n\n## User stories\n### US-1 Story (P1) [human]\n" + "".join(
+    f"- **AC-{i}** Given x, when it runs, then it holds. [human]\n  Observable: y. Level: unit.\n" for i in range(1, 11))
+
+
+def asked_repo(suite=None):
+    """A gate started on epic E-1 whose tests.md also names TC-2..TC-6, tests that log their TC when run, each only after
+    the gate's own run of the suite. (root, the log)."""
+    root, _ = gate_repo()
+    log = Path(tempfile.mkdtemp(prefix="nio-asked-")) / "ran"
+    (root / ".nio/specs/s/tests.md").write_text(MISUSE.replace("## Misuse tests", f"## Acceptance tests\n\n{ASKED_ACCEPTANCE}## Misuse tests"))
+    (root / ".nio/specs/s/spec.md").write_text(ASKED_SPEC)
+    (root / "tests/test_asked.py").write_text(ASKED_TEST.format(log=str(log)))
+    if suite:
+        (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": suite}}))
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Two")
+    start(root)
+    log.write_text("")
+    return root, log
+
+
+def asked_round(root, rnd, **lenses):
+    """Round `rnd`'s lens outputs go into the ledger, through the path that reads a finding's fields. Each lens gives
+    [(n, run or None)]: a finding on AC-n asking for that run."""
+    from nio import jury
+    paths = []
+    for lens, findings in lenses.items():
+        body = "".join(f'### F{i} finding on AC-{n}\n- cites: AC-{n}\n- kind: gap\n- severity: major\n- evidence: observed\n- gap: missing\n'
+                       f'- where: a.py\n- quote: "it holds"\n- situation: x\n- fix: y\n' + (f"- run: {run}\n" if run else "") + "\n"
+                       for i, (n, run) in enumerate(findings, 1))
+        path = root / f".nio/runs/R-1/jury/{GATE}-{lens}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f'---\nlens: {lens}\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+                        f"## Reasoning\nChecked.\n\n## Findings\n{body}")
+        paths.append(path)
+    led = jury.load(root, "s", GATE)
+    led["round"] = rnd
+    led.setdefault("versions", {})[str(rnd)] = git(root, "rev-parse", "HEAD").strip()
+    said = jury.merge(led, paths, GATE, "s", ASKED_SPEC)
+    assert not [x for x in said if "INVALID" in x or "ungrounded" in x], said
+    jury.save(root, led)
+
+
+def asked_run(root):
+    """(results, for the human) of `evidence.requested` on the gate's ledger as it stands."""
+    from nio import jury
+    e = evidence()
+    assert hasattr(e, "requested"), "evidence.requested doesn't exist yet"
+    return e.requested(root, jury.load(root, "s", GATE), "R-1")
+
+
+def next_packs(root):
+    """The next round's pack both ways it is built: a full pack, and the fix check of a re-review, whose empty diff shows
+    only what the requested runs put there."""
+    from nio import jury
+    led = jury.load(root, "s", GATE)
+    full = pack(root, "conformance")
+    head, rnd = git(root, "rev-parse", "HEAD").strip(), led["round"]
+    jury.save(root, {**led, "round": rnd + 1, "recorded": [[rnd, "rejected"]], "versions": {str(rnd): head, str(rnd + 1): head}})
+    check = pack(root, "conformance")
+    jury.save(root, led)
+    assert "fix check" in check, check
+    return full, check
+
+
+def asked_saved(root):
+    return json.dumps(evidence().load(root, "R-1")["requests"], ensure_ascii=False)
+
+
+def finding_id(root, n):
+    from nio import jury
+    return next(f["id"] for f in jury.load(root, "s", GATE)["findings"] if f["title"] == f"finding on AC-{n}")
+
+
+def on_the_list(human, request, jid):
+    """The human's list holds one entry naming both the request and its finding."""
+    return any(request in json.dumps(h, ensure_ascii=False) and re.search(rf"\b{jid}\b", json.dumps(h)) for h in human)
+
+
+def test_they_hold_that_run_s_result():
+    # the second juror's request is on a finding the first already raised; TC-1 is one of the spec's attacks
+    root, log = asked_repo()
+    asked_round(root, 1, conformance=[(1, None), (3, "TC-1")], correctness=[(1, "TC-2")])
+    assert "ASKED-MARK" not in pack(root, "conformance"), "the pack holds a run that wasn't made"
+    before = snapshot(root)
+    asked_run(root)
+    same(root, before, "a requested run")
+    assert log.read_text().split() == ["TC-2"], log.read_text()
+    for text in next_packs(root):
+        assert "ASKED-MARK-TC-2" in text and "MISUSE-RAN" in text, f"the requested runs' output is not in the pack:\n{text}"
+    saved = asked_saved(root)
+    assert all(x in saved for x in ("TC-1", "TC-2", "MISUSE-RAN", "ASKED-MARK-TC-2")), saved
+    start(root)  # CT-7: a later `nio jury evidence` on the same run keeps `requests`
+    assert "ASKED-MARK-TC-2" in pack(root, "conformance"), "a later evidence run lost the requested run"
+    print("ok")
+
+
+def test_they_say_the_run_couldn_t_start_and_why():
+    # a runner with no known way to run one test, and a program that doesn't exist
+    for suite, why in (("make test", "runner|one test"), ("/nonexistent/pytest", "not found")):
+        root, log = asked_repo(suite)
+        asked_round(root, 1, conformance=[(1, "TC-2")])
+        assert "couldn't run" not in pack(root, "conformance"), suite
+        asked_run(root)
+        assert log.read_text() == "", f"{suite}: the test ran: {log.read_text()}"
+        saved = asked_saved(root)
+        assert "TC-2" in saved and "couldn't run" in saved and re.search(why, saved, re.I), f"{suite}: {saved}"
+        full, check = next_packs(root)
+        assert "couldn't run" in full, f"{suite}: the full pack doesn't say it:\n{full}"
+        assert "TC-2" in check and "couldn't run" in check and re.search(why, check, re.I), f"{suite}: the fix check doesn't say it:\n{check}"
+    print("ok")
+
+
+def test_the_command_is_not_run_and_is_listed_for():
+    # command text from a model, however it is dressed, even one that would run a real test of the project; never a shell
+    root, log = asked_repo()
+    mark = Path(tempfile.mkdtemp(prefix="nio-shell-")) / "started"
+    shell = [f"touch {mark}", f"TC-2; touch {mark}", f"TC-2 && touch {mark}", f"$(touch {mark})", f"`touch {mark}`",
+             "TC-99", "python3 -m unittest tests.test_asked.AskedTest.test_two"]
+    asked_round(root, 1, conformance=[(i, run) for i, run in enumerate(shell[:5], 1)],
+                correctness=[(i, run) for i, run in enumerate([*shell[5:], "TC-3"], 6)])
+    _, human = asked_run(root)
+    assert not mark.exists(), "a request's shell text ran"
+    assert log.read_text().split() == ["TC-3"], f"refused requests must neither run nor use up the round's runs: {log.read_text()}"
+    assert len(human) == len(shell), human
+    for i, run in enumerate(shell, 1):
+        assert on_the_list(human, run, finding_id(root, i)), f"{run!r} and its finding are not on the list: {human}"
+    for text in next_packs(root):
+        assert "ASKED-MARK-TC-3" in text and "ASKED-MARK-TC-2" not in text, text
+    print("ok")
+
+
+def test_only_3_are_run_and_the_fourth_is_listed():
+    root, log = asked_repo()
+    four = {1: "TC-2", 2: "TC-3", 3: "TC-4", 4: "TC-5"}
+    asked_round(root, 1, conformance=[(1, four[1]), (2, four[2])], correctness=[(3, four[3]), (4, four[4])])
+    _, human = asked_run(root)
+    ran = log.read_text().split()
+    assert len(ran) == 3 == len(set(ran)) and set(ran) < set(four.values()), ran
+    (n, left), = [(n, tc) for n, tc in four.items() if tc not in ran]
+    assert len(human) == 1 and on_the_list(human, left, finding_id(root, n)), human
+    for text in next_packs(root):
+        assert set(re.findall(r"ASKED-MARK-(TC-\d+)", text)) == set(ran), text
+    asked_run(root)  # the same round again: no more runs, or the cap means nothing
+    assert log.read_text().split() == ran, log.read_text()
+    asked_round(root, 2, conformance=[(5, "TC-6")])  # the next round has its own three; what was listed stays the human's
+    asked_run(root)
+    assert log.read_text().split() == [*ran, "TC-6"], log.read_text()
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):

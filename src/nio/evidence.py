@@ -3,6 +3,7 @@ the repo and the run's results file."""
 import json
 import os
 import re
+import shlex
 import tempfile
 from pathlib import Path
 
@@ -12,6 +13,8 @@ RESULTS = "results.json"  # CT-7, under .nio/runs/<run>/
 KEEP = 100_000  # FR-41: bytes kept at each end of a run's output
 FIRST_ERRORS = 5  # FR-42: lines of a failed check's output its finding holds
 FIRST_CHARS = 2_000  # the same, for a check that prints very long lines
+MAX_REQUESTED = 3  # FR-20: a juror's requested runs per round, across all jurors
+LISTED = "listed for the human"  # a request not run; its text is a model's, so it stays out of every pack
 
 
 def cut(output):
@@ -23,18 +26,18 @@ def cut(output):
     return f"{raw[:KEEP].decode(errors='replace')}\n[cut {n} bytes]\n{raw[-KEEP:].decode(errors='replace')}", n
 
 
-def one(copy, command, limit):
-    """A command's entry in `in_copy`'s list."""
+def one(copy, command, limit, unstarted="failed"):
+    """A command's entry in `in_copy`'s list. `unstarted`: its result when the shell couldn't start the program (126, 127)."""
     if not command:
         return {"command": command, "result": "not configured", "output": "", "cut": 0}
     code, out, cause = implement.run(copy, command, limit)
     output, n = cut(out)
     if cause == "time limit":
         output += f"\ntimed out after {limit} seconds\n"
-    return {"command": command, "result": "passed" if code == 0 else "failed", "output": output, "cut": n}
+    return {"command": command, "result": "passed" if code == 0 else unstarted if code in (126, 127) else "failed", "output": output, "cut": n}
 
 
-def in_copy(root, commit, commands, limit):
+def in_copy(root, commit, commands, limit, unstarted="failed"):
     """Run `commands` in order in one throwaway clone at `commit`, removed however the runs end (CT-2, FR-40, FR-41).
     Setup comes first in `commands`, so what it builds is there for the rest. ValueError, and nothing runs, when the
     clone can't be made."""
@@ -53,9 +56,17 @@ def in_copy(root, commit, commands, limit):
                 code, _, err = records.git(where, *args, full=True)
                 if code:
                     raise ValueError(f"can't make the throwaway copy: {err.strip()}")
-            return [one(copy, command, limit) for command in commands]
+            return [one(copy, command, limit, unstarted) for command in commands]
     finally:
         os.environ.update(outer)
+
+
+def runs_in_copy(root, commit, commands, unstarted="failed"):
+    """`in_copy` under the project's `jury.run_timeout`, with `tests.setup` first when set; its own entry is dropped (a
+    failed setup fails what follows)."""
+    cfg = records.config(root)
+    setup = [s] if (s := (cfg.get("tests") or {}).get("setup")) else []
+    return in_copy(root, commit, setup + commands, (cfg.get("jury") or {}).get("run_timeout"), unstarted)[len(setup):]
 
 
 def path(root, run):
@@ -91,9 +102,9 @@ def misuse(root, slug):
 def one_test(suite, file, name):
     """The command that runs one test through the suite's runner, else None (a runner it can't address)."""
     if m := re.match(r"(.*\bunittest)\b", suite or ""):
-        return f"{m[1]} {file.removesuffix('.py').replace('/', '.')}.{name}"
+        return f"{m[1]} {shlex.quote(file.removesuffix('.py').replace('/', '.') + '.' + name)}"
     if m := re.match(r"(.*\bpytest)\b", suite or ""):
-        return f"{m[1]} {file}::{name.replace('.', '::')}"
+        return f"{m[1]} {shlex.quote(file + '::' + name.replace('.', '::'))}"
     return None
 
 
@@ -299,15 +310,10 @@ def collect(root, slug, epic, run):
     root = Path(root)
     jury.epic_gate(root, slug, f"implementation-{epic}")
     cfg = records.config(root)
-    t, limit = cfg.get("tests") or {}, (cfg.get("jury") or {}).get("run_timeout")
+    t = cfg.get("tests") or {}
     commits = commits_of(root, slug, epic)
     commit, base = commits[0], parent_of(root, commits[-1])
-
-    def runs(commands):
-        """in_copy with `tests.setup` first when set; its own entry is dropped (a failed setup fails what follows)."""
-        out = in_copy(root, commit, ([t["setup"]] if t.get("setup") else []) + commands, limit)
-        return out[bool(t.get("setup")):]
-
+    runs = lambda commands: runs_in_copy(root, commit, commands)
     mis, rest = misuse(root, slug)
     suite = (runs([t.get("suite")]) if t.get("suite") else [{"result": "not configured", "output": "", "cut": 0}])[0]
     code_ok = suite["result"] == "passed"
@@ -337,6 +343,64 @@ def collect(root, slug, epic, run):
         *[check_finding(name, c) for name, c in named if c["result"] == "failed"]])
     return [str(path(root, run).relative_to(root))] + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"]
+
+
+def known_tests(root, slug):
+    """{TC id: (file, test name), or None when its `File:` names no test}: every test of tests.md."""
+    p = Path(root) / ".nio/specs" / slug / "tests.md"
+    out = {}
+    for m in re.finditer(r"^### (TC-\d+)\b.*?(?=^#{2,3} |\Z)", p.read_text() if p.exists() else "", re.M | re.S):
+        f = re.search(r"^- File: `([^:`]+):([^`]+)`", m[0], re.M)
+        out[m[1]] = (f[1], f[2]) if f else None
+    return out
+
+
+def asked(results):
+    """The requests a pack may show: the runs made, and those that couldn't start."""
+    return [r for r in results.get("requests") or [] if r.get("result") != LISTED]
+
+
+def requested(root, led, run):
+    """Make the runs this round's findings ask for, in a throwaway copy at the epic's last commit, and record them in the
+    run's results for the next packs (CT-11, FR-20, FR-40). Returns (results, for the human), every round's. A request is
+    only ever a key into tests.md: the command comes from the config's suite and that file, never from the request. A
+    request that isn't a test of tests.md, or is over the round's runs, is listed for the human and not run. Calling it
+    again in a round makes only the runs not yet made.
+    ponytail: a finding's status isn't read, so a refuted finding's request still runs; the cap bounds what that costs."""
+    from nio import jury
+    root, slug, rnd = Path(root), led["subject"], led["round"]
+    epic = jury.epic_gate(root, slug, led["gate"])
+    results, known = load(root, run), known_tests(root, slug)
+    suite = (records.config(root).get("tests") or {}).get("suite")
+    requests = results["requests"]
+    made = {r["request"]: r for r in requests if r["round"] == rnd and r["result"] != LISTED}
+    started = sum(bool(r["command"]) for r in made.values())
+    pending = []
+    for f, tc in ((f, s["run"]) for f in led["findings"] for s in f["sources"] if s.get("run") and s.get("round") == rnd):
+        command = one_test(suite, *known[tc]) if known.get(tc) else None
+        why = "not a test of tests.md" if tc not in known else f"over the {MAX_REQUESTED} runs of a round" if command and started >= MAX_REQUESTED else ""
+        if tc in made:  # one run answers every finding asking for it
+            made[tc]["findings"] = sorted({*made[tc]["findings"], f["id"]})
+        elif why:
+            if not any(r["round"] == rnd and r["result"] == LISTED and r["request"] == tc and r["finding"] == f["id"] for r in requests):
+                requests.append({"round": rnd, "request": tc, "finding": f["id"], "result": LISTED, "why": why})
+        else:
+            made[tc] = {"round": rnd, "request": tc, "findings": [f["id"]], "command": command or "", "commit": "",
+                        "result": "couldn't run", "output": "" if command else "the test runner has no known way to run one test", "cut": 0}
+            requests.append(made[tc])
+            if command:
+                pending.append(made[tc])
+                started += 1
+    if pending:
+        try:
+            commit = commits_of(root, slug, epic)[0]
+            for r, out in zip(pending, runs_in_copy(root, commit, [r["command"] for r in pending], "couldn't run")):
+                r.update(commit=commit, result=out["result"], output=out["output"], cut=out["cut"])
+        except ValueError as e:
+            for r in pending:
+                r["output"] = str(e)
+    save(root, run, results)
+    return asked(results), [r for r in requests if r["result"] == LISTED]
 
 
 def items(root, slug):
@@ -377,6 +441,8 @@ def pack(root, slug, gate, lens, run):
             f = by_id[i]
             out += [f"### {f['id']} {f['title']}", f"- cites: {', '.join(f['cites'])}", f"- fix asked: {f['fix']}",
                     f"- what was done: {f['note']}", ""]
+        if runs := asked(results):
+            out += ["## Requested runs", "", json.dumps(runs, indent=2, ensure_ascii=False), ""]
         out += [f"## Diff since {judged[:8]}", "", *records.git(root, "diff", judged, head)]
         return "\n".join(out) + "\n"
     diff = records.git(root, "diff", base, head)
@@ -385,7 +451,7 @@ def pack(root, slug, gate, lens, run):
     serves = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
     touched = serves | {c for c, f in bound.items() if f in names}
     out += ["## Diff", "", *diff, "", "## Items the diff touches", "", *[text[i] + "\n" for i in text if i in touched],
-            "## Results", "", json.dumps({k: v for k, v in results.items() if k != "hints"}, indent=2, ensure_ascii=False), "",
+            "## Results", "", json.dumps({**{k: v for k, v in results.items() if k != "hints"}, "requests": asked(results)}, indent=2, ensure_ascii=False), "",
             "## Hints (not findings: raise one only if you confirm it)", "", *([
                 f"- {h['kind']}{' (interpretive)' if h['interpretive'] else ''}: {h['name']} at {h['file']}:{h['line']}, {h['note']}"
                 for h in results.get("hints") or []] or ["None."])]

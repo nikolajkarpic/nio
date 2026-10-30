@@ -26,7 +26,7 @@ The context pack from the jury skill, and nothing else:
 - A test that matches by name but whose body asserts nothing about the AC does not count as a match: say so in a finding.
 - Check the tampering hints the pack carries (a deleted test, a newly skipped test, a changed assertion); a finding that rests on one carries `tampering`.
 
-Start your answer with a `## Matches` section, one line per AC matched: `- AC-n -> file:line`. Then the findings. Each finding has `gap` (what is missing or wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (the command that would show it, for the human; you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
+Start your answer with a `## Matches` section, one line per AC matched: `- AC-n -> file:line`. Then the findings. Each finding has `gap` (what is missing or wrong), `where` (`file:line`), and optionally `right` (what it should be), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering` (set when the finding is about a deleted, skipped or weakened test).
 
 ## Stop when
 
