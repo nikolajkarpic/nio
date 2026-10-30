@@ -7,7 +7,7 @@ import json
 import re
 import subprocess
 
-from nio import agents, records, spec
+from nio import agents, evidence, records, spec
 
 # the plan gate judges its four files against the spec and architecture.md: a change to either withdraws its approval
 GATES = {"spec": ["spec.md"], "plan": ["plan.md", "contracts.md", "tests.md", "quickstart.md", "spec.md", "architecture.md"],
@@ -28,7 +28,10 @@ CLOSED = {"refuted", "dropped", "merged", "overruled", "noted"}  # never need a 
 VERDICT = re.compile(r"^- (J-\d+):\s*(fixed|not fixed)\b\s*[—–:-]*\s*(.*)$")  # a fix verdict in a re-review (#52 FR-8)
 CORE = {"spec": ["testability", "logic"], "plan": ["test-proof", "architecture-fit"], "tasks": ["executability"]}  # #47
 HIGH_RISK = {"auth", "money", "data-deletion", "migration"}
-PLAN_TRIGGERED = {"security", "risk-rollback"}  # the risk lenses the plan gate runs (#57 FR-5, FR-6)
+PLAN_LENSES = {"security": {"auth", "pii"}, "risk-rollback": {"migration", "data-deletion"}}  # the plan gate's own triggers (#57 FR-5, FR-6)
+# the implementation gate's trigger table, row for row (CT-8); consistency comes from the epic's diff, not a flag
+IMPL_LENSES = {"adversary": {"external-input", "multi-party", "public-api"}, "security": {"auth", "pii", "secrets"},
+               "risk-rollback": {"migration", "data-deletion"}}
 MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
 
 
@@ -222,9 +225,14 @@ def rung(risk):
 def plan(root, slug, gate, extra=()):
     """(lines, ok): the lens runs this gate needs, why each runs, the tier, and the run budget. Not ok when the gate's
     own check fails or a lens has no card; over the cap is reported for the human to choose, not refused."""
-    if gate not in CORE:
+    impl = gate.startswith("implementation")
+    if impl:
+        epic = epic_gate(root, slug, gate)
+    elif gate not in CORE:
         raise ValueError(f"only the {', '.join(CORE)} gates are built so far")
-    if gate == "plan":
+    if impl:
+        notes = [""]
+    elif gate == "plan":
         from nio import plan as plans  # plan.py reads the jury's ledger for `approved`
         errors, notes = plans.check(root, slug, gate=True)
         if errors:
@@ -240,11 +248,19 @@ def plan(root, slug, gate, extra=()):
             return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
     meta, _ = records.parse(spec.path(root, slug))
     risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
-    lenses = {lens: "core" for lens in CORE[gate]}
-    for key, flags in spec.LENSES.items() if gate != "tasks" else []:
-        lens, at_plan = key.removesuffix(" (plan gate)"), key.endswith("(plan gate)")
-        if flags & set(risk) and (lens in PLAN_TRIGGERED if gate == "plan" else not at_plan):
+    lenses = {lens: "core" for lens in (["conformance", "correctness"] if impl else CORE[gate])}
+    table = IMPL_LENSES if impl else PLAN_LENSES if gate == "plan" else {k: v for k, v in spec.LENSES.items() if "(plan gate)" not in k}
+    for lens, flags in table.items() if gate != "tasks" else []:
+        if flags & set(risk):
             lenses.setdefault(lens, "risk: " + ", ".join(sorted(flags & set(risk))))
+    if impl:  # a module that existed before the epic is changed: a file modified from the parent of its first commit
+        try:
+            commits = evidence.commits_of(root, slug, epic)
+        except ValueError:  # no commits, no diff
+            commits = []
+        old = commits and records.git(root, "diff", "--name-only", "--diff-filter=M", evidence.parent_of(root, commits[-1]), commits[0])
+        if old:
+            lenses.setdefault("consistency", f"changes {', '.join(old[:3])}" + (" ..." if len(old) > 3 else ""))
     if gate == "plan":
         contracts = (root / ".nio/specs" / slug / "contracts.md").read_text()
         stateful = [m[1] for m in re.finditer(r"^### (CT-\d+)\b(?:(?!^### ).)*?^- State:", contracts, re.M | re.S)]

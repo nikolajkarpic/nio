@@ -716,6 +716,92 @@ def test_each_has_an_at_implementation_section():
     print("ok")
 
 
+# --- T-12: the lens plan for an epic (CT-8, CT-1, AC-1, AC-18..21) ---
+
+CORE_TWO = {"conformance", "correctness"}
+ROWS = {"auth": "security", "pii": "security", "secrets": "security", "external-input": "adversary", "multi-party": "adversary",
+        "public-api": "adversary", "money": None, "migration": "risk-rollback", "data-deletion": "risk-rollback"}  # the spec's table
+
+
+def lens_plan(risk=(), modify_old=False):
+    """(lens names the gate plans for epic E-1, the plan's lines, ok): spec `s` flagged `risk`; T-1 and T-2 either only add
+    files or also change old.py, which a commit before the epic added."""
+    root = epic_repo(["T-1", "T-2"])
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/specs/s/spec.md").write_text(f"---\nslug: s\nrisk: [{', '.join(risk)}]\n---\n# s\n")
+    (root / "old.py").write_text("x = 1\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "before the epic")
+    (root / "a.py").write_text("a = 1\n")
+    if modify_old:
+        (root / "old.py").write_text("x = 2\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-1: One")
+    (root / "b.py").write_text("b = 1\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Two")
+    from nio import jury
+    lines, ok = jury.plan(root, "s", "implementation-E-1")
+    line = next((x for x in lines if x.startswith("lenses: ")), "")
+    assert line, lines
+    return set(re.findall(r"([a-z][a-z-]*) \(", line)), lines, ok
+
+
+def test_it_starts():
+    import subprocess
+    import sys
+    root = epic_repo(["T-1", "T-2"])
+    (root / ".nio/specs/s/spec.md").write_text("---\nslug: s\nrisk: []\n---\n# s\n")
+    out = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "jury", "plan", "s", "implementation-E-1"],
+                         cwd=root, capture_output=True, text=True)
+    assert out.returncode == 0, out.stderr
+    assert "conformance" in out.stdout and "correctness" in out.stdout, out.stdout
+    print("ok")
+
+
+def test_the_plan_holds_conformance_and_correctness_only():
+    names, lines, _ = lens_plan()
+    assert names == CORE_TWO, (names, lines)
+    print("ok")
+
+
+def test_security_and_risk_and_rollback_are_added():
+    names, lines, _ = lens_plan(["auth", "migration"])
+    assert names == CORE_TWO | {"security", "risk-rollback"}, (names, lines)
+    print("ok")
+
+
+def test_the_adversary_is_added():
+    names, lines, _ = lens_plan(["external-input"])
+    assert names == CORE_TWO | {"adversary"}, (names, lines)
+    print("ok")
+
+
+def test_consistency_is_added():
+    names, lines, _ = lens_plan(modify_old=True)
+    assert names == CORE_TWO | {"consistency"}, (names, lines)
+    print("ok")
+
+
+def test_every_row_of_the_trigger_table():
+    for flag, lens in ROWS.items():
+        names, lines, _ = lens_plan([flag])
+        assert names == CORE_TWO | ({lens} if lens else set()), (flag, names, lines)
+    print("ok")
+
+
+def test_secrets_brings_no_security_lens_at_the_plan_gate():
+    """CT-18: the plan gate's security trigger is its own list, not the implementation table's `secrets` row."""
+    from test_jury import PSLUG, plan_repo
+    from nio import jury
+    for risk, want in (("[secrets]", False), ("[auth]", True)):
+        lines, ok = jury.plan(plan_repo(risk), PSLUG, "plan")
+        line = next(x for x in lines if x.startswith("lenses: "))
+        assert ("security (" in line) == want, (risk, line)
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
