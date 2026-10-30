@@ -1,6 +1,7 @@
 """The tasks stage (#42): create tasks.md next to an approved spec and plan, run its free checks, print the estimate,
 show one task, and answer whether the implement stage may start."""
 import collections
+import os
 import re
 from importlib import resources
 
@@ -193,6 +194,8 @@ def check(root, slug, gate=False, base="HEAD"):
                     errs.append(f"{t} cites {i}, which the plan doesn't define")
                 elif i.startswith("J-") and not (task["fix"] and FINDING.match(f.get("From", "")) and FINDING.match(f["From"])[1] == i):
                     errs.append(f"{t} cites {i}; a finding is served only by a fix task whose `From:` names it")
+        if f.get("Test", "").startswith("new:") and not (task["fix"] and f.get("From")):
+            errs.append(f"{t}: `Test: new:` belongs to a fix task with a `From:` line")
         if "Depends on" in f and f["Depends on"] != "none" and not ids(f["Depends on"]):
             errs.append(f"{t}: `Depends on:` lists task IDs or says `none`")
         if "Parallel" in f and f["Parallel"] not in ("yes", "no"):
@@ -232,7 +235,7 @@ def check(root, slug, gate=False, base="HEAD"):
     above = {t: {u for u in tasks if t in below[u]} for t in tasks}
     for e in epics:
         if e["story"] in ("", "Foundation"):
-            for t in e["tasks"]:
+            for t in (x for x in e["tasks"] if not tasks[x]["fix"]):  # a fix task is appended with no dependents
                 theirs = {i for u in above[t] for i in ids(tasks[u]["fields"].get("Serves", ""))}
                 errs += [f"{t} serves {ac}, which no task depending on it serves" for ac in ids(tasks[t]["fields"].get("Serves", ""))
                          if ac.startswith("AC-") and ac not in theirs]
@@ -255,7 +258,7 @@ def check_fixes(root, slug, parsed, retired, base="HEAD"):
     tasks, errs = parsed["tasks"], []
     planned = [t for t in tasks if not tasks[t]["fix"]]
     top = max([int(t[2:]) for t in planned] + [int(r[2:]) for r in retired if r.startswith("T-")] + [0])
-    for t, task in tasks.items():
+    for t, task in sorted(tasks.items(), key=lambda x: int(x[0][2:])):  # IDs in the order they were taken: epics reopen out of file order
         if not task["fix"]:
             continue
         src = task["fields"].get("From", "")
@@ -327,3 +330,78 @@ def finished(states, epic):
     tasks included, is `done` in the CLI's state (#42 FR-25, FR-26; the state machine itself is #45's)."""
     left = [t for t in epic["tasks"] if states.get(t) != "done"]
     return not left, left
+
+
+def fixes_of(root, slug, gate, fid):
+    """The tasks whose `From:` names this finding of this gate; another epic's ledger counts from J-1 too."""
+    tasks = parse("\n".join(records.parse(path(root, slug))[1]))["tasks"]
+    return [t for t, x in tasks.items() if (m := FINDING.match(x["fields"].get("From", ""))) and (m[1], m[2]) == (fid, gate)]
+
+
+def fix_test(root, slug, finding, cites):
+    """A fix task's `Test:` (CT-14): the finding's `run` when tests.md holds it, else a TC covering its cite, else `new:`."""
+    from nio import evidence
+    known = evidence.known_tests(root, slug)
+    run = next((s["run"] for s in finding["sources"] if s.get("run")), "")
+    if ids(run) and set(ids(run)) <= known.keys():
+        return run
+    tests = path(root, slug).with_name("tests.md")
+    covers = {}
+    for m in re.finditer(r"^### (TC-\d+)\b.*?(?=^#{2,3} |\Z)", tests.read_text() if tests.exists() else "", re.M | re.S):
+        head = re.search(r"\(([^()]*;[^()]*)\)", m[0].splitlines()[0])  # `(AC-1; unit)`
+        line = re.search(r"^- Covers:(.*)$", m[0], re.M)
+        covers[m[1]] = set(ids((head[1] if head else "") + " " + (line[1] if line else "")))
+    tc = next((tc for c in cites for tc, cov in covers.items() if c in cov), None)
+    return tc or f"new: {cites[0] if cites else finding['id']}"
+
+
+def append_fix(root, slug, epic, finding):
+    """Append one fix task for a finding the decision table routes to a task, under the epic's `#### Fixes`, and dispose of
+    the finding as `fix-task` (CT-14, FR-26, FR-27, FR-29). The new ID, or None when the finding already has a task. Every
+    byte already in the file stays; the decision table's routing is the caller's (`jury.to_task`)."""
+    from nio import jury
+    gate, fid = f"implementation-{epic}", finding["id"]
+    led = jury.load(root, slug, gate)
+    src = f"{fid} ({gate}, round {led['round']})"
+    now = next((f for f in led["findings"] if f["id"] == fid), None)
+    if not now:
+        raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
+    p = path(root, slug)
+    meta, body = records.parse(p)
+    parsed = parse("\n".join(body))
+    had = fixes_of(root, slug, gate, fid)
+    tid = None
+    if not had:
+        taken = [int(t[2:]) for t in parsed["tasks"]] + [int(r[2:]) for r in meta.get("retired") or [] if r.startswith("T-")]
+        tid = f"T-{max(taken + [0]) + 1}"
+        text = p.read_bytes().decode()  # read_text would turn a hand-saved CRLF file into LF
+        nl = "\r\n" if "\r\n" in text else "\n"
+        cites = [c for c in finding["cites"] if re.fullmatch(r"(AC|FR|CT)-\d+", c)]
+        serves = cites + [fid] * (not any(c.startswith("AC-") for c in cites))  # `tasks.check`: an AC, or the finding itself
+        where = ", ".join("`" + re.sub(r":\d+(-\d+)?$", "", f) + "`" for f in files(finding["where"]))
+        ask = "Justify or remove" if finding.get("gap") == "unrequested" else "Fix"
+        block = [f"### {tid} {ask}: {finding['title']}", f"- From: {src}", f"- Files: {where}", f"- Serves: {', '.join(serves)}",
+                 f"- Test: {fix_test(root, slug, finding, cites)}", "- Depends on: none", "- Parallel: no",
+                 "- Tier: strong: a fix from a jury finding", "- Effort: med", "- Mode: single: a fix from a jury finding", ""]
+        # headings inside a comment aren't headings, as in `parse`; an opening mark in a title would hide the tasks after it
+        mask = re.sub(r"<!--.*?-->", lambda m: re.sub(r"[^\r\n]", " ", m[0]), text, flags=re.S)
+        start = re.search(rf"^## {epic}\b", mask, re.M)
+        if not start:
+            raise ValueError(f"no {epic} in tasks.md")
+        end = re.compile(r"^#{1,2} ", re.M).search(mask, start.end())
+        cut = end.start() if end else len(text)
+        head, tail = text[:cut], text[cut:]
+        fixes = re.search(r"^\s*#### Fixes\s*$", mask[start.start():cut], re.M)
+        new = head + ("" if head.endswith(nl * 2) else nl if head.endswith(nl) else nl * 2) + (f"#### Fixes{nl}{nl}" if not fixes else "") \
+            + nl.join(block).replace("<!--", "< !--") + (nl if tail else "") + tail
+        tmp = p.with_name(p.name + ".tmp")
+        with open(tmp, "wb") as f:
+            f.write(new.encode())
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, p)
+    # the ledger follows the file; a crash between the two is mended by the next call in the same round. A finding reopened
+    # in a later round keeps its one task and stays open.
+    if now["status"] == "open" and (tid or parsed["tasks"][had[0]]["fields"]["From"] == src):
+        jury.dispose(root, slug, gate, fid, "fix-task", "agent", f"fix task {tid or had[0]}")
+    return tid

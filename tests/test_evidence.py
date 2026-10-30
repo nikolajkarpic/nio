@@ -1680,6 +1680,385 @@ def test_the_security_lens_is_listed():
     print("ok")
 
 
+# --- T-22: a fix task for a finding, once, without touching any existing task (CT-14, AC-33, AC-35, AC-50) ---
+
+FIX_SPEC = """---
+slug: s
+route: full
+retired: []
+---
+# s
+
+## Functional requirements
+- **FR-1** THE SYSTEM SHALL do one thing. [human]
+- **FR-2** THE SYSTEM SHALL do another. [human]
+
+## User stories
+### US-1 Story (P1) [human]
+- **AC-1** Given a, when it runs, then it holds. [human]
+- **AC-2** Given b, when it runs, then it holds. [human]
+- **AC-4** Given d, when it runs, then it holds. [human]
+### US-2 Story (P1) [human]
+- **AC-3** Given c, when it runs, then it holds. [human]
+"""
+FIX_CONTRACTS = """---
+slug: s
+retired: []
+---
+# Contracts: s
+
+## Contracts
+
+### CT-1 First (FR-1) [derived: FR-1]
+- Binding: `src/one.py:one`
+
+### CT-2 Second (FR-2) [derived: FR-2]
+- Binding: `src/two.py:two`
+"""
+# AC-4 has no TC: TC-4 covers AC-44, which only looks like it. Nothing covers FR-2.
+FIX_TESTS_MD = "---\nslug: s\nretired: []\n---\n# Tests: s\n\n## Tests\n\n" + "".join(
+    f"### TC-{n} Checks {name} ({ac}; unit) [derived: {ac}]\n- File: `tests/test_calc.py:CalcTest.{name}` (new)\n- Covers: {ct}\n"
+    "- Setup: x\n- Action: y\n- Assert: z\n\n" for n, name, ac, ct in (
+        (1, "test_one", "AC-1", "CT-1"), (2, "test_two", "AC-2", "CT-2"), (3, "test_three", "AC-3", "CT-1"), (4, "test_four", "AC-44", "CT-1")))
+FIX_SUITE = '''import unittest
+
+
+class CalcTest(unittest.TestCase):
+    def test_one(self):
+        """One holds."""
+        self.assertEqual(1, 1)
+
+    def test_two(self):
+        """Two holds."""
+        self.assertEqual(2, 2)
+
+    def test_three(self):
+        """Three holds."""
+        self.assertEqual(3, 3)
+
+    def test_four(self):
+        """Four holds."""
+        self.assertEqual(4, 4)
+'''
+FIX_HEAD = """---
+slug: s
+retired: {retired}
+---
+<!-- Hand-owned: a comment may show what a task file looks like.
+#### Fixes
+## E-2 not an epic
+### T-99 not a task
+-->
+# Tasks: s
+
+"""
+
+
+def planned_task(tid, file, serves, tc, deps="none"):
+    return (f"### {tid} Build {file}\n- Files: `{file}`\n- Serves: {serves}\n- Test: {tc}\n- Depends on: {deps}\n"
+            "- Parallel: no\n- Tier: cheap: x\n- Effort: low\n- Mode: split: x\n\n")
+
+
+FIX_E1 = "## E-1 First (US-1)\n\n" + planned_task("T-1", "src/one.py", "AC-1", "TC-1") + planned_task("T-2", "src/two.py", "AC-2", "TC-2", "T-1") \
+    + planned_task("T-3", "src/three.py", "AC-4", "TC-1", "T-2")
+FIX_E2 = "## E-2 Second (US-2)\n\n" + planned_task("T-4", "src/four.py", "AC-3", "TC-3")
+
+
+def earlier_fix(cite):
+    return ("#### Fixes\n<!-- Tasks added after approval. -->\n" f"### T-5 An earlier fix\n- From: {cite} (implementation-E-1, round 1)\n"
+            f"- Files: `src/five.py`\n- Serves: {cite}\n- Test: TC-1\n- Depends on: none\n- Parallel: no\n"
+            "- Tier: strong: a fix from a jury finding\n- Effort: med\n- Mode: single: a fix from a jury finding\n\n")
+
+
+def fix_repo(earlier="J-11", retired="[]"):
+    """A full spec `s`, tasks approved. E-1 has four tasks, the last, T-5, an earlier fix for finding `earlier` under its
+    `#### Fixes` (none when `earlier` is empty); E-2 has T-4. All are done, each with its own commit, and the tests pass."""
+    root = epic_repo(["T-1", "T-2", "T-3", "T-4", "T-5"])
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    d = root / ".nio/specs/s"
+    for name, text in (("spec.md", FIX_SPEC), ("contracts.md", FIX_CONTRACTS), ("tests.md", FIX_TESTS_MD), ("plan.md", "---\nslug: s\n---\n# Plan: s\n")):
+        (d / name).write_text(text)
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": JOIN_SUITE}}))
+    (root / ".gitignore").write_text(".nio/runs/\n")
+    head = FIX_HEAD.format(retired=retired)
+    (d / "tasks.md").write_text(head + FIX_E1 + FIX_E2)
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "nio: approve tasks")
+    (root / "tests").mkdir()
+    (root / "tests/__init__.py").write_text("")
+    (root / "tests/test_calc.py").write_text(FIX_SUITE)
+    (root / "src").mkdir()
+    for tid, name in (("T-1", "one"), ("T-2", "two"), ("T-3", "three"), ("T-5", "five"), ("T-4", "four")):
+        (root / f"src/{name}.py").write_text(f"{name.upper()}_MARK = 1\n")
+        if tid == "T-5":
+            (d / "tasks.md").write_text(head + FIX_E1 + (earlier_fix(earlier) if earlier else "") + FIX_E2)
+        git(root, "add", "-A")
+        git(root, "commit", "-qm", f"{tid}: Build {name}")
+    return root
+
+
+def fix_gate(root, *findings, epic="E-1"):
+    """Round 1 of the epic's gate: each AC has a passing test, the conformance lens raises `findings` (dicts of lines,
+    title included; base below) and the refuter confirms each. Returns the ledger's findings."""
+    from nio import jury
+    gate = f"implementation-{epic}"
+    evidence().collect(root, "s", epic, "R-1")
+    lines = {"E-1": ("AC-1 -> tests/test_calc.py:5", "AC-2 -> tests/test_calc.py:9", "AC-4 -> tests/test_calc.py:17"), "E-2": ("AC-3 -> tests/test_calc.py:13",)}[epic]
+    base = {"kind": "gap", "severity": "major", "evidence": "observed", "gap": "missing", "where": "src/one.py", "quote": '"ONE_MARK"',
+            "situation": "x", "fix": "y", "cites": "AC-1"}
+    body = "".join(f"### F{i} {f['title']}\n" + "".join(f"- {k}: {v}\n" for k, v in {**base, **f}.items() if k != "title") + "\n"
+                   for i, f in enumerate(findings, 1)) or "none\n"
+    jd = root / ".nio/runs/R-1/jury"
+    jd.mkdir(parents=True, exist_ok=True)
+    (jd / f"{gate}-conformance.md").write_text(
+        f'---\nlens: conformance\ngate: {gate}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+        "## Reasoning\nChecked.\n\n## Matches\n" + "".join(f"- {x}\n" for x in lines) + f"\n## Findings\n{body}")
+    said = jury.collect(root, "s", gate, "R-1")
+    assert not [x for x in said if "INVALID" in x], said
+    pending = [f["id"] for f in jury.load(root, "s", gate)["findings"] if f["validation"] == "pending"]
+    if pending:
+        (jd / f"{gate}-refuter.md").write_text("".join(f"### {i}\n- result: confirmed\n- reason: it is so\n\n" for i in pending))
+        jury.collect(root, "s", gate, "R-1")
+    found = jury.load(root, "s", gate)["findings"]
+    assert [f["id"] for f in found] == [f"J-{n}" for n in range(1, len(findings) + 1)], f"the fixture isn't clean: {[f['title'] for f in found]}"
+    return found
+
+
+def nio(root, *args):
+    import subprocess
+    import sys
+    return subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", *args], cwd=root, capture_output=True, text=True)
+
+
+def append_fix(root, finding, epic="E-1"):
+    from nio import tasks
+    assert hasattr(tasks, "append_fix"), "tasks.append_fix doesn't exist yet"
+    return tasks.append_fix(root, "s", epic, finding)
+
+
+def task_file(root):
+    from nio import tasks
+    return tasks.path(root, "s")
+
+
+def parsed_tasks(root):
+    from nio import records, tasks
+    return tasks.parse("\n".join(records.parse(task_file(root))[1]))["tasks"]
+
+
+def fix_tasks_for(root, gate=GATE):
+    """{finding ID: [its fix tasks]}, from the `From:` lines naming this gate; the fixture's earlier fix, J-11, left out."""
+    out = {}
+    for t in parsed_tasks(root).values():
+        m = re.fullmatch(r"(J-\d+) \(([\w-]+), round \d+\)", t["fields"].get("From", ""))
+        if m and m[2] == gate and m[1] != "J-11":
+            out.setdefault(m[1], []).append(t)
+    return out
+
+
+def tasks_pass(root):
+    done = nio(root, "check", "tasks", "s")
+    assert done.returncode == 0, f"nio check tasks refuses the file:\n{done.stdout}{done.stderr}\n{task_file(root).read_text()}"
+
+
+def recorded(root, gate=GATE):
+    """`nio jury check <gate> --record`, as the human runs it. (exit code, printed lines)"""
+    done = nio(root, "jury", "check", "s", gate, "--record")
+    assert "Traceback" not in done.stderr, done.stderr
+    return done.returncode, done.stdout
+
+
+def test_each_finding_has_exactly_one_fix_task():
+    from nio import jury
+    root = fix_repo()
+    fix_gate(root, {"title": "a missing one"}, {"title": "a partial one", "gap": "partial", "cites": "AC-2"},
+             {"title": "a small one", "severity": "minor", "cites": "AC-4"})
+    assert recorded(root)[0] == 1, "the outcome isn't rejected"
+    once = task_file(root).read_text()
+    by = fix_tasks_for(root)
+    assert sorted(by) == ["J-1", "J-2"], f"one task per open major and none for the minor, not {sorted(by)}"
+    assert [len(x) for x in by.values()] == [1, 1], by
+    tasks_pass(root)
+    code, out = recorded(root)  # the same round's outcome, composed a second time
+    assert code != 0 and "outcome: approved" not in out, f"a fix task nobody has done yet approved the epic: {out}"
+    assert task_file(root).read_text() == once, "composing the same round again changed tasks.md"
+    led = jury.load(root, "s", GATE)
+    for fid in ("J-1", "J-2"):
+        f = next(x for x in led["findings"] if x["id"] == fid)
+        assert (f["status"], f["disposition"]) == ("disposed", "fix-task"), f
+        assert fid in jury.pack_ids(led, "conformance"), f"{fid}: its lens gets no fix verdict on it"
+        assert append_fix(root, f) is None, f"{fid} got a second task"
+    assert task_file(root).read_text() == once
+    print("ok")
+
+
+def test_the_four_tasks_are_unchanged_and_the_new_one():
+    root = fix_repo()
+    (f,) = fix_gate(root, {"title": "the next finding"})
+    path = task_file(root)
+    old, old_ids = path.read_text(), set(parsed_tasks(root))
+    old_blocks = {t: x["block"] for t, x in parsed_tasks(root).items()}
+    inode, around = path.stat().st_ino, sorted(os.listdir(path.parent))
+    assert append_fix(root, f) == "T-6", "T-1 to T-5 are taken"  # J-11 already has a task; J-1 doesn't
+    new = path.read_text()
+    head, tail = old.split("\n## E-2 Second")
+    assert new.startswith(head) and new.endswith("\n## E-2 Second" + tail), f"bytes around the new task changed:\n{new}"
+    now = parsed_tasks(root)
+    assert set(now) - old_ids == {"T-6"} and {t: now[t]["block"] for t in old_ids} == old_blocks, now
+    assert now["T-6"]["fix"] and now["T-6"]["epic"] == "E-1", now["T-6"]
+    assert path.stat().st_ino != inode, "tasks.md was written in place, not through a rename"
+    assert sorted(os.listdir(path.parent)) == around, "the temporary file stayed"
+    tasks_pass(root)
+    print("ok")
+
+
+def test_the_next_free_id_skips_a_retired_one():
+    root = fix_repo(earlier="", retired="[T-8]")
+    (f,) = fix_gate(root, {"title": "the next finding"})
+    assert append_fix(root, f) == "T-9", "T-8 is retired and is never used again"
+    tasks_pass(root)
+    print("ok")
+
+
+def test_a_first_fix_opens_the_section_inside_its_epic():
+    root = fix_repo(earlier="")
+    (f,) = fix_gate(root, {"title": "the first finding"})
+    path = task_file(root)
+    old = path.read_text()
+    assert append_fix(root, f) == "T-5", "T-1 to T-4 are taken"
+    new, task = path.read_text(), parsed_tasks(root)["T-5"]
+    assert task["fix"] and task["epic"] == "E-1", task
+    head, tail = old.split("\n## E-2 Second")
+    assert new.startswith(head) and new.endswith("\n## E-2 Second" + tail), f"bytes around the new task changed:\n{new}"
+    tasks_pass(root)
+    print("ok")
+
+
+def test_a_finding_of_another_epic_with_the_same_id_is_another_finding():
+    root = fix_repo(earlier="J-1")  # E-1's J-1 has its task; E-2's ledger counts from J-1 too
+    (f,) = fix_gate(root, {"title": "E-2's own finding", "cites": "AC-3", "where": "src/four.py", "quote": '"FOUR_MARK"'}, epic="E-2")
+    path = task_file(root)
+    path.write_text(path.read_text().rstrip("\n"))  # E-2 ends the file, here with no last newline
+    old = path.read_text()
+    assert append_fix(root, f, "E-2") == "T-6", "E-1's J-1 isn't E-2's"
+    new, task = path.read_text(), parsed_tasks(root)["T-6"]
+    assert new.startswith(old) and task["fix"] and task["epic"] == "E-2", new
+    assert task["fields"]["From"] == "J-1 (implementation-E-2, round 1)", task
+    tasks_pass(root)
+    print("ok")
+
+
+def test_a_fix_task_holds_each_field_of_its_contract_and_passes_the_check():
+    from nio import jury, tasks
+    root = fix_repo()
+    fix_gate(root, {"title": "cited AC has a TC"},
+             {"title": "asks for a run", "run": "TC-3", "where": "src/two.py", "quote": '"TWO_MARK"'},
+             {"title": "cited CT has a TC", "cites": "CT-2"},
+             {"title": "cited AC has none", "cites": "AC-4"},
+             {"title": "cited FR has none", "cites": "FR-2"})
+    assert jury.load(root, "s", GATE)["findings"][1]["sources"][0]["run"] == "TC-3", "the fixture's run is on its source"
+    assert recorded(root)[0] == 1, "the outcome isn't rejected"
+    by = fix_tasks_for(root)
+    assert sorted(by) == ["J-1", "J-2", "J-3", "J-4", "J-5"], sorted(by)
+    tests = {"J-1": "TC-1", "J-2": "TC-3", "J-3": "TC-2", "J-4": "new: AC-4", "J-5": "new: FR-2"}
+    cites = {"J-1": "AC-1", "J-2": "AC-1", "J-3": "CT-2", "J-4": "AC-4", "J-5": "FR-2"}
+    for fid, (task,) in by.items():
+        f = task["fields"]
+        assert task["fix"] and task["epic"] == "E-1", task
+        assert f["From"] == f"{fid} (implementation-E-1, round 1)", f
+        assert f["Test"] == tests[fid], (fid, f["Test"])
+        assert cites[fid] in tasks.ids(f["Serves"]), (fid, f["Serves"])
+        assert tasks.files(f["Files"]) == ["src/two.py" if fid == "J-2" else "src/one.py"], f["Files"]
+        assert (f["Depends on"], f["Parallel"], f["Effort"]) == ("none", "no", "med"), f
+        assert f["Tier"] == "strong: a fix from a jury finding" and f["Mode"] == "single: a fix from a jury finding", f
+        assert "justify or remove" not in " ".join(task["block"]).lower(), f"{fid} isn't unrequested: {task['block']}"
+    tasks_pass(root)
+    print("ok")
+
+
+def test_a_cli_finding_with_no_cite_still_gets_a_task_the_check_passes():
+    from nio import jury
+    root = fix_repo()
+    fix_gate(root)
+    jury.record_cli(root, "s", GATE, [{"title": "UNUSED in src/one.py is never used", "severity": "major", "gap": "unrequested", "cite": "", "where": "src/one.py"}])
+    assert recorded(root)[0] == 1, "the outcome isn't rejected"
+    (task,) = fix_tasks_for(root)["J-1"]
+    assert "justify or remove" in " ".join(task["block"]).lower(), task
+    tasks_pass(root)
+    print("ok")
+
+
+def test_only_the_findings_the_decision_table_sends_to_a_task_get_one():
+    root = fix_repo()
+    fix_gate(root, {"title": "the spec is right", "gap": "contradicts", "right": "spec"},
+             {"title": "the code is right", "gap": "contradicts", "right": "code", "cites": "AC-2"})
+    assert recorded(root)[0] == 1, "the outcome isn't rejected"
+    assert sorted(fix_tasks_for(root)) == ["J-1"], "a contradicts finding whose code is right goes to a change request, not a task"
+    print("ok")
+
+
+def test_test_new_needs_a_from_line():
+    from test_tasks import SLUG, chain, errs, field, fix, repo
+    assert errs(repo(chain(fix(), field("T-4", "Test", "new: AC-1")))) == [], "a fix task may say `Test: new: <cite>`"
+    assert errs(repo(chain(fix(), field("T-4", "Test", "new: FR-1")))) == [], "a fix task may cite an FR"
+    for route in ("full", "lite"):
+        found = [e for e in errs(repo(field("T-1", "Test", "new: AC-1"), route=route)) if e.startswith("T-1")]
+        assert any("new:" in e and "From" in e for e in found), f"{route}: a planned task said `Test: new:` and passed: {found}"
+    root = repo(chain(fix(), field("T-4", "Test", "new: AC-1"), lambda t: t.replace("- From: J-4 (implementation-E-1, round 1)\n", "")))
+    done = nio(root, "check", "tasks", SLUG)
+    assert done.returncode != 0 and "From" in done.stdout + done.stderr, done.stdout + done.stderr
+    print("ok")
+
+
+def test_the_fix_task_disposition_belongs_to_this_gate_only():
+    from nio import jury
+    assert "fix-task" in jury.DISPOSITIONS and "fix-task" in jury.FIXES, "`fix-task` isn't a disposition that a lens checks"
+    root = fix_repo()
+    (f,) = fix_gate(root, {"title": "a finding"})
+    (root / ".nio/specs/s/spec.md").write_text(FIX_SPEC)
+    led = jury.load(root, "s", "spec")
+    led["findings"].append({**f, "sources": [{**f["sources"][0], "lens": "logic"}]})
+    jury.save(root, led)
+    try:
+        jury.dispose(root, "s", "spec", f["id"], "fix-task", "agent", "a note")
+        raise AssertionError("the spec gate took a fix-task disposition")
+    except ValueError as e:
+        assert "fix-task" in str(e), e
+    print("ok")
+
+
+def test_a_justify_or_remove_task_is_appended_and_the():
+    root = fix_repo()
+    (f,) = fix_gate(root, {"title": "nobody asked for this", "gap": "unrequested"})
+    code = (root / "src/one.py").read_bytes()
+    tid = append_fix(root, f)
+    assert tid == "T-6", tid
+    assert "justify or remove" in " ".join(parsed_tasks(root)[tid]["block"]).lower(), parsed_tasks(root)[tid]
+    assert list(fix_tasks_for(root)) == ["J-1"] and len(fix_tasks_for(root)["J-1"]) == 1, fix_tasks_for(root)
+    assert (root / "src/one.py").read_bytes() == code, "the code was touched"
+    assert git(root, "diff", "--stat", "HEAD", "--", "src", "tests") == "", "the code differs from the epic's commit"
+    print("ok")
+
+
+def test_an_old_task_is_never_rewritten_and_code_never_deleted():
+    root = fix_repo()
+    fix_gate(root, {"title": "nobody asked for this", "gap": "unrequested"})
+    old = parsed_tasks(root)
+    code = (root / "src/one.py").read_bytes()
+    for _ in range(2):
+        code_exit, out = recorded(root)
+        assert code_exit != 0 and "outcome: approved" not in out, out
+    now = parsed_tasks(root)
+    assert {t: now[t]["block"] for t in old} == {t: x["block"] for t, x in old.items()}, "an old task changed"
+    (new,) = set(now) - set(old)
+    assert "justify or remove" in " ".join(now[new]["block"]).lower(), now[new]
+    assert (root / "src/one.py").read_bytes() == code, "the code was touched"
+    assert git(root, "diff", "--stat", "HEAD", "--", "src", "tests") == "", "the code differs from the epic's commit"
+    tasks_pass(root)
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
