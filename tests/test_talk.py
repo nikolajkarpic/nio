@@ -40,6 +40,9 @@ def problems(root):
 def check():
     start = time.monotonic()
     assert problems(ROOT) == [], problems(ROOT)
+    for name in ("spec", "grill", "jury", "plan", "tasks", "implement"):  # #56: every stage hands off through the flow
+        stops = re.findall(r"^Stop .*?(?:\n\n|\Z)", (ROOT / f"skills/{name}/SKILL.md").read_text(), re.M | re.S)
+        assert any("nio flow next" in s for s in stops), name
     assert time.monotonic() - start < 2  # the real check, not this test's setup below (NFR-1)
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)

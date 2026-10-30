@@ -68,7 +68,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 ## When to stop
 
 Stop when `nio flow next <slug>` says `done` (tell the human to merge `nio/<slug>`), when it says `waiting_for_human`,
-or when a claim is refused.
+or when a claim is refused, and show the human what it prints.
 
 ## When `nio` is missing or fails
 

@@ -75,7 +75,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
      will ask you);
    - the reviews the jury will run, by what each checks, as `nio check spec` lists them from the risk flags.
 
-Stop after step 7. Don't answer the open points yourself and don't start the grill: the next stage is research.
+Stop after step 7. Don't answer the open points yourself and don't start the grill. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the grill.
 
 ## When `nio` is missing or fails
 
