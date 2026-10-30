@@ -336,7 +336,7 @@ def fixes(led):
     listed = [f for f in led["findings"] if f["id"] in lst.get("ids", [])]
     if not listed or any(f["status"] == "open" for f in listed):
         return []
-    return [f["id"] for f in listed if f["disposition"] in FIXES]
+    return [f["id"] for f in listed if f["disposition"] in FIXES and not (led["gate"].startswith("implementation") and f["severity"] == "minor")]
 
 
 def pack_ids(led, lens):
@@ -565,10 +565,9 @@ def collect(root, slug, gate, run, expect=(), tier=None):
     save(root, led)
     for path in new if impl else []:  # the conformance lens's matches are joined to the results (CT-21)
         matches = re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", path.read_text(), re.M | re.S)
-        # ponytail: an output with no `## Matches` heading at all claims nothing, so it joins nothing
-        if matches and path.stem == f"{gate}-conformance" and led["jurors"][path.stem]["valid"]:
+        if path.stem == f"{gate}-conformance" and led["jurors"][path.stem]["valid"]:
             results = evidence.load(root, run)
-            evidence.join(root, slug, epic, matches[1].splitlines(), results)
+            evidence.join(root, slug, epic, matches[1].splitlines() if matches else [], results)
             evidence.save(root, run, results)
     led = load(root, slug, gate) if impl else led
     pending = [f for f in led["findings"] if f["validation"] == "pending" and f["status"] in ("open", "disposed")]
@@ -889,7 +888,9 @@ def compose(led, current):
                         f.update(status="overruled", reason=f"{lens}: {ok} of {len(counted)} jurors approved ({', '.join(sorted(majority))})")
     blocker = any(f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" for f in led["findings"])
     # failed twice: the human decides instead of another re-review, so only where one would start (#52 FR-16)
-    stale = [f"{f['id']} failed {f['rounds']} rounds" for f in led["findings"]
+    impl = led["gate"].startswith("implementation")  # CT-13: minors never reject or hand over; they are listed in the verdict
+    live = [f for f in led["findings"] if not (impl and f["severity"] == "minor")]
+    stale = [f"{f['id']} failed {f['rounds']} rounds" for f in live
              if f["status"] == "open" and f["rounds"] >= 2 and (ph == "first" or (ph == "re-review" and blocker))]
     # disposed as a spec-fix, yet the artefact (== judged, see above) reads as it did when the finding was raised: the
     # fix never landed, or was undone; a fix judged in a later round that skipped the finding's lens counts
@@ -899,8 +900,10 @@ def compose(led, current):
         return "human" if ph == "final" else "rejected", [f"{'plan' if led['gate'] == 'plan' else 'spec'}-fix without a change to the {led['gate']}: {', '.join(unapplied)}"], []
     if stuck or split or stale:
         return "human", stuck + split + stale, []
-    unresolved = [f for f in led["findings"] if f["status"] == "open"]
-    ids = [f["id"] for f in unresolved]
+    ids = [f["id"] for f in live if f["status"] == "open"]
+    noted = [f["id"] for f in live if impl and f["status"] == "noted" and f["severity"] == "major"]  # no later ruling yet
+    if noted and not ids:
+        return "human", [f"noted majors wait for the human: {', '.join(noted)}"], noted
     if ids and (ph == "first" or (ph == "re-review" and blocker)):  # #52 FR-1, FR-6
         return "rejected", [f"unresolved: {', '.join(ids)}"], []
     if ids and ph == "final":  # #52 FR-21
