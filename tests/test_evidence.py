@@ -2639,6 +2639,46 @@ def test_an_approved_verdict_names_every_minor_however_many_findings_were_settle
     print("ok")
 
 
+def noted_major_on_the_list():
+    """J-1 fixed, J-2 a new major noted in the re-review: the recorded outcome is human, J-2 on the list. (root, J-2)"""
+    from nio import jury
+    root = fix_repo()
+    fix_gate(root, {"title": "a missing one"})
+    recorded(root)
+    finish_fixes(root)
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    impl_out(root, "R-2", findings=[{"title": "a new major", "cites": "AC-2", "where": "src/two.py", "quote": '"TWO_MARK"'}],
+             verdicts=["J-1: fixed - it is there now"])
+    collected(root, "R-2")
+    assert recorded(root)[0] == 3, "the list isn't with the human"
+    led = jury.load(root, "s", GATE)
+    return root, next(f for f in led["findings"] if f["id"] == "J-2")
+
+
+def test_the_human_can_rule_on_a_noted_major_fix_or_accept():
+    from nio import jury
+    root, f = noted_major_on_the_list()
+    assert f["status"] == "noted", f
+    jury.dispose(root, "s", GATE, "J-2", "accepted-risk", "human", "fine")  # accept: refused today, the finding isn't open
+    assert jury.load(root, "s", GATE)["findings"][-1]["status"] == "disposed"
+    print("ok")
+
+
+def test_a_fix_task_for_it_is_appended_to_the():
+    from nio import jury
+    root, f = noted_major_on_the_list()
+    tid = append_fix(root, f)
+    assert tid, "no fix task for the noted major the human chose to fix"
+    (task,) = fix_tasks_for(root)["J-2"]
+    assert task["fields"]["From"].startswith("J-2 "), task
+    jury.dispose(root, "s", GATE, "J-2", "fix-task", "human", "fix it")
+    code, out = recorded(root)
+    assert code != 0 and "outcome: approved" not in out, f"the final fix check ran before the task was done:\n{out}"
+    finish_fixes(root)
+    assert "approved" not in recorded(root)[1] or "final" in recorded(root)[1], "approved with no final fix check"
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):

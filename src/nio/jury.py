@@ -865,7 +865,8 @@ def dispose(root, slug, gate, fid, disposition, by, note, change=""):
         raise ValueError(f"{fid} is disposed and waits on {(CHANGE.findall(f['note']) or ['its change request'])[0]}")
     if disposition == "overruled" and fid not in (led.get("list") or {}).get("flagged", []):
         raise ValueError(f"only a finding the final fix check flagged can be overruled; {fid} isn't one")
-    if f["status"] != "open" and not (by == "human" and f["status"] == "disposed"):
+    noted_major = f["status"] == "noted" and f["severity"] == "major" and gate.startswith("implementation")
+    if f["status"] != "open" and not (by == "human" and (f["status"] == "disposed" or noted_major)):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
     f.update(status="overruled" if disposition == "overruled" else "disposed", disposition=disposition, by=by, note=note)
     if disposition == "overruled":
