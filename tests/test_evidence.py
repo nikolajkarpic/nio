@@ -2059,6 +2059,371 @@ def test_an_old_task_is_never_rewritten_and_code_never_deleted():
     print("ok")
 
 
+# --- T-23: close the loop on a round (CT-13, CT-14, CT-17, CT-20; AC-32, AC-34, AC-38, AC-40, AC-56) ---
+
+E1_MATCHES = ("AC-1 -> tests/test_calc.py:5", "AC-2 -> tests/test_calc.py:9", "AC-4 -> tests/test_calc.py:17")
+LINT = "grep -q LINT_OK src/one.py || (echo LINT-ERROR-7 in src/one.py; exit 1)"
+
+
+def said(root, *args):
+    """A `nio` call that must work: (no crash, exit 0, no invalid lens output). What it printed."""
+    done = nio(root, *args)
+    assert "Traceback" not in done.stderr, f"nio {' '.join(args)} crashed:\n{done.stderr}"
+    assert done.returncode == 0 and "INVALID" not in done.stdout, f"nio {' '.join(args)}: {done.returncode}\n{done.stdout}{done.stderr}"
+    return done.stdout
+
+
+def looked(root, gate=GATE):
+    """`nio jury check <gate>`, recording nothing, as the agent runs it first. (exit code, printed lines)"""
+    done = nio(root, "jury", "check", "s", gate)
+    assert "Traceback" not in done.stderr, done.stderr
+    return done.returncode, done.stdout
+
+
+def impl_out(root, run, lens="conformance", findings=(), verdicts=()):
+    """A lens's output in `run`: `findings` are dicts of lines, title included; `verdicts` are `J-n: fixed - why` lines. A
+    conformance output matches each of E-1's ACs to its test."""
+    base = {"kind": "gap", "severity": "major", "evidence": "observed", "gap": "missing", "where": "src/one.py", "quote": '"ONE_MARK"',
+            "situation": "x", "fix": "y", "cites": "AC-1"}
+    body = "".join(f"### F{i} {f['title']}\n" + "".join(f"- {k}: {v}\n" for k, v in {**base, **f}.items() if k != "title") + "\n"
+                   for i, f in enumerate(findings, 1)) or "none\n"
+    matches = "## Matches\n" + "".join(f"- {x}\n" for x in E1_MATCHES) + "\n" if lens == "conformance" else ""
+    said_verdicts = "## Verdicts\n" + "".join(f"- {v}\n" for v in verdicts) + "\n" if verdicts else ""
+    path = root / f".nio/runs/{run}/jury/{GATE}-{lens}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f'---\nlens: {lens}\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+                    f"## Reasoning\nChecked.\n\n{matches}{said_verdicts}## Findings\n{body}")
+
+
+def collected(root, run):
+    """`nio jury collect`, and the refuter confirming whatever waits on it."""
+    from nio import jury
+    said(root, "jury", "collect", "s", GATE, "--run", run)
+    pending = [f["id"] for f in jury.load(root, "s", GATE)["findings"] if f["validation"] == "pending" and f["status"] in ("open", "disposed")]
+    if pending:
+        (root / f".nio/runs/{run}/jury/{GATE}-refuter.md").write_text("".join(f"### {i}\n- result: confirmed\n- reason: it is so\n\n" for i in pending))
+        said(root, "jury", "collect", "s", GATE, "--run", run)
+    return {f["id"]: f for f in jury.load(root, "s", GATE)["findings"]}
+
+
+def finish_fixes(root, edits=None):
+    """The implement stage finishes every task of E-1 not done, in order, each with its own commit: `edits[T-n]` is what it
+    appends to src/one.py, by default a comment."""
+    from nio import flow, implement
+    lines = flow.read(root, "s")[1]
+    states = implement.status(root, "s", lines)
+    history = root / ".nio/specs/s/history.jsonl"
+    done = [t for t in implement.tasks_of(root, "s") if t["epic"] == "E-1" and states[t["id"]] != "done"]
+    assert done, "there is no fix task to finish"
+    for t in done:
+        with (root / "src/one.py").open("a") as f:
+            f.write((edits or {}).get(t["id"], f"# touched by {t['id']}\n"))
+        with history.open("a") as f:
+            f.writelines(json.dumps({"kind": k, "from": "implementing", "to": "implementing", "end": True,
+                                     "evidence": {"task": t["id"], "commit": "c", "passed": True}}) + "\n"
+                         for k in ("claim", "red", "green", "review", "task_done"))
+        git(root, "add", "-A")
+        git(root, "commit", "-qm", f"{t['id']}: {t['title']}")
+    return [t["id"] for t in done]
+
+
+def rerun_lenses(root):
+    """The lenses `nio jury changed` says to re-run."""
+    line = next(x for x in said(root, "jury", "changed", "s", GATE).splitlines() if x.startswith("re-run: "))
+    return line[len("re-run: "):].split(", ")
+
+
+def rejected_round(root, *findings, run="R-1"):
+    """Round 1 through the CLI, conformance raising `findings`, recorded as rejected. {finding ID: its fix task's ID}."""
+    said(root, "jury", "evidence", "s", "E-1", "--run", run)
+    impl_out(root, run, findings=findings)
+    collected(root, run)
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out, f"round 1 isn't rejected: {code}\n{out}"
+    return {fid: tasks[0]["id"] for fid, tasks in fix_tasks_for(root).items()}
+
+
+def broken_repo():
+    """fix_repo at whose last commit the lint check fails (src/one.py has no LINT_OK) and test_one, AC-1's test, fails."""
+    root = fix_repo()
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": JOIN_SUITE, "lint": LINT}}))
+    (root / "tests/test_calc.py").write_text(FIX_SUITE.replace("self.assertEqual(1, 1)", "self.assertEqual(1, 2)"))
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-1: Build one, as it ended up")
+    return root
+
+
+def cli_round(root):
+    """Round 1 of `broken_repo` through the CLI, with no finding from any lens: J-1 is the failed lint check, J-2 AC-1's
+    missing evidence. Rejected, with one fix task each. {finding ID: its fix task's ID}."""
+    tasks = rejected_round(root)
+    assert sorted(tasks) == ["J-1", "J-2"], f"the fixture isn't clean: {tasks}"
+    tasks_pass(root)
+    led = {f["id"]: f for f in gate_findings(root, cli=True)}
+    assert "lint" in led["J-1"]["title"] and "AC-1" in led["J-2"]["title"], led
+    assert all(f["sources"][0]["lens"] == "cli" and f["disposition"] == "fix-task" for f in led.values()), led
+    return tasks
+
+
+def is_not_fixed(f, rounds=1):
+    assert (f["status"], f["disposition"], f["baseline"], f["rounds"]) == ("open", "", "unchanged", rounds), f"{f['id']} isn't `not fixed`: {f}"
+
+
+def is_fixed(f):
+    assert (f["status"], f["baseline"]) == ("fixed", "absent"), f"{f['id']} isn't `fixed`: {f}"
+
+
+def test_it_is_rejected_one_fix_task_is_appended_for():
+    root = fix_repo()
+    fix_gate(root, {"title": "a missing one"}, {"title": "a small one", "severity": "minor", "cites": "AC-2"})
+    before = task_file(root).read_bytes()
+    code, out = looked(root)
+    assert code == 1 and "outcome: rejected" in out, (code, out)
+    assert task_file(root).read_bytes() == before, "a check that records nothing wrote a task"
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out, (code, out)
+    by = fix_tasks_for(root)
+    assert sorted(by) == ["J-1"] and len(by["J-1"]) == 1, f"exactly one new task, for the major, not {by}"
+    assert "AC-1" in by["J-1"][0]["fields"]["Serves"], by["J-1"]
+    print("ok")
+
+
+def test_it_is_rejected_and_a_fix_task_is_appended():
+    from nio import flow, implement, jury
+    root = fix_repo()
+    fix_gate(root, {"title": "a missing one"})
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out, (code, out)
+    ((fid, tasks),) = fix_tasks_for(root).items()
+    assert fid == "J-1" and len(tasks) == 1 and "From" in tasks[0]["fields"], tasks
+    tid = tasks[0]["id"]
+    assert tid in out, f"the outcome doesn't name the new task: {out}"
+    assert jury.load(root, "s", GATE)["outcome"] == "rejected"
+    assert implement.next_ready(root, "s", flow.read(root, "s")[1])["id"] == tid, "the epic isn't back with the implement stage"
+    done = nio(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    assert done.returncode and tid in done.stderr and "Traceback" not in done.stderr, f"the gate ran with {tid} not done: {done.stderr}"
+    print("ok")
+
+
+def test_it_is_approved_and_no_task_is_written():
+    root = fix_repo()
+    fix_gate(root)
+    before = task_file(root).read_bytes()
+    code, out = looked(root)
+    assert code == 0 and "outcome: approved" in out, (code, out)
+    code, out = recorded(root)
+    assert code == 0 and "outcome: approved" in out, (code, out)
+    assert task_file(root).read_bytes() == before, "an approved gate changed tasks.md"
+    print("ok")
+
+
+def test_it_is_human_not_rejected_as_at_the_spec():
+    root = fix_repo()
+    fix_gate(root, {"title": "a missing one"})
+    assert recorded(root)[0] == 1, "round 1 isn't rejected"
+    finish_fixes(root)
+    tasks = task_file(root).read_bytes()
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    impl_out(root, "R-2", findings=[{"title": "a new major", "cites": "AC-2", "where": "src/two.py", "quote": '"TWO_MARK"'}],
+             verdicts=["J-1: fixed - it is there now"])
+    found = collected(root, "R-2")
+    is_fixed(found["J-1"])
+    assert found["J-2"]["status"] == "noted", found["J-2"]
+    code, out = looked(root)
+    assert code == 3 and "outcome: human" in out and "J-2" in out, (code, out)
+    code, out = recorded(root)
+    assert code == 3 and "outcome: human" in out and "J-2" in out, f"nothing else is open: a new major goes to the human, not {code}\n{out}"
+    assert task_file(root).read_bytes() == tasks, "a new major in a re-review got a task"
+    print("ok")
+
+
+def test_that_round_is_a_re_review_of_the_open():
+    from nio import jury
+    root = fix_repo()
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-1")
+    impl_out(root, "R-1", findings=[{"title": "conformance's own", "fix": "FIX-ASKED-5"}])
+    impl_out(root, "R-1", "correctness", [{"title": "correctness's own", "cites": "AC-2", "where": "src/two.py", "quote": '"TWO_MARK"', "fix": "FIX-ASKED-6"}])
+    collected(root, "R-1")
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out, (code, out)
+    led = jury.load(root, "s", GATE)
+    assert led["round"] == 1 and sorted(fix_tasks_for(root)) == ["J-1", "J-2"], led
+    judged = led["versions"]["1"]
+    finish_fixes(root, {"T-6": "FIX_MARK_ONE = 1\n", "T-7": "FIX_MARK_TWO = 1\n"})
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    assert rerun_lenses(root) == ["conformance", "correctness"], rerun_lenses(root)
+    for lens, mine, other, fix in (("conformance", "J-1", "J-2", "FIX-ASKED-5"), ("correctness", "J-2", "J-1", "FIX-ASKED-6")):
+        for name, text in (("nio jury fixcheck", said(root, "jury", "fixcheck", "s", GATE, "--lens", lens)),
+                           ("evidence.pack", evidence().pack(root, "s", GATE, lens, "R-2"))):
+            heads = text.splitlines()
+            assert "fix check" in text.lower(), f"{name} for {lens} isn't a fix check:\n{text}"
+            assert any(x.startswith(f"### {mine} ") for x in heads) and fix in text, f"{name} for {lens} lacks {mine} and its fix:\n{text}"
+            assert not any(x.startswith(f"### {other} ") for x in heads), f"{name} for {lens} holds another lens's {other}:\n{text}"
+            assert judged[:8] in text, f"{name} for {lens} doesn't start its diff at the commit round 1 judged, {judged[:8]}:\n{text}"
+            assert "+FIX_MARK_ONE = 1" in text and "+FIX_MARK_TWO = 1" in text, f"{name} for {lens} lacks the fixes' diff:\n{text}"
+            assert "+THREE_MARK = 1" not in text, f"{name} for {lens} holds code from before the commit round 1 judged:\n{text}"
+    impl_out(root, "R-2", verdicts=["J-1: fixed - it is there now"])
+    impl_out(root, "R-2", "correctness", verdicts=["J-2: fixed - it is there now"])
+    found = collected(root, "R-2")
+    led = jury.load(root, "s", GATE)
+    assert led["round"] == 2, f"the round number didn't rise by 1: {led['round']}"
+    assert jury.phase(led) == "re-review", jury.phase(led)
+    is_fixed(found["J-1"])
+    is_fixed(found["J-2"])
+    code, out = recorded(root)
+    assert code == 0 and "outcome: approved" in out, (code, out)
+    print("ok")
+
+
+def test_an_unset_right_side_goes_to_a_fix_task():
+    root = fix_repo()
+    fix_gate(root, {"title": "it says otherwise", "gap": "contradicts"})
+    code, out = looked(root)
+    assert code == 1 and "outcome: rejected" in out, (code, out)
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out, (code, out)
+    by = fix_tasks_for(root)
+    assert sorted(by) == ["J-1"] and len(by["J-1"]) == 1 and "AC-1" in by["J-1"][0]["fields"]["Serves"], by
+    assert not list((root / ".nio/memory").rglob("C-*.md")), "an unset right side raised a change record"
+    print("ok")
+
+
+def test_a_fix_task_that_did_not_fix_the_check():
+    """The failing test stays failing, by the T-7 commit touching nothing of it; the lint check passes after T-6."""
+    root = broken_repo()
+    tasks = cli_round(root)
+    finish_fixes(root, {tasks["J-1"]: "LINT_OK = 1\n"})
+    file = task_file(root).read_bytes()
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    found = {f["id"]: f for f in gate_findings(root, cli=True)}
+    assert sorted(found) == ["J-1", "J-2"], f"the fix tasks raised new findings: {list(found.values())}"
+    is_fixed(found["J-1"])
+    assert found["J-2"]["status"] != "fixed", f"evidence alone marked the failing test's finding fixed: {found['J-2']}"
+    assert "conformance" in rerun_lenses(root), "no lens re-runs, so nothing would ever join the results again"
+    impl_out(root, "R-2")  # no verdict: no juror can give one on a CLI finding
+    found = collected(root, "R-2")
+    assert sorted(found) == ["J-1", "J-2"], found
+    is_fixed(found["J-1"])
+    is_not_fixed(found["J-2"])
+    code, out = looked(root)
+    assert code == 3 and "outcome: human" in out and "J-2" in out, f"a `not fixed` with no new task goes to the human: {code}\n{out}"
+    code, out = recorded(root)
+    assert code == 3 and "outcome: human" in out and "J-2" in out, f"a `not fixed` with no new task goes to the human: {code}\n{out}"
+    assert task_file(root).read_bytes() == file, "the `not fixed` finding got a second task"
+    print("ok")
+
+
+def test_a_failed_check_its_fix_task_left_failing_is_not_fixed():
+    root = broken_repo()
+    tasks = cli_round(root)
+    (root / "tests/test_calc.py").write_text(FIX_SUITE)
+    finish_fixes(root)  # the suite passes now; the lint check still doesn't
+    file = task_file(root).read_bytes()
+    for _ in range(2):  # a second run in the round is no second failed round
+        said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+        found = {f["id"]: f for f in gate_findings(root, cli=True)}
+        assert sorted(found) == ["J-1", "J-2"], f"a repeat raised a new finding: {list(found.values())}"
+        is_not_fixed(found["J-1"])
+    assert found["J-2"]["status"] != "open", f"evidence reopened the finding only `join` can judge: {found['J-2']}"
+    impl_out(root, "R-2")
+    found = collected(root, "R-2")
+    is_not_fixed(found["J-1"])
+    is_fixed(found["J-2"])
+    assert tasks["J-1"] in {t["id"] for t in fix_tasks_for(root)["J-1"]} and len(fix_tasks_for(root)["J-1"]) == 1, fix_tasks_for(root)
+    code, out = recorded(root)
+    assert code == 3 and "outcome: human" in out and "J-1" in out, f"a `not fixed` with no new task goes to the human: {code}\n{out}"
+    assert task_file(root).read_bytes() == file, "the `not fixed` finding got a second task"
+    print("ok")
+
+
+def test_a_lens_blocker_not_fixed_with_its_task_done_goes_to_the_human():
+    root = fix_repo()
+    rejected_round(root, {"title": "a blocker", "severity": "blocker"})
+    finish_fixes(root)
+    file = task_file(root).read_bytes()
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    impl_out(root, "R-2", verdicts=["J-1: not fixed - it is still gone"])
+    found = collected(root, "R-2")
+    assert (found["J-1"]["status"], found["J-1"]["validation"]) == ("open", "confirmed"), found["J-1"]
+    code, out = recorded(root)
+    assert code == 3 and "outcome: human" in out and "J-1" in out, f"rejected with no new task leaves the epic going nowhere: {code}\n{out}"
+    assert task_file(root).read_bytes() == file, "the `not fixed` finding got a second task"
+    print("ok")
+
+
+def test_a_not_fixed_finding_beside_a_new_blocker_is_rejected_with_the_new_task():
+    root = fix_repo()
+    rejected_round(root, {"title": "a blocker", "severity": "blocker"})
+    finish_fixes(root)
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    impl_out(root, "R-2", findings=[{"title": "a new blocker", "severity": "blocker", "cites": "AC-2", "where": "src/two.py", "quote": '"TWO_MARK"'}],
+             verdicts=["J-1: not fixed - it is still gone"])
+    collected(root, "R-2")
+    code, out = recorded(root)
+    assert code == 1 and "outcome: rejected" in out, f"a new blocker has new work to send back: {code}\n{out}"
+    by = fix_tasks_for(root)
+    assert len(by["J-1"]) == 1 and len(by["J-2"]) == 1, by
+    print("ok")
+
+
+def test_every_cli_fix_that_held_approves_the_epic_with_no_juror_verdict():
+    root = broken_repo()
+    tasks = cli_round(root)
+    (root / "tests/test_calc.py").write_text(FIX_SUITE)
+    finish_fixes(root, {tasks["J-1"]: "LINT_OK = 1\n"})
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    assert "conformance" in rerun_lenses(root), "no lens re-runs, so the gate could never compose again"
+    impl_out(root, "R-2")
+    found = collected(root, "R-2")
+    is_fixed(found["J-1"])
+    is_fixed(found["J-2"])
+    code, out = recorded(root)
+    assert code == 0 and "outcome: approved" in out, (code, out)
+    print("ok")
+
+
+def test_only_a_fix_task_entry_takes_the_clis_fix_verdict():
+    from nio import jury
+    root = broken_repo()
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-1")
+    assert [f["id"] for f in gate_findings(root, cli=True)] == ["J-1"], gate_findings(root, cli=True)
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-1")  # no fix task yet: still open, no failed round
+    (f,) = gate_findings(root, cli=True)
+    assert (f["status"], f["rounds"], f["baseline"]) == ("open", 0, "new"), f
+    jury.dispose(root, "s", GATE, "J-1", "accepted-risk", "human", "we live with it")
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": JOIN_SUITE}}))  # the check isn't run any more
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-1")
+    (f,) = gate_findings(root, cli=True)
+    assert (f["status"], f["disposition"]) == ("disposed", "accepted-risk"), f"what the human ruled was changed: {f}"
+    print("ok")
+
+
+def test_a_fix_tasks_pack_says_what_to_fix():
+    from nio import implement
+    root = fix_repo()
+    rejected_round(root, {"title": "a missing one", "situation": "SITUATION-MARK-3 is wrong", "fix": "FIX-MARK-4 instead"},
+                   {"title": "cites a contract", "cites": "CT-2", "where": "src/two.py", "quote": '"TWO_MARK"', "situation": "SITUATION-MARK-5 is wrong"})
+    by_id = {t["id"]: t for t in implement.tasks_of(root, "s")}
+    text = implement.worker_pack(root, "s", by_id["T-6"])
+    assert "SITUATION-MARK-5" in implement.worker_pack(root, "s", by_id["T-7"]), "a task serving a CT has to pack too"
+    assert "SITUATION-MARK-3" in text and "FIX-MARK-4" in text, f"the worker can't see what to fix:\n{text}"
+    assert len(re.findall(r"^## ", text, re.M)) == 5, f"a worker pack has exactly five parts:\n{text}"
+    plain = implement.worker_pack(root, "s", by_id["T-1"])
+    assert "SITUATION-MARK-3" not in plain and "FIX-MARK-4" not in plain, f"a planned task got a finding's text:\n{plain}"
+    implement.worker_pack(root, "s", by_id["T-5"])  # its From: names J-11, which no ledger holds: it still packs
+    print("ok")
+
+
+def test_a_fix_tasks_pack_holds_the_errors_of_the_check_it_fixes():
+    from nio import implement
+    root = broken_repo()
+    tasks = cli_round(root)
+    task = next(t for t in implement.tasks_of(root, "s") if t["id"] == tasks["J-1"])
+    text = implement.worker_pack(root, "s", task)
+    assert "LINT-ERROR-7" in text, f"a CLI finding has no `fix`: its errors are what the worker has to go on:\n{text}"
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):

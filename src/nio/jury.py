@@ -374,11 +374,19 @@ def parts(text):
 
 def diff(root, slug, gate):
     """(led, (items before, sections before), (items after, sections after), changed IDs, changed sections, neighbours)
-    since the version the last round judged."""
+    since the version the last round judged. At the implementation gate a version is a commit: the changed IDs are the
+    files changed since it, and the items are the spec's and contracts', as they read now."""
     led = load(root, slug, gate)
     versions = led.get("versions", {})
     if not versions:
         raise ValueError(f"no round of the {gate} jury has been collected for {slug}")
+    if gate.startswith("implementation"):
+        judged = versions[max(versions, key=int)]
+        if records.git(root, "cat-file", "-e", judged, full=True)[0]:
+            raise ValueError(f"the judged {gate} commit isn't in this clone's git objects; re-run every lens")
+        head = evidence.commits_of(root, slug, gate.removeprefix("implementation-"))[0]
+        items = evidence.items(root, slug)[0], {}
+        return led, items, items, evidence.code_diff(root, judged, head, "--name-only"), [], []
     old = "\n".join(records.git(root, "cat-file", "-p", versions[max(versions, key=int)]))
     if not old:
         raise ValueError(f"the judged {gate} version isn't in this clone's git objects; re-run every lens")
@@ -393,11 +401,16 @@ def diff(root, slug, gate):
     return led, before, after, ids, secs, neighbours
 
 
+def awaits_fix_verdict(f):
+    return f["status"] == "disposed" and f["disposition"] == "fix-task"
+
+
 def changed(root, slug, gate):
     """(changed IDs, lenses to re-run, neighbour IDs, changed sections) since the version the last round judged
     (#27 FR-19, FR-23; #52 FR-14). In the first review the lenses to re-run are every lens that blocked, plus any lens
     with a finding citing a changed ID; after it, every lens with a fix to check. Once the gate was approved or closed,
-    every lens that judged it re-checks the change."""
+    every lens that judged it re-checks the change. At the implementation gate conformance also re-runs for a CLI finding
+    with a fix to judge, since it drives `join`, and when nothing else would start the round the fixes need (CT-20)."""
     led, _, _, ids, secs, neighbours = diff(root, slug, gate)
     lenses = {s["lens"] for f in led["findings"] for s in f["sources"] if s["lens"] not in ("deferred", "cli")}
     if any(o == "rejected" for _, o in led["recorded"]):  # a re-review or the final check is next
@@ -409,6 +422,9 @@ def changed(root, slug, gate):
         # an approved or closed gate whose artefact changed since (a change request, #57 FR-35, FR-47): every lens that
         # judged it re-checks only what changed, from its fix-check pack
         rerun = set(votes(led))
+    if gate.startswith("implementation") and any(o == "rejected" for _, o in led["recorded"]):
+        if (ids and not rerun) or any(awaits_fix_verdict(f) and any(s["lens"] == "cli" for s in f["sources"]) for f in led["findings"]):
+            rerun.add("conformance")
     return ids, sorted(rerun), neighbours, secs
 
 
@@ -419,9 +435,12 @@ def fixcheck(root, slug, gate, lens, blocker=None):
     led, before, after, ids, secs, neighbours = diff(root, slug, gate)
     by_id = {f["id"]: f for f in led["findings"]}
     mine = [by_id[i] for i in pack_ids(led, lens)]
+    impl = gate.startswith("implementation")
     if blocker and blocker not in by_id:
         raise ValueError(f"no finding {blocker} in the {gate} ledger of {slug}")
     out = [f"# Fix-check pack: {lens}, {gate} gate of {slug}", "",
+           "This is a fix check, not a review. You get your own findings from the last round and the code's diff since the "
+           "commit you judged. You may open any file of the project to read it." if impl else
            "This is a fix check, not a review. You get your own findings from the last round, what changed since you judged "
            "it, and the items around the changes; nothing else of the artefact. Don't open the artefact itself.", ""]
     if blocker:
@@ -443,6 +462,9 @@ def fixcheck(root, slug, gate, lens, blocker=None):
                     *(["- what it cites, now:", *[after[0][c] for c in f["cites"] if c in after[0]]] if any(c in after[0] for c in f["cites"]) else []), ""]
     ruled = [f for f in led["findings"] if f["disposition"] in HUMAN_ONLY]
     out += ["## Settled by the human: don't raise these again", *([f"- {f['id']} {f['title']} ({f['disposition']}: {f['note']})" for f in ruled] or ["None."]), ""]
+    if impl:
+        judged = version(led, led["round"])
+        return out + [f"## Diff since {judged[:8]}", "", *evidence.code_diff(root, judged, evidence.commits_of(root, slug, gate.removeprefix("implementation-"))[0])]
     out += ["## Changed items, before and after", ""]
     for i in ids:
         out += [f"### {i}", "Before:", before[0].get(i, "(new)"), "After:", after[0].get(i, "(removed)"), ""]
@@ -749,22 +771,35 @@ def add(led, f, juror, lens, rnd, text, human="", review=False):
     return f"{match['baseline']:<7} {match['id']} [{match['severity']}/{match['kind']}] {match['title']} (+{lens})"
 
 
-def record_cli(root, slug, gate, findings):
+def record_cli(root, slug, gate, findings, origin=None):
     """Put the CLI's own findings in the ledger as confirmed (CT-20, FR-24): no refuter and no vote, since they are observed
-    and no juror raised them. A repeat with the same title adds none. The new entries' IDs."""
+    and no juror raised them. A repeat with the same title adds none. The new entries' IDs. `origin` is the caller,
+    `checks` or `join`, which gives the fix verdict no juror can on its own entries only: the other reports different
+    findings, so its silence says nothing. Gone from `findings` is fixed; still there is not fixed, the same J-n."""
     led = load(root, slug, gate)
     out = []
+    reported, judged = {f["title"] for f in findings}, False
+    for g in led["findings"] if origin else []:
+        if g.get("origin") != origin:
+            continue
+        if g["title"] in reported and (awaits_fix_verdict(g) or g["status"] == "fixed"):  # a fix that came undone counts too
+            g.update(status="open", baseline="unchanged", disposition="", by="", note="", rounds=g["rounds"] + 1, last_round=led["round"],
+                     reason="the CLI still reports it after its fix task")
+            judged = True
+        elif g["title"] not in reported and awaits_fix_verdict(g):
+            g.update(status="fixed", baseline="absent", fixed_in=led["round"])
+            judged = True
     for f in findings:
         if any(g["title"] == f["title"] and any(s["lens"] == "cli" for s in g["sources"]) for g in led["findings"]):
             continue
         out.append(f"J-{len(led['findings']) + 1}")
         led["findings"].append({
             "id": out[-1], "title": f["title"], "kind": "gap", "severity": f["severity"], "cites": [c.strip() for c in f["cite"].split(",") if c.strip()],
-            "evidence": "observed", "quotes": [], "fix": f.get("fix", ""), "gap": f["gap"], "where": f["where"], "tampering": bool(f.get("tampering")),
+            "evidence": "observed", "quotes": [], "fix": f.get("fix", ""), "gap": f["gap"], "where": f["where"], "tampering": bool(f.get("tampering")), "origin": origin,
             "sources": [{"juror": "cli", "lens": "cli", "situation": f.get("situation", f["gap"]), "severity": f["severity"], "round": led["round"]}],
             "validation": "confirmed", "reason": "the CLI's own check; no refuter", "status": "open", "disposition": "", "by": "", "note": "",
             "baseline": "new", "rounds": 0, "first_round": led["round"], "last_round": led["round"]})
-    if out:
+    if out or judged:
         save(root, led)
     return out
 
@@ -941,10 +976,24 @@ def version_now(root, slug, gate):
 
 
 def composed(root, slug, gate, led, current):
-    """`compose`, and never approved while a task of the epic, a fix task above all, isn't done (FR-26)."""
+    """`compose`, and at the implementation gate: never approved while a task of the epic, a fix task above all, isn't done
+    or a fix has no verdict yet (FR-26); and human, not a dead end, when rejected has no new work to send back, since a
+    finding `not fixed` with its task done can't get a second one (FR-26)."""
     outcome, reasons, listed = compose(led, current)
-    if outcome == "approved" and gate.startswith("implementation") and (left := undone(root, slug, gate.removeprefix("implementation-"))):
-        return "rejected", [f"tasks not done: {', '.join(left)}"], []
+    if outcome not in ("approved", "rejected") or not gate.startswith("implementation"):
+        return outcome, reasons, listed
+    left = undone(root, slug, gate.removeprefix("implementation-"))
+    if outcome == "approved":
+        if left:
+            return "rejected", [f"tasks not done: {', '.join(left)}"], []
+        waiting = [f["id"] for f in led["findings"] if awaits_fix_verdict(f)]
+        if waiting and phase(led) != "final":  # the final check's flagged fixes are never checked again (#52 FR-23)
+            return "rerun", [f"no fix verdict yet on {', '.join(waiting)}: run `nio jury evidence`, then the lenses `nio jury changed` names"], []
+    elif not left:
+        from nio import tasks
+        routed = [f["id"] for f in led["findings"] if to_task(f)]
+        if routed and all(tasks.fixes_of(root, slug, gate, i) for i in routed):
+            return "human", [f"not fixed, with its fix task done and no second task allowed; fix or accept each as risk: {', '.join(routed)}"], routed
     return outcome, reasons, listed
 
 

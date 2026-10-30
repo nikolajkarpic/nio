@@ -151,6 +151,11 @@ def parent_of(root, commit):
 DEFINES = re.compile(r"^\s*(?:async\s+)?(?:def|class|function)\s+(\w+)")
 
 
+def code_diff(root, base, head, *flags):
+    """`git diff` of everything but `.nio/`, which holds ledgers and other jurors' findings: jurors judge independently."""
+    return records.git(root, "diff", *flags, base, head, "--", ".", ":(exclude).nio")
+
+
 def phantoms(root, tasks, base, head):
     """[finding]: one major finding per missing file, file outside the epic's diff, or symbol the diff defines that nothing
     else mentions (CT-4, FR-6, FR-7, FR-8). Read from git at `head`, never from a task's status.
@@ -295,11 +300,13 @@ def hints(root, base, head):
     return out
 
 
-def check_finding(name, check):
+def check_finding(root, name, check, changed):
     """The major finding of a failed lint or type check, naming it and holding its first errors (FR-42). Its title stays
-    the same from run to run, so a repeat adds none (CT-20)."""
+    the same from run to run, so a repeat adds none (CT-20). `where` becomes a fix task's `Files:`, so it holds the files
+    those errors name, else the epic's `changed` files, never the command, which the next run would report as missing."""
     first = "\n".join([x for x in check["output"].splitlines() if x.strip()][:FIRST_ERRORS])[:FIRST_CHARS]
-    return {"title": f"the {name} failed", "severity": "major", "gap": f"`{check['command']}` failed:\n{first}", "cite": "", "where": check["command"]}
+    return {"title": f"the {name} failed", "severity": "major", "gap": f"`{check['command']}` failed:\n{first}", "cite": "",
+            "where": ", ".join(implement.named_files(root, first) or changed)}
 
 
 def collect(root, slug, epic, run):
@@ -349,9 +356,10 @@ def collect(root, slug, epic, run):
                "attacks": attacks, "journeys": journeys_out, "hints": hints(root, base, commit)}
     save(root, run, results)
     named = zip(("lint check", "type check"), results["checks"])
+    changed = code_diff(root, base, commit, "--name-only", "--diff-filter=d")
     jury.record_cli(root, slug, f"implementation-{epic}", [
         *phantoms(root, [x for x in implement.tasks_of(root, slug) if x["epic"] == epic], base, commit), *tampering(root, base, commit),
-        *[check_finding(name, c) for name, c in named if c["result"] == "failed"]])
+        *[check_finding(root, name, c, changed) for name, c in named if c["result"] == "failed"]], origin="checks")
     return [str(path(root, run).relative_to(root))] + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"]
 
@@ -381,9 +389,9 @@ def join(root, slug, epic, matches, results):
         mine = [e for e in entries if e["ac"] == ac]
         if not any(e["result"] == "passed" for e in mine):
             why = "; ".join(f"{e['_name'] or e['file'] or 'no test'} {e['result']}" for e in mine)
-            out.append({"title": f"{ac} has no passing evidence", "severity": "blocker", "gap": "missing", "cite": ac, "where": mine[0]["file"] or ac,
+            out.append({"title": f"{ac} has no passing evidence", "severity": "blocker", "gap": "missing", "cite": ac, "where": mine[0]["file"] or ", ".join(dict.fromkeys(f for t in implement.tasks_of(root, slug) if t["epic"] == epic and ac in t["serves"] for f in t["files"])) or ac,
                         "situation": f"no passing test proves {ac}: {why}", "fix": f"add or fix a test that proves {ac}"})
-    jury.record_cli(root, slug, f"implementation-{epic}", out)
+    jury.record_cli(root, slug, f"implementation-{epic}", out, origin="join")
     return out
 
 
@@ -473,7 +481,8 @@ def pack(root, slug, gate, lens, run):
     led = jury.load(root, slug, gate)
     out = [f"# Pack: {lens}, {gate} gate of {slug}", "",
            "You may open any file of the project to read it. You have no way to write files or run commands.", ""]
-    if led.get("versions") and jury.phase(led) in ("re-review", "final"):
+    # not `phase`: it reads `first` until the next round is collected, and this pack is what that round needs
+    if led.get("versions") and any(o == "rejected" for _, o in led["recorded"]):
         judged = led["versions"][max(led["versions"], key=int)]
         by_id = {f["id"]: f for f in led["findings"]}
         out += ["This is a fix check, not a review. Give one verdict per finding below, `- J-<n>: fixed | not fixed - <reason>`, "
@@ -485,10 +494,10 @@ def pack(root, slug, gate, lens, run):
                     f"- what was done: {f['note']}", ""]
         if runs := asked(results):
             out += ["## Requested runs", "", json.dumps(runs, indent=2, ensure_ascii=False), ""]
-        out += [f"## Diff since {judged[:8]}", "", *records.git(root, "diff", judged, head)]
+        out += [f"## Diff since {judged[:8]}", "", *code_diff(root, judged, head)]
         return "\n".join(out) + "\n"
-    diff = records.git(root, "diff", base, head)
-    names = set(records.git(root, "diff", "--name-only", base, head))
+    diff = code_diff(root, base, head)
+    names = set(code_diff(root, base, head, "--name-only"))
     text, bound = items(root, slug)
     serves = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
     touched = serves | {c for c, f in bound.items() if f in names}
