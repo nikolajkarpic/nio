@@ -2,7 +2,7 @@
 name: adversary
 description: "Juror lens for abuse and silent failure. Use at the spec gate when the spec takes external input, involves several parties or exposes a public API (or handles money): finds what a hostile or careless user can make the system do that the spec never handles."
 tier: strong
-effort: high
+effort: med
 tools: [read]
 ---
 

@@ -2,7 +2,7 @@
 name: security
 description: "Juror lens for security and privacy. Use at the spec gate when the spec touches auth, permissions or personal data, and at the plan gate when its risk flags include auth or pii: finds actions with no stated permission, data exposed to the wrong party, and secrets or PII handled without a rule."
 tier: strong
-effort: high
+effort: med
 tools: [read]
 ---
 

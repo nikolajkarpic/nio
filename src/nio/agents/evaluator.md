@@ -21,10 +21,17 @@ Rate the work, not the task's length: a short task with subtle logic needs more 
 
 ## How to rate
 
+- Before rating a task, read its `Files:`, its `Test:` cases in the plan's tests and the contracts it serves. Rate what
+  those ask for, not how the title sounds. A task with a clear test and a pattern to follow is easy, whatever it touches.
+- Choose the lowest tier and effort that would get the task right. A rework costs less than overpaying on every task.
 - `Tier: <cheap|strong|max|frontier>: <one-line reason>`. Cheap: mechanical edits that follow an existing pattern.
   Strong: ordinary logic with clear tests. Max: subtle state, concurrency, security or data that can't be undone.
   Frontier: only what max would likely get wrong.
-- `Effort: <low|med|high>`: how hard the model should think.
+- `Effort: <low|med|high>`: how hard the model should think, rated separately from the tier.
+  - Low, the default: the test and the pack say what to do, including at a high tier.
+  - Med: the worker has to work something out that the pack doesn't settle.
+  - High: the toughest of tough tasks only, where med would likely get it wrong and the task can't be split further.
+    Expect none in most efforts. Many edge cases, several modules, a high tier or a risky area don't make a task high.
 - `Mode: <split|single|direct>: <one-line reason>`. Split: one worker writes the failing test, another the code (the
   default). Single: one worker does both, still proving red and green. Direct: no test first, for a task a test
   can't lead (config, docs, wiring).
@@ -32,7 +39,7 @@ Rate the work, not the task's length: a short task with subtle logic needs more 
 
 ## Output format
 
-`tasks.md` with every `Tier:`, `Effort:` and `Mode:` line rated. Then one line per epic with its counts by tier and effort.
+`tasks.md` with every `Tier:`, `Effort:` and `Mode:` line rated. Then one line per epic with its counts by tier and effort, and one line per high task saying what med would get wrong.
 
 ## Stop when
 

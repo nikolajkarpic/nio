@@ -61,7 +61,7 @@ def test_sync():
     parsed = {p.stem: tomllib.loads(p.read_text()) for p in (root / ".codex/agents").glob("*.toml")}  # hand-built TOML parses
     assert parsed["nio-triage"]["description"] == "Does one thing 🚀." and parsed["nio-logic"]["developer_instructions"], parsed
     logic = (root / ".claude/agents/nio-logic.md").read_text()
-    assert 'model: "opus"' in logic and 'effort: "high"' in logic and 'tools: "Read, Grep, Glob"' in logic, logic
+    assert 'model: "opus"' in logic and 'effort: "medium"' in logic and 'tools: "Read, Grep, Glob"' in logic, logic
     assert logic.rstrip().endswith("Also check the glossary."), logic
     codex = (root / ".codex/agents/nio-triage.toml").read_text()
     assert 'model = "gpt-mini"' in codex and 'model_reasoning_effort = "medium"' in codex and "shell_tool = false" in codex, codex
@@ -193,8 +193,15 @@ def test_tier_all_renders_once_per_tier():
     print("ok")
 
 
+def test_no_shipped_card_defaults_to_high_effort():
+    """#66: high is for a rated task that needs it, never a card's default."""
+    high = [p.name for p in (Path(agents.__file__).parent / "agents").glob("*.md") if "\neffort: high\n" in p.read_text()]
+    assert not high, high
+
+
 if __name__ == "__main__":
     test_shipped_cards_are_valid()
+    test_no_shipped_card_defaults_to_high_effort()
     test_sync()
     test_verify()
     test_ac12_test_proof_exists_with_an_at_plan_secti()

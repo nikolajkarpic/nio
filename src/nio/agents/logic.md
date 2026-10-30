@@ -2,7 +2,7 @@
 name: logic
 description: "Juror lens for logical correctness. Use at the spec gate (always) and the plan gate (when contracts carry state): finds contradictory rules, broken invariants, unreachable or dead-end states, and prose that disagrees with the state and decision tables."
 tier: strong
-effort: high
+effort: med
 tools: [read]
 ---
 
