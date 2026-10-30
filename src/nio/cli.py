@@ -78,6 +78,7 @@ def main():
     ja.add_argument("slug")
     jp = jsub.add_parser("plan", help="the lens runs a gate needs, why each runs, the tier and the run budget; fails on a missing card")
     jp.add_argument("--add", action="append", default=[], help="lens:reason, a lens the skill's own triggers add; repeatable")
+    jp.add_argument("--pick", help="lens,lens: the lenses to run when the plan is over the cap; the core lenses must be in it")
     jg = jsub.add_parser("changed", help="IDs and sections changed since the version the last round judged, their neighbours, and the lenses to re-run")
     jf = jsub.add_parser("fixcheck", help="print one lens's fix-check pack for a re-review or the final fix check")
     jf.add_argument("--lens", required=True)
@@ -263,7 +264,7 @@ def main():
             elif a.jury_cmd == "template":
                 print(resources.files("nio").joinpath("templates/lens-output.md").read_text(), end="")
             elif a.jury_cmd == "plan":
-                lines, ok = jury.plan(root, a.slug, a.gate, a.add)
+                lines, ok = jury.plan(root, a.slug, a.gate, a.add, a.pick)
                 print("\n".join(lines))
                 sys.exit(0 if ok else 1)
             elif a.jury_cmd == "changed":
