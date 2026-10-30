@@ -719,11 +719,16 @@ def add(led, f, juror, lens, rnd, text, human="", review=False):
         match.update(status="open", baseline="unchanged")
     match["last_round"] = rnd
     match["sources"] = [s for s in match["sources"] if s["juror"] != juror] + [source]
+    if f.get("tampering"):
+        match["tampering"] = True
+    cli = any(s["lens"] == "cli" for s in match["sources"])  # CT-20: a CLI finding stays confirmed, no refuter
     raised = worst(match["severity"], f["severity"])
-    if raised != match["severity"] and (match["validation"] == "grounded" or raised == "blocker"):
+    if cli:
+        pass
+    elif raised != match["severity"] and (match["validation"] == "grounded" or raised == "blocker"):
         match["validation"] = "pending"  # a blocker claim is the refuter's to judge, whatever validated the lesser one
     match["severity"] = raised
-    if review and raised == "blocker" and match["status"] in ("open", "noted"):  # #52 FR-11, FR-13: a blocker
+    if review and raised == "blocker" and not cli and match["status"] in ("open", "noted"):  # #52 FR-11, FR-13: a blocker
         match.update(status="open", validation="pending")  # raised again after the first review goes back to the refuter
     return f"{match['baseline']:<7} {match['id']} [{match['severity']}/{match['kind']}] {match['title']} (+{lens})"
 

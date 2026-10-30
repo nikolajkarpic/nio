@@ -956,7 +956,7 @@ retired: []
 """
 
 
-def pack_repo(files):
+def pack_repo(files, before=None):
     """A finished epic E-1 (T-1) in spec `s`, whose one commit adds `files` ({path: text}) and src/one.py; epic E-2 is for
     AC-1, FR-1 and CT-2, which T-1 and its diff never touch. Lint is `echo RESULT-MARK-7`."""
     root = epic_repo(["T-1"])
@@ -969,6 +969,9 @@ def pack_repo(files):
     (d / "contracts.md").write_text(PACK_CONTRACTS)
     (root / ".nio/config.json").write_text(json.dumps({"tests": {"lint": "echo RESULT-MARK-7"}}))
     (root / ".gitignore").write_text(".nio/runs/\n")
+    for name, text in (before or {}).items():  # files that exist before the epic
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(text)
     git(root, "add", "-A")
     git(root, "commit", "-qm", "before the epic")
     for name, text in files.items():
@@ -1248,6 +1251,137 @@ def test_the_output_is_invalid_again():
     invalid_naming("cites", cites=None)
     invalid_naming("cites", cites="a label, no ID")
     invalid_naming("where", where=None)
+    print("ok")
+
+
+# --- T-17: blockers and majors go to the refuter; a confirmed weakening is tampering (CT-12, CT-6, CT-20) ---
+
+STRONG = "def test_weak():\n    assert compute() == 2\n    assert other() == 3\n"
+WEAKER = "def test_weak():\n    assert compute() == 2\n"  # `assert other() == 3` is removed
+CHANGED = "def test_weak():\n    assert compute() == 2\n    assert other() == 4\n"  # an expected value changes
+TEST_FILE = "tests/test_app.py"
+
+
+def lens_out(root, lens, findings="none", name=None, rnd="R-1"):
+    """Write a lens output at the gate: `findings` is a list of dicts of lines (title included) or the text `none`."""
+    if findings != "none":
+        base = {"kind": "gap", "severity": "major", "evidence": "observed", "gap": "partial", "where": TEST_FILE,
+                "quote": '"assert other"', "situation": "x", "fix": "y", "cites": "AC-3"}
+        findings = "".join(f"### F{i} {f['title']}\n" + "".join(f"- {k}: {v}\n" for k, v in {**base, **f}.items() if k != "title") + "\n"
+                           for i, f in enumerate(findings, 1))
+    path = root / f".nio/runs/{rnd}/jury/{name or GATE + '-' + lens}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f'---\nlens: {lens}\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+                    f"## Reasoning\nChecked.\n\n## Findings\n{findings}")
+    return path
+
+
+def test_it_is_recorded_as_test_tampering():
+    from nio import jury
+    root = pack_repo({TEST_FILE: WEAKER}, before={TEST_FILE: STRONG})
+    start(root)
+    lens_out(root, "correctness", [{"title": "test_weak lost `assert other() == 3`", "tampering": "yes"}])
+    jury.collect(root, "s", GATE, "R-1")
+    (f,) = [x for x in gate_findings(root) if x["sources"][0]["lens"] == "correctness"]
+    assert f["tampering"] is True and f["severity"] == "major", f
+    assert "test_weak" in f["title"] and "assert other() == 3" in f["title"], f  # names the test and the removed assertion
+    print("ok")
+
+
+def test_the_cli_flags_the_assertion_and_the_correctness_lens():
+    from nio import jury
+    root = pack_repo({TEST_FILE: CHANGED}, before={TEST_FILE: STRONG})
+    results = start(root)
+    (h,) = [x for x in results["hints"] if x["name"] == "test_weak"]
+    assert h["file"] == TEST_FILE and h["kind"] == "changed assertion", h
+    lens_out(root, "correctness", [{"title": "test_weak expects 4 now", "where": f"{TEST_FILE}:{h['line']}"}])
+    jury.collect(root, "s", GATE, "R-1")
+    (f,) = gate_findings(root)
+    assert f["sources"][0]["lens"] == "correctness" and f"{TEST_FILE}:{h['line']}" in f["where"], f
+    print("ok")
+
+
+def test_the_finding_goes_to_the_refuter_before_the_human():
+    from nio import jury
+    root = pack_repo({})
+    start(root)
+    lens_out(root, "conformance", [{"title": "a major one", "quote": '"DIFF_MARK"'}])
+    said = jury.collect(root, "s", GATE, "R-1")
+    (f,) = gate_findings(root)
+    assert f["severity"] == "major" and f["validation"] == "pending", f
+    assert any(x.startswith("### J-1") for x in said) and any("Refuter batch" in x for x in said), said
+    led = jury.load(root, "s", GATE)
+    assert jury.compose(led, led["versions"][str(led["round"])])[0] == "pending", "the outcome doesn't wait on the refuter"
+    print("ok")
+
+
+def test_it_is_not_open_and_no_fix_task_is():
+    from nio import jury
+    root = pack_repo({})
+    start(root)
+    tasks = (root / ".nio/specs/s/tasks.md").read_text()
+    lens_out(root, "conformance", [{"title": "a refuted one", "quote": '"DIFF_MARK"'}])
+    jury.collect(root, "s", GATE, "R-1")
+    (root / f".nio/runs/R-1/jury/{GATE}-refuter.md").write_text("### J-1\n- result: refuted\n- reason: the code does it\n")
+    jury.collect(root, "s", GATE, "R-1")
+    (f,) = gate_findings(root)
+    assert f["status"] == "refuted", f
+    led = jury.load(root, "s", GATE)
+    assert jury.compose(led, led["versions"][str(led["round"])])[0] != "pending"
+    now = (root / ".nio/specs/s/tasks.md").read_text()
+    assert now == tasks and "J-1" not in now and "refuted one" not in now, "a task was written for a refuted finding"
+    print("ok")
+
+
+def test_no_tampering_finding_is_recorded():
+    from nio import jury
+    root = pack_repo({TEST_FILE: CHANGED}, before={TEST_FILE: STRONG})
+    start(root)
+    lens_out(root, "correctness", "none")  # the lens says the test did not get weaker
+    jury.collect(root, "s", GATE, "R-1")
+    assert has_line(pack(root, "correctness"), "test_weak", "assertion"), "the hint is not in the pack"
+    assert not [x for x in gate_findings(root) if x.get("tampering") or "test_weak" in json.dumps(x)], gate_findings(root)
+    print("ok")
+
+
+def test_cli_findings_skip_the_refuter():
+    from nio import jury
+    root = pack_repo({TEST_FILE: "def test_keeps():\n    assert 1\n"}, before={TEST_FILE: STRONG + "\n\ndef test_keeps():\n    assert 1\n"})
+    start(root, "R-1")
+    start(root, "R-2")
+    lens_out(root, "conformance", "none", rnd="R-2")
+    said = jury.collect(root, "s", GATE, "R-2")
+    (f,) = gate_findings(root)
+    assert f["sources"][0]["lens"] == "cli" and f["validation"] == "confirmed" and f["tampering"] is True, f
+    assert not any(x.startswith("### " + f["id"]) for x in said), said
+    try:
+        jury.dispose(root, "s", GATE, f["id"], "accepted-risk", "agent", "fine")
+        raise AssertionError("an agent accepted tampering")
+    except ValueError:
+        pass
+    assert gate_findings(root)[0]["status"] == "open"
+    print("ok")
+
+
+def test_a_tampering_lens_finding_that_merges_stays_tampering():
+    from nio import jury
+    for first, second in (("conformance", "correctness"), ("correctness", "conformance")):
+        root = pack_repo({})
+        start(root)
+        for lens in (first, second):
+            lens_out(root, lens, [{"title": f"{lens} says test_weak got weaker", **({"tampering": "yes"} if lens == "correctness" else {}),
+                                   "quote": '"DIFF_MARK"'}])
+        jury.collect(root, "s", GATE, "R-1")
+        (f,) = gate_findings(root)  # same kind and cited IDs: one entry
+        assert len(f["sources"]) == 2, f
+        assert f["tampering"] is True, f"{first} then {second}: the merge lost the tampering mark: {f}"
+        try:
+            jury.dispose(root, "s", GATE, f["id"], "accepted-risk", "agent", "fine")
+            raise AssertionError("an agent accepted tampering")
+        except ValueError:
+            pass
+        jury.dispose(root, "s", GATE, f["id"], "accepted-risk", "human", "the human accepts it")
+        assert gate_findings(root)[0]["disposition"] == "accepted-risk"
     print("ok")
 
 
