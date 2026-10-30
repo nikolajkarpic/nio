@@ -2591,6 +2591,54 @@ def test_every_change_request_accepted_releases_the_epic_with_no_task():
     print("ok")
 
 
+def approved_with_minors():
+    """Epic E-1 with two minor findings and nothing else open, recorded as the human does. Returns (root, printed lines)."""
+    root = fix_repo()
+    fix_gate(root, {"title": "a small one", "severity": "minor", "cites": "AC-2"}, {"title": "another small one", "severity": "minor", "cites": "AC-4"})
+    code, out = recorded(root)
+    assert code == 0 and "outcome: approved" in out, (code, out)
+    return root, out
+
+
+def verdict_records(root):
+    return [p.read_text() for p in (root / ".nio/memory").rglob("V-*.md")]
+
+
+def test_it_is_approved_and_the_verdict_lists_both():
+    root, _ = approved_with_minors()
+    (text,) = verdict_records(root)
+    assert "approved" in text and "a small one" in text and "another small one" in text, text
+    print("ok")
+
+
+def test_the_record_names_the_epic_the_outcome_and_the():
+    root, _ = approved_with_minors()
+    (text,) = verdict_records(root)
+    head = text.split("\n---\n", 1)[0]
+    assert "implementation-E-1" in head and "outcome: approved" in head and "(round 1)" in head, head
+    print("ok")
+
+
+def test_an_approved_verdict_names_every_minor_however_many_findings_were_settled_before():
+    root = fix_repo()
+    from nio import jury
+    found = fix_gate(root, {"title": "a small one", "severity": "minor", "cites": "AC-2"},
+                     {"title": "another small one", "severity": "minor", "cites": "AC-4"})
+    led = jury.load(root, "s", GATE)
+    early = [{**found[0], "id": f"J-{n}", "title": f"settled earlier {n}", "severity": "major", "status": "disposed",
+              "disposition": "accepted-risk", "by": "human", "note": "fine"} for n in range(3, 12)]
+    led["findings"] = early + led["findings"]  # nine settled findings sit ahead of the two minors
+    jury.save(root, led)
+    code, out = recorded(root)
+    assert code == 0 and "outcome: approved" in out, (code, out)
+    (text,) = verdict_records(root)
+    assert "a small one" in text and "another small one" in text, f"a minor is cut off the approved verdict:\n{text}"
+    assert len(text.splitlines()) < 40, len(text.splitlines())
+    done = nio(root, "check")
+    assert done.returncode == 0, done.stdout + done.stderr
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
