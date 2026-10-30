@@ -1661,6 +1661,25 @@ def test_a_lens_the_human_didn_t_pick_is_refused():
     print("ok")
 
 
+# --- T-21: the secrets flag adds the security lens at the implementation gate and the spec gate (CT-18, AC-60, AC-61) ---
+
+def test_the_plan_holds_the_security_lens():
+    names, lines, ok = lens_plan(["secrets"])
+    line = next(x for x in lines if x.startswith("lenses: "))
+    assert ok and "security" in names and "security (risk: secrets)" in line, (names, lines)
+    print("ok")
+
+
+def test_the_security_lens_is_listed():
+    from nio import spec
+    from test_spec import put, repo
+    root = repo()
+    slug = put(root, "spec.md", lambda t: t.replace("risk: [money, external-input]", "risk: [secrets]"))
+    errs, notes = spec.check(root, slug)
+    assert errs == [] and "lenses: testability, logic, security" in notes, (errs, notes)
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
