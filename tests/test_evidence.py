@@ -210,6 +210,83 @@ def test_results_keep_a_cut_run_at_about_200_kb():
     print("ok")
 
 
+# --- T-3: the gate runs only on a finished epic (CT-1, AC-2, AC-3) ---
+
+EPICS = """---
+slug: s
+retired: []
+---
+# Tasks: s
+
+## E-1 First (Foundation)
+
+### T-1 One
+- Files: `a.py`
+- Serves: AC-1
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: cheap: x
+- Effort: low
+
+### T-2 Two
+- Files: `b.py`
+- Serves: AC-2
+- Test: TC-2
+- Depends on: T-1
+- Parallel: no
+- Tier: cheap: x
+- Effort: low
+"""
+
+
+def epic_repo(finished):
+    """A repo whose spec `s` has epic E-1 of T-1 and T-2, with the tasks in `finished` done in its history."""
+    root = Path(tempfile.mkdtemp(prefix="nio-epic-"))
+    git(root, "init", "-q", "-b", "main")
+    d = root / ".nio/specs/s"
+    d.mkdir(parents=True)
+    (d / "tasks.md").write_text(EPICS)
+    (root / ".nio/config.json").write_text("{}")
+    lines = [{"kind": k, "from": "implementing", "to": "implementing", "end": True, "evidence": {"task": t, "commit": "c", "passed": True}}
+             for t in finished for k in ("claim", "red", "green", "review", "task_done")]
+    (d / "history.jsonl").write_text("".join(json.dumps(x) + "\n" for x in lines))
+    return root
+
+
+def refuses(root, gate, *words):
+    """The gate name is refused by the function and by the CLI, naming `words`, and no ledger is written."""
+    import subprocess
+    import sys
+    from nio import jury
+    assert hasattr(jury, "epic_gate"), "jury.epic_gate doesn't exist yet"
+    try:
+        jury.epic_gate(root, "s", gate)
+        raise AssertionError("epic_gate accepted " + gate)
+    except ValueError as e:
+        assert all(w in str(e) for w in words), f"{e!r} lacks {words}"
+    out = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "jury", "plan", "s", gate],
+                         cwd=root, capture_output=True, text=True)
+    assert out.returncode != 0 and "invalid choice" not in out.stderr, out.stderr
+    assert all(w in out.stderr for w in words), out.stderr
+    assert not (root / ".nio/specs/s/jury").exists(), "a ledger was written"
+
+
+def test_it_refuses():
+    from nio import jury
+    assert hasattr(jury, "epic_gate"), "jury.epic_gate doesn't exist yet"
+    assert jury.epic_gate(epic_repo(["T-1", "T-2"]), "s", "implementation-E-1") == "E-1"
+    refuses(epic_repo(["T-1"]), "implementation-E-1", "T-2")
+    print("ok")
+
+
+def test_it_refuses_again():
+    root = epic_repo(["T-1", "T-2"])
+    refuses(root, "implementation", "epic")
+    refuses(root, "implementation-E-9", "epic")
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):

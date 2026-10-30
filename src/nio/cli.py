@@ -88,7 +88,7 @@ def main():
     jc.add_argument("--tier", choices=["low", "medium", "high"], help="the ladder rung triage picked")
     jd = jsub.add_parser("dispose", help="set a finding's disposition; accepted-risk, out-of-scope and overruled need --by human")
     jd.add_argument("slug")
-    jd.add_argument("gate", choices=sorted(jury.GATES))
+    jd.add_argument("gate", type=jury.gate_arg, metavar="GATE")
     jd.add_argument("id")
     jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS))
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
@@ -100,7 +100,7 @@ def main():
     jk.add_argument("--human", default="", metavar="REASON", help="the human closes the gate themselves: outcome human, with their reason")
     for s in (jp, jg, jf, jc, jk, jl):  # dispose takes them first, before the finding
         s.add_argument("slug")
-        s.add_argument("gate", choices=sorted(jury.GATES))
+        s.add_argument("gate", type=jury.gate_arg, metavar="GATE")
     f = sub.add_parser("flow", help="where an effort is, what to do next, and moving it on only when its guards pass")
     fsub = f.add_subparsers(dest="flow_cmd", required=True)
     by = {"metavar": "BY", "help": '"<role> / <host> / <model>", or human'}
@@ -250,6 +250,8 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "jury":
         try:
+            if a.jury_cmd != "answers" and a.gate.startswith("implementation"):
+                jury.epic_gate(root, a.slug, a.gate)
             if a.jury_cmd == "answers":
                 print("\n".join(jury.answers(root, a.slug)))
             elif a.jury_cmd == "template":

@@ -32,6 +32,28 @@ PLAN_TRIGGERED = {"security", "risk-rollback"}  # the risk lenses the plan gate 
 MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
 
 
+def gate_arg(name):
+    """argparse type: a known gate, or an implementation name that `epic_gate` then accepts or refuses."""
+    import argparse
+    if name in GATES or name.startswith("implementation"):
+        return name
+    raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(sorted(GATES))}, implementation-E-n)")
+
+
+def epic_gate(root, slug, gate):
+    """The epic `implementation-E-n` names, when every task in it, fix tasks included, is done; else ValueError (CT-1)."""
+    from nio import flow, implement
+    m = re.fullmatch(r"implementation-(E-\d+)", gate)
+    ts = [t for t in implement.tasks_of(root, slug) if m and t["epic"] == m.group(1)]
+    if not ts:
+        raise ValueError(f"the subject of the implementation gate must be an epic from tasks.md as implementation-E-n, not {gate!r}")
+    states = implement.status(root, slug, flow.read(root, slug)[1])
+    left = [t["id"] for t in ts if states.get(t["id"]) != "done"]
+    if left:
+        raise ValueError(f"epic {m.group(1)} is not finished: {', '.join(left)} not done")
+    return m.group(1)
+
+
 def folder(root, slug):
     return root / ".nio/specs" / slug / "jury"
 
