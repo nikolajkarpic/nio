@@ -51,6 +51,127 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 - Effort: low
 - Mode: split: a clear test leads the code
 
+### T-35 Fix: test tampering: test_ac29_epic_skipped in tests/test_implement.py is deleted
+- From: J-1 (implementation-E-2, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-1
+- Test: new: J-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-36 Fix: Core lenses are not enforced; an approval can skip conformance and correctness
+- From: J-2 (implementation-E-2, round 1)
+- Files: `src/nio/jury.py collect / compose (`expect`)`
+- Serves: FR-14, FR-38, CT-8, J-2
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-37 Fix: `--pick` is accepted when the plan is not over the cap, so one command silently drops risk lenses and the record blames the human
+- From: J-3 (implementation-E-2, round 1)
+- Files: `src/nio/jury.py plan (`pick`)`, `hooks.ALLOW`, `verdict`
+- Serves: FR-16, CT-8, CT-16, J-3
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-38 Fix: An `auto` journey whose steps don't parse is recorded as passed without running anything
+- From: J-4 (implementation-E-2, round 1)
+- Files: `src/nio/evidence.py journeys / collect`
+- Serves: FR-12, CT-3, CT-7, J-4
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-39 Fix: With a test runner the CLI can't address, every scripted attack becomes "not configured" and every test "unknown", and both count as evidence
+- From: J-5 (implementation-E-2, round 1)
+- Files: `src/nio/evidence.py collect`, `one_test`, `join`
+- Serves: FR-12, FR-3, FR-5, CT-3, J-5
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-40 Fix: `results.json` is never tied to the gate's epic or to the commit being judged
+- From: J-6 (implementation-E-2, round 1)
+- Files: `src/nio/jury.py collect (join)`, `src/nio/evidence.py pack`, `load`
+- Serves: FR-6, FR-17, CT-7, CT-9, CT-21, J-6
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-41 Fix: Tampering dispose rule in CT-20 doesn't match the code's fix-task exception
+- From: J-7 (implementation-E-2, round 1)
+- Files: `src/nio/jury.py dispose (the tampering check before the PLAN_ONLY check)`
+- Serves: CT-20, FR-10, J-7
+- Test: TC-7
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-42 Fix: The consistency lens's decision check has no decisions in its pack
+- From: J-8 (implementation-E-2, round 1)
+- Files: `src/nio/evidence.py pack (the consistency lens's pack at implementation)`
+- Serves: CT-9, FR-17, J-8
+- Test: TC-25
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-43 Fix: A conformance fix-check output with no `## Matches` section re-blocks every AC
+- From: J-10 (implementation-E-2, round 1)
+- Files: `src/nio/jury.py (collect`, `the call to evidence.join) and src/nio/evidence.py:join`
+- Serves: AC-6, FR-5, CT-21
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-44 Fix: An AC proved by a misuse test is judged "didn't run" and gets a blocker
+- From: J-11 (implementation-E-2, round 1)
+- Files: `src/nio/evidence.py:collect and src/nio/evidence.py:join`
+- Serves: FR-5, CT-21, J-11
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-45 Fix: A fix task's `Files:` is built from the juror's free-text `where`, which can create a phantom the next evidence run reports
+- From: J-12 (implementation-E-2, round 1)
+- Files: `src/nio/tasks.py:append_fix and src/nio/evidence.py:phantoms`
+- Serves: FR-26, FR-8, CT-14, J-12
+- Test: TC-38
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-3 The CLI collects observed evidence before any lens runs (US-2)
 
 ### T-5 Run the tests, lint, type check, scripted attacks and journey runs and write the results with `nio jury evidence`
