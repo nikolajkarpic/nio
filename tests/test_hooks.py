@@ -114,11 +114,13 @@ def test_allow():
         rules = cfg["permissions"]["allow"]
         assert cfg["model"] == "opus" and "Bash(git log:*)" in rules and len(rules) == len(set(rules))
         assert "Bash(nio flow next:*)" in rules and "Bash(uv run nio flow next:*)" in rules
+        assert "Bash(nio jury evidence:*)" in rules and "Bash(uv run nio jury evidence:*)" in rules
         assert not (root / ".claude/settings.json").exists()
         # commands that run anything, or are the human's alone, are never allowed
         for cmd in ("flow red", "flow green", "flow seen", "flow abandon", "flow unblock", "hooks"):
             assert not any(cmd in r for r in rules), cmd
         assert "Bash(nio *human*)" in cfg["permissions"]["ask"] and "Bash(nio flow done *--c*)" in cfg["permissions"]["ask"]
+        assert "Bash(nio jury plan *--pick*)" in cfg["permissions"]["ask"]
         assert hooks.allow(root, True) == root / ".claude/settings.json"
         local.write_text("{broken")
         try:

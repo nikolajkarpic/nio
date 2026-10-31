@@ -31,6 +31,13 @@ The context pack from the jury skill, and nothing else:
 - Is every misuse line in Actors and journeys covered by an AC that rejects or contains it?
 - Can it be used to exhaust something (quota, money, storage, notifications, another party's attention)?
 
+## At implementation
+
+- Read the epic's diff for each place the outside world reaches the code: inputs, requests, handlers, retries and timers.
+- For each such entry, what happens with hostile input (oversized, malformed, empty, duplicated, out of order, replayed), and does the code reject or contain it?
+- Where can the code fail without anyone noticing: a swallowed error, a partial write, a dropped message treated as success?
+- Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding: which of the two is wrong; unset means the spec is right), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering: yes` (set when the finding is about a deleted, skipped or weakened test).
+
 ## Output format
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each cites the

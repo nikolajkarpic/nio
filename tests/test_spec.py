@@ -225,7 +225,17 @@ def test_grill_provenance():
     print("ok")
 
 
+def test_secrets_flag_brings_in_security():
+    root = repo()
+    slug = put(root, "spec.md", lambda t: t.replace("risk: [money, external-input]", "risk: [secrets]"))
+    errs, notes = spec.check(root, slug)
+    assert errs == [], errs
+    assert notes == ["lenses: testability, logic, security"], notes
+    print("ok")
+
+
 if __name__ == "__main__":
+    test_secrets_flag_brings_in_security()
     test_grill_provenance()
     test_edge_cases()
     test_examples_pass()

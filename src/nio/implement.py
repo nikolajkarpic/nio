@@ -161,6 +161,18 @@ def defs(path):
     return {i: ls for i, ls in spec.items(records.parse(path)[1])} if path.exists() else {}
 
 
+def finding_lines(root, slug, shown):
+    """What a fix task's worker has to go on: its finding's situations (a CLI finding's hold the check's errors) and the
+    fix asked, indented so an error line can't read as a heading. Nothing when `shown` has no `From:` a ledger holds."""
+    from nio import jury
+    m = next((m for x in shown if x.startswith("- From: ") and (m := tasks.FINDING.match(x[8:]))), None)
+    f = m and next((g for g in jury.load(root, slug, m[2])["findings"] if g["id"] == m[1]), None)
+    if not f:
+        return []
+    said = [f"- situation ({s['lens']}): " + s["situation"].replace("\n", "\n  ") for s in f["sources"]]
+    return ["", "#### The finding", *said, *[f"- fix asked: {f['fix']}"] * bool(f["fix"])]
+
+
 def worker_pack(root, slug, task):
     """The task's worker pack (CT-6, FR-4): exactly five `## ` parts, in order: its memory pack (no closing
     instructions, CT-15 replaces them), its section of tasks.md, the ACs it serves, the CT-n blocks its TC-n entries
@@ -170,11 +182,11 @@ def worker_pack(root, slug, task):
     acs, cts, tcs = defs(folder / "spec.md"), defs(folder / "contracts.md"), defs(folder / "tests.md")
     tests = [t for t in task["tests"] if t in tcs]
     covers = list(dict.fromkeys(c for t in tests for c in tasks.ids(plan.field(tcs[t], "Covers")) if c in cts))
-    block = lambda ids, found: [x for i in ids for x in found[i] if i in found]
+    block = lambda ids, found: [x for i in ids if i in found for x in found[i]]
     body = lambda name, lines: [f"## {name}", ""] + nest("\n".join(lines).strip().splitlines()) + [""]
     shown = [x for x in tasks.show(root, slug, task["id"]) if not x.startswith("- Mode:")]  # claim prints the mode
     out = nest(memory.rstrip().splitlines()) + [""]  # the pack's `# Memory for T-n` becomes its part's heading
-    return "\n".join(out + body("Task", shown) + body("Acceptance criteria", block(task["serves"], acs))
+    return "\n".join(out + body("Task", shown + finding_lines(root, slug, shown)) + body("Acceptance criteria", block(task["serves"], acs))
                      + body("Contracts", block(covers, cts)) + body("Tests", block(tests, tcs))).rstrip() + "\n"
 
 
@@ -287,6 +299,9 @@ def claim(root, slug=None, by=None):
                 flow.write(root, slug, [entry], state, w, "implementing")
                 return 1, flow.talk(slug, flow.where(root, slug))
             base = [entry]
+        gate = open_gate(root, slug, lines)
+        if gate:
+            return 1, [f"{gate} is finished but its gate is open: run @nio:jury on implementation-{gate}, then `nio flow done implementation-{gate}`"]
         task = next_ready(root, slug, lines)
         rid = records.new_run(root, {"effort": slug, "task": task["id"],
                                      "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
@@ -538,9 +553,9 @@ def commits_of(root, slug):
 
 def epic_end(root, slug, task, review):
     """CT-13 (FR-27 to FR-31): after the task's `task_done` line, when every task of its epic (fix tasks included) is
-    done and its review found no new failure: the epic's `epic` line `skipped: not built`, and after the last epic a
-    `pass` line implementing -> done. Returns (those lines, the report: each done task with its commit, the files outside
-    each task's list, the baseline failures still failing, a `notify:` line and, after the last epic, `merge:`); ([], [])
+    done and its review found no new failure: no line is written (`nio flow done implementation-E-n` writes `epic`
+    and `pass`, CT-17). Returns ([], the report: each done task with its commit, the files outside
+    each task's list, the baseline failures still failing, a `notify:` line ); ([], [])
     otherwise. The task being committed has no commit yet: its line names THIS."""
     ev = review.get("evidence") or {}
     lines = flow.load(root, slug)[1]
@@ -549,14 +564,6 @@ def epic_end(root, slug, task, review):
     mine = [t for t in ts if t["epic"] == eid]
     if ev.get("failing") or any(st[t["id"]] != "done" for t in mine):
         return [], []
-    entries = [{"kind": "epic", "from": "implementing", "to": "implementing", "reason": "skipped: not built",
-                "evidence": {"epic": eid}}]
-    shut = {x["evidence"].get("epic") for x in lines if x["kind"] == "epic"} | {eid}
-    last = all(t["epic"] in shut for t in ts)
-    if last:
-        _, to = flow.moves("implementing")
-        entries.append({"kind": "pass", "from": "implementing", "to": to,
-                        "evidence": {"paths": [f".nio/specs/{slug}/tasks.md"]}})
     shas = commits_of(root, slug)
     reviews = {x["evidence"]["task"]: x["evidence"] for x in lines if x["kind"] == "review" and x["evidence"].get("passed")}
     reviews[task["id"]] = ev
@@ -565,8 +572,8 @@ def epic_end(root, slug, task, review):
         report.append(f"  {t['id']} {THIS if t['id'] == task['id'] else shas.get(t['id'], '(no commit found)')} {t['title']}")
         report += [f"  outside {t['id']}'s files: {p}" for p in (reviews.get(t["id"]) or {}).get("outside", [])]
     report += [f"  baseline failure still failing: {f}" for f in ev.get("still") or []]
-    report += [f"epic gate: {eid} skipped: not built", f"notify: the human: {eid} is finished; its epic gate is skipped (not built)"]
-    return entries, report + [f"merge: {branch(slug)}"] * last
+    report += [f"next: run @nio:jury on implementation-{eid}", f"notify: the human: {eid} is finished; its epic gate is open"]
+    return [], report
 
 
 NEEDS = {"split": "red, green and review", "single": "red, green and review", "direct": "green and review"}
@@ -580,6 +587,19 @@ def left(root, slug, lines):
     out = [f"{t['id']} is {st[t['id']]}: needs {needs.get(st[t['id']], NEEDS[t['mode']])}" for t in ts if st[t["id"]] != "done"]
     shut = {x["evidence"].get("epic") for x in lines if x["kind"] == "epic"}
     return out + [f"{e} has no epic line" for e in dict.fromkeys(t["epic"] for t in ts) if e not in shut]
+
+
+def open_gate(root, slug, lines):
+    """The first epic whose tasks are all done and that has no `epic` line (an old skipped one counts as closed): its gate
+    is open (CT-17); None when there is none, or when an earlier epic has work left (a fix task reopened it)."""
+    st, ts = status(root, slug, lines), tasks_of(root, slug)
+    shut = {x["evidence"].get("epic") for x in lines if x["kind"] == "epic"}
+    for e in dict.fromkeys(t["epic"] for t in ts):
+        if any(st[t["id"]] != "done" for t in ts if t["epic"] == e):
+            return None
+        if e not in shut:
+            return e
+    return None
 
 
 def green(root, slug, tid, command, by):

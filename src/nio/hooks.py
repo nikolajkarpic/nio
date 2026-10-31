@@ -58,10 +58,10 @@ def install(root, nio=None):
 ALLOW = ["check", "query", "get", "pack", "status", "index", "new", "run", "task", "agents sync", "agents verify",
          "flow next", "flow status", "flow start", "flow park", "flow done", "flow claim", "flow block",
          "jury template", "jury answers", "jury plan", "jury changed", "jury fixcheck", "jury collect", "jury dispose",
-         "jury files", "jury check"]
+         "jury files", "jury check", "jury evidence", "jury pack"]
 # the human's decisions always prompt. Short flags count: argparse takes --c for --commit and --h for --human.
 # ponytail: pattern matching on the command text, a deterrent and not a boundary; the CLI's own rules still apply
-ASK = ["*human*", "flow done *--c*", "flow done *--h*", "jury check *--h*"]
+ASK = ["*human*", "flow done *--c*", "flow done *--h*", "jury check *--h*", "jury plan *--pick*"]
 
 
 def settings(root, shared):

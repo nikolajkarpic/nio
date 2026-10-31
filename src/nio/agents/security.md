@@ -40,6 +40,13 @@ The context pack from the jury skill, and nothing else:
 - Does any contract return or log a secret or personal data the spec says to keep from that caller?
 - Does a test in `tests.md` try the call as an actor the spec forbids, and check that it fails?
 
+## At implementation
+
+- Read the epic's diff for each place an actor is checked, a secret is issued or stored, or personal data is read, returned, logged or deleted.
+- Does the code let an actor the spec forbids reach that data or action, through a list, a search, an export, an error message or a log?
+- Does the code return, log or keep a secret or personal data the spec says to keep from that caller, or delete data the spec says to keep?
+- Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding: which of the two is wrong; unset means the spec is right), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering: yes` (set when the finding is about a deleted, skipped or weakened test).
+
 ## Output format
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each cites the
