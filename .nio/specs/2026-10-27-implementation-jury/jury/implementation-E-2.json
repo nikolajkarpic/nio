@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-10-27-implementation-jury",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,11 @@
     "R-261030-bjik/implementation-E-2-conformance.md": "3621e4126c6b537ca985f1d81d915813f7393e910cbf334b592249e145145cd3",
     "R-261030-bjik/implementation-E-2-consistency.md": "31025325dcd92d4b00d4674cdc1603b75af86c61412501d8a48b785466b9de6d",
     "R-261030-bjik/implementation-E-2-correctness.md": "2fd7d381e5c8dfc4f3820655d1e9e083a2b6e64b51c7eaa4eca1f41b68efeeab",
-    "R-261030-bjik/implementation-E-2-refuter.md": "0020838f3fbeeb4cd1d2ea0ee72dea8357c3ca22cb1c9370c2ffb708464ba455"
+    "R-261030-bjik/implementation-E-2-refuter.md": "0020838f3fbeeb4cd1d2ea0ee72dea8357c3ca22cb1c9370c2ffb708464ba455",
+    "R-261031-ldqu/implementation-E-2-adversary.md": "f5bf67f74772e35814fa90f0fce0e8eb195bb92fc6b0c26e1225b123ce699e51",
+    "R-261031-ldqu/implementation-E-2-conformance.md": "cc4d58cbe8acfcc7edde69cd8a22ff3449f0eeb1ab58d927e7822be6ffc4d485",
+    "R-261031-ldqu/implementation-E-2-consistency.md": "53471b46fdfa25da3a477defb2e9405e7128d60ceade44126bf9fda6c03f7f1c",
+    "R-261031-ldqu/implementation-E-2-correctness.md": "2cefd7c027237873b32510fa6fcdd1c972faa2ad3c20bead42415f9192877a0b"
   },
   "jurors": {
     "implementation-E-2-adversary": {
@@ -24,20 +28,20 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "fcf8cc44244370c72bed1f5727993460b03ba017",
-      "judged": 1
+      "round": 2,
+      "version": "7c70b8be468343181628803d1ba7560bfed62c60",
+      "judged": 2
     },
     "implementation-E-2-conformance": {
       "attempts": 1,
       "lens": "conformance",
-      "by": "juror / claude-code / sonnet-5-5",
+      "by": "juror / claude-code / claude-sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "fcf8cc44244370c72bed1f5727993460b03ba017",
-      "judged": 1
+      "round": 2,
+      "version": "7c70b8be468343181628803d1ba7560bfed62c60",
+      "judged": 2
     },
     "implementation-E-2-consistency": {
       "attempts": 1,
@@ -46,9 +50,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "fcf8cc44244370c72bed1f5727993460b03ba017",
-      "judged": 1
+      "round": 2,
+      "version": "7c70b8be468343181628803d1ba7560bfed62c60",
+      "judged": 2
     },
     "implementation-E-2-correctness": {
       "attempts": 1,
@@ -57,9 +61,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "fcf8cc44244370c72bed1f5727993460b03ba017",
-      "judged": 1
+      "round": 2,
+      "version": "7c70b8be468343181628803d1ba7560bfed62c60",
+      "judged": 2
     }
   },
   "findings": [
@@ -87,14 +91,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-35",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 1
     },
     {
       "id": "J-2",
@@ -122,17 +127,18 @@
       ],
       "validation": "confirmed",
       "reason": "`jury.collect` sets `led[\"expect\"]` only from the `--expect` flags (jury.py:555). `compose` flags a missing lens only if it is in `expect` (jury.py:922). Nothing adds conformance or correctness at an implementation gate, so a round with only adversary output can compose to approved. `join` runs only when a valid conformance file arrives (jury.py:597-602).",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-36",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/jury.py collect / compose (`expect`)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -160,17 +166,18 @@
       ],
       "validation": "confirmed",
       "reason": "`plan` runs the `pick is not None` branch without checking `over` (jury.py:303-312). It writes `dropped` for the unpicked lenses, and `collect` then refuses those lenses. `hooks.ALLOW` holds \"jury plan\" and ASK (hooks.py:64) has no `--pick` pattern, so nothing asks the human.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-37",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/jury.py plan (`pick`), hooks.ALLOW, verdict",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-4",
@@ -198,17 +205,18 @@
       ],
       "validation": "confirmed",
       "reason": "`journeys()` returns `[]` steps when the regex doesn't match (evidence.py:117). In `collect`, `rs=[]` makes `all(...)` true, so the journey is written as \"passed\" (evidence.py:352-353). `matched` accepts an empty `contains:` because `\"\" in output` is true (evidence.py:125).",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-38",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/evidence.py journeys / collect",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-5",
@@ -237,17 +245,18 @@
       ],
       "validation": "confirmed",
       "reason": "`one_test` returns None for any runner other than unittest or pytest (evidence.py:102-108). `one()` turns an empty command into \"not configured\" (evidence.py:31-32), and `collect` prints \"not configured\" only for lint and typecheck (evidence.py:363-364). A runner with no summary reader gives \"unknown\" when the suite passes (evidence.py:339), and `join` counts \"unknown\" as passing (evidence.py:390).",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-39",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/evidence.py collect, one_test, join",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-6",
@@ -277,17 +286,18 @@
       ],
       "validation": "confirmed",
       "reason": "`collect`, `pack` and `join` take their results from `load(root, run)` and never compare `results[\"commit\"]` with `commits_of(...)[0]`. The results file holds no slug or epic (evidence.py:355). In `jury.collect`, `join` runs on whatever file `--run` names (jury.py:600-601).",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-40",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/jury.py collect (join), src/nio/evidence.py pack, load",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-7",
@@ -314,17 +324,18 @@
       ],
       "validation": "confirmed",
       "reason": "CT-20 (contracts.md:239) says a dispose of a tampering finding by anything but `--by human` fails. The code adds `and disposition != \"fix-task\"` (jury.py:841), so the two disagree. The code is what `append_fix` needs.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-41",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/jury.py dispose (the tampering check before the PLAN_ONLY check)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-8",
@@ -351,17 +362,18 @@
       ],
       "validation": "confirmed",
       "reason": "consistency.md:37 tells the lens to check the diff against the decisions in the pack. `evidence.pack` builds only Diff, Items the diff touches, Results and Hints (evidence.py:499-510). It has no memory or decision section, and evidence.py has no memory code at all.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-42",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/evidence.py pack (the consistency lens's pack at implementation)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-9",
@@ -426,17 +438,18 @@
       ],
       "validation": "confirmed",
       "reason": "`jury.collect` calls `join` for every new valid conformance file, passing `[]` when there is no `## Matches` section (jury.py:597-602). `join` then gives every AC \"no match\" and a blocker (evidence.py:381-393). The re-review pack asks only for `- J-n: fixed | not fixed` verdicts (evidence.py:488), and the Re-review section of conformance.md:39-41 doesn't ask for Matches.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-43",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/jury.py (collect, the call to evidence.join) and src/nio/evidence.py:join",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-11",
@@ -463,17 +476,18 @@
       ],
       "validation": "confirmed",
       "reason": "Misuse tests go only into `attacks`, which carry no file or line (evidence.py:343-346). Only `rest` tests enter `results[\"tests\"]` (evidence.py:336-342). `join` looks a match up in `results[\"tests\"]` only (evidence.py:378, 382-383). An AC proved only by a misuse test therefore gets \"didn't run\" and a blocker.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-44",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/evidence.py:collect and src/nio/evidence.py:join",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-12",
@@ -501,20 +515,96 @@
       ],
       "validation": "confirmed",
       "reason": "`append_fix` builds `Files:` from `files(finding[\"where\"])`, which splits on commas and backticks each piece with no check that it is a path (tasks.py:381). The conformance card allows `where: <file or area>` (conformance.md:29). `phantoms` reports any task file not found at head as a major finding (evidence.py:170-172), and it runs over every task of the epic, fix tasks included.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-45",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/tasks.py:append_fix and src/nio/evidence.py:phantoms",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "T-37: hooks.ALLOW doesn't exist",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-16",
+        "CT-8",
+        "CT-16",
+        "J-3"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-37 names hooks.ALLOW, which is not in the repo at 7c70b8be",
+      "where": "hooks.ALLOW",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-37 names hooks.ALLOW, which is not in the repo at 7c70b8be",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "T-43: evidence.join doesn't exist",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-6",
+        "FR-5",
+        "CT-21"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-43 names evidence.join, which is not in the repo at 7c70b8be",
+      "where": "evidence.join",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-43 names evidence.join, which is not in the repo at 7c70b8be",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
@@ -522,6 +612,33 @@
     ]
   ],
   "versions": {
-    "1": "fcf8cc44244370c72bed1f5727993460b03ba017"
+    "1": "fcf8cc44244370c72bed1f5727993460b03ba017",
+    "2": "7c70b8be468343181628803d1ba7560bfed62c60"
+  },
+  "matched": {
+    "AC-2": [
+      [
+        "tests/test_evidence.py",
+        "test_it_refuses"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_evidence.py",
+        "test_it_refuses_again"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_evidence.py",
+        "test_the_results_list_each_ac_with_that_test_s"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_evidence.py",
+        "test_a_missing_evidence_finding_is_recorded_for_it_again"
+      ]
+    ]
   }
 }

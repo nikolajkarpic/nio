@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-2
 subject: 2026-10-27-implementation-jury
-round: 1
-outcome: rejected
+round: 2
+outcome: human
 ---
 # Implementation-e-2 jury: 2026-10-27-implementation-jury
 
@@ -10,18 +10,20 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | FR-14, FR-38, CT-8 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | gap | FR-16, CT-8, CT-16 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | major | gap | FR-12, CT-3, CT-7 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-5 | major | gap | FR-12, FR-3, FR-5, CT-3 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-6 | major | gap | FR-6, FR-17, CT-7, CT-9, CT-21 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-7 | major | contradiction | CT-20, FR-10 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-8 | major | gap | CT-9, FR-17 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap |  | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | gap | FR-14, FR-38, CT-8 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-3 | major | gap | FR-16, CT-8, CT-16 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-4 | major | gap | FR-12, CT-3, CT-7 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-5 | major | gap | FR-12, FR-3, FR-5, CT-3 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-6 | major | gap | FR-6, FR-17, CT-7, CT-9, CT-21 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-7 | major | contradiction | CT-20, FR-10 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-8 | major | gap | CT-9, FR-17 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-9 | minor | inconsistency | CT-7, CT-3 | consistency | grounded | open |  | new, 0 |
-| J-10 | major | gap | AC-6, FR-5, CT-21 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-11 | major | gap | FR-5, CT-21 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-12 | major | risk | FR-26, FR-8, CT-14 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-10 | major | gap | AC-6, FR-5, CT-21 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-11 | major | gap | FR-5, CT-21 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-12 | major | risk | FR-26, FR-8, CT-14 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-13 | major | gap | FR-16, CT-8, CT-16, J-3 | cli | confirmed | open |  | new, 0 |
+| J-14 | major | gap | AC-6, FR-5, CT-21 | cli | confirmed | open |  | new, 0 |
 
 ### J-1 test tampering: test_ac29_epic_skipped in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac29_epic_skipped from tests/test_implement.py
@@ -104,11 +106,21 @@ outcome: rejected
 - validation: confirmed: `append_fix` builds `Files:` from `files(finding["where"])`, which splits on commas and backticks each piece with no check that it is a path (tasks.py:381). The conformance card allows `where: <file or area>` (conformance.md:29). `phantoms` reports any task file not found at head as a major finding (evidence.py:170-172), and it runs over every task of the epic, fix tasks included.
 - disposition: fix-task by agent: fix task T-45
 
+### J-13 T-37: hooks.ALLOW doesn't exist
+- situation (cli): T-37 names hooks.ALLOW, which is not in the repo at 7c70b8be
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+
+### J-14 T-43: evidence.join doesn't exist
+- situation (cli): T-43 names evidence.join, which is not in the repo at 7c70b8be
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-2-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-2-conformance | conformance | juror / claude-code / sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-2-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-2-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-2-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-2-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
