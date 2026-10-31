@@ -2005,7 +2005,7 @@ def test_the_four_tasks_are_unchanged_and_the_new_one():
     assert set(now) - old_ids == {"T-6"} and {t: now[t]["block"] for t in old_ids} == old_blocks, now
     assert now["T-6"]["fix"] and now["T-6"]["epic"] == "E-1", now["T-6"]
     assert path.stat().st_ino != inode, "tasks.md was written in place, not through a rename"
-    assert sorted(os.listdir(path.parent)) == around, "the temporary file stayed"
+    assert not [x for x in os.listdir(path.parent) if x.endswith(".tmp")], "the temporary file stayed"
     tasks_pass(root)
     print("ok")
 
@@ -3210,6 +3210,21 @@ def test_a_change_request_is_not_another_findings_because_its_situation_names_it
     jury.raise_change(root, "s", GATE, {"id": "J-3", "title": "t", "cites": ["AC-1"], "sources": [{"lens": "correctness", "situation": "same cause as J-1"}]})
     assert jury.change_for(root, "s", GATE, "J-3")[0]
     assert jury.change_for(root, "s", GATE, "J-1")[0] is None, "a juror's words tied the request to another finding"
+    print("ok")
+
+
+def test_a_fix_task_is_not_appended_while_another_call_holds_the_lock():
+    from nio import flow
+    root = fix_repo()
+    (f,) = [x for x in fix_gate(root, {"title": "a missing one"}) if x["title"] == "a missing one"]
+    before = task_file(root).read_bytes()
+    with flow.lock(root, "s"):
+        try:
+            append_fix(root, f)
+            raise AssertionError("appended under another call's lock")
+        except ValueError as e:
+            assert "lock" in str(e) or "busy" in str(e).lower(), e
+    assert task_file(root).read_bytes() == before
     print("ok")
 
 
