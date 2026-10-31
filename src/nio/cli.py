@@ -4,7 +4,7 @@ import re
 import sys
 from importlib import resources
 
-from nio import agents, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks, usage
+from nio import agents, evidence, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks, usage
 
 
 def report(errors, warnings, count):
@@ -87,6 +87,7 @@ def main():
     ja.add_argument("slug")
     jp = jsub.add_parser("plan", help="the lens runs a gate needs, why each runs, the tier and the run budget; fails on a missing card")
     jp.add_argument("--add", action="append", default=[], help="lens:reason, a lens the skill's own triggers add; repeatable")
+    jp.add_argument("--pick", help="lens,lens: the lenses to run when the plan is over the cap; the core lenses must be in it")
     jg = jsub.add_parser("changed", help="IDs and sections changed since the version the last round judged, their neighbours, and the lenses to re-run")
     jf = jsub.add_parser("fixcheck", help="print one lens's fix-check pack for a re-review or the final fix check")
     jf.add_argument("--lens", required=True)
@@ -97,19 +98,26 @@ def main():
     jc.add_argument("--tier", choices=["low", "medium", "high"], help="the ladder rung triage picked")
     jd = jsub.add_parser("dispose", help="set a finding's disposition; accepted-risk, out-of-scope and overruled need --by human")
     jd.add_argument("slug")
-    jd.add_argument("gate", choices=sorted(jury.GATES))
+    jd.add_argument("gate", type=jury.gate_arg, metavar="GATE")
     jd.add_argument("id")
     jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS))
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
     jd.add_argument("--note", required=True)
     jd.add_argument("--change", default="", metavar="C-ID", help="spec-change only: the change record the finding waits on")
+    je = jsub.add_parser("evidence", help="run an epic's tests, checks, attacks and journeys in a throwaway copy and write the run's results.json")
+    je.add_argument("slug")
+    je.add_argument("epic", metavar="E-n")
+    je.add_argument("--run", required=True)
     jl = jsub.add_parser("files", help="the files a juror at this gate reads, and the only files its quotes may come from")
+    jpk = jsub.add_parser("pack", help="print one lens's pack at an implementation gate: the epic's diff, its ACs and the run's results")
+    jpk.add_argument("--lens", required=True)
+    jpk.add_argument("--run", required=True)
     jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
     jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
     jk.add_argument("--human", default="", metavar="REASON", help="the human closes the gate themselves: outcome human, with their reason")
-    for s in (jp, jg, jf, jc, jk, jl):  # dispose takes them first, before the finding
+    for s in (jp, jg, jf, jc, jk, jl, jpk):  # dispose takes them first, before the finding
         s.add_argument("slug")
-        s.add_argument("gate", choices=sorted(jury.GATES))
+        s.add_argument("gate", type=jury.gate_arg, metavar="GATE")
     f = sub.add_parser("flow", help="where an effort is, what to do next, and moving it on only when its guards pass")
     fsub = f.add_subparsers(dest="flow_cmd", required=True)
     by = {"metavar": "BY", "help": '"<role> / <host> / <model>", or human'}
@@ -119,7 +127,7 @@ def main():
     fs = fsub.add_parser("start", help="start an effort, or resume a parked, suspended or abandoned one")
     fs.add_argument("slug")
     fd = fsub.add_parser("done", help="report a stage done: its guard decides; at a gate, --commit approves it")
-    fd.add_argument("stage", choices=list(flow.STAGES))
+    fd.add_argument("stage", type=flow.stage_arg, metavar="STAGE", help="a stage, or an epic's gate as implementation-E-n")
     fd.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
     fd.add_argument("--commit", action="store_true", help="at a gate: make the `nio: approve <gate>` commit")
     fd.add_argument("--human", metavar="REASON", help="the human passes a failing check, with their reason")
@@ -271,18 +279,24 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "jury":
         try:
-            if a.jury_cmd == "answers":
+            if getattr(a, "gate", "").startswith("implementation"):  # a ruling needn't wait for the fix tasks; a round does
+                jury.epic_gate(root, a.slug, a.gate, finished=a.jury_cmd in ("plan", "collect"))
+            if a.jury_cmd == "evidence":
+                print("\n".join(evidence.collect(root, a.slug, a.epic, a.run)))
+            elif a.jury_cmd == "answers":
                 print("\n".join(jury.answers(root, a.slug)))
             elif a.jury_cmd == "template":
                 print(resources.files("nio").joinpath("templates/lens-output.md").read_text(), end="")
             elif a.jury_cmd == "plan":
-                lines, ok = jury.plan(root, a.slug, a.gate, a.add)
+                lines, ok = jury.plan(root, a.slug, a.gate, a.add, a.pick)
                 print("\n".join(lines))
                 sys.exit(0 if ok else 1)
             elif a.jury_cmd == "changed":
                 ids, rerun, near, secs = jury.changed(root, a.slug, a.gate)
                 print(f"changed: {', '.join(ids) or 'nothing'}\nsections: {', '.join(secs) or 'nothing'}\n"
                       f"neighbours: {', '.join(near) or 'nothing'}\nre-run: {', '.join(rerun) or 'nothing'}")
+            elif a.jury_cmd == "pack":
+                print(evidence.pack(root, a.slug, a.gate, a.lens, a.run), end="")
             elif a.jury_cmd == "files":
                 print("\n".join(str(f.relative_to(root)) for f in jury.sources(root, a.slug, a.gate)))
             elif a.jury_cmd == "fixcheck":
@@ -296,7 +310,7 @@ def main():
                 outcome, lines = jury.check(root, a.slug, a.gate, a.record, a.human)
                 print("\n".join(lines))
                 sys.exit({"approved": 0, "rejected": 1, "human": 3}.get(outcome, 2))
-        except ValueError as e:
+        except (ValueError, flow.Busy) as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "flow":
         try:

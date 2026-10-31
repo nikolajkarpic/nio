@@ -345,3 +345,54 @@ Options:
 3. Mark out of scope
 Answer: 1. Accept as risks, commit later: the spec can be approved now, with the four marked as waiting on those issues; nothing gets built until they settle; the memory decision is committed with the spec when you ask for a commit. Lost: the approved spec has four known holes. [human]
 Patched: none (jury dispositions accepted-risk by the human)
+
+Session (2026-10-30): the plan's questions that nothing upstream settled.
+
+## Q22 · epic order · 2026-10-30
+Question: When an epic's tasks are finished, should work on the next epic wait for that epic's check to finish?
+Answer: 1. Wait for the check: `nio flow claim` refuses the next epic until the check is approved or the human closes it. [human]
+Patched: architecture.md
+
+## Q23 · lint and type-check commands · 2026-10-30
+Question: What should the epic check do when a project hasn't named a lint or type-check command?
+Answer: 1. Note it and go on: an unset command is reported to the human and shown to every reviewer as not configured, and the check continues. [human]
+Patched: architecture.md
+
+## Q24 · architecture note · 2026-10-30
+Question: Approve the architecture note for the implementation jury?
+Answer: 1. Approve: the plan builds on it, and the plan jury checks the plan against it. [human]
+Patched: architecture.md approved; plan.md architecture: approved
+
+Session (2026-10-30): the plan jury's questions the spec didn't settle.
+
+## Q25 · the CLI's own findings · 2026-10-30
+Question: Should a finding that NIO's own checks made (a deleted test, a missing file, a failed lint) also go through the checker that tries to disprove findings?
+Answer: 1. Skip checker: NIO's own findings go straight to the record as confirmed, and a deleted test can't be dismissed by a model. [human]
+Patched: spec.md FR-24; contracts.md CT-20
+
+## Q26 · which side is right · 2026-10-30
+Question: When a reviewer says the code and the spec disagree, who decides which one is right?
+Answer: 1. Reviewer says, default spec: the reviewer states it and the checker tests the claim; if it says nothing, the spec wins and a fix task is written. [human]
+Patched: contracts.md CT-12, CT-14, CT-15
+
+## Q27 · where tests run · 2026-10-30
+Question: Where should the epic's tests and attacks run, given a linked git worktree was approved earlier?
+Answer: 1. Local clone: a separate clone at the epic's commit in a temp folder, deleted after the run. [human]
+Patched: architecture.md; contracts.md CT-2
+
+## Q28 · epics already skipped · 2026-10-30
+Question: What should happen to epics the implement stage already closed as skipped?
+Answer: 1. Stay closed, say so: `nio flow next` names the epics that were never reviewed. [human]
+Patched: architecture.md; contracts.md CT-17
+
+## Q29 · a new problem in a re-review · 2026-10-30
+Question: If a re-review of an epic's code finds a new serious problem, and nothing else is open, what should happen?
+Answer: 1. Comes to you: the epic waits for the human's ruling, fix it or accept the risk. [human]
+Patched: spec.md FR-32; contracts.md CT-13
+
+Session (2026-10-30): a build-order fault the implement stage found.
+
+## Q30 · the wait rule's place · 2026-10-30
+Question: The next task would block this build, so how should we fix it?
+Answer: 1. Move it to the end: the wait rule is built last, after the command that closes reviews exists; earlier epics keep being marked skipped. [human]
+Patched: plan.md US-1, US-6; tasks.md T-4, T-27, T-28, T-29 retired, T-30 to T-33 added (C-261030-abpr)

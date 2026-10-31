@@ -18,6 +18,7 @@ STAGES = {  # the state table "Flow": stage -> (where a passing guard goes, wher
     "arch_grilling": ("planning", None), "planning": ("plan_jury", None), "plan_jury": ("tasking", "planning"),
     "tasking": ("tasks_jury", None), "tasks_jury": ("implementing", "tasking"), "implementing": ("done", None),
     "done": (None, None)}
+EPIC_GATE = re.compile(r"implementation-E-\d+")
 NOT_BUILT = {"researching", "advocate_walking", "arch_grilling"}  # skipped on the record (FR-21)
 # each gate stage's jury gate and approval commit message: CT-6's search, CT-7's judged versions and CT-11's commit
 GATES = {"spec_jury": ("spec", "nio: approve spec"), "plan_jury": ("plan", "nio: approve plan"),
@@ -587,6 +588,7 @@ def where(root, slug, state=None, lines=None):
     from nio import jury
     if state is None:
         state, lines = load(root, slug)
+    skill = ""
     stage, why, ready, results, ledgers, approved, sent_by, task = "done", "", None, {}, {}, [], None, ""
     passes = lambda s: results[s] if s in results else results.setdefault(s, guard(root, slug, s, evidence=False)[0])
     ledger = lambda s: ledgers[s] if s in ledgers else ledgers.setdefault(s, jury.load(root, slug, GATES[s][0]))
@@ -664,11 +666,17 @@ def where(root, slug, state=None, lines=None):
             implement.next_ready(root, slug, lines)
         status, command = "working", "" if tid or not t else f"nio flow claim {slug}"
         task = f"{t['id']} {t['title']}" + " (claimed)" * bool(tid) if t else ""
+        gate = None if tid else implement.open_gate(root, slug, lines)
+        if gate:  # CT-17: the epic waits on its gate
+            gate = f"implementation-{gate}"
+            held = [p for p in jury.gate_changes(root, slug, gate) if re.search(r"^outcome: pending", (root / p).read_text(), re.M)]
+            task = f"{gate} is open" + (f" (held on a change request: {held[0]})" if held else "")
+            skill, command = "@nio:jury", f"nio flow done {gate} {slug}"
     elif stage == "done":
         status, command = "done", ""
     else:
         status = "working"
-    return {"stage": stage, "status": status, "why": why, "skill": SKILL.get(stage, ""),
+    return {"stage": stage, "status": status, "why": why, "skill": skill or SKILL.get(stage, ""),
             "inputs": [rel(n) for n in names if (folder / n).exists()], "exit": EXIT.get(stage, ""),
             "command": command, "skipped": skipped, "changes": entries, "overrides": unseen(lines),
             "unreadable": unreadable, "refs": pending[0]["record"] if pending else "",
@@ -807,7 +815,8 @@ def next_step(root, slug=None, by=None):
         out = [f"effort: {slug}", f"state: {here['stage']} (working{': ' + here['why'] if here['why'] else ''})",
                f"skill: {here['skill']}", f"next: run {typed(here['skill'])}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}"]
         out += [f"task: {here['task']}"] * bool(here["task"])
-        label = "claim" if here["stage"] == "implementing" else "done"
+        label = "claim" if here["command"].startswith("nio flow claim") else "done"
+        out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines)]
         out += [f"{label}: {here['command']} {by_arg(by)}"] * bool(here["command"])
         out += [f"skipped: {', '.join(here['skipped'])} (not built)"] * bool(here["skipped"]) + overridden(here)
     else:
@@ -818,6 +827,11 @@ def next_step(root, slug=None, by=None):
     if owed and by is None:
         out.append(f"would record: {', '.join(dict.fromkeys(owed))} (run with --by to record)")
     return 0, out
+
+
+def never_reviewed(root, slug, lines):
+    """Epics closed by an old `skipped: not built` line (CT-17)."""
+    return [x["evidence"]["epic"] for x in lines if x["kind"] == "epic" and x.get("reason") == "skipped: not built"]
 
 
 def start(root, slug, by):
@@ -895,11 +909,21 @@ def pending_pass(lines, stage, verdict_id):
     return False
 
 
+def stage_arg(name):
+    """argparse type: a stage, or an epic's gate as `implementation-E-n`."""
+    import argparse
+    if name in STAGES or EPIC_GATE.fullmatch(name):
+        return name
+    raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(STAGES)}, implementation-E-n)")
+
+
 def done(root, stage, slug=None, commit=False, human=None, by=None):
     """`nio flow done` (CT-11, FR-12 to FR-27, FR-48, FR-62): run the stage's guard and, when it passes (or the human
     overrides a failing one), record the move and the skips after it; at a gate, `--commit` (or the auto flag on a
     spec without a risky flag) also makes the approval commit, rolled back when git fails. Returns (code, lines)."""
     from nio import jury
+    if EPIC_GATE.fullmatch(stage):
+        return epic_done(root, stage, slug, by)
     if stage not in STAGES:
         raise ValueError(f"unknown stage {stage}")
     slug = pick(root, slug)
@@ -990,6 +1014,59 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         return commit_gate(root, slug, stage, entries, state, w, out)
 
 
+def epic_done(root, gate, slug=None, by=None):
+    """`nio flow done implementation-E-n` (CT-17): when the gate is approved or the human closed it, and that is recorded,
+    write the epic's `epic` line with the outcome as its reason and, after the last epic, the `pass` line implementing ->
+    done, and make the approval commit. Any other standing refuses, naming the gate. An `epic` line already there, an
+    old `skipped: not built` too, is closed: a second call writes nothing, and only commits what a crash left uncommitted."""
+    from nio import implement, jury
+    slug = pick(root, slug)  # no `refuse`: an epic with a recorded gate is what lets this write, whatever the folder's name
+    w, epic = who(by), gate.removeprefix("implementation-")
+    if not any(t["epic"] == epic for t in implement.tasks_of(root, slug)):
+        raise ValueError(f"the subject of the implementation gate must be an epic from tasks.md, not {gate}")
+    state, lines = load(root, slug)
+    if held(state):
+        return 1, talk(slug, where(root, slug, state, lines))
+    line = next((x for x in lines if x["kind"] == "epic" and x["evidence"].get("epic") == epic), None)
+    reason = line and line.get("reason")
+    if not line:
+        led, now = jury.load(root, slug, gate), jury.standing(root, slug, gate)
+        if now not in ("approved", "closed"):
+            return 1, [f"{gate} is {now}, not approved or closed; `nio flow done {gate}` needs its jury to approve it or the human to close it"]
+        if [led["round"], now] not in led["recorded"]:
+            return 1, [f"{gate} is {now} but not recorded: run `nio jury check {slug} {gate} --record` first"]
+        reason = "human" if now == "closed" else now
+    message = f"nio: approve {gate}"
+    with lock(root, slug):
+        state, now_lines = load(root, slug)
+        if now_lines != lines:
+            raise ValueError(f"{slug} changed while its gate was read; try again")
+        entries = [] if line else [{"kind": "epic", "from": "implementing", "to": "implementing", "reason": reason, "evidence": {"epic": epic}}]
+        last = not implement.left(root, slug, lines + entries) and not any(x["kind"] == "pass" and x["from"] == "implementing" for x in lines)
+        if last:
+            entries.append({"kind": "pass", "from": "implementing", "to": STAGES["implementing"][0],
+                            "evidence": {"paths": [f".nio/specs/{slug}/tasks.md"]}})
+        crashed = line and reason != "skipped: not built" and uncommitted(root, slug, gate) and \
+            not records.git(root, "log", "-1", "--format=%H", f"--grep=^{message}$", "--", f".nio/specs/{slug}")
+        if not entries and not crashed:
+            return 0, [f"{gate} is closed already ({reason}); nothing to do"]
+        out = [f"closed {gate}: {reason}"] + [f"merge: {implement.branch(slug)}"] * last
+        if last:
+            out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines + entries)]
+        return commit_gate(root, slug, "implementing", entries, state, w, out, gate, message)
+
+
+def gate_paths(root, slug, gate):
+    """What a gate's commit holds, as paths from the root: the effort folder, the gate's verdict records and, at an epic's
+    gate, the change requests its findings raised."""
+    from nio import jury
+    return [f".nio/specs/{slug}", *verdicts(root, slug, gate), *jury.gate_changes(root, slug, gate)]
+
+
+def uncommitted(root, slug, gate):
+    return bool(records.git(root, "status", "--porcelain", "--", *gate_paths(root, slug, gate)))
+
+
 def verdicts(root, slug, gate):
     """The verdict records `nio jury check --record` wrote for this gate, as paths from the root."""
     line = f'subject: "{gate}:{slug}"'
@@ -997,9 +1074,9 @@ def verdicts(root, slug, gate):
                   if line in p.read_text(encoding="utf-8").splitlines())
 
 
-def commit_gate(root, slug, stage, entries, state, w, out):
-    """Record the gate's pass and make its `nio: approve <gate>` commit of the effort folder and the gate's verdict
-    records (FR-18, the jury skill's Approval step); when git
+def commit_gate(root, slug, stage, entries, state, w, out, gate=None, message=None):
+    """Record the gate's pass and make its `nio: approve <gate>` commit (or `message`, for `gate`) of the effort folder and
+    the gate's verdict records (FR-18, the jury skill's Approval step); when git
     fails, put history.jsonl, state.json and the index back as they were, byte for byte, and print git's error (FR-20,
     CT-19)."""
     folder = root / ".nio/specs" / slug
@@ -1011,8 +1088,9 @@ def commit_gate(root, slug, stage, entries, state, w, out):
         return 1, [err.strip()]
     if entries:
         write(root, slug, entries, state, w, stage)
-    rel = [f".nio/specs/{slug}"] + verdicts(root, slug, GATES[stage][0])
-    for args in (["add", "-A", "--", *rel], ["commit", "-q", "-m", GATES[stage][1], "--", *rel]):
+    gate, message = gate or GATES[stage][0], message or GATES[stage][1]
+    rel = gate_paths(root, slug, gate)
+    for args in (["add", "-A", "--", *rel], ["commit", "-q", "-m", message, "--", *rel]):
         code, _, err = records.git(root, *args, full=True)
         if code:
             if kept is None:
@@ -1026,7 +1104,7 @@ def commit_gate(root, slug, stage, entries, state, w, out):
             np.unlink(missing_ok=True)
             records.git(root, "read-tree", tree.strip(), full=True)
             return 1, [line for line in (err.strip() or f"git {args[0]} failed").splitlines()]
-    return 0, out + [f"committed {GATES[stage][1]}"]
+    return 0, out + [f"committed {message}"]
 
 
 # --- nio flow status (CT-12) and abandon (CT-14) ---

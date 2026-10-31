@@ -1,8 +1,8 @@
 ---
 gate: spec
 subject: 2026-10-27-implementation-jury
-round: 3
-outcome: human
+round: 4
+outcome: approved
 ---
 # Spec jury: 2026-10-27-implementation-jury
 
@@ -16,8 +16,8 @@ outcome: human
 | J-4 | major | gap | AC-28, FR-28, FR-25, AC-34 | adversary | confirmed | fixed | spec-fix (agent) | absent, 0 |
 | J-5 | major | inconsistency | FR-26, decision table where a confirmed finding goes, AC-33 | adversary, logic | confirmed | fixed | spec-fix (grill) | absent, 0 |
 | J-6 | major | inconsistency | AC-22, AC-23, FR-16 | consistency, logic | confirmed | fixed | spec-fix (agent) | absent, 0 |
-| J-7 | minor | ambiguity | AC-17, FR-5, NFR-1 | consistency | grounded | disposed | spec-fix (agent) | new, 0 |
-| J-8 | minor | inconsistency | FR-21 | consistency | grounded | disposed | spec-fix (agent) | new, 0 |
+| J-7 | minor | ambiguity | AC-17, FR-5, NFR-1 | consistency | grounded | fixed | spec-fix (agent) | absent, 0 |
+| J-8 | minor | inconsistency | FR-21 | consistency | grounded | fixed | spec-fix (agent) | absent, 0 |
 | J-9 | minor | risk | FR-4 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-10 | major | contradiction | FR-16, AC-22, UJ-4, Glossary (Lens run) | logic | merged | merged |  | new, 0 |
 | J-11 | major | contradiction | FR-26, FR-30, FR-31, AC-36, decision table "where a confirmed finding goes" | logic | merged | merged |  | new, 0 |
@@ -231,7 +231,7 @@ outcome: human
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
 | spec-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| spec-consistency | consistency | juror / claude-code / haiku | sufficient | no: J-6 is not in the fix-check pack | 2 | 3 |
+| spec-consistency | consistency | juror / claude-code / haiku-5-5 | sufficient | yes | 2 | 4 |
 | spec-logic | logic | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | spec-scope | scope | juror / claude-code / haiku | sufficient | yes | 1 | 2 |
 | spec-testability | testability | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
