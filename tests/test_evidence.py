@@ -1290,7 +1290,24 @@ CHANGED = "def test_weak():\n    assert compute() == 2\n    assert other() == 4\
 TEST_FILE = "tests/test_app.py"
 
 
-def lens_out(root, lens, findings="none", name=None, rnd="R-1"):
+def fill(root, gate, run, matches=()):
+    """Write a valid empty output for each planned lens the run has none for (a setup: the round expects them all)."""
+    from nio import jury
+    try:
+        text = next(x for x in jury.plan(root, "s", gate)[0] if x.startswith("lenses: "))
+    except (ValueError, StopIteration):
+        return
+    d = root / f".nio/runs/{run}/jury"
+    for lens in re.findall(r"([a-z][a-z-]*) \(", text):
+        path = d / f"{gate}-{lens}.md"
+        if not path.exists() and lens != "refuter":
+            body = "## Matches\n" + "".join(f"- {x}\n" for x in matches) + "\n" if lens == "conformance" else ""
+            d.mkdir(parents=True, exist_ok=True)
+            path.write_text(f'---\nlens: {lens}\ngate: {gate}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
+                            f"## Reasoning\nChecked.\n\n{body}## Findings\nnone\n")
+
+
+def lens_out(root, lens, findings="none", name=None, rnd="R-1", rest=True):
     """Write a lens output at the gate: `findings` is a list of dicts of lines (title included) or the text `none`."""
     if findings != "none":
         base = {"kind": "gap", "severity": "major", "evidence": "observed", "gap": "partial", "where": TEST_FILE,
@@ -1301,6 +1318,8 @@ def lens_out(root, lens, findings="none", name=None, rnd="R-1"):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f'---\nlens: {lens}\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
                     f"## Reasoning\nChecked.\n\n## Findings\n{findings}")
+    if rest:
+        fill(root, GATE, rnd, E1_MATCHES)
     return path
 
 
@@ -1601,7 +1620,7 @@ def test_it_is_rerun_and_never_approved_after_a_second():
     from nio import jury
     root = pack_repo({})
     start(root)
-    lens_out(root, "conformance", "none")
+    lens_out(root, "conformance", "none", rest=False)
     jury.collect(root, "s", GATE, "R-1", expect=("conformance", "correctness"))  # correctness has no output
     outcome, reasons, _ = composed(root)
     assert outcome == "rerun" and any("correctness" in r for r in reasons), (outcome, reasons)
@@ -1833,6 +1852,7 @@ def fix_gate(root, *findings, epic="E-1"):
     (jd / f"{gate}-conformance.md").write_text(
         f'---\nlens: conformance\ngate: {gate}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
         "## Reasoning\nChecked.\n\n## Matches\n" + "".join(f"- {x}\n" for x in lines) + f"\n## Findings\n{body}")
+    fill(root, gate, "R-1", lines)
     said = jury.collect(root, "s", gate, "R-1")
     assert not [x for x in said if "INVALID" in x], said
     pending = [f["id"] for f in jury.load(root, "s", gate)["findings"] if f["validation"] == "pending"]
@@ -2112,6 +2132,7 @@ def impl_out(root, run, lens="conformance", findings=(), verdicts=()):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f'---\nlens: {lens}\ngate: {GATE}\nsubject: s\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
                     f"## Reasoning\nChecked.\n\n{matches}{said_verdicts}## Findings\n{body}")
+    fill(root, GATE, run, E1_MATCHES)
 
 
 def collected(root, run):
@@ -2868,6 +2889,21 @@ def test_a_later_open_gate_doesnt_hold_a_fix_in_an_earlier_epic():
         assert implement.open_gate(None, "s", [{"kind": "epic", "evidence": {"epic": "E-1"}}]) == "E-2"
     finally:
         implement.status, implement.tasks_of = status, tasks_of
+    print("ok")
+
+
+def test_expect_adversary_alone_cant_reach_approved():
+    """J-2: at an implementation gate the core lenses are expected whatever --expect says."""
+    from nio import jury
+    root = lens_repo()
+    gate = "implementation-E-1"
+    out = root / ".nio/runs/R-1/jury"
+    out.mkdir(parents=True)
+    (out / f"{gate}-adversary.md").write_text("# adversary\n")
+    jury.collect(root, "s", gate, "R-1", expect=("adversary",))
+    led = jury.load(root, "s", gate)
+    assert {"conformance", "correctness"} <= set(led["expect"]), led["expect"]
+    assert jury.compose(led, jury.version(led, led["round"]))[0] != "approved"
     print("ok")
 
 

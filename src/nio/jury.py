@@ -544,6 +544,8 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         commit = evidence.commits_of(root, slug, epic)[0]
         text = ground = "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in ("spec.md", "contracts.md")) if p.exists())
         human = ""
+        planned = re.findall(r"([a-z][a-z-]*) \(", next(x for x in plan(root, slug, gate)[0] if x.startswith("lenses: ")))
+        expect = set(expect) | {x for x in planned if x not in led.get("dropped", [])}
     elif gate not in GATES:
         raise ValueError(f"gate must be one of {sorted(GATES)}")
     else:
