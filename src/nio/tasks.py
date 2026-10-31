@@ -362,6 +362,16 @@ def fix_test(root, slug, finding, cites):
 
 
 def append_fix(root, slug, epic, finding):
+    """`one_fix` under the effort's lock: two calls at once would pick one ID and lose a task (AC-50)."""
+    from nio import flow
+    try:
+        with flow.lock(root, slug):
+            return one_fix(root, slug, epic, finding)
+    except flow.Busy as e:
+        raise ValueError(f"another nio call holds the lock of {slug}, try again: {e}") from None
+
+
+def one_fix(root, slug, epic, finding):
     """Append one fix task for a finding the decision table routes to a task, under the epic's `#### Fixes`, and dispose of
     the finding as `fix-task` (CT-14, FR-26, FR-27, FR-29). The new ID, or None when the finding already has a task. Every
     byte already in the file stays; the decision table's routing is the caller's (`jury.to_task`)."""
