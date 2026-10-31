@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-8
 subject: 2026-10-27-implementation-jury
-round: 1
-outcome: rerun
+round: 2
+outcome: approved
 ---
 # Implementation-e-8 jury: 2026-10-27-implementation-jury
 
@@ -10,14 +10,14 @@ outcome: rerun
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-33, AC-35, AC-50 | cli | confirmed | open |  | new, 0 |
-| J-2 | major | gap | AC-32, AC-40 | cli | confirmed | open |  | new, 0 |
-| J-3 | major | gap | AC-1, AC-40 | cli | confirmed | open |  | new, 0 |
+| J-1 | major | gap | AC-33, AC-35, AC-50 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-2 | major | gap | AC-32, AC-40 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-3 | major | gap | AC-1, AC-40 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-4 | major | gap |  | cli | confirmed | fixed |  | absent, 0 |
-| J-5 | major | gap | CT-6, CT-20, FR-10 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-6 | major | gap | CT-17, FR-26 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-7 | major | gap | CT-15, FR-44, AC-58, AC-59 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-8 | major | gap | AC-50, FR-26, FR-27 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | major | gap | CT-6, CT-20, FR-10 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-6 | major | gap | CT-17, FR-26 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-7 | major | gap | CT-15, FR-44, AC-58, AC-59 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-8 | major | gap | AC-50, FR-26, FR-27 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-9 | major | risk | CT-2, CT-3, FR-40 | adversary | refuted | refuted |  | new, 0 |
 | J-10 | minor | gap | AC-46 | conformance | grounded | open |  | new, 0 |
 | J-11 | major | contradiction | CT-20, FR-10 | consistency | refuted | refuted |  | new, 0 |
@@ -29,16 +29,19 @@ outcome: rerun
 - situation (cli): T-22 names tests/test_tasks.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: the human accepted: the task listed a test file it never edited; its tests went into tests/test_evidence.py, and no code is wrong
 
 ### J-2 T-30: tests/test_flow.py isn't in the epic's diff
 - situation (cli): T-30 names tests/test_flow.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: the human accepted: the task listed a test file it never edited; its tests went into tests/test_evidence.py, and no code is wrong
 
 ### J-3 T-33: tests/test_flow.py isn't in the epic's diff
 - situation (cli): T-33 names tests/test_flow.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: the human accepted: the task listed a test file it never edited; its tests went into tests/test_evidence.py, and no code is wrong
 
 ### J-4 test tampering: test_ac29_epic_skipped in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac29_epic_skipped from tests/test_implement.py
@@ -109,7 +112,7 @@ outcome: rerun
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-8-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-8-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-8-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
 | implementation-E-8-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
 | implementation-E-8-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
