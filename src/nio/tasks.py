@@ -403,5 +403,5 @@ def append_fix(root, slug, epic, finding):
     # the ledger follows the file; a crash between the two is mended by the next call in the same round. A finding reopened
     # in a later round keeps its one task and stays open.
     if now["status"] == "open" and (tid or parsed["tasks"][had[0]]["fields"]["From"] == src):
-        jury.dispose(root, slug, gate, fid, "fix-task", "agent", f"fix task {tid or had[0]}")
+        jury.dispose(root, slug, gate, fid, "fix-task", "agent", f"fix task {tid or had[0]}", routed=True)
     return tid

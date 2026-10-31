@@ -2972,6 +2972,23 @@ def test_an_unknown_result_is_not_evidence_for_a_test_that_is_not_in_the_file():
     print("ok")
 
 
+def test_an_agent_cannot_dispose_of_tampering_with_a_fix_task_but_record_still_does():
+    from nio import jury
+    root = fix_repo()
+    fix_gate(root, {"title": "test_weak got weaker", "tampering": "yes"})
+    (f,) = [x for x in jury.load(root, "s", GATE)["findings"] if x.get("tampering")]
+    try:
+        jury.dispose(root, "s", GATE, f["id"], "fix-task", "agent", "fix it")
+        raise AssertionError("an agent disposed of tampering with fix-task")
+    except ValueError as e:
+        assert "tampering" in str(e), e
+    assert recorded(root)[0] == 1
+    assert [len(x) for x in fix_tasks_for(root).values()] == [1], "--record gave the tampering finding no single fix task"
+    f = next(x for x in jury.load(root, "s", GATE)["findings"] if x["id"] == f["id"])
+    assert (f["status"], f["disposition"]) == ("disposed", "fix-task"), f
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
