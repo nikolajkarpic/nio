@@ -1040,6 +1040,15 @@ def test_it_holds_the_diff_the_text_of_ac_3():
     print("ok")
 
 
+def test_only_the_consistency_pack_has_a_decisions_section():
+    root = pack_repo({})
+    start(root)
+    text = pack(root, "consistency")
+    assert "## Decisions" in text and "none found" in text.lower(), f"no Decisions section:\n{text}"
+    assert "## Decisions" not in pack(root, "conformance"), "another lens's pack changed"
+    print("ok")
+
+
 def test_it_can_open_any_project_file_and_can_t():
     from nio import agents, records
     shipped = Path(__file__).resolve().parent.parent / "src/nio/agents"

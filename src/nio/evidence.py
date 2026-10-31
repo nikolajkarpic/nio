@@ -518,11 +518,22 @@ def pack(root, slug, gate, lens, run):
         return "\n".join(out) + "\n"
     diff = code_diff(root, base, head)
     names = set(code_diff(root, base, head, "--name-only"))
+    decisions = []
+    if lens == "consistency":  # the related decisions and lessons with their standing, as the spec gate finds them
+        from nio import pack as memory
+        spec = (root / ".nio/specs" / slug / "spec.md").read_text()
+        summary = re.search(r"^## Summary\n(.*?)(?=^## |\Z)", spec, re.M | re.S)
+        try:
+            found = memory.build(root, " ".join(summary.group(1).split()) if summary else slug, worker=False)[0]
+            found = found.split("\n\n", 2)[2].strip()
+        except Exception:  # no memory or no index yet
+            found = ""
+        decisions = ["## Decisions", "", found if "Memory has nothing" not in found and found else "None found.", ""]
     text, bound = items(root, slug)
     serves = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
     touched = serves | {c for c, f in bound.items() if f in names}
     out += ["## Diff", "", *diff, "", "## Items the diff touches", "", *[text[i] + "\n" for i in text if i in touched],
-            "## Results", "",
+            *decisions, "## Results", "",
             *(["Per-test results are unknown: the suite's runner can't be read per test; the exit code and output are in `suite`.", ""]
               if any(t["result"] == "unknown" for t in results.get("tests") or []) else []), json.dumps({**{k: v for k, v in results.items() if k != "hints"}, "requests": asked(results)}, indent=2, ensure_ascii=False), "",
             "## Hints (not findings: raise one only if you confirm it)", "", *([
