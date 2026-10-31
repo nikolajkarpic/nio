@@ -2929,6 +2929,19 @@ def test_a_pick_is_refused_under_the_cap_and_cannot_drop_a_collected_lens():
     print("ok")
 
 
+def test_an_auto_journey_that_does_not_parse_fails_and_an_empty_contains_never_matches():
+    ev = evidence()
+    root = Path(tempfile.mkdtemp())
+    q = root / ".nio/specs/s/quickstart.md"
+    q.parent.mkdir(parents=True)
+    q.write_text("### QS-1 a (UJ-1; auto)\n\n1. `echo hi`\n   Expected: hi\n\n"
+                 "### QS-2 b (UJ-2; auto)\n\n1. `echo a`\n   Expected:\n   ```\n   a\n   ```\n2. `echo b`\n   Expected: b\n")
+    got = {x[0]: x[2:] and x[2] for x in ev.journeys(root, "s")}
+    assert got["QS-1"], got
+    assert "1 of 2" in got["QS-2"], got
+    assert not ev.matched("contains:", "anything")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
