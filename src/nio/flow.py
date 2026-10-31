@@ -1044,7 +1044,7 @@ def epic_done(root, gate, slug=None, by=None):
             entries.append({"kind": "pass", "from": "implementing", "to": STAGES["implementing"][0],
                             "evidence": {"paths": [f".nio/specs/{slug}/tasks.md"]}})
         crashed = line and reason != "skipped: not built" and uncommitted(root, slug, gate) and \
-            not records.git(root, "log", "-1", "--format=%H", f"--grep=^{message}$")
+            not records.git(root, "log", "-1", "--format=%H", f"--grep=^{message}$", "--", f".nio/specs/{slug}")
         if not entries and not crashed:
             return 0, [f"{gate} is closed already ({reason}); nothing to do"]
         out = [f"closed {gate}: {reason}"] + [f"merge: {implement.branch(slug)}"] * last
