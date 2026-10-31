@@ -1237,6 +1237,7 @@ def finding_collected(**fields):
     removing its lines. (the lines collect printed, the gate's findings)"""
     from nio import jury
     root = pack_repo({})
+    start(root)
     lines = {"cites": "AC-3", "kind": "gap", "severity": "major", "evidence": "observed", "gap": "missing", "where": "src/one.py",
              "quote": '"return DIFF_MARK"', "situation": "x", "fix": "y", **fields}
     body = "".join(f"- {k}: {v}\n" for k, v in lines.items() if v is not None)
@@ -1529,6 +1530,24 @@ def test_the_results_list_each_ac_with_that_test_s():
     print("ok")
 
 
+def test_results_of_another_commit_or_epic_are_refused():
+    from nio import jury
+    root, source = join_repo()
+    start(root)
+    r = evidence().load(root, "R-1")
+    assert r.get("slug") == "s" and r.get("epic") == "E-1" and r.get("commit"), {k: r.get(k) for k in ("slug", "epic", "commit")}
+    for key, value in (("commit", "0" * 40), ("epic", "E-2"), ("slug", "other")):
+        evidence().save(root, "R-1", {**r, key: value})
+        for call in (lambda: pack(root, "conformance"), lambda: jury.collect(root, "s", GATE, "R-1")):
+            try:
+                call()
+            except ValueError as e:
+                assert "nio jury evidence" in str(e), e
+            else:
+                raise AssertionError(f"results with another {key} were accepted")
+    print("ok")
+
+
 def test_a_missing_evidence_finding_is_recorded_for_it():
     root, source = join_repo()
     results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{def_line(source, 'test_adds_two_numbers')}")  # AC-2 has no test
@@ -1673,6 +1692,7 @@ def test_a_lens_the_human_didn_t_pick_is_refused():
     root = capped()
     four = ["conformance", "correctness", "security", "adversary"]
     jury.plan(root, "s", GATE, pick=",".join(four))  # the human picks four; risk-rollback is dropped
+    start(root)
     assert jury.load(root, "s", GATE)["dropped"] == ["risk-rollback"], jury.load(root, "s", GATE)
     jury_dir = root / ".nio/runs/R-1/jury"
     jury_dir.mkdir(parents=True)
@@ -2896,6 +2916,7 @@ def test_expect_adversary_alone_cant_reach_approved():
     """J-2: at an implementation gate the core lenses are expected whatever --expect says."""
     from nio import jury
     root = lens_repo()
+    start(root)
     gate = "implementation-E-1"
     out = root / ".nio/runs/R-1/jury"
     out.mkdir(parents=True)

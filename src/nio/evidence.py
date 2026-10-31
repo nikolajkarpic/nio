@@ -81,6 +81,13 @@ def load(root, run):
     return {"commit": "", "tests": [], "checks": [], "attacks": [], "journeys": [], "hints": [], "requests": [], "evidence": []}
 
 
+def current(root, slug, epic, results):
+    """Raise unless the results were collected for this epic at its last commit (FR-6)."""
+    head = commits_of(root, slug, epic)[0]
+    if (results.get("slug"), results.get("epic"), results.get("commit")) != (slug, epic, head):
+        raise ValueError(f"the run's results are not for {slug} {epic} at {head[:8]}: run `nio jury evidence` again")
+
+
 def save(root, run, results):
     p = path(root, run)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -359,7 +366,7 @@ def collect(root, slug, epic, run):
         ok = all(r["result"] == "passed" and matched(e, r["output"]) for r, (_, e) in zip(rs, ss))
         journeys_out.append({"command": " && ".join(c for c, _ in ss), "result": "passed" if ok else "failed",
                              "output": "\n".join(r["output"] for r in rs), "cut": sum(r["cut"] for r in rs)})
-    results = {**load(root, run), "commit": commit, "tests": tests, "suite": suite, "checks": runs([t.get("lint"), t.get("typecheck")]),
+    results = {**load(root, run), "slug": slug, "epic": epic, "commit": commit, "tests": tests, "suite": suite, "checks": runs([t.get("lint"), t.get("typecheck")]),
                "attacks": attacks, "journeys": journeys_out, "hints": hints(root, base, commit) + [
                    {"kind": "attack not run", "file": f, "name": n, "line": 0, "interpretive": False,
                     "note": "the suite's runner can't be addressed per test, so this misuse test was not run"}
@@ -432,6 +439,7 @@ def requested(root, led, run):
     root, slug, rnd = Path(root), led["subject"], led["round"]
     epic = jury.epic_gate(root, slug, led["gate"])
     results, known = load(root, run), known_tests(root, slug)
+    current(root, slug, epic, results)
     suite = (records.config(root).get("tests") or {}).get("suite")
     requests = results["requests"]
     made = {r["request"]: r for r in requests if r["round"] == rnd and r["result"] != LISTED}
@@ -489,6 +497,7 @@ def pack(root, slug, gate, lens, run):
     commits = commits_of(root, slug, epic)
     base, head = parent_of(root, commits[-1]), commits[0]
     results = load(root, run)
+    current(root, slug, epic, results)
     led = jury.load(root, slug, gate)
     out = [f"# Pack: {lens}, {gate} gate of {slug}", "",
            "You may open any file of the project to read it. You have no way to write files or run commands.", ""]

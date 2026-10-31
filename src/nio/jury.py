@@ -605,6 +605,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         matches = re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", path.read_text(), re.M | re.S)
         if path.stem == f"{gate}-conformance" and led["jurors"][path.stem]["valid"]:
             results = evidence.load(root, run)
+            evidence.current(root, slug, epic, results)
             evidence.join(root, slug, epic, matches[1].splitlines() if matches else [], results)
             evidence.save(root, run, results)
     led = load(root, slug, gate) if impl else led
