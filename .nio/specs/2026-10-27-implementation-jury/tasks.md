@@ -485,3 +485,14 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 - Tier: strong: a fix from a jury finding
 - Effort: med
 - Mode: single: a fix from a jury finding
+
+### T-49 Fix: The crash-mend check matches an approval commit of any effort, so a crashed approval is reported as closed
+- From: J-6 (implementation-E-8, round 1)
+- Files: `src/nio/flow.py`
+- Serves: CT-17, FR-26, J-6
+- Test: TC-38
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding

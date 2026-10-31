@@ -15,7 +15,7 @@ outcome: rerun
 | J-3 | major | gap | AC-1, AC-40 | cli | confirmed | open |  | new, 0 |
 | J-4 | major | gap |  | cli | confirmed | fixed |  | absent, 0 |
 | J-5 | major | gap | CT-6, CT-20, FR-10 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-6 | major | gap | CT-17, FR-26 | adversary | confirmed | open |  | new, 0 |
+| J-6 | major | gap | CT-17, FR-26 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-7 | major | gap | CT-15, FR-44, AC-58, AC-59 | adversary | confirmed | open |  | new, 0 |
 | J-8 | major | gap | AC-50, FR-26, FR-27 | adversary | confirmed | open |  | new, 0 |
 | J-9 | major | risk | CT-2, CT-3, FR-40 | adversary | refuted | refuted |  | new, 0 |
@@ -57,6 +57,7 @@ outcome: rerun
 - situation (adversary): The commit message is `nio: approve implementation-E-n`. It names no effort, and every effort has an E-1. Effort B's `nio flow done implementation-E-1` crashes after writing the `epic` line and before the commit. `crashed` is computed as false, because an earlier effort A's identical "nio: approve implementation-E-1" is already in HEAD's history. `entries` is empty, so the code prints "is closed already (approved); nothing to do" and exits 0. B's `epic` line, any `pass` line and the verdict records stay uncommitted. It fails silently as success.
 - fix: Make the "already committed" test specific to the effort. For example, put the slug in the message, or check that `gate_paths` has no uncommitted change AND that the commit touches this effort's folder (`git log -1 -- .nio/specs/<slug>`).
 - validation: confirmed: The crash test greps all history for `^nio: approve implementation-E-n$` (flow.py:1046-1047). That message names no effort (flow.py:1036), so another effort's E-1 approval commit makes `crashed` false. With `entries` empty, flow.py:1048-1049 then returns "closed already ... nothing to do" with exit 0.
+- disposition: fix-task by agent: fix task T-49
 
 ### J-7 A change request is matched to a finding by free-text search, so one request can settle or reject another finding
 - quote: "`if meta.get("type") == "change" and f"/{slug}/spec.md" in str(meta.get("against")) and named(text, fid, r"\d") and named(text, gate, r"[\w-]"):`"
