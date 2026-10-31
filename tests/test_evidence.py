@@ -3204,6 +3204,15 @@ def test_a_crashed_approval_is_mended_though_another_effort_has_the_same_message
     print("ok")
 
 
+def test_a_change_request_is_not_another_findings_because_its_situation_names_it():
+    from nio import jury
+    root = fix_repo()
+    jury.raise_change(root, "s", GATE, {"id": "J-3", "title": "t", "cites": ["AC-1"], "sources": [{"lens": "correctness", "situation": "same cause as J-1"}]})
+    assert jury.change_for(root, "s", GATE, "J-3")[0]
+    assert jury.change_for(root, "s", GATE, "J-1")[0] is None, "a juror's words tied the request to another finding"
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
