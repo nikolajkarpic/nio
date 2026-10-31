@@ -172,6 +172,17 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 - Effort: med
 - Mode: single: a fix from a jury finding
 
+### T-46 Fix the ten findings of the branch code review
+- From: C-261031-rvfx
+- Files: `src/nio/cli.py`, `src/nio/jury.py`, `src/nio/evidence.py`, `src/nio/agents/conformance.md`, `src/nio/agents/correctness.md`, `tests/test_evidence.py`
+- Serves: AC-4, AC-6
+- Test: TC-4, TC-6, plus direct checks of each finding
+- Depends on: none
+- Parallel: no
+- Tier: strong: small rules across the gate's CLI
+- Effort: med
+- Mode: single: a fix from a code review
+
 ## E-3 The CLI collects observed evidence before any lens runs (US-2)
 
 ### T-5 Run the tests, lint, type check, scripted attacks and journey runs and write the results with `nio jury evidence`
