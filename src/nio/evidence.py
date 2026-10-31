@@ -180,6 +180,8 @@ def phantoms(root, tasks, base, head):
         cite = ", ".join(t.get("serves") or [])
         for f in dict.fromkeys(filter(None, map(tasks_mod.file_of, t.get("files") or []))):  # old fix tasks hold free text
             if records.git(root, "cat-file", "-e", f"{head}:{f}", full=True)[0]:
+                if t.get("fix"):  # ponytail: an old fix task's `Files:` may hold a juror's free text; a missing file in a fix task goes unreported
+                    continue
                 out.append(finding(f"{t['id']}: {f} doesn't exist", f"{t['id']} names {f}, which is not in the repo at {head[:8]}", cite, f))
             elif f not in in_diff:
                 out.append(finding(f"{t['id']}: {f} isn't in the epic's diff", f"{t['id']} names {f}, which no commit of the epic changed", cite, f))

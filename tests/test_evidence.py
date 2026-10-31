@@ -3172,6 +3172,13 @@ def test_a_symbol_named_only_under_nio_is_still_an_orphan():
     print("ok")
 
 
+def test_a_fix_tasks_free_text_files_piece_is_no_phantom():
+    root, base, head = phantom_repo({}, [("T-1", {"src/real.py": "def real():\n    return 1\n\n\nreal()\n"})])
+    assert phantoms(root, [{**task("T-1", "src/real.py", "hooks.ALLOW"), "fix": True}], base, head) == []
+    assert naming(phantoms(root, [task("T-1", "src/real.py", "src/gone.py")], base, head), "src/gone.py"), "a planned task's missing file must still count"
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
