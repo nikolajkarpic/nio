@@ -161,9 +161,13 @@ TEST_FILE = re.compile(r"(^|[/_.-])tests?([/_.-]|$)|\.(test|spec)\.")
 DEFINES = re.compile(r"^\s*(?:async\s+)?(?:def|class|function)\s+(\w+)")
 
 
+PRIVATE = [f":(exclude,glob){x}" for x in (".nio/runs/**", ".nio/memory/**", ".nio/specs/*/jury/**", ".nio/specs/*/history.jsonl", ".nio/specs/*/state.json")]
+
+
 def code_diff(root, base, head, *flags):
-    """`git diff` of everything but `.nio/`, which holds ledgers and other jurors' findings: jurors judge independently."""
-    return records.git(root, "diff", *flags, base, head, "--", ".", ":(exclude).nio")
+    """`git diff` of everything but what's private to the jury and the flow: jurors judge independently. The config, tests.md
+    and quickstart.md stay in, since they decide what the evidence runs."""
+    return records.git(root, "diff", *flags, base, head, "--", ".", *PRIVATE)
 
 
 def phantoms(root, tasks, base, head):
@@ -392,11 +396,14 @@ def collect(root, slug, epic, run):
                     "note": "the suite's runner can't be addressed per test, so this misuse test was not run"}
                    for a, (f, n) in zip(attacks, mis) if a["result"] == "not configured"]}
     save(root, run, results)
-    named = zip(("lint check", "type check"), results["checks"])
+    named = list(zip(("lint check", "type check"), results["checks"]))
+    raised = {f["title"] for f in jury.load(root, slug, f"implementation-{epic}")["findings"]}
+    off = [{"title": f"the {name} failed", "severity": "major", "gap": f"the {name} failed and is now not configured", "cite": "", "where": ".nio/config.json"}
+           for name, c in named if c["result"] == "not configured" and f"the {name} failed" in raised]  # turning a check off isn't fixing it
     changed = code_diff(root, base, commit, "--name-only", "--diff-filter=d")
     jury.record_cli(root, slug, f"implementation-{epic}", [
         *phantoms(root, [x for x in implement.tasks_of(root, slug) if x["epic"] == epic], base, commit), *tampering(root, base, commit),
-        *[check_finding(root, name, c, changed) for name, c in named if c["result"] == "failed"]], origin="checks")
+        *[check_finding(root, name, c, changed) for name, c in named if c["result"] == "failed"], *off], origin="checks")
     return [str(path(root, run).relative_to(root))] + skipped + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"] \
         + (["attacks: not configured"] if any(a["result"] == "not configured" for a in attacks) else [])
