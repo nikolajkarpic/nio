@@ -475,3 +475,13 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 - Effort: high
 - Mode: split: clear tests lead the code
 
+### T-48 Fix: The diff jurors read excludes all of `.nio/`, so a task commit can switch off the suite or lint and no one sees it
+- From: J-5 (implementation-E-8, round 1)
+- Files: `src/nio/evidence.py`, `src/nio/jury.py`
+- Serves: CT-6, CT-20, FR-10, J-5
+- Test: TC-11
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
