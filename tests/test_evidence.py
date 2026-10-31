@@ -1576,6 +1576,22 @@ def test_a_missing_evidence_finding_is_recorded_for_it_again():
     print("ok")
 
 
+def test_a_fix_check_output_with_no_matches_does_not_reblock_the_acs():
+    import re
+    root = fix_repo()
+    rejected_round(root, {"title": "one gap"})
+    before = {f["id"] for f in gate_findings(root, cli=True)}
+    finish_fixes(root)
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    impl_out(root, "R-2", verdicts=("J-1: fixed - done",))
+    out = root / f".nio/runs/R-2/jury/{GATE}-conformance.md"
+    out.write_text(re.sub(r"## Matches\n(- .*\n)*\n", "", out.read_text()))  # a fix-check output that omits its matches
+    collected(root, "R-2")
+    new = [f for f in gate_findings(root, cli=True) if f["id"] not in before]
+    assert not [f for f in new if "no passing evidence" in f["title"]], f"a fix check without Matches re-blocked: {new}"
+    print("ok")
+
+
 def test_every_ac_is_recorded_without_passing_evidence_the_cli():
     root, source = join_repo(header="import no_such_module_for_crash\n")  # the suite dies on import; no test runs
     adds, times = def_line(source, "test_adds_two_numbers"), def_line(source, "test_multiplies_two_numbers")
