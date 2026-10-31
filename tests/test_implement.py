@@ -1317,6 +1317,31 @@ def test_ac29_epic_waits_on_its_gate():
     print("ok")
 
 
+def test_ac29_epic_skipped():
+    root = impl(tasks=TWO)
+    finish(root, "T-1")
+    finish(root, "T-2")
+    close(root, "E-1", "skipped: not built")  # an old line: the epic stays closed
+    code, out = flow(root, "next", S)
+    assert "never reviewed: E-1" in out.splitlines() and "task: T-3 " in out, out
+    code, out = flow(root, "claim", S)
+    assert code == 0 and "task: T-3 " in out, out
+    print("ok")
+
+
+def test_ac29_last_epic_merge_names_never_reviewed():
+    root = impl(tasks=TWO)
+    finish(root, "T-1")
+    finish(root, "T-2")
+    close(root, "E-1", "skipped: not built")
+    finish(root, "T-3")
+    close(root, "E-2")  # closed but the pass line is missing: done writes it and prints the merge
+    code, out = flow(root, "done", "implementation-E-2", S, "--by", "human")
+    rows = out.splitlines()
+    assert code == 0 and any(x.startswith("merge:") for x in rows) and "never reviewed: E-1" in rows, (code, out)
+    print("ok")
+
+
 def test_ac30_epic_report():
     root = impl(tasks=ONE)
     failing(root, "test_a")
