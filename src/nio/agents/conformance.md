@@ -16,7 +16,7 @@ Match every acceptance criterion the epic covers to the tests that prove it. You
 
 The context pack from the jury skill, and nothing else:
 - the gate (`implementation`) and the section below for it;
-- the files `nio jury files <slug> implementation` lists: the epic's spec, tasks, the code and tests it changed, and the evidence file with each test's result;
+- the files `nio jury files <slug> implementation-E-n` lists: the epic's spec, contracts, tasks and the code and tests it changed; each test's result is in your pack;
 - the lens output format to answer in.
 
 ## At implementation
