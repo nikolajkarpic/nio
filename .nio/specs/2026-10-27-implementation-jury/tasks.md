@@ -186,7 +186,7 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 ### T-47 Fix: A free-text `Files:` piece of an old fix task reads as a missing file
 - From: J-13 (implementation-E-2, round 2)
 - Files: `src/nio/evidence.py`, `tests/test_evidence.py`
-- Serves: FR-8, J-13, J-14
+- Serves: FR-8, J-13
 - Test: TC-38
 - Depends on: none
 - Parallel: no
