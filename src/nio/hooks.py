@@ -61,7 +61,7 @@ ALLOW = ["check", "query", "get", "pack", "status", "index", "new", "run", "task
          "jury files", "jury check", "jury evidence", "jury pack"]
 # the human's decisions always prompt. Short flags count: argparse takes --c for --commit and --h for --human.
 # ponytail: pattern matching on the command text, a deterrent and not a boundary; the CLI's own rules still apply
-ASK = ["*human*", "flow done *--c*", "flow done *--h*", "jury check *--h*"]
+ASK = ["*human*", "flow done *--c*", "flow done *--h*", "jury check *--h*", "jury plan *--pick*"]
 
 
 def allow(root, shared):

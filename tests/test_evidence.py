@@ -2907,6 +2907,28 @@ def test_expect_adversary_alone_cant_reach_approved():
     print("ok")
 
 
+def test_a_pick_is_refused_under_the_cap_and_cannot_drop_a_collected_lens():
+    from nio import jury
+    root = lens_repo(["auth", "external-input"])  # four runs, the cap is six
+    try:
+        jury.plan(root, "s", GATE, pick="conformance,correctness")
+        raise AssertionError("a pick was taken with the plan under the cap")
+    except ValueError as e:
+        assert "cap" in str(e), e
+    assert not (root / ".nio/specs/s/jury").exists(), "a refused pick wrote a ledger"
+    root = capped()
+    jury.plan(root, "s", GATE, pick=",".join(FIVE))
+    led = jury.load(root, "s", GATE)
+    led["collected"] = {f".nio/runs/R-1/jury/{GATE}-security.md": "x"}
+    jury.save(root, led)
+    try:
+        jury.plan(root, "s", GATE, pick="conformance,correctness,adversary,risk-rollback")
+        raise AssertionError("a second pick dropped a lens with collected output")
+    except ValueError as e:
+        assert "security" in str(e), e
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:

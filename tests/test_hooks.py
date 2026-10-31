@@ -120,6 +120,7 @@ def test_allow():
         for cmd in ("flow red", "flow green", "flow seen", "flow abandon", "flow unblock", "hooks"):
             assert not any(cmd in r for r in rules), cmd
         assert "Bash(nio *human*)" in cfg["permissions"]["ask"] and "Bash(nio flow done *--c*)" in cfg["permissions"]["ask"]
+        assert "Bash(nio jury plan *--pick*)" in cfg["permissions"]["ask"]
         assert hooks.allow(root, True) == root / ".claude/settings.json"
         local.write_text("{broken")
         try:

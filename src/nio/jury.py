@@ -307,7 +307,12 @@ def plan(root, slug, gate, extra=(), pick=None):
         if unknown or [c for c in core if c not in picked]:
             raise ValueError(f"--pick {pick}: " + (f"not planned: {', '.join(unknown)}" if unknown else
                              f"cannot drop {', '.join(c for c in core if c not in picked)} (a core lens always runs)"))
+        if not over:
+            raise ValueError(f"--pick {pick}: the plan is {len(lenses)} runs, within the cap of {cap}; nothing to pick")
         led = load(root, slug, gate)
+        held = [x for x in lenses if x not in picked and any(k.endswith(f"{gate}-{x}.md") for k in led.get("collected", {}))]
+        if held:
+            raise ValueError(f"--pick {pick}: cannot drop {', '.join(held)} (its output is already collected)")
         led.update(picked=picked, dropped=[x for x in lenses if x not in picked])
         save(root, led)
     out = [f"tier: {tier}" + (f" ({', '.join(sorted(set(risk) & HIGH_RISK) or risk)})" if risk else ""),
