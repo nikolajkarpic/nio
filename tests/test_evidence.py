@@ -3179,6 +3179,19 @@ def test_a_fix_tasks_free_text_files_piece_is_no_phantom():
     print("ok")
 
 
+def test_a_commit_that_unsets_the_lint_check_shows_in_the_pack_and_closes_nothing():
+    root = broken_repo()
+    cli_round(root)
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": JOIN_SUITE}}))
+    finish_fixes(root)
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    lint = next(f for f in gate_findings(root, cli=True) if "lint" in f["title"])
+    assert lint["status"] != "fixed", "turning the check off counted as fixing it"
+    text = said(root, "jury", "pack", "s", GATE, "--lens", "correctness", "--run", "R-2")
+    assert ".nio/config.json" in text and ".nio/specs/s/jury/" not in text, "the pack hides the config or shows the ledger"
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
