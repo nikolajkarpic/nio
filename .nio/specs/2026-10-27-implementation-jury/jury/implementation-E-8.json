@@ -196,14 +196,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 1
     },
     {
       "id": "J-5",
@@ -578,7 +579,7 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "rerun",
   "recorded": [],
   "versions": {
     "1": "caafa1bec6779436ac77a0c4b7f5ef310ed8354f"
