@@ -2,7 +2,7 @@
 gate: implementation-E-8
 subject: 2026-10-27-implementation-jury
 round: 1
-outcome: rejected
+outcome: rerun
 ---
 # Implementation-e-8 jury: 2026-10-27-implementation-jury
 
@@ -13,7 +13,7 @@ outcome: rejected
 | J-1 | major | gap | AC-33, AC-35, AC-50 | cli | confirmed | open |  | new, 0 |
 | J-2 | major | gap | AC-32, AC-40 | cli | confirmed | open |  | new, 0 |
 | J-3 | major | gap | AC-1, AC-40 | cli | confirmed | open |  | new, 0 |
-| J-4 | major | gap |  | cli | confirmed | open |  | new, 0 |
+| J-4 | major | gap |  | cli | confirmed | fixed |  | absent, 0 |
 | J-5 | major | gap | CT-6, CT-20, FR-10 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-6 | major | gap | CT-17, FR-26 | adversary | confirmed | open |  | new, 0 |
 | J-7 | major | gap | CT-15, FR-44, AC-58, AC-59 | adversary | confirmed | open |  | new, 0 |
