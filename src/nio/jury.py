@@ -603,7 +603,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
     save(root, led)
     for path in new if impl else []:  # the conformance lens's matches are joined to the results (CT-21)
         matches = re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", path.read_text(), re.M | re.S)
-        if path.stem == f"{gate}-conformance" and led["jurors"][path.stem]["valid"]:
+        if path.stem == f"{gate}-conformance" and led["jurors"][path.stem]["valid"] and (matches or not review):  # a fix check may omit Matches: keep the earlier evidence
             results = evidence.load(root, run)
             evidence.current(root, slug, epic, results)
             evidence.join(root, slug, epic, matches[1].splitlines() if matches else [], results)
