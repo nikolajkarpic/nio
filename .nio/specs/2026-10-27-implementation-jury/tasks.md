@@ -496,3 +496,14 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 - Tier: strong: a fix from a jury finding
 - Effort: med
 - Mode: single: a fix from a jury finding
+
+### T-50 Fix: A change request is matched to a finding by free-text search, so one request can settle or reject another finding
+- From: J-7 (implementation-E-8, round 1)
+- Files: `src/nio/jury.py`
+- Serves: CT-15, FR-44, AC-58, AC-59
+- Test: TC-46
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding

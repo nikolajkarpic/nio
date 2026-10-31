@@ -16,7 +16,7 @@ outcome: rerun
 | J-4 | major | gap |  | cli | confirmed | fixed |  | absent, 0 |
 | J-5 | major | gap | CT-6, CT-20, FR-10 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-6 | major | gap | CT-17, FR-26 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-7 | major | gap | CT-15, FR-44, AC-58, AC-59 | adversary | confirmed | open |  | new, 0 |
+| J-7 | major | gap | CT-15, FR-44, AC-58, AC-59 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-8 | major | gap | AC-50, FR-26, FR-27 | adversary | confirmed | open |  | new, 0 |
 | J-9 | major | risk | CT-2, CT-3, FR-40 | adversary | refuted | refuted |  | new, 0 |
 | J-10 | minor | gap | AC-46 | conformance | grounded | open |  | new, 0 |
@@ -64,6 +64,7 @@ outcome: rerun
 - situation (adversary): `change_for` takes the first (sorted) `C-*.md` whose whole text mentions `J-n` and the gate. `raise_change` copies each finding's lens-written `situation` text into the request. Say J-3 is a code-is-right finding, and its situation text says "same cause as J-1". J-1 is another code-is-right finding at the same gate, with no request of its own yet. `settle` finds J-3's request as J-1's, so no request is raised for J-1. When the human accepts J-3's request, J-1 is disposed `accepted-risk` with `by="human"`, though the human never ruled on J-1.
 - fix: Match on a machine field, not on text. For example, put `finding: J-n` and `gate:` lines in the request's frontmatter and match those exactly, or key the request by the title `Code is right, spec is stale: J-n at <gate>`.
 - validation: confirmed: `change_for` matches on the whole text of any `C-*.md` containing `J-n` and the gate (jury.py:1100). `raise_change` copies each source's free-text `situation` into the request (jury.py:1127). A situation that mentions another finding's ID therefore lets that other finding be held by the request, or be marked `accepted-risk` with `by="human"` when the request is accepted (jury.py:1142-1152).
+- disposition: fix-task by agent: fix task T-50
 
 ### J-8 `check --record` writes `tasks.md` and the ledger with no lock, so two runs together lose a fix task
 - quote: "`tmp = p.with_name(p.name + ".tmp")`"
