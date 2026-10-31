@@ -1048,6 +1048,8 @@ def epic_done(root, gate, slug=None, by=None):
         if not entries and not crashed:
             return 0, [f"{gate} is closed already ({reason}); nothing to do"]
         out = [f"closed {gate}: {reason}"] + [f"merge: {implement.branch(slug)}"] * last
+        if last:
+            out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines + entries)]
         return commit_gate(root, slug, "implementing", entries, state, w, out, gate, message)
 
 
