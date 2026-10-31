@@ -17,7 +17,7 @@ outcome: rerun
 | J-5 | major | gap | CT-6, CT-20, FR-10 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-6 | major | gap | CT-17, FR-26 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-7 | major | gap | CT-15, FR-44, AC-58, AC-59 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-8 | major | gap | AC-50, FR-26, FR-27 | adversary | confirmed | open |  | new, 0 |
+| J-8 | major | gap | AC-50, FR-26, FR-27 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-9 | major | risk | CT-2, CT-3, FR-40 | adversary | refuted | refuted |  | new, 0 |
 | J-10 | minor | gap | AC-46 | conformance | grounded | open |  | new, 0 |
 | J-11 | major | contradiction | CT-20, FR-10 | consistency | refuted | refuted |  | new, 0 |
@@ -71,6 +71,7 @@ outcome: rerun
 - situation (adversary): `epic_done` and the final commit take `flow.lock`. The fix-task path does not. A retry after a timeout, or the human and an agent both running `nio jury check <slug> implementation-E-1 --record`, makes two processes run it at once. Each reads `tasks.md` and computes the same next ID. Both write the same `tasks.md.tmp` path and `os.replace` it, so one finding's task disappears while the ledger says `disposed fix-task`. Nothing reports it.
 - fix: Hold `flow.lock(root, slug)` around the whole of `check --record` at an implementation gate, from the settle step through the commit. Alternatively, use a per-process unique tmp name and re-check `fixes_of` inside the lock.
 - validation: confirmed: `check --record` calls `tasks.append_fix` with no `flow.lock`. The only lock in `check` is the post-commit one at jury.py:1076, and cli.py takes none for jury. `append_fix` computes the next ID from the file it read and writes the fixed path `tasks.md.tmp` (tasks.py:381, 409-414). Two concurrent runs can lose a task while the ledger says `fix-task`.
+- disposition: fix-task by agent: fix task T-51
 
 ### J-9 `jury evidence` is auto-allowed and runs commands that a task commit can change, with the user's full environment
 - quote: "`"jury files", "jury check", "jury evidence", "jury pack"]`"

@@ -507,3 +507,14 @@ retired: [T-4, T-27, T-28, T-29]                      # task IDs removed from th
 - Tier: strong: a fix from a jury finding
 - Effort: med
 - Mode: single: a fix from a jury finding
+
+### T-51 Fix: `check --record` writes `tasks.md` and the ledger with no lock, so two runs together lose a fix task
+- From: J-8 (implementation-E-8, round 1)
+- Files: `src/nio/jury.py`, `src/nio/tasks.py`
+- Serves: AC-50, FR-26, FR-27
+- Test: TC-38
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
