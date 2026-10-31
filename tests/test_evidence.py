@@ -3027,6 +3027,23 @@ def test_an_agent_cannot_dispose_of_tampering_with_a_fix_task_but_record_still_d
     print("ok")
 
 
+def test_a_fix_task_files_names_only_tracked_files():
+    root = fix_repo()
+    a, b = fix_gate(root, {"title": "junk after", "where": "src/one.py collect / compose (`expect`)"},
+                    {"title": "no file", "where": "the evidence module"})
+    ta, tb = append_fix(root, a), append_fix(root, b)
+    now = parsed_tasks(root)
+    assert now[ta]["fields"]["Files"] == "`src/one.py`", now[ta]["fields"]["Files"]
+    fb = [f.strip("`") for f in now[tb]["fields"]["Files"].split(", ")]
+    assert all((root / f).is_file() for f in fb), fb
+    # an old line with the junk raises nothing; a missing real path still does
+    root, base, head = phantom_repo({}, [("T-1", {"src/real.py": "def real():\n    return 1\n\n\nreal()\n"})])
+    junk = task("T-1", "src/real.py", "src/real.py collect / compose (`expect`)", "the evidence module")
+    assert phantoms(root, [junk], base, head) == []
+    assert len(naming(phantoms(root, [task("T-1", "src/gone.py:12 here")], base, head), "src/gone.py")) == 1
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
