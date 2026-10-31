@@ -1096,7 +1096,7 @@ def change_for(root, slug, gate, fid):
     named = lambda text, name, end: re.search(rf"(?<![\w-]){name}(?!{end})", text)
     for path in sorted((root / ".nio/memory").rglob("C-*.md")):
         meta, _ = records.parse(path)
-        text = path.read_text()
+        text = re.sub(r"^- situation \(.*$", "", path.read_text(), flags=re.M)  # a juror's words name other findings
         if meta.get("type") == "change" and f"/{slug}/spec.md" in str(meta.get("against")) and named(text, fid, r"\d") and named(text, gate, r"[\w-]"):
             return path, meta
     return None, {}
