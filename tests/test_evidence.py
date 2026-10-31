@@ -1539,6 +1539,19 @@ def test_the_results_list_each_ac_with_that_test_s():
     print("ok")
 
 
+def test_an_ac_proved_by_a_misuse_test_gets_its_result_and_no_blocker():
+    root, source = join_repo()
+    d = root / ".nio/specs/s/tests.md"
+    d.write_text(d.read_text().replace("### TC-3", "## Misuse tests\n\n### TC-3"))  # the subtracts and lists tests are attacks
+    subtracts = def_line(source, "test_subtracts_two_numbers")
+    results, blockers = joined(root, f"AC-1 -> tests/test_calc.py:{def_line(source, 'test_adds_two_numbers')}",
+                               f"AC-2 -> tests/test_calc.py:{subtracts}")
+    assert {(a["file"], a["line"]) for a in results["attacks"]} >= {("tests/test_calc.py", subtracts)}, results["attacks"]
+    assert results["evidence"][1] == {"ac": "AC-2", "file": "tests/test_calc.py", "line": subtracts, "result": "passed"}, results["evidence"]
+    assert not blockers, [f["title"] for f in blockers]
+    print("ok")
+
+
 def test_results_of_another_commit_or_epic_are_refused():
     from nio import jury
     root, source = join_repo()
