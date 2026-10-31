@@ -353,6 +353,7 @@ def collect(root, slug, epic, run):
     attacks = runs(attack_cmds)
     for a, (f, n) in zip(attacks, mis):
         a["command"] = a["command"] or f"{f}:{n}"
+        a["file"], a["line"] = f, defs.setdefault(f, asserts_in(root, commit, f)).get(n.split(".")[-1], (0,))[0]
     found = journeys(root, slug)
     steps = [(c, e) for _, ss, bad in found if not bad for c, e in ss]
     done = iter(runs([c for c, _ in steps]))
@@ -394,6 +395,9 @@ def join(root, slug, epic, matches, results):
     found = [(m[1], m[2], int(m[3])) for x in matches if (m := re.search(r"(AC-\d+)\s*->\s*`?([^\s:`]+):(\d+)", x))]
     hinted = {(h["file"], h["line"]) for h in results.get("hints") or [] if h["kind"] == "test with no assertion"}
     tests = {(t["file"], t["line"]): t for t in results.get("tests") or []}
+    # an attack is a test too; one the runner couldn't address follows the unreadable-runner rule ("unknown")
+    tests.update({(a["file"], a["line"]): {**a, "name": a["file"], "result": "unknown" if a["result"] == "not configured" else a["result"]}
+                  for a in results.get("attacks") or [] if a.get("line")})
     entries = []
     for ac in acs:
         for _, file, line in [m for m in found if m[0] == ac] or [(ac, "", 0)]:
