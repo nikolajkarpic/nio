@@ -4,7 +4,7 @@ import re
 import sys
 from importlib import resources
 
-from nio import agents, evidence, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks
+from nio import agents, evidence, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks, usage
 
 
 def report(errors, warnings, count):
@@ -66,6 +66,15 @@ def main():
     r = sub.add_parser("run", help="start a run: create .nio/runs/<run>/promote.md and print the run ID")
     r.add_argument("slug", nargs="?", help="the effort the run serves (.nio/specs/<slug>/)")
     r.add_argument("target", nargs="?", help="the stage or task (T-n) it serves; written to the run's flow.json")
+    us = sub.add_parser("usage", help="record what a run spends: install the agent hooks, or write an effort's summary")
+    ussub = us.add_subparsers(dest="usage_cmd", required=True)
+    ui = ussub.add_parser("install", help="install the hooks that timestamp each agent and shell call")
+    ui.add_argument("--host", default="claude", choices=sorted(usage.HOSTS))
+    uscope = ui.add_mutually_exclusive_group(required=True)
+    uscope.add_argument("--personal", action="store_true", help="this clone only: .claude/settings.local.json, gitignored")
+    uscope.add_argument("--shared", action="store_true", help="everyone on the repo: .claude/settings.json, to commit")
+    ussub.add_parser("event", help="record one hook payload from stdin; the hooks call this").add_argument("host", choices=sorted(usage.HOSTS))
+    ussub.add_parser("report", help="write .nio/specs/<slug>/usage.json without committing it").add_argument("slug")
     ag = sub.add_parser("agents", help="agent cards: render them for each host, or check which model they ran on")
     agsub = ag.add_subparsers(dest="agents_cmd", required=True)
     agsub.add_parser("sync", help="render the shipped, personal and team cards as .claude/agents and .codex/agents files")
@@ -147,6 +156,9 @@ def main():
         s.add_argument("--by", required=True, **by)
     a = p.parse_args()
 
+    if a.cmd == "usage" and a.usage_cmd == "event":  # before repo_root: a hook must never fail the agent's call
+        usage.record(a.host)
+        return
     root = records.repo_root()
     if a.cmd == "new":
         try:
@@ -243,6 +255,15 @@ def main():
         try:
             for path in hooks.install(root):
                 print(path)
+        except ValueError as e:
+            sys.exit(f"error: {e}")
+    elif a.cmd == "usage":
+        try:
+            if a.usage_cmd == "install":
+                print(f"wrote {usage.HOSTS[a.host]['install'](root, a.shared).relative_to(root)}")
+            else:
+                path = usage.write(root, a.slug)
+                print(path.relative_to(root) if path else f"nothing recorded for {a.slug}")
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "agents":

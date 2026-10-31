@@ -19,7 +19,7 @@ A worker runs no `nio flow` command, except in single mode `nio flow red` and `n
 ## Inputs and outputs
 
 - **Input:** the slug of an effort at implementing (`nio flow next` names this skill), with a `nio: approve tasks`
-  commit and `tests.suite` set in `.nio/config.json` (the command that runs the whole test suite).
+  commit and `tests.suite` set in `.nio/config.json` (the command that runs the whole test suite, which runs at the baseline and for the task closing each epic; other tasks run only their own test). For a slow suite, set `tests.epic` to a faster command: it replaces the suite at each epic's end, and the full suite then runs only when the last epic closes.
 - **Outputs:** one `T-n: <title>` commit per done task on `nio/<slug>`, never merged; the task lines `nio flow` keeps;
   a change request for each spec problem a worker finds; the epic reports and notices passed on to the human.
 
