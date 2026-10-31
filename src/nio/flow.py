@@ -1007,6 +1007,9 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         entries = owed + ([] if gated and pending_pass(lines, stage, ev["verdict"]) else [line] + skips)
         if not gated:
             write(root, slug, entries, state, w, stage)
+            if to == "done":
+                from nio import usage
+                out += usage.finish(root, slug)
             return 0, out
         return commit_gate(root, slug, stage, entries, state, w, out)
 
