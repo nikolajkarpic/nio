@@ -172,11 +172,12 @@ def phantoms(root, tasks, base, head):
     def finding(title, gap, cite, where):
         return {"title": title, "severity": "major", "gap": gap, "cite": cite, "where": where}
 
+    from nio import tasks as tasks_mod
     in_diff = set(records.git(root, "diff", "--name-only", base, head))
     out = []
     for t in tasks:
         cite = ", ".join(t.get("serves") or [])
-        for f in t.get("files") or []:
+        for f in dict.fromkeys(filter(None, map(tasks_mod.file_of, t.get("files") or []))):  # old fix tasks hold free text
             if records.git(root, "cat-file", "-e", f"{head}:{f}", full=True)[0]:
                 out.append(finding(f"{t['id']}: {f} doesn't exist", f"{t['id']} names {f}, which is not in the repo at {head[:8]}", cite, f))
             elif f not in in_diff:

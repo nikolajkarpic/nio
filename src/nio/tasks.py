@@ -89,6 +89,12 @@ def files(value):
     return [f.strip().strip("`") for f in value.split(",") if f.strip().strip("`")]
 
 
+def file_of(entry):
+    """The path a `Files:` entry names, past a `:line` or trailing words; None when it names no file-like path."""
+    m = re.search(r"[\w./-]*\w\.\w+", entry)
+    return m[0] if m else None
+
+
 def ids(value):
     return ID.findall(value)
 
@@ -378,7 +384,13 @@ def append_fix(root, slug, epic, finding):
         nl = "\r\n" if "\r\n" in text else "\n"
         cites = [c for c in finding["cites"] if re.fullmatch(r"(AC|FR|CT)-\d+", c)]
         serves = cites + [fid] * (not any(c.startswith("AC-") for c in cites))  # `tasks.check`: an AC, or the finding itself
-        where = ", ".join("`" + re.sub(r":\d+(-\d+)?$", "", f) + "`" for f in files(finding["where"]))
+        tracked = set(records.git(root, "ls-files"))
+        named = list(dict.fromkeys(f for f in map(file_of, files(finding["where"])) if f in tracked))
+        if not named:  # as `evidence.check_finding`: the epic's changed files
+            from nio import evidence
+            commits = evidence.commits_of(root, slug, epic)
+            named = evidence.code_diff(root, evidence.parent_of(root, commits[-1]), commits[0], "--name-only", "--diff-filter=d") if commits else []
+        where = ", ".join(f"`{f}`" for f in named)
         ask = "Justify or remove" if finding.get("gap") == "unrequested" else "Fix"
         block = [f"### {tid} {ask}: {finding['title']}", f"- From: {src}", f"- Files: {where}", f"- Serves: {', '.join(serves)}",
                  f"- Test: {fix_test(root, slug, finding, cites)}", "- Depends on: none", "- Parallel: no",
