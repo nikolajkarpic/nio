@@ -839,14 +839,14 @@ def refute(led, path):
     return out
 
 
-def dispose(root, slug, gate, fid, disposition, by, note, change=""):
+def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=False):
     led = load(root, slug, gate)
     f = next((g for g in led["findings"] if g["id"] == fid), None)
     if not f:
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
     if disposition not in DISPOSITIONS or by not in BY or not note.strip():
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
-    if f.get("tampering") and by != "human" and disposition != "fix-task":  # a task repairs the test; only accepting it is the human's
+    if f.get("tampering") and by != "human" and not routed:  # only the human disposes of it; `tasks.append_fix` alone routes it to its fix task (FR-26)
         raise ValueError(f"{fid} is test tampering; only the human disposes of it (--by human)")
     if disposition in PLAN_ONLY and gate != "plan":
         raise ValueError(f"`{disposition}` belongs to the plan gate")
