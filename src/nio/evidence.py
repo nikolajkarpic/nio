@@ -109,20 +109,22 @@ def one_test(suite, file, name):
 
 
 def journeys(root, slug):
-    """[(QS id, [(step command, [expected lines or None])])]: quickstart.md's `auto` scenarios. Expected is `contains:`
-    lines, or None for exact output."""
+    """[(QS id, [(step command, expected)], problem)]: quickstart.md's `auto` scenarios. Expected is `contains:` lines, or
+    exact output. problem is "" or says the scenario has no steps, or fewer parsed than its numbered list holds."""
     p = Path(root) / ".nio/specs" / slug / "quickstart.md"
     out = []
     for qs, body in re.findall(r"^### (QS-\d+) [^\n]*; auto\)[^\n]*\n(.*?)(?=^### |\Z)", p.read_text() if p.exists() else "", re.M | re.S):
         steps = re.findall(r"^\d+\. `([^`\n]+)`\s*\n\s*Expected:\s*\n\s*```\n(.*?)```", body, re.M | re.S)
-        out.append((qs, [(c, e) for c, e in steps]))
+        listed = len(re.findall(r"^\d+\. ", body, re.M))
+        bad = "no step could be read" if not steps else f"{len(steps)} of {listed} numbered steps could be read" if len(steps) < listed else ""
+        out.append((qs, steps, bad))
     return out
 
 
 def matched(expected, output):
     lines = [x.strip() for x in expected.strip().splitlines()]
     if lines and all(x.startswith("contains:") for x in lines):
-        return all(x[9:].strip() in output for x in lines)
+        return all(x[9:].strip() and x[9:].strip() in output for x in lines)
     return output.strip() == expected.strip()
 
 
@@ -344,10 +346,15 @@ def collect(root, slug, epic, run):
     attacks = runs(attack_cmds)
     for a, (f, n) in zip(attacks, mis):
         a["command"] = a["command"] or f"{f}:{n}"
-    steps = [(c, e) for _, ss in journeys(root, slug) for c, e in ss]
+    found = journeys(root, slug)
+    steps = [(c, e) for _, ss, bad in found if not bad for c, e in ss]
     done = iter(runs([c for c, _ in steps]))
-    journeys_out = []
-    for qs, ss in journeys(root, slug):
+    journeys_out, skipped = [], []
+    for qs, ss, bad in found:
+        if bad:
+            skipped.append(f"{qs}: failed, {bad}")
+            journeys_out.append({"command": "", "result": "failed", "output": f"{qs} is marked auto but {bad}; nothing ran", "cut": 0})
+            continue
         rs = [next(done) for _ in ss]
         ok = all(r["result"] == "passed" and matched(e, r["output"]) for r, (_, e) in zip(rs, ss))
         journeys_out.append({"command": " && ".join(c for c, _ in ss), "result": "passed" if ok else "failed",
@@ -360,7 +367,7 @@ def collect(root, slug, epic, run):
     jury.record_cli(root, slug, f"implementation-{epic}", [
         *phantoms(root, [x for x in implement.tasks_of(root, slug) if x["epic"] == epic], base, commit), *tampering(root, base, commit),
         *[check_finding(root, name, c, changed) for name, c in named if c["result"] == "failed"]], origin="checks")
-    return [str(path(root, run).relative_to(root))] + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
+    return [str(path(root, run).relative_to(root))] + skipped + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"]
 
 
