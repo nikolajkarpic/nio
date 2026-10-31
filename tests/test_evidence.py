@@ -3192,6 +3192,18 @@ def test_a_commit_that_unsets_the_lint_check_shows_in_the_pack_and_closes_nothin
     print("ok")
 
 
+def test_a_crashed_approval_is_mended_though_another_effort_has_the_same_message():
+    root, _ = approved_with_minors()
+    assert epic_done(root).returncode == 0
+    git(root, "reset", "-q", "--soft", "HEAD~1")
+    git(root, "reset", "-q")
+    git(root, "commit", "-q", "--allow-empty", "-m", "nio: approve implementation-E-1")  # another effort's E-1
+    again = epic_done(root)
+    assert "nothing to do" not in again.stdout, again.stdout
+    assert ".nio/specs/s" in git(root, "log", "-1", "--name-only", "--format=", "--grep=^nio: approve implementation-E-1$"), "the mend wasn't committed"
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
