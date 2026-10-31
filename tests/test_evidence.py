@@ -2942,6 +2942,15 @@ def test_an_auto_journey_that_does_not_parse_fails_and_an_empty_contains_never_m
     assert not ev.matched("contains:", "anything")
 
 
+def test_an_unknown_result_is_not_evidence_for_a_test_that_is_not_in_the_file():
+    from nio import evidence as ev
+    root, _ = join_repo()
+    results = {"tests": [{"name": "test_gone", "file": "tests/test_calc.py", "line": 0, "result": "unknown"}], "hints": []}
+    out = ev.join(root, "s", "E-1", ["AC-1 -> tests/test_calc.py:0"], results)
+    assert [f["cite"] for f in out if f["cite"] == "AC-1"], "line 0 unknown counted as evidence"
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:

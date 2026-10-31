@@ -360,7 +360,10 @@ def collect(root, slug, epic, run):
         journeys_out.append({"command": " && ".join(c for c, _ in ss), "result": "passed" if ok else "failed",
                              "output": "\n".join(r["output"] for r in rs), "cut": sum(r["cut"] for r in rs)})
     results = {**load(root, run), "commit": commit, "tests": tests, "suite": suite, "checks": runs([t.get("lint"), t.get("typecheck")]),
-               "attacks": attacks, "journeys": journeys_out, "hints": hints(root, base, commit)}
+               "attacks": attacks, "journeys": journeys_out, "hints": hints(root, base, commit) + [
+                   {"kind": "attack not run", "file": f, "name": n, "line": 0, "interpretive": False,
+                    "note": "the suite's runner can't be addressed per test, so this misuse test was not run"}
+                   for a, (f, n) in zip(attacks, mis) if a["result"] == "not configured"]}
     save(root, run, results)
     named = zip(("lint check", "type check"), results["checks"])
     changed = code_diff(root, base, commit, "--name-only", "--diff-filter=d")
@@ -368,7 +371,8 @@ def collect(root, slug, epic, run):
         *phantoms(root, [x for x in implement.tasks_of(root, slug) if x["epic"] == epic], base, commit), *tampering(root, base, commit),
         *[check_finding(root, name, c, changed) for name, c in named if c["result"] == "failed"]], origin="checks")
     return [str(path(root, run).relative_to(root))] + skipped + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
-                                                       if c["result"] == "not configured"]
+                                                       if c["result"] == "not configured"] \
+        + (["attacks: not configured"] if any(a["result"] == "not configured" for a in attacks) else [])
 
 
 def join(root, slug, epic, matches, results):
@@ -394,7 +398,7 @@ def join(root, slug, epic, matches, results):
     out = []
     for ac in acs:
         mine = [e for e in entries if e["ac"] == ac]
-        if not any(e["result"] in ("passed", "unknown") for e in mine):
+        if not any(e["result"] == "passed" or (e["result"] == "unknown" and e["line"]) for e in mine):
             why = "; ".join(f"{e['_name'] or e['file'] or 'no test'} {e['result']}" for e in mine)
             out.append({"title": f"{ac} has no passing evidence", "severity": "blocker", "gap": "missing", "cite": ac, "where": mine[0]["file"] or ", ".join(dict.fromkeys(f for t in implement.tasks_of(root, slug) if t["epic"] == epic and ac in t["serves"] for f in t["files"])) or ac,
                         "situation": f"no passing test proves {ac}: {why}", "fix": f"add or fix a test that proves {ac}"})
