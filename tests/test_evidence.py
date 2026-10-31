@@ -989,7 +989,7 @@ def pack_repo(files, before=None):
     root = epic_repo(["T-1"])
     git(root, "config", "user.name", "t")
     git(root, "config", "user.email", "t@t")
-    files = {"src/one.py": "DIFF_MARK = 42\n\n\ndef f():\n    return DIFF_MARK\n", **files}
+    files = {"src/one.py": "DIFF_MARK = 42\n\n\ndef f():\n    return DIFF_MARK\n\n\nf()\n", **files}
     d = root / ".nio/specs/s"
     (d / "tasks.md").write_text(PACK_TASKS.format(files=", ".join(f"`{x}`" for x in files)))
     (d / "spec.md").write_text(PACK_SPEC)
@@ -3041,6 +3041,134 @@ def test_a_fix_task_files_names_only_tracked_files():
     junk = task("T-1", "src/real.py", "src/real.py collect / compose (`expect`)", "the evidence module")
     assert phantoms(root, [junk], base, head) == []
     assert len(naming(phantoms(root, [task("T-1", "src/gone.py:12 here")], base, head), "src/gone.py")) == 1
+    print("ok")
+
+
+def test_template_and_files_work_at_the_implementation_gate():
+    root = fix_repo()
+    assert "## Findings" in said(root, "jury", "template")
+    listed = said(root, "jury", "files", "s", GATE).split()
+    assert ".nio/specs/s/spec.md" in listed and "src/one.py" in listed, listed
+    assert nio(root, "jury", "files", "s", "implementation").returncode != 0
+    print("ok")
+
+
+def test_a_finding_can_be_ruled_on_while_its_fix_tasks_wait():
+    root = fix_repo()
+    tasks = rejected_round(root, {"title": "one gap"})
+    fid = next(iter(tasks))
+    said(root, "jury", "dispose", "s", GATE, fid, "accepted-risk", "--by", "human", "--note", "not wanted")
+    done = nio(root, "jury", "collect", "s", GATE, "--run", "R-1")
+    assert done.returncode != 0 and "not finished" in done.stderr, done.stderr
+    print("ok")
+
+
+def per_test(results, name):
+    return next(t["result"] for t in results["tests"] if t["name"].endswith(name))
+
+
+def test_a_pytest_q_failure_is_no_crash_and_a_test_not_named_is_run_alone():
+    root, _ = join_repo(difference=5)
+    # a stand-in for `pytest -q`: no "collected" line, one failure named; alone, a test passes unless it is subtracts
+    (root / "pytest").write_text("import sys\nif sys.argv[1:]:\n    sys.exit('subtracts' in sys.argv[1])\n"
+                                 "print('FAILED tests/test_calc.py::CalcTest::test_subtracts_two_numbers - x')\nprint('1 failed, 3 passed')\nsys.exit(1)\n")
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": "python3 pytest"}}))
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Stand-in")
+    start(root)
+    results = evidence().load(root, "R-1")
+    assert per_test(results, "test_adds_two_numbers") == "passed", results["tests"]
+    assert per_test(results, "test_subtracts_two_numbers") == "failed", results["tests"]
+    print("ok")
+
+
+def test_a_test_a_failed_suite_hid_is_not_passed():
+    root, _ = join_repo(product=5, difference=5)  # alphabetical: multiplies stops the run, subtracts never runs
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": "python3 -m unittest -f tests.test_calc"}}))
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Stop at the first failure")
+    start(root)
+    results = evidence().load(root, "R-1")
+    assert per_test(results, "test_subtracts_two_numbers") == "failed", results["tests"]
+    assert per_test(results, "test_adds_two_numbers") == "passed", results["tests"]
+    print("ok")
+
+
+def test_a_fix_check_asks_conformance_for_matches_and_a_partial_list_keeps_the_rest():
+    import re
+    root = fix_repo()
+    rejected_round(root, {"title": "one gap"})
+    finish_fixes(root)
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    pack = said(root, "jury", "pack", "s", GATE, "--lens", "conformance", "--run", "R-2")
+    assert "## Matches" in pack and "AC-1" in pack and "test_one" in pack, pack[:600]
+    impl_out(root, "R-2", verdicts=("J-1: fixed - done",))
+    out = root / f".nio/runs/R-2/jury/{GATE}-conformance.md"
+    out.write_text(re.sub(r"- AC-[24] -> .*\n", "", out.read_text()))
+    collected(root, "R-2")
+    assert not [f for f in gate_findings(root, cli=True) if "no passing evidence" in f["title"] and f["status"] == "open"]
+    print("ok")
+
+
+def test_stale_evidence_is_rejudged_when_the_fix_check_omits_matches():
+    root = fix_repo()
+    rejected_round(root, {"title": "one gap"})
+    (root / "tests/test_calc.py").write_text((root / "tests/test_calc.py").read_text().replace("self.assertEqual(1, 1)", "self.assertEqual(1, 2)"))
+    finish_fixes(root)
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
+    impl_out(root, "R-2", verdicts=("J-1: fixed - done",))
+    out = root / f".nio/runs/R-2/jury/{GATE}-conformance.md"
+    out.write_text(re.sub(r"## Matches\n(- .*\n)*\n", "", out.read_text()))
+    collected(root, "R-2")
+    assert [f for f in gate_findings(root, cli=True) if "no passing evidence" in f["title"] and f["status"] == "open"]
+    print("ok")
+
+
+def test_a_needs_more_conformance_output_is_not_joined_and_a_good_rerun_closes_cli_blockers():
+    from nio import jury
+    root = fix_repo()
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-1")
+    impl_out(root, "R-1")
+    out = root / f".nio/runs/R-1/jury/{GATE}-conformance.md"
+    good = out.read_text()
+    out.write_text(good.replace("context: sufficient", "context: needs-more"))
+    said(root, "jury", "collect", "s", GATE, "--run", "R-1")
+    assert not [f for f in gate_findings(root, cli=True) if "no passing evidence" in f["title"]]
+    jury.record_cli(root, "s", GATE, [{"title": "AC-1 has no passing evidence", "severity": "blocker", "gap": "missing", "cite": "AC-1", "where": "src/one.py"}], origin="join")
+    out.write_text(good)
+    said(root, "jury", "collect", "s", GATE, "--run", "R-1")
+    assert not [f for f in gate_findings(root, cli=True) if "no passing evidence" in f["title"] and f["status"] == "open"]
+    print("ok")
+
+
+def test_a_collect_refused_on_stale_results_still_joins_on_retry():
+    from nio import jury
+    root = fix_repo()
+    said(root, "jury", "evidence", "s", "E-1", "--run", "R-1")
+    impl_out(root, "R-1")
+    good = evidence().load(root, "R-1")
+    evidence().save(root, "R-1", {**good, "commit": "stale"})
+    assert nio(root, "jury", "collect", "s", GATE, "--run", "R-1").returncode != 0
+    assert not jury.load(root, "s", GATE)["collected"], "the refused collect marked the output collected"
+    evidence().save(root, "R-1", good)
+    said(root, "jury", "collect", "s", GATE, "--run", "R-1")
+    assert evidence().load(root, "R-1")["evidence"], "the retry never joined"
+    print("ok")
+
+
+def test_go_rust_ruby_and_java_tests_are_recognised():
+    e = evidence()
+    named = lambda text: [x[2] for x in e.test_lines(text) if x[2]]
+    assert named("func TestAdds(t *testing.T) {\n") == ["TestAdds"]
+    assert named("#[test]\n#[ignore]\nfn adds() {\n}\nfn helper() {\n}\n") == ["adds"]
+    assert named("  it 'adds' do\n") == ["adds"]
+    assert named("@Test\npublic void adds() {\n}\nvoid helper() {}\n") == ["adds"]
+    print("ok")
+
+
+def test_a_symbol_named_only_under_nio_is_still_an_orphan():
+    root, base, head = phantom_repo({".nio/specs/s/contracts.md": "orphan_thing is planned\n"}, [("T-1", {"src/a.py": "def orphan_thing():\n    return 1\n"})])
+    assert naming(phantoms(root, [], base, head), "orphan_thing"), "a mention in .nio/ counted as a use"
     print("ok")
 
 

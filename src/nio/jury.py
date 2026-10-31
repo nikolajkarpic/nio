@@ -44,13 +44,14 @@ def gate_arg(name):
     raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(sorted(GATES))}, implementation-E-n)")
 
 
-def epic_gate(root, slug, gate):
-    """The epic `implementation-E-n` names, when every task in it, fix tasks included, is done; else ValueError (CT-1)."""
+def epic_gate(root, slug, gate, finished=True):
+    """The epic `implementation-E-n` names, when every task in it, fix tasks included, is done; else ValueError (CT-1).
+    `finished` False checks the name only: a finding can be ruled on while its fix tasks wait."""
     from nio import implement
     m = re.fullmatch(r"implementation-(E-\d+)", gate)
     if not (m and any(t["epic"] == m.group(1) for t in implement.tasks_of(root, slug))):
         raise ValueError(f"the subject of the implementation gate must be an epic from tasks.md as implementation-E-n, not {gate!r}")
-    left = undone(root, slug, m.group(1))
+    left = undone(root, slug, m.group(1)) if finished else []
     if left:
         raise ValueError(f"epic {m.group(1)} is not finished: {', '.join(left)} not done")
     return m.group(1)
@@ -197,6 +198,11 @@ def sources(root, slug, gate):
     """The files a juror at this gate is given, which are also the only files its quotes may come from (#57 FR-42,
     FR-43). The plan gate adds CLAUDE.md and every file a contract binds or a `Like:` line names."""
     folder = root / ".nio/specs" / slug
+    if gate not in GATES:  # an implementation gate: the spec and tasks, and what the epic's commits changed
+        from nio import evidence
+        commits = evidence.commits_of(root, slug, epic_gate(root, slug, gate, finished=False))
+        changed = evidence.code_diff(root, evidence.parent_of(root, commits[-1]), commits[0], "--name-only", "--diff-filter=d")
+        return [p for p in [folder / n for n in ("spec.md", "contracts.md", "tasks.md")] + [root / n for n in changed] if p.is_file()]
     files = [folder / n for n in GATES[gate]]
     if gate == "plan":
         contracts = folder / "contracts.md"
@@ -547,6 +553,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
                 raise ValueError(f"{path.name}: lens {lens} was not picked for {gate} (picked: {', '.join(led['picked'])})")
         # a round judges the epic's last commit; the cites are checked against the spec and contracts (CT-12)
         commit = evidence.commits_of(root, slug, epic)[0]
+        evidence.current(root, slug, epic, evidence.load(root, run))  # before the ledger marks anything collected: a retry must still join
         text = ground = "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in ("spec.md", "contracts.md")) if p.exists())
         human = ""
         planned = re.findall(r"([a-z][a-z-]*) \(", next(x for x in plan(root, slug, gate)[0] if x.startswith("lenses: ")))
@@ -601,11 +608,13 @@ def collect(root, slug, gate, run, expect=(), tier=None):
             led["collected"][f"{run}/{refuter.name}"] = sha
             out += refute(led, refuter)
     save(root, led)
-    for path in new if impl else []:  # the conformance lens's matches are joined to the results (CT-21)
-        matches = re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", path.read_text(), re.M | re.S)
-        if path.stem == f"{gate}-conformance" and led["jurors"][path.stem]["valid"] and (matches or not review):  # a fix check may omit Matches: keep the earlier evidence
-            results = evidence.load(root, run)
-            evidence.current(root, slug, epic, results)
+    if impl:  # the conformance lens's matches are joined to the results (CT-21); each review round re-judges them on its results
+        lens_out = next((p for p in new if p.stem == f"{gate}-conformance"), None)
+        juror = led["jurors"].get(f"{gate}-conformance") or {}
+        usable = lens_out and juror.get("valid") and juror.get("context") != "needs-more"
+        results = evidence.load(root, run)
+        if usable or (review and led.get("matched")):
+            matches = re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", lens_out.read_text(), re.M | re.S) if usable else None
             evidence.join(root, slug, epic, matches[1].splitlines() if matches else [], results)
             evidence.save(root, run, results)
     led = load(root, slug, gate) if impl else led
@@ -794,7 +803,7 @@ def record_cli(root, slug, gate, findings, origin=None):
             g.update(status="open", baseline="unchanged", disposition="", by="", note="", rounds=g["rounds"] + 1, last_round=led["round"],
                      reason="the CLI still reports it after its fix task")
             judged = True
-        elif g["title"] not in reported and awaits_fix_verdict(g):
+        elif g["title"] not in reported and (awaits_fix_verdict(g) or g["status"] in ("open", "noted")):  # gone after a good re-run too
             g.update(status="fixed", baseline="absent", fixed_in=led["round"])
             judged = True
     for f in findings:

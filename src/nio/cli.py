@@ -258,8 +258,8 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "jury":
         try:
-            if a.jury_cmd not in ("answers", "evidence") and a.gate.startswith("implementation"):
-                jury.epic_gate(root, a.slug, a.gate)
+            if getattr(a, "gate", "").startswith("implementation"):  # a ruling needn't wait for the fix tasks; a round does
+                jury.epic_gate(root, a.slug, a.gate, finished=a.jury_cmd in ("plan", "collect"))
             if a.jury_cmd == "evidence":
                 print("\n".join(evidence.collect(root, a.slug, a.epic, a.run)))
             elif a.jury_cmd == "answers":

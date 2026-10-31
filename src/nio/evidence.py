@@ -157,6 +157,7 @@ def parent_of(root, commit):
     return (records.git(root, "rev-parse", "-q", "--verify", f"{commit}^") or records.git(root, "hash-object", "-t", "tree", "/dev/null"))[0]
 
 
+TEST_FILE = re.compile(r"(^|[/_.-])tests?([/_.-]|$)|\.(test|spec)\.")
 DEFINES = re.compile(r"^\s*(?:async\s+)?(?:def|class|function)\s+(\w+)")
 
 
@@ -183,36 +184,47 @@ def phantoms(root, tasks, base, head):
             elif f not in in_diff:
                 out.append(finding(f"{t['id']}: {f} isn't in the epic's diff", f"{t['id']} names {f}, which no commit of the epic changed", cite, f))
     defined, file = [], ""
-    for line in records.git(root, "diff", "-U0", base, head):
+    for line in code_diff(root, base, head, "-U0"):
         if line.startswith("+++ "):
             file = line[6:] if line.startswith("+++ b/") else ""
         elif line.startswith("+") and (m := DEFINES.match(line[1:])):
             name = m[1]
-            if not (name.startswith("test_") or (name.startswith("__") and name.endswith("__"))):
+            if not (TEST_FILE.search(file) or name.startswith("test_") or (name.startswith("__") and name.endswith("__"))):  # a runner finds what a test file defines
                 defined.append((name, file))
     for name, file in dict.fromkeys(defined):
-        hits = [x.split(":", 3)[-1] for x in records.git(root, "grep", "-nwF", "-e", name, head)]
+        hits = [x.split(":", 3)[-1] for x in records.git(root, "grep", "-nwF", "-e", name, head, "--", ".", ":(exclude).nio")]
         if not [x for x in hits if not (m := DEFINES.match(x)) or m[1] != name]:
             cite = next((", ".join(t.get("serves") or []) for t in tasks if file in (t.get("files") or [])), "")
             out.append(finding(f"{name} in {file} is never used", f"{name} is defined in {file} and mentioned nowhere else", cite, file))
     return out
 
 
-TEST_DEF = re.compile(r"^\s*(?:async\s+)?def\s+(test\w*)|^\s*(?:it|test|describe)(?:\.\w+)?\(\s*['\"`]([^'\"`]+)")
-SKIP = re.compile(r"pytest\.mark\.skip|pytest\.skip\(|unittest\.skip|\bskipTest\(|\.skip\(|\bx(?:it|test|describe)\(|@Disabled|#\[ignore\]")
+TEST_DEF = re.compile(r"^\s*(?:async\s+)?def\s+(test\w*)|^\s*(?:it|test|describe)(?:\.\w+)?[(\s]\s*['\"`]([^'\"`]+)|^\s*func\s+(Test\w*)")
+MARKED = re.compile(r"#\[(?:\w+::)?test\]|@Test\b")  # Rust and Java: the marker sits above the function
+MARKED_FN = re.compile(r"^\s*(?:(?:pub|public|async)\s+)*(?:fn|void)\s+(\w+)")
+SKIP = re.compile(r"pytest\.mark\.skip|pytest\.skip\(|unittest\.skip|\bskipTest\(|\.skip\(|\bt\.Skip\(|\bx(?:it|test|describe)[(\s]|@Disabled|#\[ignore\]")
+
+
+def test_lines(text):
+    """(line number, line, the test it starts or None) per line."""
+    marked = False
+    for n, line in enumerate(text.splitlines(), 1):
+        m = TEST_DEF.match(line) or (marked and MARKED_FN.match(line))
+        yield n, line, next(filter(None, m.groups())) if m else None
+        marked = bool(MARKED.search(line)) or (marked and line.lstrip().startswith(("#[", "@")))
 
 
 def tests_in(root, rev, f):
     """{test name: count of skip markers on it}: its decorators and body, or the skip call on its own line."""
     text = records.git(root, "show", f"{rev}:{f}", full=True)
     out, pending, cur = {}, 0, None
-    for line in text[1].splitlines() if not text[0] else []:
+    for _, line, name in test_lines(text[1] if not text[0] else ""):
         s = len(SKIP.findall(line))
-        if m := TEST_DEF.match(line):
-            cur = m[1] or m[2]
+        if name:
+            cur = name
             out[cur] = out.get(cur, 0) + pending + s
             pending = 0
-        elif line.lstrip().startswith("@"):
+        elif line.lstrip().startswith(("@", "#[")):
             pending += s
         elif cur:
             out[cur] += s
@@ -225,7 +237,7 @@ def tampering(root, base, head):
     out = []
     for line in records.git(root, "diff", "--name-status", "--no-renames", base, head):
         status, _, f = line.partition("\t")
-        if not re.search(r"(^|[/_.-])tests?([/_.-]|$)|\.(test|spec)\.", f) or status == "A":
+        if not TEST_FILE.search(f) or status == "A":
             continue
         before, after = tests_in(root, base, f), tests_in(root, head, f)
         for name, n in before.items():
@@ -245,7 +257,7 @@ STRING = re.compile(r"\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'")
 def added_lines(root, base, head):
     """{file: {line numbers the diff adds}}."""
     out, file = {}, ""
-    for line in records.git(root, "diff", "-U0", base, head):
+    for line in code_diff(root, base, head, "-U0"):
         if line.startswith("+++ "):
             file = line[6:] if line.startswith("+++ b/") else ""
         elif m := re.match(r"@@ -\S+ \+(\d+)(?:,(\d+))? @@", line):
@@ -257,9 +269,9 @@ def asserts_in(root, rev, f):
     """{test name: (def line, [its assertion lines])}, read line by line like `tests_in`."""
     text = records.git(root, "show", f"{rev}:{f}", full=True)
     out, cur = {}, None
-    for n, line in enumerate(text[1].splitlines() if not text[0] else [], 1):
-        if m := TEST_DEF.match(line):
-            cur = m[1] or m[2]
+    for n, line, name in test_lines(text[1] if not text[0] else ""):
+        if name:
+            cur = name
             out[cur] = (n, [])
         elif cur and ASSERT.search(line):
             out[cur][1].append(line.strip())
@@ -288,7 +300,7 @@ def hints(root, base, head):
                         isinstance(s, ast.Pass) or (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant))
                         or (isinstance(s, ast.Raise) and "NotImplementedError" in ast.dump(s)) for s in node.body):
                     out.append(hint("possible stub", f, node.name, node.lineno, True, "its body is empty or only a TODO"))
-        if re.search(r"(^|[/_.-])tests?([/_.-]|$)|\.(test|spec)\.", f):
+        if TEST_FILE.search(f):
             after = asserts_in(root, head, f)
             before = asserts_in(root, base, f) if records.git(root, "cat-file", "-e", f"{base}:{f}", full=True)[0] == 0 else {}
             for name, (line, found) in after.items():
@@ -303,7 +315,7 @@ def hints(root, base, head):
             if n in lines and (m := DEFINES.match(line)) and not (m[1].startswith("test_") or m[1].startswith("__")):
                 defined.append((m[1], f, n))
     for name, f, n in defined:
-        hits = [x.split(":", 3)[-1] for x in records.git(root, "grep", "-nwF", "-e", name, head)]
+        hits = [x.split(":", 3)[-1] for x in records.git(root, "grep", "-nwF", "-e", name, head, "--", ".", ":(exclude).nio")]
         uses = [x for x in hits if not ((m := DEFINES.match(x)) and m[1] == name)]
         if uses and not any(re.search(rf"\b{name}\b", STRING.sub('""', x)) for x in uses):
             out.append(hint("uncertain reference", f, name, n, True, "uncertain: it is only mentioned in strings, maybe called dynamically"))
@@ -334,13 +346,14 @@ def collect(root, slug, epic, run):
     mis, rest = misuse(root, slug)
     suite = (runs([t.get("suite")]) if t.get("suite") else [{"result": "not configured", "output": "", "cut": 0}])[0]
     code_ok = suite["result"] == "passed"
-    # ponytail: a test is failed when a failing-test line of the runner's summary names it, never found in the output otherwise;
-    # a suite that crashed ran none, and a runner without a reader gives "unknown" (exit code and output stay in `suite`)
+    # ponytail: a test is failed when a failing-test line of the runner's summary names it. On a failed suite any other is
+    # run alone, since `-x`, a class setup error or a cut output hide it. A suite that crashed ran none, and a runner
+    # without a reader gives "unknown" (exit code and output stay in `suite`)
     name = implement.runner(t.get("suite") or "")
     fail, _ = implement.SUMMARY.get(name, (None, None))
     failing = re.findall(fail, suite["output"], re.M) if fail else []
     crashed = bool(implement.wrong_reason(name, 0 if code_ok else 1, suite["output"])) or "\ntimed out after" in suite["output"] \
-        or (fail is not None and suite["result"] != "passed" and not re.search(implement.SUMMARY[name][1], suite["output"], re.M))
+        or (fail is not None and suite["result"] != "passed" and not failing and not re.search(implement.SUMMARY[name][1], suite["output"], re.M))
     defs = {}
     tests = []
     for file, tname in rest:
@@ -348,13 +361,16 @@ def collect(root, slug, epic, run):
         line = defs.setdefault(file, asserts_in(root, commit, file)).get(short, (0,))[0]
         result = (("unknown" if code_ok else "failed") if not fail else "didn't run" if crashed or not line
                   else "failed" if any(re.search(rf"\b{re.escape(short)}\b", x) for x in failing)
-                  else "passed" if code_ok or failing else "unknown")
+                  else "passed" if code_ok else "alone")
         tests.append({"name": tname, "file": file, "line": line, "result": result})
+    alone = [x for x in tests if x["result"] == "alone"]
+    for x, r in zip(alone, runs([one_test(t.get("suite"), x["file"], x["name"]) for x in alone]) if alone else []):
+        x["result"] = "passed" if r["result"] == "passed" else "failed"
     attack_cmds = [one_test(t.get("suite"), f, n) for f, n in mis]
     attacks = runs(attack_cmds)
     for a, (f, n) in zip(attacks, mis):
         a["command"] = a["command"] or f"{f}:{n}"
-        a["file"], a["line"] = f, defs.setdefault(f, asserts_in(root, commit, f)).get(n.split(".")[-1], (0,))[0]
+        a["name"], a["file"], a["line"] = n, f, defs.setdefault(f, asserts_in(root, commit, f)).get(n.split(".")[-1], (0,))[0]
     found = journeys(root, slug)
     steps = [(c, e) for _, ss, bad in found if not bad for c, e in ss]
     done = iter(runs([c for c, _ in steps]))
@@ -397,16 +413,23 @@ def join(root, slug, epic, matches, results):
     hinted = {(h["file"], h["line"]) for h in results.get("hints") or [] if h["kind"] == "test with no assertion"}
     tests = {(t["file"], t["line"]): t for t in results.get("tests") or []}
     # an attack is a test too; one the runner couldn't address follows the unreadable-runner rule ("unknown")
-    tests.update({(a["file"], a["line"]): {**a, "name": a["file"], "result": "unknown" if a["result"] == "not configured" else a["result"]}
+    tests.update({(a["file"], a["line"]): {**a, "name": a.get("name", a["file"]), "result": "unknown" if a["result"] == "not configured" else a["result"]}
                   for a in results.get("attacks") or [] if a.get("line")})
+    # a round's lens may match only some ACs, or none: the rest keep the test matched earlier, judged on these results
+    by_name = {(t["file"], t["name"]): t for t in tests.values()}
+    led = jury.load(root, slug, f"implementation-{epic}")  # the ledger, since each round may have its own run
+    kept = led.get("matched") or {}
     entries = []
     for ac in acs:
-        for _, file, line in [m for m in found if m[0] == ac] or [(ac, "", 0)]:
+        for _, file, line in ([m for m in found if m[0] == ac] or [(ac, f, by_name.get((f, n), {}).get("line", 0)) for f, n in kept.get(ac, [])]
+                              or [(ac, "", 0)]):
             t = tests.get((file, line))
             result = "no match" if not file else "didn't run" if not t else "no assertion" if t["result"] in ("passed", "unknown") and (file, line) in hinted else t["result"]
             entries.append({"ac": ac, "file": t["file"] if t else "", "line": t["line"] if t else 0, "result": result,
                             "_name": t["name"] if t else ""})
     results["evidence"] = [{k: v for k, v in e.items() if k != "_name"} for e in entries]
+    led["matched"] = {ac: [[e["file"], e["_name"]] for e in entries if e["ac"] == ac and e["_name"]] for ac in acs}
+    jury.save(root, led)
     out = []
     for ac in acs:
         mine = [e for e in entries if e["ac"] == ac]
@@ -517,6 +540,12 @@ def pack(root, slug, gate, lens, run):
             f = by_id[i]
             out += [f"### {f['id']} {f['title']}", f"- cites: {', '.join(f['cites'])}", f"- fix asked: {f['fix']}",
                     f"- what was done: {f['note']}", ""]
+        if lens == "conformance":
+            text, _ = items(root, slug)
+            acs = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
+            out += ["## ACs to match", "", "Also write `## Matches`, one `AC-n -> file:line` per AC, the test's `def` line in these results. "
+                    "An AC you leave out keeps the test matched earlier.", "", *[text[i] + "\n" for i in text if i in acs and i.startswith("AC-")],
+                    "## Results", "", json.dumps({k: results.get(k) for k in ("tests", "suite", "attacks", "evidence")}, indent=2, ensure_ascii=False), ""]
         if runs := asked(results):
             out += ["## Requested runs", "", json.dumps(runs, indent=2, ensure_ascii=False), ""]
         out += [f"## Diff since {judged[:8]}", "", *code_diff(root, judged, head)]
