@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-10-27-implementation-jury",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -16,7 +16,7 @@
     "R-261030-bjik/implementation-E-2-correctness.md": "2fd7d381e5c8dfc4f3820655d1e9e083a2b6e64b51c7eaa4eca1f41b68efeeab",
     "R-261030-bjik/implementation-E-2-refuter.md": "0020838f3fbeeb4cd1d2ea0ee72dea8357c3ca22cb1c9370c2ffb708464ba455",
     "R-261031-ldqu/implementation-E-2-adversary.md": "f5bf67f74772e35814fa90f0fce0e8eb195bb92fc6b0c26e1225b123ce699e51",
-    "R-261031-ldqu/implementation-E-2-conformance.md": "cc4d58cbe8acfcc7edde69cd8a22ff3449f0eeb1ab58d927e7822be6ffc4d485",
+    "R-261031-ldqu/implementation-E-2-conformance.md": "1014541e3638e9800e3a845d9ebd361d27615708713149ce71b117dbf0fee942",
     "R-261031-ldqu/implementation-E-2-consistency.md": "53471b46fdfa25da3a477defb2e9405e7128d60ceade44126bf9fda6c03f7f1c",
     "R-261031-ldqu/implementation-E-2-correctness.md": "2cefd7c027237873b32510fa6fcdd1c972faa2ad3c20bead42415f9192877a0b"
   },
@@ -39,9 +39,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "7c70b8be468343181628803d1ba7560bfed62c60",
-      "judged": 2
+      "round": 3,
+      "version": "5188923373164cf7aaa8c272706c3f1812e8e31c",
+      "judged": 3
     },
     "implementation-E-2-consistency": {
       "attempts": 1,
@@ -557,14 +557,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-14",
@@ -594,26 +595,32 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     }
   ],
-  "outcome": "human",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "fcf8cc44244370c72bed1f5727993460b03ba017",
-    "2": "7c70b8be468343181628803d1ba7560bfed62c60"
+    "2": "7c70b8be468343181628803d1ba7560bfed62c60",
+    "3": "5188923373164cf7aaa8c272706c3f1812e8e31c"
   },
   "matched": {
     "AC-2": [

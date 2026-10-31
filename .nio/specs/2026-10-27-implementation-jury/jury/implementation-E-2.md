@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-2
 subject: 2026-10-27-implementation-jury
-round: 2
-outcome: human
+round: 3
+outcome: approved
 ---
 # Implementation-e-2 jury: 2026-10-27-implementation-jury
 
@@ -22,8 +22,8 @@ outcome: human
 | J-10 | major | gap | AC-6, FR-5, CT-21 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-11 | major | gap | FR-5, CT-21 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-12 | major | risk | FR-26, FR-8, CT-14 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
-| J-13 | major | gap | FR-16, CT-8, CT-16, J-3 | cli | confirmed | open |  | new, 0 |
-| J-14 | major | gap | AC-6, FR-5, CT-21 | cli | confirmed | open |  | new, 0 |
+| J-13 | major | gap | FR-16, CT-8, CT-16, J-3 | cli | confirmed | fixed |  | absent, 0 |
+| J-14 | major | gap | AC-6, FR-5, CT-21 | cli | confirmed | fixed |  | absent, 0 |
 
 ### J-1 test tampering: test_ac29_epic_skipped in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac29_epic_skipped from tests/test_implement.py
@@ -121,6 +121,6 @@ outcome: human
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
 | implementation-E-2-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
-| implementation-E-2-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-2-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 3 |
 | implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-2-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
