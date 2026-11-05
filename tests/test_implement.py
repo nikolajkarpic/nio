@@ -1251,6 +1251,64 @@ def test_ac48_block_twice():
     print("ok")
 
 
+def blocked_record(root):
+    """Run `nio flow block` on a claimed T-1; returns the filed record."""
+    code, out = flow(root, "block", S, "T-1", "--handoff", handoff(root, HANDOFF.replace("refund any order", "FR-2 says X")
+                     .replace("orders have no paid flag", "the code does Y").replace("add paid to Order", "say Y in FR-2")))
+    assert code == 0, out
+    return changes(root)[-1]
+
+
+def nio_check(root):
+    r = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "check"], cwd=root, capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
+def test_ac1_block_record_passes_check():
+    root = claimed()
+    rec = blocked_record(root)
+    errors = records.check(root)[0]
+    assert not [e for e in errors if rec.name in e], errors
+    git(root, "add", str(rec.relative_to(root)))
+    code, out = nio_check(root)
+    assert code == 0, out
+    print("ok")
+
+
+def test_ac2_block_sections():
+    root = claimed()
+    body = blocked_record(root).read_text()
+    wrong = body.partition("## What is wrong")[2].partition("## Proposed change")[0]
+    prop = body.partition("## Proposed change")[2].partition("## Human decision")[0]
+    assert "FR-2 says X" in wrong and "the code does Y" in wrong and "say Y in FR-2" not in wrong, body
+    assert "say Y in FR-2" in prop, body
+    assert body.partition("## Human decision")[2].strip().startswith("Pending."), body
+    print("ok")
+
+
+def test_ac3_block_reuse():
+    root = claimed()
+    blocked_record(root)
+    h = handoff(root, HANDOFF.replace("refund any order", "FR-2 says X")
+                .replace("orders have no paid flag", "the code does Y").replace("add paid to Order", "say Y in FR-2"))
+    code, out = flow(root, "block", S, "T-1", "--handoff", h)
+    assert code == 0, out
+    sha = nio_flow.sha(Path(h).read_bytes())
+    mine = [p for p in changes(root) if f"Handoff: {sha}" in p.read_text()]
+    assert len(mine) == 1, mine
+    assert not [e for e in records.check(root)[0] if mine[0].name in e]
+    print("ok")
+
+
+def test_ac1_block_record_passes_check_misuse():
+    root = claimed()
+    rec = blocked_record(root)
+    git(root, "add", str(rec.relative_to(root)))  # as filed, no edit
+    code, out = nio_check(root)
+    assert code == 0, out
+    print("ok")
+
+
 def test_uj2_spec_edited():
     root = red_one()
     code_with(root)

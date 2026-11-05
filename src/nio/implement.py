@@ -710,8 +710,9 @@ def block(root, slug, tid, handoff, by):
                                 f"Spec problem in {tid}: {str(cr['spec_says']).strip()}", by=by.strip())
             head = found.read_text().partition("\n---\n")[0]
             head = re.sub(r'^against: .*$', f'against: ".nio/specs/{slug}/spec.md"', head, flags=re.M)
-            body = "".join(f"## {name}\n{str(cr[k]).strip()}\n" for k, name in PARTS)
-            kept = f"{head}\n---\n{body}## Human decision\nPending.\n\nHandoff: {hsh}\n"
+            body = (f"## What is wrong\nThe spec says: {str(cr['spec_says']).strip()}\n\nThe code shows: {str(cr['code_shows']).strip()}\n"
+                    f"## Proposed change\n{str(cr['smallest_change']).strip()}\n\nHandoff: {hsh}\n")
+            kept = f"{head}\n---\n{body}## Human decision\nPending.\n"
         found.write_text(kept)  # a reused record, untracked, was cleaned with the task's files
         cid = records.parse(found)[0]["id"]
         if not mine:  # the line and the state it leaves go in one write, so a blocked line means waiting is set too
