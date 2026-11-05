@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-1",
   "subject": "2026-11-05-implement-followups",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,19 +14,20 @@
     "R-261105-bvhm/implementation-E-1-conformance.md": "af6ab1c6dd9a820b306e568c1503ddd32b5dc964c6c4d41729805539fc62be36",
     "R-261105-bvhm/implementation-E-1-consistency.md": "2b5b2d11f160324f5314fd1fb498e77175927d30444ad7efd50341762499a5ed",
     "R-261105-bvhm/implementation-E-1-correctness.md": "3d761053f2e9ddd93fd30821a1ff10cf355c01a4cbe34fbb3ee25c35e09c834a",
-    "R-261105-bvhm/implementation-E-1-refuter.md": "e1fb1bb4a5a8da59a71a2ba2c5f681e90a3ba3c8936aae478272059ecdc6af0c"
+    "R-261105-bvhm/implementation-E-1-refuter.md": "e1fb1bb4a5a8da59a71a2ba2c5f681e90a3ba3c8936aae478272059ecdc6af0c",
+    "R-261105-rttx/implementation-E-1-adversary.md": "40d52be051c42be54973bb3f7ea7c33b88b967276c97187168be7cc719bd7ed6"
   },
   "jurors": {
     "implementation-E-1-adversary": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "adversary",
       "by": "juror / claude-code / claude-sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "b885ff480163fdc5a28d7e43f8412941395a23ec",
-      "judged": 1
+      "round": 2,
+      "version": "c4d7ac08efb4d80af55f2b797d4c2b2310c18a04",
+      "judged": 2
     },
     "implementation-E-1-conformance": {
       "attempts": 1,
@@ -87,17 +88,18 @@
       ],
       "validation": "confirmed",
       "reason": "The template (src/nio/templates/change.md:4) puts the title in a double-quoted YAML scalar, and records.new (records.py:289) escapes only `\"`. A spec_says with `\\d` or a trailing `\\` therefore gives invalid YAML. In implement.block, the line guard (697) and the non-empty check (693) don't catch backslashes. `shelve` (710) has already run when `records.parse(found)` (721) raises ValueError, and the `blocked` line and waiting state are written only after that (722-725). The task is left claimed with its work shelved, and the broken C-*.md stays on disk. Later blocks then hit `records.parse(p)` in the lookup at 708 and crash.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-14",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/implement.py",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -174,15 +176,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "b885ff480163fdc5a28d7e43f8412941395a23ec"
+    "1": "b885ff480163fdc5a28d7e43f8412941395a23ec",
+    "2": "c4d7ac08efb4d80af55f2b797d4c2b2310c18a04"
   },
   "matched": {
     "AC-1": [
