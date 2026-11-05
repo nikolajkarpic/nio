@@ -1,0 +1,967 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-05-implement-followups",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261105-m5gv/spec-adversary.md": "97c182184a211c95c043347c81517d2c844aae64d6b209c1a4cc9b86d87fc1d9",
+    "R-261105-m5gv/spec-consistency.md": "9d3b21a17077e101ba0839612a6a8257fa91316c11253e96ea8148eee0491bc4",
+    "R-261105-m5gv/spec-logic.md": "2277f37e87f6ac11fe55aa8d3b381c5681be19c1137327ce9ecbdb798ed97cca",
+    "R-261105-m5gv/spec-scope.md": "a725c2efbb2d6e37eef9b782a7890882b9046658aa1beddc5970a977dcb76670",
+    "R-261105-m5gv/spec-testability.md": "d7e6fbb4d06b737f1225df8c3fda535ec923722f00f366202e31b94cb16d587d",
+    "R-261105-m5gv/spec-refuter.md": "d1f5e1c05c9aba107d7957dba34827cd88f9ebd4bdfc66ae76e6aa47ff403a24",
+    "R-261105-drup/spec-adversary.md": "9e3e4f1dca861214cd2a4d1097d79bcc5db5bd758c7593202aa3207f4e0a220e",
+    "R-261105-drup/spec-consistency.md": "d6978b51655a12f04c7f8f82c82854da5acfa8a97808993a4516eedf614465d2",
+    "R-261105-drup/spec-logic.md": "cf2d2ed746a0640fdddaa5004cc50c0bcfbbce2c4b4762f9a6d7d0e5cd1871dd",
+    "R-261105-drup/spec-scope.md": "6205963486b93c5f01a86695f59acde87503bbb887dd7d9d7f32e0082378fe89",
+    "R-261105-drup/spec-testability.md": "2b36c53da480e678a22c2a90ebffeb8a79819e45fa4f46c79147f09a6b5dde58"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 2,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "aa4fef4ccfe71b137a574bfadfc44fd190cf285e",
+      "judged": 2
+    },
+    "spec-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "aa4fef4ccfe71b137a574bfadfc44fd190cf285e",
+      "judged": 2
+    },
+    "spec-logic": {
+      "attempts": 2,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "aa4fef4ccfe71b137a574bfadfc44fd190cf285e",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 2,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "aa4fef4ccfe71b137a574bfadfc44fd190cf285e",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 2,
+      "lens": "testability",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "aa4fef4ccfe71b137a574bfadfc44fd190cf285e",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Worker text is copied verbatim into a memory record with no handling of hostile content",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the first two under `## What is wrong`, the third under `## Proposed change`",
+        "each of the three texts appears verbatim under its section"
+      ],
+      "fix": "add an AC for hostile and empty `change_request` texts. Either neutralise heading and front-matter lines, or refuse the handoff loudly. State the size bound and the concurrent-run behaviour (one record).",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a worker is an untrusted writer. Its `change_request` holds a line like `## Proposed change`, a `---` front-matter delimiter, or a fake `Status: decided`. It may also be empty, or megabytes long.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-2 and AC-2 require verbatim copy of worker text under fixed headings. Nothing in the spec handles heading, front-matter or empty text, so a `change_request` containing `## Proposed change` would break the record's sections and the memory check that AC-1 depends on.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-16, AC-20, AC-21: block refuses a change_request text with a '## ' or '---' line, or an empty text, and files nothing; it already files under the effort lock (RF-17); size noted in Risks.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "A deferral can remove every test requirement from a task, and nothing checks the target is real",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-12",
+        "AC-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "then red is accepted with no file requirement",
+        "A TC a later task proves only in part counts as deferred",
+        "fail for a deferred TC ID that the task its `Test:` line names doesn't cite as its own"
+      ],
+      "fix": "have FR-12 also require that the target task exists and is later. Say which reading wins when a TC is both own and deferred. Decide whether a task may defer all of its TCs (AC-6) and what stops that being a bypass. Re-check the target when tasks are removed.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "UJ-2's misuse is \"the command names an unrelated file only to get past the check\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-12 only requires that the named task cites the TC as its own. It does not require that task to be later than the deferring one, and nothing says which reading wins when a TC is both own and deferred on the same line. AC-6 lets a task defer every TC it cites, which removes its file requirement. A nonexistent target is probably caught, since it cites nothing, so the \"target is real\" part of the finding is weaker than the rest.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-3, AC-23: a TC cited outside the deferral part is own (own wins); deferring every TC is caught at the tasks jury (Risks); the later-task check moved out with #69 (non-goals).",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "Tasks under Fixes bypass approval, and a judged task can be moved there",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "FR-7",
+        "AC-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "keep it approved when a task is added under `#### Fixes`",
+        "without making a lens re-run on that alone"
+      ],
+      "fix": "define \"added under Fixes\" as an ID never seen at the judged version. Treat a changed or moved judged ID as a normal change that triggers a re-run. Say who may add fix tasks and whether a limit applies.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "FR-8 and FR-7 let any task under `#### Fixes` go through with no juror verdict and no re-approval. Nothing bounds the number or scope of such tasks, so unreviewed work accumulates under an approved gate.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The Decisions entry (\"shown to the juror but doesn't make a lens re-run or withdraw an approval\") and FR-8 [research: RF-9] make this behaviour deliberate. The Glossary defines a fix task as \"added after the tasks gate judged the list\", which settles that it is a new task. Unbounded accumulation is a design choice, not a contradiction or gap in the artefact.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "With NIO_PERF off, the speed requirement is enforced nowhere",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-15",
+        "FR-11",
+        "AC-18"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "assert its time limit only when `NIO_PERF=1` is set",
+        "without any wall-clock limit that load can exceed"
+      ],
+      "fix": "name one place and one trigger where `NIO_PERF=1` runs, with an AC for it. Narrow FR-11 to the named speed assertions, or list which timing checks remain.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "after this change the status-speed and drift-speed limits are never asserted in the default run. No AC, FR or entry says where `NIO_PERF=1` is run (CI, a scheduled run, before release). A 10x slowdown of `nio flow status` then passes every review and gate, and the \"NFR-3: status in under 2 seconds\" requirement quietly loses its only check.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-9",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "The evaluator's \"only rating lines\" rule is enforced by the card and tool choice alone",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "FR-10",
+        "SC-4",
+        "AC-12"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "change only the tasks' `Tier:`, `Effort:` and `Mode:` lines in `tasks.md`",
+        "with an edit tool and no whole-file write tool"
+      ],
+      "fix": "add a deterministic post-run check, for example that the diff of `tasks.md` touches only rating lines, run by `nio check tasks` or the flow, with an AC that rejects a stray edit.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the evaluator reads task text that workers and drafters wrote, so injected text in a task could steer it. An edit tool can still change any line, such as a task's `Test:` or `Files:` line. Edits keyed on a repeated `Tier: standard` line can also land on the wrong task silently.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-18",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "Own TC IDs: refuse when any file is missing, or only when none is named",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "→ refused, naming the missing file; an attempt is used",
+        "IF `nio flow red` refuses a command for naming none of the required test files THEN THE SYSTEM SHALL name only the required files in the refusal."
+      ],
+      "fix": "say whether the command must name every required file or at least one. Make the table row, FR-4 and FR-3 use the same wording, and add an AC with two own TC IDs.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a task's `Test:` line cites own TC-10 and TC-12, which have different files, and the red command names only TC-10's file. The decision table row `own | no` refuses it for TC-12's missing file and spends an attempt. FR-4 refuses only a command naming none of the required files, so this command is accepted. The same input gets two outcomes. AC-5 only covers one own TC, so it settles neither reading.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The decision table row `own | no` refuses for any missing own file, while FR-4 speaks of a command \"naming none of the required test files\". With two own TC IDs and only one file named, the two readings give different outcomes. AC-4 and AC-5 cover only one own TC and settle neither.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-3, FR-4, red table: the command must name a file of at least one own TC ID, as today; AC-22 covers two own TCs.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "Fix-task rows say \"shown and listed\", but FR-7 and FR-8 add \"no re-run\", which the table and ACs don't carry",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "FR-8",
+        "AC-9",
+        "AC-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "→ shown in the fix-check pack and listed by `changed`",
+        "without making a lens re-run on that alone",
+        "then T-30 is among the changed IDs it reports"
+      ],
+      "fix": "add a column to the decision table for \"makes a lens re-run\" (no for Fixes, yes for the other rows). Add an AC for a Fixes-only change that asserts no re-run. State what happens to approval when a task is removed.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the only change since the judged version is T-30 added under `#### Fixes`. `nio jury changed` lists T-30 as a changed ID, exactly as it lists an added task outside Fixes, which the table treats the same way. Nothing says what separates \"listed, no re-run\" from \"listed, re-run\". AC-10 tests only that the gate stays approved. Nothing tests that no lens is asked to re-run, and nothing covers a Fixes task together with a removal. In AC-8, T-4 is removed while the gate is approved. FR-8 covers only an add under Fixes, so it does not say whether that removal withdraws the approval.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-15",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "FR-11 bans any load-exceedable time limit, but FR-15 and the Decisions entry keep some",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "FR-15",
+        "AC-14",
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL decide the result without any wall-clock limit that load can exceed.",
+        "time-limit tests keep their wide bounds",
+        "with `NIO_PERF=1` set, they assert their 2-second limits as today"
+      ],
+      "fix": "reword FR-11 as \"without any wall-clock assertion unless `NIO_PERF=1`\". Say the review never sets `NIO_PERF`. Say what a wide-bound test is allowed to assert.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a review runs the full suite on a loaded machine and `NIO_PERF=1` is set in the environment. Status over 20 efforts takes 2.5 seconds, the 2-second assertion fires, and the review fails. FR-11 forbids that outcome and FR-15 allows it. The same applies to the \"wide bounds\" tests. A wide bound is still a wall-clock limit that enough load can exceed, so FR-11 forbids it too. AC-14 does not say that `NIO_PERF` is unset, and AC-18 does not say a review never sets it.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "any time limit can be exceeded under enough load, so \"any wall-clock limit that load can exceed\" has no pass or fail condition. AC-14 does not say how 2.5 s is produced (a sleep injected into status? a patched clock?). Nor does it say whether `NIO_PERF` is unset in that run. If `NIO_PERF=1` is inherited, the 2-second test fails by design. SC-5 (\"when the machine is idle\") cannot be checked either.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-11 says a review must never depend on a limit load can exceed, and FR-15 only moves \"speed requirement\" limits behind NIO_PERF. Under the Decisions bullet, a \"time-limit\" test with a wide bound (for example a 10-second assertion in the suite) keeps running on every review. On a loaded machine it can fail and spend a task attempt, which is the failure US-5 exists to stop. The spec never defines the split between \"speed requirement\" and \"time-limit\" tests, so a builder can't tell which side a test falls on.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-11 forbids any load-exceedable wall-clock limit, while FR-15 and the Decisions keep a 2-second limit under `NIO_PERF=1` and \"wide bounds\" on other time-limit tests. Nothing says a review runs with `NIO_PERF` unset, so FR-11 and FR-15 can conflict.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-11 now says the review strips NIO_PERF; FR-15 names only test_nfr3_status_speed; the 'wide bounds' decision is gone and time-limit tests are a non-goal.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "FR-15 leaves the approved 2-second status requirement unchecked by default",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-15",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "US-5 changes how flow-state's NFR-3 (status in under 2 seconds, [human] in an approved spec) is checked",
+        "THE SYSTEM SHALL assert its time limit only when `NIO_PERF=1` is set."
+      ],
+      "fix": "name where `NIO_PERF=1` runs, for example a release check or a CI job. Or add an AC that something outside the per-task review still enforces the limit.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "NFR-3 is an invariant the human approved. After this change, no default run checks it. If status takes 10 seconds, the whole suite passes unless someone sets `NIO_PERF=1`. The spec does not say who sets it or when, so NFR-3 can be broken with every test green. This is accepted in Risks but not closed by any requirement or AC.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "after this change the status-speed and drift-speed limits are never asserted in the default run. No AC, FR or entry says where `NIO_PERF=1` is run (CI, a scheduled run, before release). A 10x slowdown of `nio flow status` then passes every review and gate, and the \"NFR-3: status in under 2 seconds\" requirement quietly loses its only check.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-15 and C-261105-6rme say NFR-3 \"is checked on request\", but no FR, AC or Decisions entry names where or when `NIO_PERF=1` runs. A 10x slowdown of status passes every default run, and the Risks bullet only asks for the change request, which is filed.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-18, AC-29: CLAUDE.md lists NIO_PERF=1 uv run python tests/test_flow.py, run after a change to nio flow status.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "Worker pack change is not in the intake",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-14",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN the worker pack is built THE SYSTEM SHALL show only the task's own TC entries and the contracts they cover.",
+        "Given a task whose `Test:` line defers TC-38, when its worker pack is built, then the pack's tests part holds its own TC entries and not TC-38's."
+      ],
+      "fix": "drop FR-14 and AC-17, or add the reason from the human to the intake and label it as a scope extension.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake's item 2 is about the `nio flow red` file check. FR-14 changes what every worker reads in its pack, for every task, and the intake never mentions the pack. If it is not built, the human loses nothing they asked for, but the change still alters worker input across all tasks.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-14 and AC-17 change the worker pack for every task. The intake has no mention of \"pack\" (grep returned nothing), and item 2 concerns only the `nio flow red` file check. The spec labels FR-14 [agent] with no human basis.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-14 and AC-17 retired; the worker pack is a non-goal.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "New `nio check tasks` rule and drafter card form go beyond item 2",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-12",
+        "FR-13",
+        "AC-16",
+        "AC-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "fail for a deferred TC ID that the task its `Test:` line names doesn't cite as its own",
+        "even one the line says a later task proves\" (intake item 2)"
+      ],
+      "fix": "remove FR-12, AC-16, FR-13 and AC-19 from this spec, or record a human answer that asks for the stricter check.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "item 2 asks only that red stop demanding files for TC IDs a later task proves. FR-12 adds a new check that fails `nio check tasks`, so a `tasks.md` that passes today, where T-4 defers TC-38 to T-11 and T-11 doesn't cite it, would now fail the tasks gate. The human never asked for a stricter gate. The drafter card change in FR-13 belongs with it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "Fix-task approval rule is not in the intake",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHILE a tasks gate is approved THE SYSTEM SHALL keep it approved when a task is added under `#### Fixes`."
+      ],
+      "fix": "either confirm RF-9 says this is current behaviour that the change must not break (then say so in the requirement), or drop FR-8 and AC-10.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "intake item 3 asks only that the fix check and `nio jury changed` show moved work. It says nothing about whether an approval survives a Fixes addition. The label is [research: RF-9], which I could not read, so the trace to the intake is missing. If FR-8 is not built, the human still gets the work they asked for, and only the approval behaviour is unchanged.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-8 now states it keeps today's rule (RF-9) and adds AC-25: editing or removing a planned task still withdraws the approval.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "Drift-speed test is outside the intake's item 9",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "AC-18",
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the status-speed and drift-speed tests run",
+        "`tests/test_flow.py:test_nfr3_status_speed` asserts status takes under 2 seconds.\" (intake item 9)"
+      ],
+      "fix": "limit AC-18 and FR-15 to the status-speed test named in item 9, or add the drift test to the intake with the human's answer.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "item 9 names only `test_nfr3_status_speed`. The spec also changes a drift-speed test and FR-15 applies to every speed test. Nothing in the intake asks for that test to change, so if it is not built, the human loses nothing they asked for.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "Five unrelated fixes in one spec",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "Summary",
+        "FR-1",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "This fixes the five that are bugs:"
+      ],
+      "fix": "split into an epic with one slice per bug, or state why one spec is the right size.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the five fixes touch separate parts (the block record, the red check, the jury tools, the evaluator card, and the test timing). They share no dependency. Right now one unmet requirement, such as F2 or F1, holds all five at the spec gate. The check already flags the spec for scope (more than 8 FRs; there are 15).",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): Summary now says why it stays one spec: each fix is a task or two and the tasks stage gives each story its own epic.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "FR-7 \"no lens re-run\" clause has no AC",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "AC-9",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "without making a lens re-run on that alone",
+        "no lens is asked to re-run it"
+      ],
+      "fix": "add an AC with a fixture where the only change since the last round is a Fixes task. The Observable should be that the set of lenses due to re-run is empty (or unchanged from before).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-9 only checks that T-30 appears in the `nio jury changed` output. AC-10 only covers an approved gate and a status check. Nothing tests that a gate whose only change is a Fixes task leaves no lens due a re-run. An implementation can list T-30 as a changed ID, so lenses re-run on it, and every AC still passes. The spec's own Decisions say this must not happen.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the only change since the judged version is T-30 added under `#### Fixes`. `nio jury changed` lists T-30 as a changed ID, exactly as it lists an added task outside Fixes, which the table treats the same way. Nothing says what separates \"listed, no re-run\" from \"listed, re-run\". AC-10 tests only that the gate stays approved. Nothing tests that no lens is asked to re-run, and nothing covers a Fixes task together with a removal. In AC-8, T-4 is removed while the gate is approved. FR-8 covers only an add under Fixes, so it does not say whether that removal withdraws the approval.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-9 checks only that T-30 appears in `changed`. AC-10 checks only that the gate stays approved. Its Observable says \"no lens is asked to re-run it\", but its Given/When/Then is about approval status alone, so the no-re-run clause of FR-7 has no AC of its own. The Observable in AC-10 is closest, but it names the status check and not a lens-due set.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): AC-24: a Fixes-only change lists T-30 and names no lens to re-run; the fix-check table gained a re-run column.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-16",
+      "title": "FR-11 cannot be tested as written, and AC-14 does not say how slowness is made",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "AC-14",
+        "SC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "decide the result without any wall-clock limit that load can exceed",
+        "a machine slow enough that `nio flow status` over 20 efforts takes 2.5 seconds"
+      ],
+      "fix": "restate FR-11 as \"the review runs with `NIO_PERF` unset and no test in the suite asserts a time limit\". Have AC-14 name the slowdown mechanism and state that `NIO_PERF` is unset.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "any time limit can be exceeded under enough load, so \"any wall-clock limit that load can exceed\" has no pass or fail condition. AC-14 does not say how 2.5 s is produced (a sleep injected into status? a patched clock?). Nor does it say whether `NIO_PERF` is unset in that run. If `NIO_PERF=1` is inherited, the 2-second test fails by design. SC-5 (\"when the machine is idle\") cannot be checked either.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "AC-6 relies on prose that no test can classify",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-6",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "describes a direct check in words and says every TC ID it cites is proved later by another task"
+      ],
+      "fix": "give the exact fixture `Test:` line in the AC. State that the rule is \"no own TC ID means no file required\".",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the fixture's `Test:` line is free prose. One tester writes \"run the CLI by hand; TC-38 proved later by T-11\" and another writes a different wording. They get different red outcomes, because the spec defines a deferral only as the `;`-separated \"proved later by T-n\" part. It also does not say what a \"direct check\" is, or whether any file is required when the task has no own TC.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): AC-6 now gives the exact Test line and states the rule: no own TC ID, no file to name.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-18",
+      "title": "AC-13 judges a real model from a single run",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "AC-13",
+        "FR-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "when the evaluator rates it on a real model"
+      ],
+      "fix": "require the run to rate at least one task (non-empty diff) and say how many runs or fixtures count. Or add a deterministic check that rejects any diff line that is not a rating line.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a model that is non-deterministic can pass one run and rewrite epic headings on the next. One green e2e run does not show FR-9 holds. The same run could also fail because the model rated nothing, since the AC only says changed lines must be rating lines, not that any were changed. That is a vacuous pass.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the evaluator reads task text that workers and drafters wrote, so injected text in a task could steer it. An edit tool can still change any line, such as a task's `Test:` or `Files:` line. Edits keyed on a repeated `Tier: standard` line can also land on the wrong task silently.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-13's Observable only requires that every changed line is a rating line. An empty diff, where nothing was rated, satisfies it, and it names a single real-model run (Level: e2e). Nothing else in the spec (FR-9, FR-10, SC-4) adds a non-empty requirement or a deterministic check on the diff.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): AC-13 (one real-model run) retired; FR-9 is now a deterministic nio check tasks --rated-from <copy> (AC-26, AC-27), run by the tasks skill (FR-17, AC-28).",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-19",
+      "title": "AC-18 and the Decisions leave the speed tests' checks and \"wide bounds\" undefined",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-18",
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "they check their output and assert no time",
+        "time-limit tests keep their wide bounds"
+      ],
+      "fix": "list the tests by name (status-speed, drift-speed). State the output each one checks. Give a number for \"wide\" or drop the phrase.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "\"check their output\" does not say what output is checked or how. \"Wide bounds\" gives no number, so a tester cannot tell whether a test's 30 s limit is wide enough. The AC-18 pair (3 s passes with `NIO_PERF` unset, fails with `NIO_PERF=1`) tests the gating but not which tests count as speed-requirement tests. FR-15's \"WHERE a test asserts a speed requirement\" is open-ended.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-15 and AC-18 name test_nfr3_status_speed alone, the output it checks (20 lines) and how the 3 s is made (its clock).",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-20",
+      "title": "The drift-speed test is relaxed without a change request against plain-talk NFR-1",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-15",
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the status-speed and drift-speed tests run, then they check their output and assert no time",
+        "US-5 changes how flow-state's NFR-3 (status in under 2 seconds, [human] in an approved spec) is checked; going against it needs a change request against that spec first, filed as a change record (see Decisions)."
+      ],
+      "fix": "file a change request against plain-talk NFR-1 for `tests/test_talk.py`, or limit FR-15 and AC-18 to the flow-state test and say so in Risks.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "AC-18 stops the drift test from asserting its 2-second limit in a normal suite run. That test enforces plain-talk NFR-1 (\"run the drift test ... in under 2 seconds\", tagged [human], in `.nio/specs/plain-talk/spec.md:195`), an approved requirement. The only change record, C-261105-6rme, is against flow-state's TC-67. The Risks bullet asks for a change request against NFR-3 alone. So a build that follows FR-15 weakens an approved requirement with no change request against it.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-18 covers the \"drift-speed\" test, which is the test behind plain-talk NFR-1 and AC-27 (\"finishes in under 2 seconds\", [human], in `plain-talk/spec.md`). The only change record, C-261105-6rme, is against flow-state's `tests.md` (TC-67), and the Risks bullet names NFR-3 only. So weakening NFR-1's check has no change request.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): The drift test (plain-talk NFR-1) is out of scope (non-goals); FR-15 and AC-18 name only the flow-state test, covered by C-261105-6rme.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-21",
+      "title": "FR-11 forbids any load-exceedable wall-clock limit, but a Decision keeps wide bounds on time-limit tests",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN a task's review runs the test suite THE SYSTEM SHALL decide the result without any wall-clock limit that load can exceed.",
+        "time-limit tests keep their wide bounds (OP-11, OP-12, [agent]): C-261105-6rme (memory, 2026-11-05)."
+      ],
+      "fix": "state in FR-11 that a wide bound is allowed, or name the tests that keep one and show that load can't exceed it.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-11 says a review must never depend on a limit load can exceed, and FR-15 only moves \"speed requirement\" limits behind NIO_PERF. Under the Decisions bullet, a \"time-limit\" test with a wide bound (for example a 10-second assertion in the suite) keeps running on every review. On a loaded machine it can fail and spend a task attempt, which is the failure US-5 exists to stop. The spec never defines the split between \"speed requirement\" and \"time-limit\" tests, so a builder can't tell which side a test falls on.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-22",
+      "title": "A deferred TC the task partly proves drops the task's own file check",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-12"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THE SYSTEM SHALL require only the files of the TC IDs the task's `Test:` line does not say a later task proves.",
+        "A TC a later task proves only in part counts as deferred"
+      ],
+      "fix": "require T-4's file for any TC it proves in part, and keep the deferral only for TCs it proves in no part, or say explicitly that partial proof is unchecked.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "take T-4 with `Test:` \"TC-38 proved later by T-11\", where T-4 proves half of TC-38 and T-11 proves the rest. The decision table row \"deferred | - | → not required\" applies, so red is accepted with no file for the part T-4 does prove, and the check in FR-12 passes because T-11 is named. A red for T-4's own half can then pass on a test that doesn't exercise it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The Decisions bullet settles this on purpose: \"A TC a later task proves only in part counts as deferred (OP-6, OP-7, [agent])\". The decision table row \"deferred | - | → not required\" follows from it, and FR-12 still checks that the named later task cites the TC. The outcome the finding describes is the stated trade-off, not an unnoticed gap.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-23",
+      "title": "AC-14 doesn't say whether the review runs with NIO_PERF set",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-14",
+        "FR-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the task's review runs the full suite, then the review passes.",
+        "assert its time limit only when `NIO_PERF=1` is set."
+      ],
+      "fix": "state that the review runs with NIO_PERF unset, and add that case to AC-14.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the spec never says whether a task's review sets or clears NIO_PERF. If the review environment already has NIO_PERF=1 (set in a dev shell or CI), then on a slow machine the status run is 2.5 seconds, the 2-second limit applies, and AC-14 fails, which contradicts its stated pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Delegated grill (human: run the whole flow on recommended): FR-11 and AC-14: the review strips NIO_PERF, with NIO_PERF=1 in the orchestrator's environment as the case.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "bb05426dc1c92b7944c30e39de584abf51cc3f87",
+    "2": "aa4fef4ccfe71b137a574bfadfc44fd190cf285e"
+  }
+}
