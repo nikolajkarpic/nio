@@ -711,7 +711,7 @@ def block(root, slug, tid, handoff, by):
         if found is None:
             areas = records.areas(root)
             found = records.new(root, "change", "project" if "project" in areas else areas[0],
-                                f"Spec problem in {tid}: {str(cr['spec_says']).strip()}", by=by.strip())
+                                f"Spec problem in {tid}: " + " ".join(str(cr["spec_says"]).split()).replace("\\", "\\\\"), by=by.strip())  # one line, backslashes escaped like quotes
             head = found.read_text().partition("\n---\n")[0]
             head = re.sub(r'^against: .*$', f'against: ".nio/specs/{slug}/spec.md"', head, flags=re.M)
             body = (f"## What is wrong\nThe spec says: {str(cr['spec_says']).strip()}\n\nThe code shows: {str(cr['code_shows']).strip()}\n"

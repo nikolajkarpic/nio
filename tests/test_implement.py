@@ -1300,6 +1300,17 @@ def test_ac3_block_reuse():
     print("ok")
 
 
+def test_ac1_block_backslash_title():
+    root = claimed()
+    h = handoff(root, HANDOFF.replace("refund any order", "the path C:\\\\data\\\\new \\\\q\\\\"))  # YAML: a \n newline, a trailing \
+    code, out = flow(root, "block", S, "T-1", "--handoff", h)
+    assert code == 0, out
+    for p in changes(root):
+        records.parse(p)
+    assert not records.check(root)[0], records.check(root)[0]
+    print("ok")
+
+
 def test_ac1_block_record_passes_check_misuse():
     root = claimed()
     rec = blocked_record(root)
