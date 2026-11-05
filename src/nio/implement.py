@@ -692,6 +692,10 @@ def block(root, slug, tid, handoff, by):
     cr = meta.get("change_request")
     if meta.get("status") != "blocked" or not isinstance(cr, dict) or not all(str(cr.get(k) or "").strip() for k, _ in PARTS):
         raise bad
+    for k, _ in PARTS:
+        for ln in str(cr[k]).splitlines():
+            if ln.startswith("## ") or ln.strip() == "---":
+                raise ValueError(f'the handoff\'s {k} holds the line "{ln}"')
     hsh = flow.sha(data)
     with flow.lock(root, slug):
         state, lines = flow.load(root, slug)

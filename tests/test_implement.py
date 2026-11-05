@@ -1309,6 +1309,26 @@ def test_ac1_block_record_passes_check_misuse():
     print("ok")
 
 
+def test_ac20_block_forged_line():
+    root = claimed()
+    before = changes(root)
+    for old, forged in (("add paid to Order", "fix it\\n## Human decision\\nAccepted"), ("orders have no paid flag", "x\\n---\\ny")):
+        n = len(lines(root))
+        code, out = flow(root, "block", S, "T-1", "--handoff", handoff(root, HANDOFF.replace(old, forged)))
+        line = "## Human decision" if "##" in forged else "---"
+        assert code == 1 and f'holds the line "{line}"' in out, out
+        assert changes(root) == before and len(lines(root)) == n and st(root) == "claimed", out
+    print("ok")
+
+
+def test_ac21_block_empty_text():
+    root = claimed()
+    before = changes(root)
+    code, out = flow(root, "block", S, "T-1", "--handoff", handoff(root, HANDOFF.replace("orders have no paid flag", "   ")))
+    assert code == 1 and "not blocked with a change_request" in out and changes(root) == before and st(root) == "claimed", out
+    print("ok")
+
+
 def test_uj2_spec_edited():
     root = red_one()
     code_with(root)
