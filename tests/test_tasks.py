@@ -475,6 +475,13 @@ def test_cli():
     print("ok")
 
 
+def test_own():
+    assert tasks.own("TC-10; TC-38 proved later by T-11") == ["TC-10"]
+    assert tasks.own("a direct unit check calling `load`; TC-6 and TC-7 proved later by T-8") == []
+    assert tasks.own("TC-38, plus a direct check; TC-38 proved later by T-11") == ["TC-38"]
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_"):

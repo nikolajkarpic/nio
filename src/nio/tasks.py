@@ -99,6 +99,14 @@ def ids(value):
     return ID.findall(value)
 
 
+def own(test_line):
+    """TC IDs of a Test: line, minus those only in a `;` part saying "proved later"."""
+    parts = test_line.split(";")
+    later = {i for p in parts if "proved later" in p for i in ids(p) if i.startswith("TC-")}
+    keep = {i for p in parts if "proved later" not in p for i in ids(p)}
+    return [i for i in dict.fromkeys(ids(test_line)) if i.startswith("TC-") and (i in keep or i not in later)]
+
+
 def reach(tasks):
     """{task: every task it depends on, directly or through others}."""
     deps = {t: set(ids(tasks[t]["fields"].get("Depends on", ""))) & tasks.keys() for t in tasks}
