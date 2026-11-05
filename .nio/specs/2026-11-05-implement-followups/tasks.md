@@ -26,6 +26,19 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: split: both tests fail on today's code
 
+#### Fixes
+
+### T-14 Fix: Backslash in spec_says breaks the record title, leaving a half-done block
+- From: J-1 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`
+- Serves: CT-1, J-1
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-2 Red asks only for the test files of the TC IDs the task proves itself (US-2)
 
 ### T-3 Add `tasks.own`, a task's own TC IDs without those a later task proves
