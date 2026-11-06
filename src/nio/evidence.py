@@ -156,7 +156,10 @@ def reused_suite(root, slug, commit, suite):
 def covered(step, suite):
     """True when `step` is the suite's own per-file command on one file the suite runs (CT-5, FR-6)."""
     try:
-        words, swords = shlex.split(step), shlex.split(suite or "")
+        words = shlex.split(step)
+        lex = shlex.shlex(suite or "", posix=True, punctuation_chars=True)
+        lex.whitespace_split = True
+        swords = list(lex)  # punctuation-aware: `;` `|` `&` are words of their own
     except ValueError:
         return False
     if len(words) < 2:

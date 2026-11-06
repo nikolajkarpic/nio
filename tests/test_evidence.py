@@ -3374,6 +3374,14 @@ def test_covered_prefix_is_the_whole_command():
     print("ok")
 
 
+def test_covered_serial_suite_with_semicolon():
+    from nio.evidence import covered
+    suite = 'for f in tests/test_*.py; do uv run python "$f" || exit 1; done'
+    assert covered("uv run python tests/test_evidence.py", suite)
+    assert not covered("NIO_E2E=1 uv run python tests/test_evidence.py", suite)
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
