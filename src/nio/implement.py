@@ -108,7 +108,7 @@ def tasks_of(root, slug):
             out.append({"id": tid, "title": t["title"], "epic": e["id"], "fix": t["fix"], "deps": tasks.ids(f.get("Depends on", "")),
                         "files": tasks.files(f.get("Files", "")), "serves": tasks.ids(f.get("Serves", "")),
                         "tests": tasks.ids(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
-                        "effort": f.get("Effort", ""), "mode": forced or (word if word in MODES else "split")})
+                        "effort": f.get("Effort", ""), "parallel": f.get("Parallel") == "yes", "mode": forced or (word if word in MODES else "split")})
     return out
 
 
@@ -303,14 +303,49 @@ def claim(root, slug=None, by=None):
         if gate:
             return 1, [f"{gate} is finished but its gate is open: run @nio:jury on implementation-{gate}, then `nio flow done implementation-{gate}`"]
         task = next_ready(root, slug, lines)
-        rid = records.new_run(root, {"effort": slug, "task": task["id"],
-                                     "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
-        path = pack.save(root, rid, task["id"], worker_pack(root, slug, task))
+        group = wave(root, slug, lines, task)
         head = records.git(root, "rev-parse", "HEAD")[0]
-        line = {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": task["id"], "commit": head}}
-        flow.write(root, slug, base + [line], {**state, "claims": {"task": task["id"]}}, w, "implementing")
-    return 0, [f"task: {task['id']} {task['title']}", f"mode: {task['mode']}", f"card: nio-worker-{task['tier']}",
-               f"effort: {task['effort']}", f"pack: {path.relative_to(root)}"]
+        made, out, claims = [], [], []
+        for t in group:
+            rid = records.new_run(root, {"effort": slug, "task": t["id"],
+                                         "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
+            path = pack.save(root, rid, t["id"], worker_pack(root, slug, t))
+            ev = {"task": t["id"], "commit": head}
+            out += [f"task: {t['id']} {t['title']}", f"mode: {t['mode']}", f"card: nio-worker-{t['tier']}",
+                    f"effort: {t['effort']}", f"pack: {path.relative_to(root)}"]
+            if len(group) > 1:
+                tree = root / ".nio/runs" / rid / "worktree"
+                code, _, err = records.git(root, "worktree", "add", "--detach", str(tree), head, full=True)
+                if code:
+                    for m in made:
+                        records.git(root, "worktree", "remove", "--force", str(m), full=True)
+                    raise ValueError(f"can't create a worktree for {t['id']}: {err.strip()}")
+                made.append(tree)
+                ev["worktree"] = str(tree.relative_to(root))
+                out.append(f"worktree: {ev['worktree']}")
+            claims.append({"kind": "claim", "from": "implementing", "to": "implementing", "evidence": ev})
+        mark = {"task": group[0]["id"], **({"wave": [t["id"] for t in group]} if len(group) > 1 else {})}
+        flow.write(root, slug, base + claims, {**state, "claims": mark}, w, "implementing")
+    return 0, out
+
+
+def wave(root, slug, lines, first):
+    """The tasks one claim takes (CT-1, FR-1 to FR-3, FR-15): `first`, then the epic's following ready `Parallel: yes`
+    tasks in file order, at most `budgets.parallel` (2 when unset) in all; just `first` when it isn't parallel."""
+    n = (records.config(root).get("budgets") or {}).get("parallel", 2)
+    if type(n) is not int or n < 1:
+        raise ValueError(f"budgets.parallel must be a whole number of at least 1, not {n!r}")
+    if n == 1 or not first["parallel"]:
+        return [first]
+    st, ts = status(root, slug, lines), tasks_of(root, slug)
+    after = ts[[t["id"] for t in ts].index(first["id"]) + 1:]
+    return [first] + [t for t in after if t["epic"] == first["epic"] and t["parallel"] and st[t["id"]] == "ready"][:n - 1]
+
+
+def worktree(root, lines, tid):
+    """The absolute worktree the task's latest claim line names, None when it names none or the folder is gone (CT-2)."""
+    name = next((x["evidence"].get("worktree") for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("task") == tid), None)
+    return root / name if name and (root / name).is_dir() else None
 
 
 # --- red, green, review, attempts and unblock (CT-7, CT-8, CT-10, CT-12) ---
