@@ -149,6 +149,19 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: direct: both tests pass on today's code, so red can't be proved
 
+#### Fixes
+
+### T-17 Fix: AC-9 calls T-30 a changed ID, but the code and CT-6 keep it out of the changed line
+- From: J-8 (implementation-E-4, round 1)
+- Files: `src/nio/cli.py`
+- Serves: AC-9, CT-6, FR-7
+- Test: TC-9
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-5 The evaluator edits only the rating lines (US-4)
 
 ### T-11 Add `tasks.rated_from` and `--rated-from` on `nio check tasks`
