@@ -1,0 +1,297 @@
+{
+  "gate": "implementation-E-3",
+  "subject": "2026-11-05-implement-followups",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-bll4/implementation-E-3-adversary.md": "ae0a8d5dd9ecc482cc9a91aae8c5ba36dc462667b467d78b45e5e4b20076986e",
+    "R-261106-bll4/implementation-E-3-conformance.md": "85ef9e0b6e642f83c78eb33e94a8b892575d60682f434b29f14886837c38bb44",
+    "R-261106-bll4/implementation-E-3-consistency.md": "bf239687310ae08de3dfeb42e3494221787b943af8dcb72775a97c772f48e7fd",
+    "R-261106-bll4/implementation-E-3-correctness.md": "5dc1a4cbb6981c7fd7f93e7756015cd47d78c9b0df26769e10ffd319376de06e",
+    "R-261106-bll4/implementation-E-3-refuter.md": "11ffb2d4f3d876da99638e9c764d04b7d75403612f9627eed76012079cf07f40"
+  },
+  "jurors": {
+    "implementation-E-3-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6",
+      "judged": 1
+    },
+    "implementation-E-3-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6",
+      "judged": 1
+    },
+    "implementation-E-3-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6",
+      "judged": 1
+    },
+    "implementation-E-3-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The journey that claims to run the 2-second limit sets NIO_PERF for the wrong command",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-18",
+        "AC-29"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "NIO_PERF=1 uv run python tests/test_implement.py && uv run python tests/test_flow.py && echo ok"
+      ],
+      "fix": "change the journey command so that `NIO_PERF=1` is on `test_flow.py`: `uv run python tests/test_implement.py && NIO_PERF=1 uv run python tests/test_flow.py && echo ok`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "Shell inline variables apply to the first command only. `tests/test_flow.py`, the file that holds `test_nfr3_status_speed`, runs with `NIO_PERF` unset. If `nio flow status` regresses to 5 seconds, this journey still passes. The output shows \"ok (3.00s)\" and \"ok (2.80s)\" with no failure. The `NIO_PERF=1` environment is only passed to `test_implement.py`, which does not use it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "results.json line 242 holds the command `NIO_PERF=1 uv run python tests/test_implement.py && uv run python tests/test_flow.py && echo ok`. An inline variable applies only to the first command, so `test_flow.py` runs with `NIO_PERF` unset. That means the 2-second assert in `test_nfr3_status_speed` never fires, which is what AC-18 and AC-29 are about.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-15",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "the `NIO_PERF=1` journey command (journeys in the evidence pack); `tests/test_flow.py:test_nfr3_status_speed`",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "The status-speed assertion was weakened and nothing automated runs it",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-18",
+        "CT-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "if os.environ.get(\"NIO_PERF\") == \"1\":"
+      ],
+      "fix": "keep it as specified. Have a scheduled or manual gate run `NIO_PERF=1 uv run python tests/test_flow.py`. Correct the F1 journey so that at least one recorded run asserts the limit.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "The old test always asserted `took < 2.0`. It now asserts the limit only when `NIO_PERF` is exactly \"1\". The review's `run` strips `NIO_PERF` by design (CT-9), and CLAUDE.md asks only for a manual run. Status speed can therefore regress unnoticed through every automated gate, and the F1 journey does not catch it either. Nothing marks this as a deliberate weakening other than the spec itself.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "`tests/test_flow.py:status_speed`; `src/nio/implement.py:run`",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "The printed timing in the status-speed test is misleading",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "print(f\"ok ({time.perf_counter() - start:.2f}s)\")"
+      ],
+      "fix": "print the status-run time that `status_speed` measures (return it as well as the output), or drop the number from the line.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`start` is taken before `status_speed()`, which also builds 20 efforts with 50 history lines each. The printed value (3.00s, 2.80s in the pack output) is setup plus status. A reader comparing it with the 2-second limit would see a figure over the limit next to \"ok\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "`tests/test_flow.py:test_nfr3_status_speed`",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "AC-14 and AC-15 tests sit after the `__main__` runner and never run",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-14",
+        "AC-15",
+        "CT-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "for name, test in list(globals().items()):"
+      ],
+      "fix": "move the T-5 tests and the `perf_suite` helper above the `if __name__ == \"__main__\":` block in `tests/test_implement.py`, then re-run the suite and confirm the new tests print \"ok\".",
+      "sources": [
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "`test_ac14_review_strips_nio_perf`, `test_ac15_review_still_fails` and `test_ac14_review_strips_nio_perf_misuse` are appended under \"# --- T-5: the review strips NIO_PERF (CT-9, FR-11) ---\", after the `__main__` loop. Running `python tests/test_implement.py` defines them only after the loop has finished. The passing suite and the journey runs therefore prove nothing about FR-11. The code in `src/nio/implement.py:run` could be reverted and the suite would still pass.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "`uv run python tests/test_implement.py` reaches the `if __name__ == \"__main__\":` block at line 1662 and runs only the tests defined above it. The new `test_ac14_review_strips_nio_perf` and `test_ac15_review_still_fails` are defined at lines 1678 and 1699, after the loop has already run. The suite therefore reports `ok` for `test_implement.py` without ever checking that the review strips `NIO_PERF` (AC-14) or still fails a broken assertion (AC-15). If the review regressed, the gate would still pass.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "In tests/test_implement.py the `__main__` runner is at lines 1662-1669, and the three T-5 tests (lines 1678, 1699, 1715) are defined after it. The loop iterates `globals()` before they exist, so they never run under `python tests/test_implement.py`. FR-11 is therefore unchecked by the suite.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-16",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_implement.py (end of file, after the `__main__` block)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "AC-14 and AC-15 tests sit below the file's runner and never run",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-14",
+        "AC-15 (FR-11)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "    for name, test in list(globals().items()):",
+        "+# --- T-5: the review strips NIO_PERF (CT-9, FR-11) ---",
+        "+def test_ac14_review_strips_nio_perf():"
+      ],
+      "fix": "move the `if __name__ == \"__main__\":` block (lines 1662-1669) to the end of `tests/test_implement.py`, after the T-5 tests, so every test is defined before the runner.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "`uv run python tests/test_implement.py` reaches the `if __name__ == \"__main__\":` block at line 1662 and runs only the tests defined above it. The new `test_ac14_review_strips_nio_perf` and `test_ac15_review_still_fails` are defined at lines 1678 and 1699, after the loop has already run. The suite therefore reports `ok` for `test_implement.py` without ever checking that the review strips `NIO_PERF` (AC-14) or still fails a broken assertion (AC-15). If the review regressed, the gate would still pass.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-4",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_implement.py (lines 1662-1669 runner, lines 1672-1728 T-5 tests)",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6"
+  },
+  "matched": {
+    "AC-14": [
+      [
+        "tests/test_implement.py",
+        "test_ac14_review_strips_nio_perf"
+      ]
+    ],
+    "AC-15": [
+      [
+        "tests/test_implement.py",
+        "test_ac15_review_still_fails"
+      ]
+    ],
+    "AC-18": [
+      [
+        "tests/test_flow.py",
+        "test_ac18_status_speed_gated"
+      ]
+    ],
+    "AC-29": [
+      [
+        "tests/test_flow.py",
+        "test_ac29_perf_selfcheck_listed"
+      ]
+    ]
+  }
+}
