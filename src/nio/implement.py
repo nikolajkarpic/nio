@@ -364,7 +364,7 @@ def land(root, slug, tid, tree, since):
     diff = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, full=True)[1]
     path = tree.parent / f"{tid}.patch"
     path.write_text(diff)
-    names = [p for p in records.git(tree, "diff", "--cached", "--name-only", "--no-renames", since) if p not in keep]
+    names = [p for p in records.git(tree, "-c", "core.quotepath=off", "diff", "--cached", "--name-only", "--no-renames", since) if p not in keep]
     saved = {p: (root / p).read_bytes() if (root / p).is_file() else None for p in names}
     code, _, err = records.git(root, "apply", "--binary", *[f"--exclude={p}" for p in keep], str(path), full=True) \
         if names else (0, "", "")
