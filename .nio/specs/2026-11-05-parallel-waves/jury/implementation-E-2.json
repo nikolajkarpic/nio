@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-11-05-parallel-waves",
-  "round": 1,
+  "round": 2,
   "tier": "high",
   "expect": [
     "conformance",
@@ -14,30 +14,33 @@
     "R-261106-qfdt/implementation-E-2-consistency.md": "da780c16e56c3a60032b6235ac671d937aed8a494d3dc241b9a59ce4ca15302f",
     "R-261106-qfdt/implementation-E-2-correctness.md": "69457b9d3b703572c7b4eaa32b2f1a2df6378420302a609d8a3314c6f716dc14",
     "R-261106-qfdt/implementation-E-2-risk-rollback.md": "a167d7c073771ec3289a0c143e85f290887062f6522ee45e034a007456e9c97d",
-    "R-261106-qfdt/implementation-E-2-refuter.md": "ec61c05f3be7fc3494eb1ace36dcfaaccdf908c17781c50e467f3f7e3de45945"
+    "R-261106-qfdt/implementation-E-2-refuter.md": "ec61c05f3be7fc3494eb1ace36dcfaaccdf908c17781c50e467f3f7e3de45945",
+    "R-261106-x2vp/implementation-E-2-conformance.md": "e1654630dfef4af0f70a1c42b5e274955af817897feddcd29c513777e3fada44",
+    "R-261106-x2vp/implementation-E-2-consistency.md": "a0a801d6c551176ac118f47c12cf756900bdb6629b68f7e2d5a6f446f807aaa8",
+    "R-261106-x2vp/implementation-E-2-risk-rollback.md": "cbf1976ad544999054cd9d3549088cfdc57cf7591bbbbffc5ab8c3e77d6a00b8"
   },
   "jurors": {
     "implementation-E-2-conformance": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "conformance",
-      "by": "juror / claude-code / claude-sonnet-5-5",
+      "by": "juror / claude-code / Sonnet 5.5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
-      "judged": 1
+      "round": 2,
+      "version": "817df13d3e31948b8076478888b92a32222e9624",
+      "judged": 2
     },
     "implementation-E-2-consistency": {
-      "attempts": 3,
+      "attempts": 1,
       "lens": "consistency",
       "by": "juror / claude-code / claude-haiku-5-5",
-      "context": "limited",
+      "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
-      "judged": 1
+      "round": 2,
+      "version": "817df13d3e31948b8076478888b92a32222e9624",
+      "judged": 2
     },
     "implementation-E-2-correctness": {
       "attempts": 1,
@@ -51,15 +54,15 @@
       "judged": 1
     },
     "implementation-E-2-risk-rollback": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "risk-rollback",
       "by": "juror / claude-code / sonnet",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
-      "judged": 1
+      "round": 2,
+      "version": "817df13d3e31948b8076478888b92a32222e9624",
+      "judged": 2
     }
   },
   "findings": [
@@ -89,17 +92,18 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "T-19 fixes the demo so QS-1's tasks are direct",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "journeys evidence of the pack (QS-1)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -127,17 +131,18 @@
       ],
       "validation": "confirmed",
       "reason": "`shelve` builds its patch from `porcelain(tree)` filtered through `outside(slug, ...)` (implement.py:432). It then writes to `.nio/runs/<run>/T-n.patch` (line 439), the same place `land` put the full diff (line 365). It then force-removes the worktree (line 449). Effort-folder edits therefore end up in no patch and no tree. CT-7 and AC-12 don't address this.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-15",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/implement.py shelve (tree branch), attempt, block",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -164,17 +169,18 @@
       ],
       "validation": "confirmed",
       "reason": "`green` calls `restore(root, saved)` only when `commit` returns no sha (line 737). `commit` raises ValueError when the branch is wrong (line 586) or `write-tree` fails (line 592), after `land` has applied. Nothing catches the exception, and `clean()` doesn't check the branch. CT-4's rollback line covers a refused commit that returns, not a raise. The crash non-goal covers a dying process, not this case.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-16",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/implement.py green (after land), commit",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-4",
@@ -200,17 +206,18 @@
       ],
       "validation": "confirmed",
       "reason": "`records.git` sets no `core.quotepath=off` (records.py:46-49). `land` takes `names` from `git diff --name-only` (line 367), so a non-ASCII path arrives quoted with octal escapes. `(root/p).is_file()` is then false, and the snapshot records the file as absent. `porcelain` and `changed` only strip the quotes (lines 245, 407), so they don't decode the escapes either.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-17",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/implement.py land",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-5",
@@ -276,15 +283,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "Line 690 does `worktree(root, lines, tid) or root`. CT-2 defines `worktree()` as None when the folder is gone, and no text refuses green in that case. This is the same problem as the `green` half of implementation-E-1 J-3. That finding was accepted as a risk by the human (\"a deleted worktree is the human's own act\"). This finding adds the claim that the task can be committed with none of its code.",
+      "reason": "implementation-E-2-consistency: the code half is in place (`tree_of` raises when a named worktree is gone, and `green` and `red` use it instead of `or root`, with a test). The spec half is missing: `contracts.md` CT-2 and `spec.md` FR-5 are unchanged in the diff and still say nothing about what green does when the folder is gone. The fix asked for both halves.",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-18",
-      "baseline": "new",
-      "rounds": 0,
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "The code refuses a gone worktree (tree_of, tested); only the contract line is missing, and editing contracts.md would reopen the approved plan. Follow-up issue to add the line to CT-2. (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "partial",
       "where": "`src/nio/implement.py`, `green` (the line that sets `direct, tree`), and `review` (the `worktree(...)` test)",
       "tampering": false
@@ -327,25 +334,26 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b"
+    "1": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
+    "2": "817df13d3e31948b8076478888b92a32222e9624"
   },
   "matched": {
     "AC-4": [
       [
         "tests/test_waves.py",
         "test_ac4_no_claim_while_the_wave_is_open"
-      ],
-      [
-        "tests/test_waves.py",
-        "test_ac4_two_blocked_siblings_hold_the_claim"
       ]
     ],
     "AC-7": [
@@ -364,10 +372,6 @@
       [
         "tests/test_waves.py",
         "test_ac9_failed_review_restores_the_main_tree"
-      ],
-      [
-        "tests/test_waves.py",
-        "test_ac9_failed_commit_restores_and_retry_lands"
       ]
     ],
     "AC-10": [
