@@ -552,6 +552,14 @@ def test_ac28_skill_runs_rated_from():
     print("ok")
 
 
+def test_ac28_skill_starts_run_with_bare_nio_run():
+    skill = (Path(__file__).parent.parent / "skills/tasks/SKILL.md").read_text()
+    step3 = skill.split("3. **Rate.**", 1)[1].split("4. **Verify", 1)[0]
+    assert "`nio run`" in step3, step3
+    assert "nio run <slug>" not in step3, step3
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_"):
