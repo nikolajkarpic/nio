@@ -50,6 +50,52 @@ retired: []
 - Effort: med
 - Mode: split: integration tests define every case
 
+#### Fixes
+
+### T-7 Fix: Reuse never checks the review ran at this commit or on a clean tree
+- From: J-1 (implementation-E-3, round 1)
+- Files: `src/nio/evidence.py`
+- Serves: AC-10, AC-9, CT-5
+- Test: TC-10
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-8 Fix: A different interpreter counts as the suite's own per-file command
+- From: J-2 (implementation-E-3, round 1)
+- Files: `src/nio/evidence.py`
+- Serves: AC-8, CT-5
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-9 Fix: A journey is not recognised as covered under the project's own `for f in ...; do ... "$f"` suite
+- From: J-5 (implementation-E-3, round 1)
+- Files: `src/nio/evidence.py`
+- Serves: AC-8, CT-5
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-10 Fix: The glob is matched with `fnmatch`, so a nested path counts as a suite file
+- From: J-7 (implementation-E-3, round 1)
+- Files: `src/nio/evidence.py`
+- Serves: AC-8, CT-5
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Tests call the nio CLI in-process (US-1)
 
 ### T-5 In-process `run_main` helper and one embedding model per process
