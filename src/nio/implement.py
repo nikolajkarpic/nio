@@ -107,7 +107,7 @@ def tasks_of(root, slug):
             word = tasks.TIER.match(f.get("Mode", "")).group(1) if f.get("Mode") else ""
             out.append({"id": tid, "title": t["title"], "epic": e["id"], "fix": t["fix"], "deps": tasks.ids(f.get("Depends on", "")),
                         "files": tasks.files(f.get("Files", "")), "serves": tasks.ids(f.get("Serves", "")),
-                        "tests": tasks.ids(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
+                        "tests": tasks.ids(f.get("Test", "")), "own": tasks.own(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
                         "effort": f.get("Effort", ""), "mode": forced or (word if word in MODES else "split")})
     return out
 
@@ -346,7 +346,7 @@ def digest(root, path):
 def test_files(root, slug, task):
     """The test files the task's TC-n entries name in their `File:` lines (FR-43)."""
     tcs = defs(root / ".nio/specs" / slug / "tests.md")
-    found = [f.split(":")[0] for t in task["tests"] if t in tcs for f in re.findall(r"`([^`]+)`", plan.field(tcs[t], "File"))]
+    found = [f.split(":")[0] for t in task["own"] if t in tcs for f in re.findall(r"`([^`]+)`", plan.field(tcs[t], "File"))]
     return list(dict.fromkeys(found))
 
 
