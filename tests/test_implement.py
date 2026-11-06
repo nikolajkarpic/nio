@@ -1591,6 +1591,64 @@ def test_memory_records_are_the_humans():
     assert git(root, "status", "--porcelain", "--", rel).startswith("??")
     print("ok")
 
+# --- T-4: red reads the task's own TC IDs (CT-2, CT-3) ---
+# TC-1's file is tests/test_refund.py, TC-2 to TC-4's is tests/test_refunds.py; they stand in for the plan's TC-10 / TC-38.
+
+def own_red(test_line, command, name="tests/test_refund.py"):
+    """T-1 claimed with `test_line` as its Test: line, `name` failing on `assert False`, then red with `command`."""
+    old = "- Test: TC-1\n"
+    assert old in REFUNDS
+    root = claimed(tasks=with_modes().replace(old, f"- Test: {test_line}\n", 1))
+    (root / name).write_text("import unittest\n\n\nclass T(unittest.TestCase):\n    def test_x(self):\n        assert False\n")
+    code, out = flow(root, "red", S, "T-1", "--run", command)
+    return root, code, out
+
+
+def test_ac4_red_deferred_not_required():
+    root, code, out = own_red("TC-1; TC-2 proved later by T-2", "python -m unittest tests/test_refund.py")
+    assert code == 0 and st(root) == "red", out
+    print("ok")
+
+
+def test_ac5_red_deferred_file_only():
+    root, code, out = own_red("TC-1; TC-2 proved later by T-2", "python -m unittest tests/test_refunds.py", "tests/test_refunds.py")
+    assert code == 1 and "tests/test_refund.py" in out and "tests/test_refunds.py" not in out, out
+    assert lines(root)[-1]["kind"] == "refused"
+    print("ok")
+
+
+def test_ac6_red_all_deferred():
+    root, code, out = own_red("a direct unit check calling `load`; TC-2 and TC-3 proved later by T-2",
+                              "python -m unittest tests/test_c.py", "tests/test_c.py")
+    assert code == 0 and st(root) == "red", out
+    print("ok")
+
+
+def test_ac7_red_proving_task():
+    root, code, out = own_red("TC-2", "python -m unittest tests/test_refund.py")
+    assert code == 1 and "tests/test_refunds.py" in out and st(root) == "claimed", out
+    print("ok")
+
+
+def test_ac22_red_one_of_two():
+    root, code, out = own_red("TC-1 and TC-2", "python -m unittest tests/test_refund.py")
+    assert code == 0 and st(root) == "red", out
+    print("ok")
+
+
+def test_ac23_red_own_wins():
+    line = "TC-2, plus a direct check; TC-2 proved later by T-2"
+    assert tasks.own(line) == ["TC-2"]
+    root, code, out = own_red(line, "python -m unittest tests/test_c.py", "tests/test_c.py")
+    assert code == 1 and "tests/test_refunds.py" in out, out
+    print("ok")
+
+
+def test_ac5_red_deferred_file_only_misuse():
+    root, code, out = own_red("TC-1; TC-2 proved later by T-2", "python -m unittest tests/test_z.py", "tests/test_z.py")
+    assert code == 1 and "tests/test_refund.py" in out, out
+    print("ok")
+
 
 def demo():
     """quickstart.md's demo effort: the refunds tasks with T-1 split and T-2, T-3 direct; its folder."""
