@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-4",
   "subject": "2026-11-06-faster-checks",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,11 @@
     "R-261106-wy34/implementation-E-4-conformance.md": "97eddb0e95746832104ba1e1a3558174831adcc6f981e885fc05dd494d81543c",
     "R-261106-wy34/implementation-E-4-consistency.md": "417eb82492f74698bcd855454af34f55634be3d9bf0b82dd82f4bfb91e89bfc0",
     "R-261106-wy34/implementation-E-4-correctness.md": "0b809b1c5140adf6f6f535331fedd34a5b42e4dbdea00fe9b8f0e0fadf30d8a9",
-    "R-261106-wy34/implementation-E-4-refuter.md": "775e354d1079b516eb711edd85c840970e7447d839c3ccc2e601d762e28c051d"
+    "R-261106-wy34/implementation-E-4-refuter.md": "775e354d1079b516eb711edd85c840970e7447d839c3ccc2e601d762e28c051d",
+    "R-261106-bncj/implementation-E-4-adversary.md": "6cdbaffa09da481341575a4b7a27b4a34885d6b204dab97e17bf420576df6fc9",
+    "R-261106-bncj/implementation-E-4-conformance.md": "d466887567b8ab1acc8ff6eb747d85e0cad50d872698ac6b87c38090ccff14be",
+    "R-261106-bncj/implementation-E-4-consistency.md": "982b0580ee70ac6fe9d179e1278992481b01fad2dc3ff45b4c78a24d9b190f04",
+    "R-261106-bncj/implementation-E-4-correctness.md": "64164c35533b5b9222d4cf19000dee0fd2309e717c8e896dee378856e34efd7b"
   },
   "jurors": {
     "implementation-E-4-adversary": {
@@ -24,9 +28,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "72ca9e69ee5a508615b84d9444980fe18e292e20",
-      "judged": 1
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
     },
     "implementation-E-4-conformance": {
       "attempts": 1,
@@ -35,9 +39,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "72ca9e69ee5a508615b84d9444980fe18e292e20",
-      "judged": 1
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
     },
     "implementation-E-4-consistency": {
       "attempts": 1,
@@ -46,9 +50,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "72ca9e69ee5a508615b84d9444980fe18e292e20",
-      "judged": 1
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
     },
     "implementation-E-4-correctness": {
       "attempts": 1,
@@ -57,9 +61,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "72ca9e69ee5a508615b84d9444980fe18e292e20",
-      "judged": 1
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
     }
   },
   "findings": [
@@ -503,27 +507,41 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-11",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: AC-1's test is TC-1, tests/test_flow.py:test_cli_runs_in_process, which passes in the reused suite; the lens matched AC-1 to none only because its 60 s is QS-1's hand measurement (47.9 s, T-5's worker; re-measured for the PR). T-11 is retired as pointless.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      1,
+      "approved"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "72ca9e69ee5a508615b84d9444980fe18e292e20"
+    "1": "72ca9e69ee5a508615b84d9444980fe18e292e20",
+    "2": "2924cfdaeb172be73090a97f4b3e6ddebf38024c"
   },
   "matched": {
-    "AC-1": [],
+    "AC-1": [
+      [
+        "tests/test_flow.py",
+        "test_cli_runs_in_process"
+      ]
+    ],
     "AC-2": [
       [
         "tests/test_flow.py",
