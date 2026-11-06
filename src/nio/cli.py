@@ -295,6 +295,8 @@ def main():
                 ids, rerun, near, secs = jury.changed(root, a.slug, a.gate)
                 print(f"changed: {', '.join(ids) or 'nothing'}\nsections: {', '.join(secs) or 'nothing'}\n"
                       f"neighbours: {', '.join(near) or 'nothing'}\nre-run: {', '.join(rerun) or 'nothing'}")
+                if added := jury.fixes_added(root, a.slug, a.gate):
+                    print(f"added under Fixes: {', '.join(added)}")
             elif a.jury_cmd == "pack":
                 print(evidence.pack(root, a.slug, a.gate, a.lens, a.run), end="")
             elif a.jury_cmd == "files":

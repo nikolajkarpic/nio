@@ -1444,6 +1444,42 @@ def test_ac8_fixcheck_shows_fixes_misuse():
     print("ok")
 
 
+def cli_out(root, *args):
+    import contextlib, io, os, sys
+    from nio import cli
+    here, argv = os.getcwd(), sys.argv
+    try:
+        os.chdir(root)
+        sys.argv = ["nio", *args]
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            cli.main()
+        return out.getvalue()
+    finally:
+        os.chdir(here)
+        sys.argv = argv
+
+
+def test_ac9_changed_lists_fixes():
+    root, slug, path, judged, fix_task = fixes_gate()
+    path.write_text(judged.replace("Notify the customer", "Notify the buyer") + fix_task)
+    lines = cli_out(root, "jury", "changed", slug, "tasks").splitlines()
+    assert lines[0].startswith("changed:") and "T-4" in lines[0] and "T-30" not in lines[0], lines
+    assert lines[4:] == ["added under Fixes: T-30"], lines
+    print("ok")
+
+
+def test_ac11_no_fixes_unchanged():
+    from test_tasks import FIX
+    root, slug, path, judged, _ = fixes_gate()
+    path.write_text(judged + FIX.format(tid="T-29", src="T-4", file="app.py", serves="AC-1", par="no"))
+    finding = PLAN_FINDING.format(n=1, what="is vague", sev="minor", quote="Notify the customer").replace("CT-1", "T-4")
+    plan_lens(root, "R-T2", "executability", finding, gate="tasks")
+    jury.collect(root, slug, "tasks", "R-T2")
+    assert "## Tasks added under Fixes" not in "\n".join(jury.fixcheck(root, slug, "tasks", "executability"))
+    assert len(cli_out(root, "jury", "changed", slug, "tasks").splitlines()) == 4
+    print("ok")
+
+
 if __name__ == "__main__":
     test_review_scenarios()
     test_plan_gate_versions()
@@ -1508,3 +1544,5 @@ if __name__ == "__main__":
     test_ac8_fixcheck_shows_fixes()
     test_ac24_fixes_only_no_rerun()
     test_ac8_fixcheck_shows_fixes_misuse()
+    test_ac9_changed_lists_fixes()
+    test_ac11_no_fixes_unchanged()
