@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-4",
   "subject": "2026-11-05-implement-followups",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,8 @@
     "R-261106-xdao/implementation-E-4-conformance.md": "122d71cb109691dab41da1779ca3c4d6cbe9bb8657feaa0a727c3b18d461dd84",
     "R-261106-xdao/implementation-E-4-consistency.md": "04f0e72aebaeb3066c690d773b41d3c71c9f83629d1a28f9ec1834e35e4be5b8",
     "R-261106-xdao/implementation-E-4-correctness.md": "69ea63ce25ca293e1d3367c71567783d79a570af27a62f89288a0760bf9494ca",
-    "R-261106-xdao/implementation-E-4-refuter.md": "a5adf951d11c50bd683522bf16ecfddff074dfb286477d801b4a284d62d7f1a9"
+    "R-261106-xdao/implementation-E-4-refuter.md": "a5adf951d11c50bd683522bf16ecfddff074dfb286477d801b4a284d62d7f1a9",
+    "R-261106-mgyg/implementation-E-4-conformance.md": "0468d14fc01dd674dfdcf8922d2839fbc17e4b6d75b23a064871179ad4e6a255"
   },
   "jurors": {
     "implementation-E-4-adversary": {
@@ -35,9 +36,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "9586bfe3b97f428596e4261a34a2a9d9e6038616",
-      "judged": 1
+      "round": 2,
+      "version": "a907d7507da97623dd2c0d44308af91a1ab8b160",
+      "judged": 2
     },
     "implementation-E-4-consistency": {
       "attempts": 1,
@@ -485,15 +486,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "9586bfe3b97f428596e4261a34a2a9d9e6038616"
+    "1": "9586bfe3b97f428596e4261a34a2a9d9e6038616",
+    "2": "a907d7507da97623dd2c0d44308af91a1ab8b160"
   },
   "matched": {
     "AC-8": [

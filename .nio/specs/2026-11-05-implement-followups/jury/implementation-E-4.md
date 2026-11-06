@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-4
 subject: 2026-11-05-implement-followups
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-4 jury: 2026-11-05-implement-followups
 
@@ -93,6 +93,6 @@ outcome: rejected
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
 | implementation-E-4-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-4-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-4-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-4-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
 | implementation-E-4-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
