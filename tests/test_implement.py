@@ -581,8 +581,8 @@ def test_ac46_wrong_branch():
 
 
 def nio(root, *args):
-    r = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", *args], cwd=root, capture_output=True, text=True)
-    return r.returncode, r.stdout + r.stderr
+    code, out, err = test_flow.run_main(root, *args)
+    return code, out + err
 
 
 def test_ac40_legacy_list_without_mode():
