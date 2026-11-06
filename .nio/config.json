@@ -14,5 +14,8 @@
   },
   "tests": {
     "suite": "for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done"
+  },
+  "jury": {
+    "run_timeout": 1800
   }
 }
