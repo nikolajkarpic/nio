@@ -413,6 +413,20 @@ def test_format_template_parses():
     print("ok")
 
 
+def test_template_shows_gap_and_where():
+    """The template shows the implementation gate's gap and where lines, marked for that gate only."""
+    root = setup()
+    text = resources.files("nio").joinpath("templates/lens-output.md").read_text()
+    path = root / "lens.md"
+    path.write_text(text.replace("subject: checkout-refunds", "subject: s"))
+    lines = text.splitlines()
+    assert any(line.startswith("- gap:") and "implementation gate only" in line for line in lines), text
+    assert any(line.startswith("- where:") and "implementation gate only" in line for line in lines), text
+    meta, findings, errors = jury.parse_lens(path, "spec", "s")
+    assert not errors, errors
+    print("ok")
+
+
 def test_versions_decide_fixed():
     """Regressions from the second independent review: what a re-run on a new version may and may not settle."""
     def edit(root, extra):
@@ -1472,6 +1486,7 @@ if __name__ == "__main__":
     test_plan_and_changed()
     test_deferred_points_need_the_human()
     test_format_template_parses()
+    test_template_shows_gap_and_where()
     test_gate()
     test_persisting_finding_goes_to_the_human()
     test_majority_overrules_one_juror()
