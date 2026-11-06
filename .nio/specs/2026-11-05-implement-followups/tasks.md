@@ -155,12 +155,12 @@ retired: []                      # task IDs removed from this file; never reused
 - From: J-8 (implementation-E-4, round 1)
 - Files: `src/nio/cli.py`
 - Serves: AC-9, CT-6, FR-7
-- Test: TC-9
+- Test: TC-9; J-8 was accepted as risk (the code follows the approved CT-6, and AC-9's wording is loose against it), so nothing changes: this task only re-runs TC-9 to confirm the output CT-6 sets
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
 - Effort: med
-- Mode: single: a fix from a jury finding
+- Mode: direct: no change to make; the run confirms TC-9 still passes
 
 ## E-5 The evaluator edits only the rating lines (US-4)
 

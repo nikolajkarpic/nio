@@ -17,7 +17,7 @@ outcome: rejected
 | J-5 | major | contradiction | AC-9, AC-24, CT-6 | conformance | merged | merged |  | new, 0 |
 | J-6 | minor | gap | AC-25 | conformance | grounded | open |  | new, 0 |
 | J-7 | minor | gap | AC-11 | conformance | grounded | open |  | new, 0 |
-| J-8 | major | inconsistency | AC-9, CT-6, FR-7 | conformance, consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-8 | major | inconsistency | AC-9, CT-6, FR-7 | conformance, consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-9 | minor | inconsistency | CT-4, FR-8, AC-10 | consistency | grounded | open |  | new, 0 |
 | J-10 | minor | inconsistency | AC-9, CT-6, AC-24 | correctness | grounded | open |  | new, 0 |
 | J-11 | minor | gap | AC-8 | correctness | grounded | open |  | new, 0 |
@@ -69,7 +69,7 @@ outcome: rejected
 - situation (conformance): A fix task T-30 is added. AC-9 and AC-24 expect `nio jury changed` to report it among the changed IDs, next to T-4. The code prints it only on `added under Fixes: T-30`. `test_ac9_changed_lists_fixes` asserts `"T-30" not in lines[0]`, and `test_ac24_fixes_only_no_rerun` asserts `ids == []`. The code and tests follow CT-6, so the two ACs as written are not met.
 - fix: reword AC-9 so T-30 is listed under `added under Fixes` in the output, as CT-6 intends. Alternatively, put T-30 in the `changed:` line and keep it out of the re-run list, then update the test.
 - validation: confirmed: AC-9 says T-30 is "among the changed IDs". CT-6 and the test keep it out of the `changed:` line and print it on `added under Fixes:`. The ACs and the implementation describe different outputs. This is the same problem as J-5.
-- disposition: fix-task by agent: fix task T-17
+- disposition: accepted-risk by human: Delegated human (orchestrator): the code follows the approved contract CT-6 (fix IDs on their own 'added under Fixes:' line, so no lens re-runs); AC-9/AC-24 wording is loose against it, as the tasks jury already found. Rewording the ACs would reopen the spec gate for wording only; tracked on #80. T-17 becomes a re-run of TC-9.
 
 ### J-9 fix_ids reads the `#### Fixes` heading differently from the approval path
 - quote: "so approval and `changed` are untouched"
