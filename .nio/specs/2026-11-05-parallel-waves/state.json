@@ -1,0 +1,14 @@
+{
+  "abandon": null,
+  "attempts": {
+    "T-1": 1,
+    "T-14": 2,
+    "T-19": 1,
+    "T-5": 1
+  },
+  "auto": false,
+  "claims": {},
+  "pause": null,
+  "run": "R-261106-4abh",
+  "waiting": null
+}

@@ -108,7 +108,7 @@ def tasks_of(root, slug):
             out.append({"id": tid, "title": t["title"], "epic": e["id"], "fix": t["fix"], "deps": tasks.ids(f.get("Depends on", "")),
                         "files": tasks.files(f.get("Files", "")), "serves": tasks.ids(f.get("Serves", "")),
                         "tests": tasks.ids(f.get("Test", "")), "own": tasks.own(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
-                        "effort": f.get("Effort", ""), "mode": forced or (word if word in MODES else "split")})
+                        "effort": f.get("Effort", ""), "parallel": f.get("Parallel") == "yes", "mode": forced or (word if word in MODES else "split")})
     return out
 
 
@@ -255,6 +255,12 @@ def dirty(root, slug):
     return outside(slug, [p for _, p in porcelain(root)])
 
 
+def clean(root, slug):
+    """Refuse, recording nothing, while the main tree has uncommitted changes outside the effort folder (FR-22, FR-14)."""
+    if left := dirty(root, slug):
+        raise ValueError("uncommitted changes outside the effort folder:" + "".join(f"\n  {p}" for p in left))
+
+
 def guard(root, slug, state, lines, started):
     """CT-5's refusals, in its order; each raises ValueError and nothing is recorded (FR-2, FR-3, FR-20, FR-22)."""
     if not any(s == "tasks_jury" for _, _, s in flow.commits(root, slug)):
@@ -265,8 +271,7 @@ def guard(root, slug, state, lines, started):
     now = (records.git(root, "branch", "--show-current") or ["(detached)"])[0]
     if started and now != branch(slug):
         raise ValueError(f"on {now}, not {branch(slug)}")
-    if left := dirty(root, slug):
-        raise ValueError("uncommitted changes outside the effort folder:" + "".join(f"\n  {p}" for p in left))
+    clean(root, slug)
     if state["claims"].get("task"):
         raise ValueError(f"{state['claims']['task']} is claimed")
     if next_ready(root, slug, lines) is None:
@@ -292,6 +297,8 @@ def claim(root, slug=None, by=None):
         guard(root, slug, state, lines, started)
         if state["abandon"] is not None or state["pause"] or started and state["waiting"]:
             return 1, flow.talk(slug, flow.where(root, slug, state, lines))  # a blocked task holds the stage (AC-23)
+        if t := next((t for t, v in status(root, slug, lines).items() if v == "blocked"), None):
+            return 1, [f'{t} is blocked: nio flow unblock {slug} {t} --human "<reason>" --by human']
         base = []
         if not started:
             entry, state, why = start_stage(root, slug, state)
@@ -303,14 +310,86 @@ def claim(root, slug=None, by=None):
         if gate:
             return 1, [f"{gate} is finished but its gate is open: run @nio:jury on implementation-{gate}, then `nio flow done implementation-{gate}`"]
         task = next_ready(root, slug, lines)
-        rid = records.new_run(root, {"effort": slug, "task": task["id"],
-                                     "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
-        path = pack.save(root, rid, task["id"], worker_pack(root, slug, task))
+        group = wave(root, slug, lines, task)
         head = records.git(root, "rev-parse", "HEAD")[0]
-        line = {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": task["id"], "commit": head}}
-        flow.write(root, slug, base + [line], {**state, "claims": {"task": task["id"]}}, w, "implementing")
-    return 0, [f"task: {task['id']} {task['title']}", f"mode: {task['mode']}", f"card: nio-worker-{task['tier']}",
-               f"effort: {task['effort']}", f"pack: {path.relative_to(root)}"]
+        made, out, claims = [], [], []
+        for t in group:
+            rid = records.new_run(root, {"effort": slug, "task": t["id"],
+                                         "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
+            path = pack.save(root, rid, t["id"], worker_pack(root, slug, t))
+            ev = {"task": t["id"], "commit": head}
+            out += [f"task: {t['id']} {t['title']}", f"mode: {t['mode']}", f"card: nio-worker-{t['tier']}",
+                    f"effort: {t['effort']}", f"pack: {path.relative_to(root)}"]
+            if len(group) > 1:
+                tree = root / ".nio/runs" / rid / "worktree"
+                code, _, err = records.git(root, "worktree", "add", "--detach", str(tree), head, full=True)
+                if code:
+                    for m in made:
+                        records.git(root, "worktree", "remove", "--force", str(m), full=True)
+                    raise ValueError(f"can't create a worktree for {t['id']}: {err.strip()}")
+                made.append(tree)
+                ev["worktree"] = str(tree.relative_to(root))
+                out.append(f"worktree: {ev['worktree']}")
+            claims.append({"kind": "claim", "from": "implementing", "to": "implementing", "evidence": ev})
+        mark = {"task": group[0]["id"], **({"wave": [t["id"] for t in group]} if len(group) > 1 else {})}
+        flow.write(root, slug, base + claims, {**state, "claims": mark}, w, "implementing")
+    return 0, out
+
+
+def wave(root, slug, lines, first):
+    """The tasks one claim takes (CT-1, FR-1 to FR-3, FR-15): `first`, then the epic's following ready `Parallel: yes`
+    tasks in file order, at most `budgets.parallel` (2 when unset) in all; just `first` when it isn't parallel."""
+    n = (records.config(root).get("budgets") or {}).get("parallel", 2)
+    if type(n) is not int or n < 1:
+        raise ValueError(f"budgets.parallel must be a whole number of at least 1, not {n!r}")
+    if n == 1 or not first["parallel"]:
+        return [first]
+    st, ts = status(root, slug, lines), tasks_of(root, slug)
+    after = ts[[t["id"] for t in ts].index(first["id"]) + 1:]
+    return [first] + [t for t in after if t["epic"] == first["epic"] and t["parallel"] and st[t["id"]] == "ready"][:n - 1]
+
+
+def release(claims, tid):
+    """`claims` without `tid` (CT-1): a wave keeps its other tasks, the first left leading; {} once none is left."""
+    left = [t for t in claims.get("wave", []) if t != tid]
+    return {"task": left[0], "wave": left} if left else {}
+
+
+def land(root, slug, tid, tree, since):
+    """Apply a wave task's worktree changes since its claim commit `since`, untracked files included, to the main tree
+    (CT-4). Returns (the patch, saved next to the worktree; {path: its main-tree bytes before, None when absent};
+    git's error or "", the main tree untouched on an error). The effort's state and history are never applied."""
+    keep = [f".nio/specs/{slug}/state.json", f".nio/specs/{slug}/history.jsonl"]
+    records.git(tree, "add", "-A")
+    diff = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, full=True)[1]
+    path = tree.parent / f"{tid}.patch"
+    path.write_text(diff)
+    names = [p for p in records.git(tree, "-c", "core.quotepath=off", "diff", "--cached", "--name-only", "--no-renames", since) if p not in keep]
+    saved = {p: (root / p).read_bytes() if (root / p).is_file() else None for p in names}
+    code, _, err = records.git(root, "apply", "--binary", *[f"--exclude={p}" for p in keep], str(path), full=True) \
+        if names else (0, "", "")
+    return str(path.relative_to(root)), saved, err.strip() or "git apply failed" if code else ""
+
+
+def restore(root, saved):
+    """Put each path `land` saved back to its bytes before the apply, deleting one that didn't exist."""
+    for p, b in saved.items():
+        (root / p).write_bytes(b) if b is not None else (root / p).unlink(missing_ok=True)
+
+
+def worktree(root, lines, tid):
+    """The absolute worktree the task's latest claim line names, None when it names none or the folder is gone (CT-2)."""
+    name = next((x["evidence"].get("worktree") for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("task") == tid), None)
+    return root / name if name and (root / name).is_dir() else None
+
+
+def tree_of(root, lines, tid):
+    """The tree a task's command runs in: its worktree, the main tree when it has none; refuses a named worktree that is gone."""
+    path = worktree(root, lines, tid)
+    name = next((x["evidence"].get("worktree") for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("task") == tid), None)
+    if name and not path:
+        raise ValueError(f"the worktree of {tid} is gone: {name}")
+    return path or root
 
 
 # --- red, green, review, attempts and unblock (CT-7, CT-8, CT-10, CT-12) ---
@@ -354,17 +433,22 @@ def limit(root):
     return (records.config(root).get("tests") or {}).get("timeout") or DEFAULT_LIMIT
 
 
-def shelve(root, slug, run, tid):
+def shelve(root, slug, run, tid, tree=None):
     """Save the task's uncommitted changes outside the effort folder (`git diff HEAD` plus untracked files) as
-    `.nio/runs/<run>/T-n.patch`, then restore those paths to HEAD (CT-10). Returns the patch's path."""
-    rows = [(c, p) for c, p in porcelain(root) if outside(slug, [p])]
+    `.nio/runs/<run>/T-n.patch` of the main tree, then restore those paths to HEAD (CT-10). `tree` is the task's
+    worktree, when it has one. Returns the patch's path."""
+    main, root = root, tree or root
+    keep = (lambda p: not p.startswith(SCRATCH) and not p.startswith(f".nio/specs/{slug}/") or  # a worktree is removed: keep
+            p.startswith(f".nio/specs/{slug}/") and p.rsplit("/", 1)[-1] not in ("state.json", "history.jsonl")) \
+        if tree else (lambda p: bool(outside(slug, [p])))  # its effort-folder edits too
+    rows = [(c, p) for c, p in porcelain(root) if keep(p)]
     paths = [p for _, p in rows]
     diff = ""
     if paths:
         if new := [p for c, p in rows if c == "??"]:
             records.git(root, "add", "-N", "--", *new)  # so `git diff` shows untracked files too
         diff = records.git(root, "diff", "HEAD", "--binary", "--", *paths, full=True)[1]
-    path = root / ".nio/runs" / run / f"{tid}.patch"
+    path = main / ".nio/runs" / run / f"{tid}.patch"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(diff)  # written before anything is restored: the work is never only in the tree
     for p in paths:
@@ -373,7 +457,9 @@ def shelve(root, slug, run, tid):
         else:
             records.git(root, "rm", "-q", "--cached", "--ignore-unmatch", "--", p)
             (root / p).unlink(missing_ok=True)
-    return str(path.relative_to(root))
+    if tree:
+        records.git(main, "worktree", "remove", "--force", str(tree), full=True)
+    return str(path.relative_to(main))
 
 
 def run_of(root, slug, lines, tid):
@@ -389,10 +475,10 @@ def attempt(root, slug, state, lines, tid, line):
     state = {**state, "attempts": {**state["attempts"], tid: n}}
     if n < 3:
         return [line], state
-    patch = shelve(root, slug, run_of(root, slug, lines, tid), tid)
+    patch = shelve(root, slug, run_of(root, slug, lines, tid), tid, worktree(root, lines, tid))
     why = f"{tid} blocked after 3 attempts"
     return [line, entry("blocked", tid, cause="attempts", patch=patch)], \
-        {**state, "claims": {}, "waiting": {"why": why, "task": tid}}
+        {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}
 
 
 def refused(root, slug, state, lines, tid, step, command, why, w):
@@ -441,16 +527,16 @@ def red(root, slug, tid, command, by):
         if named and not any(f in command for f in named):
             why = f"the command doesn't name {' or '.join(named)}"
         else:
-            code, out, cause = run(root, command, limit(root))
+            code, out, cause = run(tree_of(root, lines, tid), command, limit(root))
             # a cause first: a killed run's partial output proves nothing either way
             why = cause or ("the test passes before the code exists" if code == 0 else wrong_reason(name, code, out))
         if why:
             return refused(root, slug, state, lines, tid, "red", command, why, w)
-        mine = since_claim(lines, tid)
+        mine, tree = since_claim(lines, tid), tree_of(root, lines, tid)
         reds = [x for x in mine if x["kind"] == "red"]
         paths = list(reds[0]["evidence"]["frozen"]) if reds else \
-            outside(slug, changed(root, mine[0]["evidence"].get("commit") or "HEAD"))  # FR-10, FR-11: never grown
-        frozen = {p: digest(root, p) for p in paths}
+            outside(slug, changed(tree, mine[0]["evidence"].get("commit") or "HEAD"))  # FR-10, FR-11: never grown
+        frozen = {p: digest(tree, p) for p in paths}
         line = entry("red", tid, command=command, output=flow.sha(out.encode()), runner=name or "unknown", frozen=frozen)
         flow.write(root, slug, [line], state, w, "implementing")
     return 0, [f"red: {tid} accepted", "frozen:"] + [f"  {p}" for p in frozen]
@@ -470,14 +556,15 @@ def review(root, slug, task, lines):
     full suite for the last epic or when it isn't."""
     tid = task["id"]
     mine = since_claim(lines, tid)
-    paths = changed(root, mine[0]["evidence"].get("commit") or "HEAD")
+    # a wave task's changes are applied on HEAD, which may hold a sibling's commit since its claim (CT-5)
+    paths = changed(root, "HEAD" if worktree(root, lines, tid) else mine[0]["evidence"].get("commit") or "HEAD")
     reds = [x for x in mine if x["kind"] == "red"]
     frozen = reds[-1]["evidence"]["frozen"] if reds else {}
     folder = f".nio/specs/{slug}/"
     reasons = [f"the task edited {p[len(folder):]}: the spec, plan and tasks are not the worker's" for p in paths
                if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
     reasons = reasons or [f"{p} changed since red" for p, h in frozen.items() if digest(root, p) != h]
-    new, still = [], []
+    new, still, ran = [], [], {}
     # #66: the full suite took about half the worker time on every task; the task's own test already ran at green
     epic_closes, all_close = closes(root, slug, task, lines)
     if not reasons and epic_closes:
@@ -485,6 +572,7 @@ def review(root, slug, task, lines):
         cfg = records.config(root)
         quick = None if all_close else (cfg.get("tests") or {}).get("epic")  # a slow suite runs in full only at the end
         r = suite(root, cfg, quick)
+        ran = {"suite": {"command": r["command"], "code": r["code"]}}
         if r["broken"]:
             reasons.append(f"the suite is broken: {r['cause'] or wrong_reason(r['runner'], r['code'], r['output'])}")
         elif r["runner"] is None or r["failing"] is None:
@@ -497,7 +585,7 @@ def review(root, slug, task, lines):
         if not quick and r["collected"] is not None and base.get("collected") is not None and r["collected"] < base["collected"]:
             reasons.append(f"{r['collected']} tests collected against the baseline's {base['collected']}")
     out = [p for p in outside(slug, paths) if p not in task["files"] and p not in frozen]
-    return entry("review", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out)
+    return entry("review", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out, **ran)
 
 
 def commit(root, slug, task, who, review=None):
@@ -519,7 +607,7 @@ def commit(root, slug, task, who, review=None):
     parent = records.git(root, "rev-parse", "HEAD")[0]
     waiting = None if (state["waiting"] or {}).get("task") == tid else state["waiting"]
     flow.write(root, slug, [entry("task_done", tid, branch=branch(slug), parent=parent)],
-               {**state, "claims": {}, "waiting": waiting}, who, "implementing")
+               {**state, "claims": release(state["claims"], tid), "waiting": waiting}, who, "implementing")
     ends, report = epic_end(root, slug, task, review or {})
     if ends:
         flow.write(root, slug, ends, flow.load(root, slug)[0], who, "implementing")
@@ -612,7 +700,9 @@ def green(root, slug, tid, command, by):
     with flow.lock(root, slug):
         state, lines = flow.load(root, slug)
         task, now = task_for(root, slug, lines, tid, ("claimed", "red", "green"))
-        direct = task["mode"] == "direct"
+        direct, tree = task["mode"] == "direct", tree_of(root, lines, tid)
+        if tree != root:
+            clean(root, slug)  # FR-14: the apply and its restore must not mix with the human's edits
         if now == "claimed" and not direct:
             raise ValueError(f"{tid} has no failing test first")
         by_worker(task, w, "green")
@@ -628,24 +718,40 @@ def green(root, slug, tid, command, by):
                     why = f"the command recorded at red is {ev['command']}"
                 command = ev["command"]
                 why = why or next((f"{p} changed since red; prove red again" for p, h in ev["frozen"].items()
-                                   if digest(root, p) != h), "")
+                                   if digest(tree, p) != h), "")
             if not why:
-                code, out, cause = run(root, command, limit(root))
+                code, out, cause = run(tree, command, limit(root))
                 why = cause or (f"the command exits {code}" if code else "")
             if why:
                 return refused(root, slug, state, lines, tid, "green", command, why, w)
             line = entry("green", tid, command=command, output=flow.sha(out.encode()))
             flow.write(root, slug, [line], state, w, "implementing")
             lines, printed = lines + [line], [f"green: {tid} accepted"]
+        saved = {}
+        if tree != root:
+            patch, saved, err = land(root, slug, tid, tree, since_claim(lines, tid)[0]["evidence"]["commit"])
+            if err:
+                records.git(root, "worktree", "remove", "--force", str(tree), full=True)
+                why = f"{tid} blocked: its changes don't apply"
+                flow.write(root, slug, [entry("blocked", tid, cause="apply", patch=patch)],
+                           {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}, w, "implementing")
+                return 1, printed + [why, f"  {err}", f"its changes are in {patch}"]
         line = review(root, slug, task, lines)
         ev = line["evidence"]
         if not ev["passed"]:
+            restore(root, saved)
             entries, state = attempt(root, slug, state, lines, tid, line)
             flow.write(root, slug, entries, state, w, "implementing")
             return 1, printed + ["review: failed"] + [f"  {r}" for r in ev["reasons"]] + said(entries)
         flow.write(root, slug, [line], state, w, "implementing")
         printed += ["review: passed"] + [f"  outside the task's files: {p}" for p in ev["outside"]]
-        sha, report = commit(root, slug, task, w, line)
+        try:
+            sha, report = commit(root, slug, task, w, line)
+        except Exception:
+            restore(root, saved)
+            raise
+        if tree != root:
+            records.git(root, "worktree", "remove", "--force", str(tree), full=True) if sha else restore(root, saved)
     if sha:
         return 0, printed + [f"done: {tid} {sha}"] + report
     return 1, printed + [flow.load(root, slug)[0]["waiting"]["why"], f"{tid} stays green; `nio flow green {slug} {tid}` retries"]
@@ -707,7 +813,7 @@ def block(root, slug, tid, handoff, by):
         found = next((p for p in sorted((root / ".nio/memory").rglob("C-*.md"))
                       if f"Handoff: {hsh}" in p.read_text() and records.parse(p)[0].get("outcome") == "pending"), None)
         kept = found.read_text() if found else ""
-        patch = "" if mine else shelve(root, slug, run_of(root, slug, lines, tid), tid)  # first: it cleans every untracked file
+        patch = "" if mine else shelve(root, slug, run_of(root, slug, lines, tid), tid, worktree(root, lines, tid))  # first: it cleans every untracked file
         if found is None:
             areas = records.areas(root)
             found = records.new(root, "change", "project" if "project" in areas else areas[0],
@@ -721,6 +827,6 @@ def block(root, slug, tid, handoff, by):
         cid = records.parse(found)[0]["id"]
         if not mine:  # the line and the state it leaves go in one write, so a blocked line means waiting is set too
             line = {**entry("blocked", tid, cause="spec", handoff=hsh, patch=patch), "change": cid}
-            flow.write(root, slug, [line], {**state, "claims": {}, "waiting": {"why": f"spec problem in {tid}", "task": tid, "change": cid}},
+            flow.write(root, slug, [line], {**state, "claims": release(state["claims"], tid), "waiting": {"why": f"spec problem in {tid}", "task": tid, "change": cid}},
                        w, "implementing")
     return 0, [f"blocked: {tid}", cid]

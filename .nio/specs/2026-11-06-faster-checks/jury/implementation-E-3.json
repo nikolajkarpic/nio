@@ -1,0 +1,416 @@
+{
+  "gate": "implementation-E-3",
+  "subject": "2026-11-06-faster-checks",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-g6fh/implementation-E-3-adversary.md": "5d3a4ec287657e23575661150bb06571c89e4742180492ac933df1c4090bdfc0",
+    "R-261106-g6fh/implementation-E-3-conformance.md": "b01f5541fb2a651dc09a4603e1400776a3f020c679a31c0e9e835a8afc3d9959",
+    "R-261106-g6fh/implementation-E-3-consistency.md": "e6843f390e1c7e74a9b6a2f2f29711fd38e83c2eb14ca208087148cafaa5d46a",
+    "R-261106-g6fh/implementation-E-3-correctness.md": "8d0886d34922fa56753e097c94058d53aa5a830a4bc3ed10eeb3050dc18155f8",
+    "R-261106-g6fh/implementation-E-3-refuter.md": "eb7573fd09fbf3b1a5fdb8581878a13920d3c4e8508c5620a927dc2b6fff9a6b",
+    "R-261106-2iou/implementation-E-3-adversary.md": "646e7d64a13afca8f28b5409a2a4fd90fead07991df6c6c470b658ead891f396",
+    "R-261106-2iou/implementation-E-3-conformance.md": "52af63d482eea12fa16c0cb2135977d3f4cb5c12228e709015e68780769d619b",
+    "R-261106-2iou/implementation-E-3-consistency.md": "3ca9cb4f4fc903d0aed4e596e2bc80071ba05d4b749b5c62d219caac062851e2",
+    "R-261106-2iou/implementation-E-3-correctness.md": "cf9c3f9f7b378c5efa04cb6ed8c2538a658ffd7a2e8d7fc5238b2d9d1a3f322d"
+  },
+  "jurors": {
+    "implementation-E-3-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fea98374370fedb0841ed51e59df2be2b714173a",
+      "judged": 2
+    },
+    "implementation-E-3-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fea98374370fedb0841ed51e59df2be2b714173a",
+      "judged": 2
+    },
+    "implementation-E-3-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fea98374370fedb0841ed51e59df2be2b714173a",
+      "judged": 2
+    },
+    "implementation-E-3-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fea98374370fedb0841ed51e59df2be2b714173a",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Reuse never checks the review ran at this commit or on a clean tree",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-10",
+        "AC-9",
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Given the review's suite result is from another commit or a dirty tree",
+        "ev.get(\"task\") != task or ev.get(\"passed\") is not True"
+      ],
+      "fix": "compare the review's recorded commit or tree with `commit` (or its parent) and return None on mismatch. Add a test with a post-review commit of the same task.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "T-4's review passes and is recorded with its own `commit`. Someone then commits another change as `T-4: tweak`, or the review ran on files the task commit later changed. The newest commit's subject still says T-4, and the last review line is still T-4's, passed with code 0. `reused_suite` never reads `ev[\"commit\"]` or compares the tree, so the evidence suite is recorded \"passed ... reused\" for code the review never ran. This is a silent false pass.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "`reused_suite` compares only the review's task id (from the commit subject), `passed`, `suite.command` and `suite.code`. It never reads `ev[\"commit\"]`, and the tests give the review a bogus commit `\"c\"` and still expect reuse. A review recorded for T-n, followed by a later `T-n: ...` commit that changes code, would be reused for code the review never ran. CT-5 relies on the flow's task commit being the clean tree, which holds only if no code commit follows the review.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`reused_suite` (evidence.py:132-146) checks only the task id from the commit subject, `passed`, `suite.command` and `suite.code`. It never reads `ev[\"commit\"]` or the tree, although AC-9 and AC-10 name \"same commit with a clean tree\" and \"another commit or a dirty tree\". Nothing else in the artefact enforces that.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-7",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:reused_suite",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "A different interpreter counts as the suite's own per-file command",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-8",
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "A step with an added argument or environment variable (for example `NIO_E2E=1`), a step on a file the suite doesn't run",
+        "any(f\"{prefix} {m}\" in suite for m in (\"{}\", '\"$f\"', \"$1\"))"
+      ],
+      "fix": "require the prefix to equal the whole command that precedes the placeholder. Match at a word boundary, or anchor at the start of the command or after `do`, `;`, `&&` or `sh -c '`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "the suite is `for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done`. A quickstart step `python tests/test_x.py` has the prefix `python`, and the substring `python \"$f\"` occurs inside `uv run python \"$f\"`. The step is judged covered and never runs, although it uses another interpreter and environment than the suite (system python instead of `uv run`). The same happens with the prefix `run python`. The journey is recorded as passed without any run.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`covered` (evidence.py:159) tests `f\"{prefix} {m}\" in suite` as a plain substring. Prefix `python` is found inside `uv run python \"$f\"`, so a step run with another interpreter counts as the suite's own command. AC-8 says \"the suite's own per-file command and nothing added\".",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:covered",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "The glob match is looser than the shell's, so unrun or non-existent files count as covered",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "AC-8",
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a test file the suite runs",
+        "fnmatch.fnmatchcase(words[-1], g) for g in swords if \"*\" in g"
+      ],
+      "fix": "reject a path with extra `/` beyond the glob's own, and check that the file exists at the commit (or is in the set the glob expands to).",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`fnmatchcase` lets `*` match `/`, so `tests/sub/test_x.py` or `tests/a/b/test_y.py` matches `tests/test_*.py`. The shell glob in the suite does not run those files. It also never checks that the file exists, so `tests/test_typo.py` is \"covered\" and recorded passed when the step would have failed. Any word of the suite containing `*` also acts as a glob, for example a `-k \"*slow*\"` filter.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "the suite is `uv run python3 {}` and a journey step is `python3 tests/test_x.py`. The prefix `python3 {}` is a substring of the suite, so the step is judged \"the suite's own per-file command\" and is skipped. It differs from the suite's real command (`uv run` is missing, so the environment differs), and AC-8 says \"with the suite's own per-file command and nothing added\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-7",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:covered",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "A journey with no steps is recorded as covered and passed",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-8",
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "A journey whose every step is covered, while the suite entry `collect` uses passed, is not run",
+        "cov = lambda ss: code_ok and all(covered(c, t.get(\"suite\")) for c, _ in ss)"
+      ],
+      "fix": "require `ss` to be non-empty in `cov`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "if a scenario parses to zero steps without being flagged `bad`, `all([])` is True. The journey becomes `covered: true, result: passed` with an empty command. That is vacuous evidence of a scenario that was never checked.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/evidence.py:collect",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "A journey is not recognised as covered under the project's own `for f in ...; do ... \"$f\"` suite",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "AC-8",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the path matches a glob word of the suite command (`tests/test_*.py`)",
+        "Observable: no run of that command; the journey's record says covered by the suite run."
+      ],
+      "fix": "strip shell punctuation (`;`, `|`, `&`) from the suite words before the glob test, and add a test that uses the real `for f in tests/test_*.py; do ...` suite",
+      "sources": [
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "the suite is `for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done`. `shlex.split` leaves the glob word as `tests/test_*.py;` with the semicolon attached, so `fnmatch` never matches `tests/test_evidence.py`. Both journeys in the pack's results were run in the copy and are not marked covered, although the suite result passed. The only test of the covered path uses a suite where the glob is followed by a space (`printf '%s\\n' tests/test_*.py | xargs ...`), so it cannot catch this.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "the configured suite is `for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done`. `shlex.split` makes `tests/test_*.py;` the glob word, so `covered` is false for `uv run python tests/test_evidence.py`, which the suite runs with its own per-file command. The journey runs in full in the copy and is not recorded as covered, which is what AC-8 says must not happen. The suite's reuse does fire, so the speed-up is half-applied. The unit tests use an `xargs` suite without the semicolon, so they never exercise this form.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`shlex.split` of `for f in tests/test_*.py; do ...` gives the word `tests/test_*.py;` with the semicolon attached, and `.nio/config.json` line 16 uses that exact suite. `fnmatch` against `tests/test_evidence.py` therefore fails, so journeys on the project's own suite are never marked covered. This contradicts AC-8. The cited tests use an `xargs` suite and don't exercise this form.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-9",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:covered; tests/test_evidence.py:test_covered_journey_is_not_run_again",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "Configured suite is sequential, against the current decision and FR-3",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "run the test files in parallel, eight at a time, each file to its end even when another failed",
+        "for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done"
+      ],
+      "fix": "change `tests.suite` in `.nio/config.json` to the `xargs -P8` form the spec and decision name, or write a change request if the sequential suite is meant to stay.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "the spec requires the suite to run eight files at a time and to run every file even after one fails. The configured suite in `.nio/config.json` runs the files one after another and stops at the first failing file (`|| exit 1`), so a failing file hides the later ones. The decision D-261106-qo2r (\"The repo suite runs eight test files at once and every file runs even after one fails\") is current, so this goes against it with no change request. This diff does not touch the config, so the epic's own suite speed-up is not in effect.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tasks.md assigns the parallel suite config change to T-6 in E-5 (\"Parallel suite command in config\"). This gate reviews E-3 (jury evidence reuse), so a config that is still sequential is the expected state before E-5 and is not a defect of E-3's diff.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": ".nio/config.json (`tests.suite`)",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "The glob is matched with `fnmatch`, so a nested path counts as a suite file",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "AC-8",
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`return any(fnmatch.fnmatchcase(words[-1], g) for g in swords if \"*\" in g)`"
+      ],
+      "fix": "match one path segment, for example reject a candidate whose directory part differs from the glob's, or expand the glob with `glob` against the copy.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "`fnmatch` lets `*` match `/`, so `tests/sub/test_x.py` matches `tests/test_*.py`. The shell glob would not match it, so the suite does not run that file. The journey is then recorded as covered and never executed, although AC-8 requires \"a test file the suite runs\". Nothing checks that the file exists at the commit either.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`fnmatchcase` lets `*` match `/`, so `tests/sub/test_x.py` or `tests/a/b/test_y.py` matches `tests/test_*.py`. The shell glob in the suite does not run those files. It also never checks that the file exists, so `tests/test_typo.py` is \"covered\" and recorded passed when the step would have failed. Any word of the suite containing `*` also acts as a glob, for example a `-k \"*slow*\"` filter.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`fnmatchcase` lets `*` match `/`, so `tests/sub/test_x.py` matches `tests/test_*.py` (evidence.py:158), and AC-8 requires \"a test file the suite runs\". This is the nested-path half of J-3.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-10",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:covered",
+      "tampering": false,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "f3e4d3f7aeea9f9b06dc54d5f226c125071f46c1",
+    "2": "fea98374370fedb0841ed51e59df2be2b714173a"
+  },
+  "matched": {
+    "AC-8": [
+      [
+        "tests/test_evidence.py",
+        "test_covered_journey_is_not_run_again"
+      ]
+    ],
+    "AC-9": [
+      [
+        "tests/test_evidence.py",
+        "test_review_suite_is_reused"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_evidence.py",
+        "test_review_suite_is_not_reused_unless_it_qualifies"
+      ]
+    ],
+    "AC-11": [
+      [
+        "tests/test_evidence.py",
+        "test_failed_suite_covers_no_journey"
+      ]
+    ],
+    "AC-16": [
+      [
+        "tests/test_evidence.py",
+        "test_fix_check_round_reuses_the_fix_review"
+      ]
+    ]
+  }
+}

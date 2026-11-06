@@ -1,0 +1,696 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-05-parallel-waves",
+  "round": 2,
+  "tier": "high",
+  "expect": [
+    "architecture-fit",
+    "logic",
+    "risk-rollback",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261106-soyl/plan-architecture-fit.md": "dc38010d58041c64003959400ec2559154d9edfac9a410c58e372d6e1cec9731",
+    "R-261106-soyl/plan-logic.md": "83c7e397195c502517d933c02fadb9f10cf760e693f0fe5f732ed68a95571ab9",
+    "R-261106-soyl/plan-risk-rollback.md": "928cd74116226fe60f38da1948e193d5b6c11babd6f74957d3678321eb7e3d19",
+    "R-261106-soyl/plan-test-proof.md": "bd70825994baae946ed0184050ff02cb2adf186ada4b212cb24441e676efa248",
+    "R-261106-soyl/plan-refuter.md": "053c59c2e1f9190a7814cbbd89e072e52b493482ce9974fd8d85fae69bb9556e",
+    "R-261106-jwa6/plan-architecture-fit.md": "f174d939ccf85cddb6d637cee5b72e47c135d0202e378bee9577b20f9912f405",
+    "R-261106-jwa6/plan-logic.md": "4de955993b98d7a5df6e33db38d11ac4af1c6652ce1dddb886981e60c77b9d97",
+    "R-261106-jwa6/plan-risk-rollback.md": "1dcfe396b0d96a50a512dd03164edec014b282e962feb593c84ae639bcd6150e",
+    "R-261106-jwa6/plan-test-proof.md": "e6d9166f6ce600c56a85c15bf8adab1375631e38adbff8380286ce2bfddfbdfb"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "611a7f036e7c690c77d12b33311af029a29ef388",
+      "judged": 2
+    },
+    "plan-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "611a7f036e7c690c77d12b33311af029a29ef388",
+      "judged": 2
+    },
+    "plan-risk-rollback": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "611a7f036e7c690c77d12b33311af029a29ef388",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 2,
+      "lens": "test-proof",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "611a7f036e7c690c77d12b33311af029a29ef388",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Committing a wave task empties every claim: commit() is not bound and release() has no contract",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-4",
+        "CT-7",
+        "FR-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "{**state, \"claims\": {}, \"waiting\": waiting}, who, \"implementing\")"
+      ],
+      "fix": "Add a contract for `release(claims, tid)` (new, Like `run_of` or similar). Its result should be: `tid` removed from `wave`, `task` moved to the first remaining ID, and `{}` once the wave is empty. Bind `src/nio/implement.py:commit` (existing) to use it, and name `attempt` and `block` in CT-7's binding as callers too.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "Today `commit()` writes `task_done` with `claims: {}`. `attempt()` does the same at the third attempt (`{**state, \"claims\": {}, \"waiting\": {\"why\": why, \"task\": tid}}`), and so does `block()`. CT-1 says a wave task leaves `claims` \"only when it is committed or blocked (`release(claims, tid)`, CT-4, CT-7)\". But no contract defines `release`: it has no binding, no shape and no `Like:` line. CT-4 binds `land`, not `commit`, and no contract binds `commit`. As planned, landing T-1 would empty `claims` while T-2 is still open, so the next claim opens a new wave and breaks FR-9. TC-4 also expects `claims` to become `{\"task\": \"T-2\", \"wave\": [\"T-2\"]}`, meaning `task` moves on to the next open task. No contract says that.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "The wave is `{\"task\": \"T-1\", \"wave\": [\"T-1\", \"T-2\"]}`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "implement.py line 522 (`commit`) writes `\"claims\": {}` and CT-1 names `release(claims, tid)`, but no contract defines `release` or binds `commit`. CT-4 binds only `land`. Nothing says `task` moves to the next sibling, which TC-4 expects.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "CT-1 now defines release(claims, tid) and binds commit, attempt and block to it (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "The skill's loop stops on \"a task already claimed\", so a wave stops after its first task lands",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-8",
+        "FR-12",
+        "FR-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Go back to step 1 until the claim refuses, the effort waits for the human, or it is done."
+      ],
+      "fix": "Widen CT-8 to steps 5 and 6, \"When to stop\" and the opening lines. Re-claim only after every wave worker has handed off and its red and green have been reported. Treat \"is claimed\" during an open wave as \"wait\", not \"stop\".",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "CT-8's shape is limited to \"steps 1 and 2 of the skill\". Step 1 tells the orchestrator to stop when a claim refuses (\"a task already claimed\"). Step 6 loops back to step 1, and \"When to stop\" ends the run \"when a claim is refused\". During a wave, re-claiming after one task lands is refused with `T-2 is claimed` (FR-9, TC-4), so the skill as written would stop and report to the human while siblings are still running. The skill's description and opening (\"one task at a time\") also still describe serial work.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SKILL.md step 1 stops when a claim refuses (\"a task already claimed\"), step 6 loops to step 1, and \"When to stop\" ends on a refused claim. CT-8 covers only steps 1 and 2, and FR-9 makes a claim during an open wave refuse with `T-n is claimed`. A wave would therefore stop after its first landing.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "CT-8 now covers the opening, steps 1, 2, 5, 6 and When to stop; 'is claimed' during a wave means wait (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "US-1's test TC-4 needs CT-4, which US-2 delivers",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "US-1",
+        "US-2",
+        "TC-4",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`land(root, \"T-1\")` exits 0"
+      ],
+      "fix": "Move TC-4 (and its FR-9 delivery) to US-2. Or rewrite TC-4 so it doesn't land: for example, claim again while both wave tasks are only claimed or red, and expect `T-1 is claimed`.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The US-1 build-order entry lists TC-4 and delivers CT-1, CT-2, CT-3, CT-6 and CT-8. TC-4's setup lands T-1 first. That needs the apply, review and commit of `land` (CT-4) and the claim release on commit (F1), and both belong to US-2, which \"Depends on: US-1\". So when US-1 is done its own test can't pass, and US-1 has no demonstrable end state that excludes landing.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "plan.md puts TC-4 in US-1, but its setup lands T-1 through `green`, and its assert needs `claims` to keep T-2 after that commit. The per-task release on commit belongs to CT-4 (US-2: \"on success the worktree is removed and the task released from `claims`\"). Today's `commit()` writes `{**state, \"claims\": {}, \"waiting\": waiting}`. So with only US-1 built, landing T-1 empties `claims`, the next claim succeeds, and TC-4 fails inside its own build-order entry.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "plan.md puts TC-4 in US-1 and CT-4 in US-2 (\"Depends on: US-1\"). TC-4's setup runs `land(root, \"T-1\")`, which needs CT-4 and the per-task release. US-1's own test cannot pass when US-1 is finished.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "TC-4 moved to US-2, which delivers land (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "A single-mode worker gets \"try again\", but only the orchestrator's skill is told to retry",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-8",
+        "CT-3",
+        "FR-11",
+        "FR-12"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "A worker runs no `nio flow` command, except in single mode `nio flow red` and `nio flow green` on its own task."
+      ],
+      "fix": "Bind the nio-worker card (existing, `src/nio/agents/`) in CT-8 or a new contract: in single mode, retry a `try again` exit after a pause and don't report it as a refusal. Add a TC that reads the card for that text, as TC-11 does for the skill.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "CT-3 makes a concurrent red or green exit 1 at once with \"try again\". CT-8 puts \"a `try again` from `nio flow` is retried, not counted as a refusal\" into the implement skill, which is the orchestrator. In single mode the worker calls `nio flow red` and `nio flow green` itself (`by_worker` accepts these only from a single-mode worker). With two single-mode wave tasks, the worker that loses the lock gets exit 1 and nothing tells it to retry. It will likely hand off a failure or stop. No contract binds the worker card (`src/nio/agents/*.md`).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "worker.md line 11 has single-mode workers run `nio flow red` and `green` themselves. CT-3 makes a concurrent call exit 1 with \"try again\", and only the skill (CT-8) is told to retry. No contract binds the worker card, and the card's \"read each refusal and fix it\" line would treat the lock message as a refusal.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "CT-8 binds the worker card: single mode retries on 'try again'; TC-11 checks the card (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "FR-17's rollback removes worktrees but not the run folders, packs or branch switch that claim made first",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-2",
+        "FR-17",
+        "TC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the worktrees made so far by this claim are removed, exit 1 with `can't create a worktree for <T-n>: <git's error>`, no line written (FR-17)"
+      ],
+      "fix": "In CT-2's failure path, either also remove the run folders this claim created, or state that leftover run folders and packs are scratch and acceptable. Also say that the branch switch from the first claim may remain.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "In `claim()`, `start_stage` can run `git checkout -b nio/<slug>` and run the baseline suite. After that, `records.new_run(...)` and `pack.save(...)` create a run folder and pack for each task, before any worktree is added. CT-2's failure path removes only worktrees, so a refused wave claim leaves run folders and packs behind (and possibly the branch switch). FR-17 says \"remove any worktree that claim made\", and AC-16 says \"no worktree of that claim is left\". TC-16 checks only `git worktree list` and the history.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "CT-2 states leftover run folders and packs are scratch and the branch switch stays (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "A wave claim can be reopened or wiped while siblings are still claimed",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-7",
+        "FR-9",
+        "AC-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a wave task leaves `claims` only when it is committed or blocked (`release(claims, tid)`, CT-4, CT-7); `claims` is empty once the last one leaves"
+      ],
+      "fix": "Specify `release` as removing only that tid from `wave` and re-pointing `task` to the first remaining member. Say that `block`, `handoff`, `attempt` and `green` all use `release`, not `\"claims\": {}`. Add a test where a task lands or blocks while a sibling is still claimed and a second claim must still be refused.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "The wave is `{\"task\": \"T-1\", \"wave\": [\"T-1\", \"T-2\"]}`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "A second blocked sibling overwrites the first block's waiting",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "CT-7",
+        "FR-9",
+        "FR-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`waiting` set to `<T-n> blocked: its changes don't apply`"
+      ],
+      "fix": "Decide whether `waiting` must list every blocked task, or whether the claim guard also checks for any task in the blocked state. Add a test with two blocked siblings.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "`waiting` holds one task (`{\"why\", \"task\"}`).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`waiting` is a single `{\"why\", \"task\"}` object (implement.py lines 395 and 536). A second block overwrites the first. Line 666 clears `waiting` when it names the unblocked task, so unblocking the second would let claims resume while the first is still blocked. FR-9 forbids that, and no contract or test settles it.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "CT-1: claim refuses while any task is blocked; TC-18 covers two blocked siblings (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "\"Diff does not apply\" is not guaranteed for a same-file sibling change",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-15",
+        "FR-7",
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a clash on the same file is a diff that does not apply (AC-8)"
+      ],
+      "fix": "Reword AC-15 to say that only overlapping edits block. Or say that a same-file overlap is detected on purpose.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "The patch is taken against the claim commit and applied to a moved HEAD with `git apply`. Two tasks edit different hunks of the same file, so a sibling's commit sits in that file. `git apply` succeeds with offset context. AC-15 says the second task is blocked, but the contracts say it lands.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-4 states only overlapping edits fail to apply; non-overlapping same-file edits land and are recorded as outside",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "Restore goes back to HEAD, not to the pre-apply state, and can wipe uncommitted effort-folder files",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "TC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`restore(root, paths)` puts each path back to HEAD (deleting one HEAD lacks)"
+      ],
+      "fix": "Snapshot the bytes, or the absence, of every path the apply will touch before applying, and restore to that snapshot rather than to HEAD. Alternatively, refuse the land when any touched path is dirty in the main tree. State that `paths` never includes the excluded `state.json`/`history.jsonl`. Add a TC with an uncommitted edit to an effort-folder file that the patch also touches in a different hunk, and assert that its bytes and the history's line count survive a failed review.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "FR-14's guard refuses only \"uncommitted changes outside the effort folder\". Files inside `.nio/specs/<slug>/` may still be dirty in the main tree. `state.json` and `history.jsonl` always are, because flow.write leaves them uncommitted between task commits. `git apply` uses context matching, so a patch can apply cleanly to a dirty tracked effort file when its hunks fall elsewhere in the file. TC-9 itself makes the worker edit `spec.md`. A failed review then runs `git checkout HEAD -- <path>` on that file. This destroys the main tree's uncommitted edits, which the spec's decision says the restore must never touch (\"so the restore never touches the human's changes\"). CT-4 also doesn't say whether `paths` (\"the paths the patch touches\") excludes the `state.json`/`history.jsonl` that `git apply` leaves out. If it doesn't, the restore resets the effort's state and history to HEAD and loses every uncommitted red, green and claim line. TC-9 starts from a clean `spec.md` and drops state and history from its comparison, so it proves neither case.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-4 restores \"each path back to HEAD\" and FR-14 guards only changes outside the effort folder. Dirty effort-folder files, such as `spec.md` or `state.json` if `paths` includes them, can therefore be reset. CT-4 doesn't say `paths` excludes `state.json` and `history.jsonl`. TC-9 starts from a clean `spec.md`, so it never exercises this.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "CT-4 restores a pre-apply byte snapshot, never state.json/history.jsonl; TC-9 adds a dirty effort-folder edit (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "The rollback when the commit fails has no test",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the commit fails → `restore(root, paths)`, the task stays green as today; a retry applies again"
+      ],
+      "fix": "Add a TC that makes the commit fail during a wave-task land, for example a failing pre-commit hook or a wrapped `records.git` as in TC-16. Assert that the main tree's porcelain and file bytes equal the pre-apply ones, the task is `green`, the worktree still holds the work, and a second `land` commits.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "This is the second path that rolls back the main tree after an apply, and no TC in tests.md exercises it. TC-7 to TC-15 cover a successful land, an apply failure and a review failure only. If this restore is missing or partial, the main tree keeps the applied changes uncommitted. Every later green, including the promised retry, is then refused by FR-14 as \"uncommitted changes outside the effort folder\". The wave cannot go on until someone repairs the tree by hand. `commit()` already rolls back history, state and the index on its own. The new `restore` has to run after that, and nothing proves the order or the result.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-4 specifies \"the commit fails → restore(root, paths)\", but the tests for CT-4 are TC-7 to TC-10, TC-13 to TC-15. None of them makes the commit fail. TC-16 wraps git for the claim path only.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-19 makes the commit fail, asserts the restore, the green state and a landing retry",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "A land that stops halfway leaves the apply in the main tree, and FR-14 then blocks the retry",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "so the main tree holds no task's uncommitted apply once the lock is released"
+      ],
+      "fix": "Make the land able to run twice. Before the dirty-tree check, if the uncommitted paths are exactly those of the task's saved `T-n.patch` and match it, restore them (or treat the apply as done). Or state the manual recovery step in CT-4 and the skill. Add a TC that applies the patch, skips the commit, then retries green and expects a single `T-n:` commit.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "The apply, the review (which may run the epic suite for up to the timeout) and the commit run in one process under the lock. If that process is killed or crashes after `git apply` and before the commit or the restore, the lock goes away, but the main tree holds the task's applied files uncommitted. The next green for any wave task, including this one's retry, hits FR-14's dirty-tree refusal before anything else. The plan gives no way to tell this leftover apply from the human's own changes. It also defines no step that re-runs or undoes the apply, although the patch is still in `.nio/runs/<run>/T-n.patch`. The spec's non-goal covers only a worker that crashes, not `nio flow` itself stopping partway through.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-3 and CT-4 run the apply, review and commit in one process under the lock. A kill after the apply leaves uncommitted files in the main tree, which FR-14 then refuses on retry. The spec's non-goal (line 117) covers only a worker crash, and no contract or test covers recovery.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "CT-4 documents the manual recovery (git apply -R of the kept patch); a crash of nio flow itself is the spec's crash non-goal (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "`--force` worktree removal deletes worker files the patch did not capture",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-2",
+        "CT-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "removal is `git worktree remove --force <path>`"
+      ],
+      "fix": "Before a forced removal at block, list the ignored or uncaptured files the worktree holds (`git status --ignored`) in the `blocked` line or the output. Alternatively, keep the worktree folder of a blocked task until it is unblocked.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "The patch is built with `git add -A` and `git diff --cached`, so it leaves out gitignored files the worker created in the worktree. When an apply fails or a task is blocked, `--force` removal then deletes them for good. The only thing recovered is the kept patch, and nothing tells the human that anything else was lost.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Ignored files in a worktree are build output; CT-2 states they are lost on removal (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "TC-4 can't pass inside US-1: it needs US-2's land and per-task release",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-4",
+        "AC-4",
+        "CT-1",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a wave task leaves `claims` only when it is committed or blocked (`release(claims, tid)`, CT-4, CT-7)"
+      ],
+      "fix": "Move TC-4 (and FR-9's release on commit) to US-2. Or make the release a CT-1 change delivered in US-1 that patches `commit()` and `attempt()`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "plan.md puts TC-4 in US-1, but its setup lands T-1 through `green`, and its assert needs `claims` to keep T-2 after that commit. The per-task release on commit belongs to CT-4 (US-2: \"on success the worktree is removed and the task released from `claims`\"). Today's `commit()` writes `{**state, \"claims\": {}, \"waiting\": waiting}`. So with only US-1 built, landing T-1 empties `claims`, the next claim succeeds, and TC-4 fails inside its own build-order entry.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-3",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "No test asserts the worktree is removed when a task is blocked because its diff doesn't apply",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-8",
+        "TC-12",
+        "AC-12",
+        "AC-8",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "its worktree removed, the main tree untouched (FR-7)"
+      ],
+      "fix": "Add to TC-8's Assert: \"`git worktree list` doesn't name `wt(out, \"T-2\")` and that folder doesn't exist\". Optionally add a `nio flow block` case to TC-12.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "AC-12 says a wave task's worktree goes \"when it is committed or blocked\". TC-12 covers only the commit and the third failed attempt. TC-8 asserts the apply-block's state, patch and main tree, but not the worktree. A `land()` that blocks on a failed `git apply` without calling `git worktree remove` leaves the worktree behind, and every test still passes. `nio flow block` (CT-7) isn't checked for removal either.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-8's Assert checks the blocked status, state, patch and main-tree files, but not the worktree. TC-12 covers only the commit and the third failed attempt. An apply-block that skips the worktree removal would pass every test, although AC-12 and FR-13 require removal on block.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-8 asserts the blocked tasks' worktrees are gone",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "TC-3 and TC-5 don't check that red freezes the worktree's files",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-3",
+        "TC-5",
+        "AC-3",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "red's frozen files and their hashes, and green's frozen check, are read there"
+      ],
+      "fix": "In TC-3, assert that red's output lists `  tests/test_refund.py` under `frozen:`, and that the history's red line has `frozen` naming `tests/test_refund.py` with its hash. Better still, add a step that edits that test in `w1` and asserts green on T-1 is refused with `tests/test_refund.py changed since red`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "Suppose `red` runs the command in the worktree but still calls `changed(root, ...)` and `digest(root, p)` on the main tree. Since the main tree is clean, the frozen list comes out empty, and the later frozen check at green protects nothing. TC-3 only asserts \"red exits 0 with `red: T-1 accepted`\", and TC-5 only asserts exit 0 and a `red` line, so that bug passes both. The only wave green after a red (TC-5's single mode) is never run.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-3 asserts the exit code, `red: T-1 accepted`, the pwd log and the detached HEAD, and TC-5 asserts only an exit 0 and a `red` line. Neither checks the frozen list or its hashes. A `red` that computes them on the clean main tree would pass both, even though CT-3 says they are read in the worktree.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-3 asserts the frozen list and hash from the worktree and a green refused after the test is edited",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "AC-6 already holds on today's code",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "TC-6",
+        "AC-6",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with flow.lock(root, slug):"
+      ],
+      "fix": "Either accept TC-6 as a regression guard and say so, or change the test to check FR-11's real promise. For example, run green on T-2 from a second process while T-1's landing is in progress, and assert the main tree never holds T-1's uncommitted apply when the lock is released.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "Today's `green` (and `red`) already take the effort lock first, and that lock already raises the \"is being written by another nio flow call ... try again\" message. Once the wave setup works, TC-6 passes with no new code for FR-11. The part FR-11 actually adds is that the apply, review and commit all run under the lock, so a second guard can't see a half-applied main tree. TC-6 doesn't test that.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-6 is marked a regression guard",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "No test covers a `Parallel: no` task between two `Parallel: yes` tasks",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "TC-2",
+        "TC-1",
+        "AC-1",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the epic's following ready `Parallel: yes` tasks in `tasks.md` order"
+      ],
+      "fix": "Settle the reading in CT-1's Rules. Then add a fourth TC-2 repo, `waves(n=3, parallel={\"T-2\": \"no\"})`, asserting the chosen result.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "With T-1 yes, T-2 no and T-3 yes, FR-1 can be read two ways: the wave is T-1 and T-3 (skip T-2), or T-1 alone (only adjacent tasks join). No TC covers this layout. TC-2's repo 3 sets both T-2 and T-3 to `no`, so either reading of `wave()` passes, and the builder's choice goes unchecked.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1 settles that a Parallel: no task in between is skipped; TC-1 adds that case",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "ffc160d5a0a0cb310ffbbdebdddd1d3a1e2f3518",
+    "2": "611a7f036e7c690c77d12b33311af029a29ef388"
+  }
+}

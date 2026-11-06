@@ -1,4 +1,5 @@
 """Build .nio/cache/index.db (graph, FTS5, int8 vectors) and INDEX.md from the committed records."""
+import functools
 import hashlib
 import importlib.metadata
 import os
@@ -42,13 +43,18 @@ def connect(root):
     return db
 
 
+@functools.cache
+def _model(model, cache):
+    from fastembed import TextEmbedding
+
+    return TextEmbedding(model, cache_dir=cache)
+
+
 def embed(model, texts):
     """Embed texts as normalized int8 vectors (bytes). Loads the model only when called."""
     import numpy as np
-    from fastembed import TextEmbedding
-
     cache = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "nio/fastembed"
-    vecs = TextEmbedding(model, cache_dir=str(cache)).embed(texts)
+    vecs = _model(model, str(cache)).embed(texts)
     return [np.clip(np.round(v / np.linalg.norm(v) * 127), -127, 127).astype(np.int8).tobytes() for v in vecs]
 
 
