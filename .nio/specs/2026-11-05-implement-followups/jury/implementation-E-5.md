@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-5
 subject: 2026-11-05-implement-followups
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-5 jury: 2026-11-05-implement-followups
 
@@ -13,7 +13,7 @@ outcome: rejected
 | J-1 | major | gap | CT-7, AC-27 | adversary | refuted | refuted |  | new, 0 |
 | J-2 | minor | risk | AC-27, CT-7 | adversary, correctness | grounded | open |  | new, 0 |
 | J-3 | minor | gap | CT-11, AC-28 | adversary | grounded | open |  | new, 0 |
-| J-4 | major | inconsistency | CT-11, AC-28 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-4 | major | inconsistency | CT-11, AC-28 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-5 | major | gap | D-261029-rkpb, AC-27, CT-11 | consistency | refuted | refuted |  | new, 0 |
 | J-6 | minor | inconsistency | AC-27, CT-7 | consistency | grounded | open |  | new, 0 |
 | J-7 | minor | gap | CT-7, AC-26 | correctness | grounded | open |  | new, 0 |
@@ -68,5 +68,5 @@ outcome: rejected
 | --- | --- | --- | --- | --- | --- | --- |
 | implementation-E-5-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
 | implementation-E-5-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-5-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-5-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-5-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
