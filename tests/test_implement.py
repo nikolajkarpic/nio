@@ -1659,14 +1659,10 @@ def demo():
     return root
 
 
-if __name__ == "__main__":
-    if "--demo" in sys.argv:
-        tempfile.tempdir = tempfile.mkdtemp(prefix="nio-demo-", dir=Path(tempfile.tempdir).parent)  # outlives this run
-        print(demo())
-        sys.exit()
-    for name, test in list(globals().items()):
-        if name.startswith("test_") and callable(test):
-            test()
+def test_runner_runs_every_test():
+    src = Path(__file__).read_text()
+    assert "def test_" not in src.rsplit("if __name__ ==", 1)[1], "tests defined after the runner never run"
+    print("ok")
 
 
 # --- T-5: the review strips NIO_PERF (CT-9, FR-11) ---
@@ -1728,3 +1724,13 @@ def test_ac14_review_strips_nio_perf_misuse():
         del os.environ["NIO_PERF"]
     assert not state(root)["attempts"].get("T-1"), state(root)["attempts"]
     print("ok")
+
+
+if __name__ == "__main__":
+    if "--demo" in sys.argv:
+        tempfile.tempdir = tempfile.mkdtemp(prefix="nio-demo-", dir=Path(tempfile.tempdir).parent)  # outlives this run
+        print(demo())
+        sys.exit()
+    for name, test in list(globals().items()):
+        if name.startswith("test_") and callable(test):
+            test()
