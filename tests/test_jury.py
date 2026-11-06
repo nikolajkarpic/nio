@@ -1404,7 +1404,65 @@ def test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n():
     print("ok")
 
 
+def parse_text(root, text, gate="spec"):
+    path = root / "lens-x.md"
+    path.write_text(f"---\nlens: logic\ngate: {gate}\nsubject: refunds\nby: j\ncontext: sufficient\n---\n## Reasoning\nChecked.\n\n## Findings\n{text}\n")
+    return jury.parse_lens(path, gate, "refunds")
+
+
+IMPL = """### F1 x
+- cites: AC-1
+- kind: gap
+- severity: major
+- evidence: observed
+- quote: "x"
+- situation: s
+- fix: f
+- gap: missing
+- where: app.py
+"""
+
+
+def test_none_slips_mean_no_findings():
+    root = setup()
+    for t in ("none", "None", "None.", "NONE!"):
+        _, findings, errs = parse_text(root, t)
+        assert errs == [] and findings == [], (t, errs)
+    print("ok")
+
+
+def test_field_labels_in_any_case():
+    root = setup()
+    other = IMPL.replace("- gap:", "- Gap:").replace("- where:", "- WHERE:").replace("- fix:", "- Fix:").replace("- severity:", "- Severity:")
+    a, b = (parse_text(root, t, "implementation-E-1") for t in (IMPL, other))
+    assert not a[2] and not b[2], (a[2], b[2])
+    assert a[1] == b[1] and len(a[1]) == 1
+    print("ok")
+
+
+def test_malformed_output_stays_invalid():
+    root = setup()
+    for t in ("None, but see F1", "none yet", "none?"):
+        assert parse_text(root, t)[2], t
+    for drop in ("- gap: missing\n", "- where: app.py\n"):
+        assert parse_text(root, IMPL.replace(drop, ""), "implementation-E-1")[2], drop
+    spec_f = IMPL.replace("- gap: missing\n", "").replace("- where: app.py\n", "")
+    assert not parse_text(root, spec_f)[2]
+    print("ok")
+
+
+def test_none_with_findings_is_invalid():
+    root = setup()
+    errs = parse_text(root, "None.\n\n" + CONTRADICTION.format(n=1))[2]
+    assert any("none and findings" in e for e in errs), errs
+    print("ok")
+
+
 if __name__ == "__main__":
+    test_none_slips_mean_no_findings()
+    test_field_labels_in_any_case()
+    test_malformed_output_stays_invalid()
+    test_none_with_findings_is_invalid()
     test_review_scenarios()
     test_plan_gate_versions()
     test_needs_more_doesnt_fix()
