@@ -1404,6 +1404,46 @@ def test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n():
     print("ok")
 
 
+def fixes_gate():
+    """A tasks gate whose round 1 judged a tasks.md holding T-4, with a finding citing T-4 (T-8)."""
+    from test_tasks import FIX, SLUG, TASKS, repo
+    root = repo()
+    path = root / ".nio/specs" / SLUG / "tasks.md"
+    judged = TASKS.rstrip("\n") + "\n\n### T-4 Notify the customer\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: T-1\n- Parallel: no\n- Tier: cheap: small\n- Effort: low\n- Mode: split: small\n"
+    path.write_text(judged)
+    finding = PLAN_FINDING.format(n=1, what="is vague", sev="minor", quote="Notify the customer").replace("CT-1", "T-4")
+    plan_lens(root, "R-T1", "executability", finding, gate="tasks")
+    jury.collect(root, SLUG, "tasks", "R-T1")
+    return root, SLUG, path, judged, FIX.format(tid="T-30", src="T-4", file="app.py", serves="AC-1", par="no")
+
+
+def test_ac8_fixcheck_shows_fixes():
+    root, slug, path, judged, fix_task = fixes_gate()
+    path.write_text(judged.split("\n### T-4 ")[0] + "\n" + fix_task)
+    pack = "\n".join(jury.fixcheck(root, slug, "tasks", "executability"))
+    assert "## Tasks added under Fixes" in pack, pack
+    assert "Notify the customer" in pack.split("## Tasks added under Fixes")[0], pack  # T-4's old text, in the before part
+    added = pack.split("## Tasks added under Fixes")[1]
+    assert "### T-30 Fix the finding" in added and "- From: T-4" in added and "- Effort: low" in added, pack
+    print("ok")
+
+
+def test_ac24_fixes_only_no_rerun():
+    root, slug, path, judged, fix_task = fixes_gate()
+    path.write_text(judged + fix_task)
+    ids, rerun, _, secs = jury.changed(root, slug, "tasks")
+    assert ids == [] and rerun == [] and not secs, (ids, rerun, secs)
+    assert getattr(jury, "fixes_added", lambda *a: None)(root, slug, "tasks") == ["T-30"]
+    print("ok")
+
+
+def test_ac8_fixcheck_shows_fixes_misuse():
+    root, slug, path, judged, fix_task = fixes_gate()
+    path.write_text(judged.split("\n### T-4 ")[0] + "\n" + fix_task)
+    assert "### T-30 Fix the finding" in "\n".join(jury.fixcheck(root, slug, "tasks", "executability"))
+    print("ok")
+
+
 if __name__ == "__main__":
     test_review_scenarios()
     test_plan_gate_versions()
@@ -1465,3 +1505,6 @@ if __name__ == "__main__":
     test_escaped_quotes_ground()
     test_ac41_it_plans_executability_as_the_core_lens()
     test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n()
+    test_ac8_fixcheck_shows_fixes()
+    test_ac24_fixes_only_no_rerun()
+    test_ac8_fixcheck_shows_fixes_misuse()
