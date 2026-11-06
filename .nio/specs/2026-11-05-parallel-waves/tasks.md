@@ -168,7 +168,7 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 
 ### T-15 Fix: The third-attempt or block shelve destroys a wave task's effort-folder edits and overwrites land's fuller patch
 - From: J-2 (implementation-E-2, round 1)
-- Files: `src/nio/implement.py`
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
 - Serves: CT-7, CT-2, J-2
 - Test: TC-12
 - Depends on: none
@@ -179,7 +179,7 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 
 ### T-16 Fix: An exception from commit after the apply leaves the applied files in the main tree with no restore
 - From: J-3 (implementation-E-2, round 1)
-- Files: `src/nio/implement.py`
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
 - Serves: CT-4, J-3
 - Test: TC-7
 - Depends on: none
@@ -190,7 +190,7 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 
 ### T-17 Fix: The snapshot and restore miss git-quoted (non-ASCII) paths, so a failed review or commit leaves those changes applied
 - From: J-4 (implementation-E-2, round 1)
-- Files: `src/nio/implement.py`
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
 - Serves: CT-4, J-4
 - Test: TC-7
 - Depends on: none
@@ -201,7 +201,7 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 
 ### T-18 Fix: Green on a wave task falls back to the main tree when its worktree is gone
 - From: J-6 (implementation-E-2, round 1)
-- Files: `src/nio/implement.py`
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
 - Serves: CT-2, CT-3, CT-4, FR-5, J-6
 - Test: TC-3
 - Depends on: none
@@ -209,3 +209,14 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Tier: strong: a fix from a jury finding
 - Effort: med
 - Mode: single: a fix from a jury finding
+
+### T-19 Fix: The demo makes T-1 split while the quickstart assumes direct tasks
+- From: J-1 (implementation-E-2, round 1)
+- Files: `tests/test_waves.py`
+- Serves: J-1
+- Test: QS-1: `uv run python tests/test_waves.py --demo` builds a repo whose T-1 and T-2 are both direct, so QS-1 steps 1 to 4 pass when walked by hand
+- Depends on: none
+- Parallel: no
+- Tier: cheap: a one-line fixture change
+- Effort: low
+- Mode: direct: a fixture change, proven by walking QS-1
