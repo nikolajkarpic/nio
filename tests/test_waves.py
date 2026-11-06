@@ -162,6 +162,18 @@ def test_ac6_second_guard_is_told_to_try_again():
     print("ok")
 
 
+def test_ac11_skill_dispatches_a_wave():
+    root = Path(__file__).resolve().parent.parent
+    skill = (root / "skills/implement/SKILL.md").read_text()
+    worker = (root / "src/nio/agents/worker.md").read_text()
+    for phrase in ("one worker per claimed task at the same time", "the task's worktree as its working directory",
+                   "by its own ID", "try again", "while a wave is open, `is claimed` means wait"):
+        assert phrase in skill, phrase
+    single = worker.split("- **single:**", 1)[1].split("- **direct:**", 1)[0]
+    assert "try again" in single, single
+    print("ok")
+
+
 def demo():
     """A repo with three independent parallel tasks, T-1 split and the rest direct."""
     return waves(n=3, modes={"T-1": "split"})

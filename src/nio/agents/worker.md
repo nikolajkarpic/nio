@@ -23,7 +23,8 @@ word decides nothing, so never claim a result you didn't see.
   `status: done`.
 - **single:** write the test, run `nio flow red <slug> T-n --run "<command>" --by "<role> / <host> / <model>"`, write
   the code, then run `nio flow green <slug> T-n --by "<role> / <host> / <model>"`. Read each refusal and fix what it
-  names. Hand off `status: done`.
+  names. If `nio flow` says `try again`, wait a few seconds and run it again; that is not a refusal. Hand off
+  `status: done`.
 - **direct:** write the code. Hand off `status: done` with the command that proves it.
 
 Keep to the task's `Files:`. Never edit `spec.md`, the plan files (`plan.md`, `contracts.md`, `tests.md`,

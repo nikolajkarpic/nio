@@ -45,9 +45,11 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 1. **Claim.** Run `nio flow claim <slug> --by`. It prints `task:`, `mode:`, `card:` (`nio-worker-<tier>`), `effort:`
    and `pack:`. The first claim also switches to `nio/<slug>` and records the suite's baseline. If it refuses
    (uncommitted changes, a task already claimed, no ready task, the wrong branch), or prints a waiting message, stop and
-   tell the human in the shape above.
+   tell the human in the shape above, except that while a wave is open, `is claimed` means wait for the other wave
+   workers, not stop; claim again only once every wave task is done or blocked.
 2. **Start the worker** as a fresh subagent of the named card, on the pack's path, with the mode, and the effort where
-   the host takes one per call. By mode:
+   the host takes one per call. For a wave, start one worker per claimed task at the same time, each with
+   the task's worktree as its working directory. Report each red and green by its own ID. By mode:
    - **split:** a test-phase worker writes the test and hands off `status: red-ready` with its command. Report it:
      `nio flow red <slug> T-n --run "<command>" --by`. Then a fresh code-phase worker, given the same pack, writes the
      code and hands off `status: done`. Report it: `nio flow green <slug> T-n --by`.
@@ -56,7 +58,8 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    - **direct:** one worker writes the code and hands off `status: done` with a command. Report it:
      `nio flow green <slug> T-n --run "<command>" --by`.
 3. **On a refusal** of red or green, or a failed review, start a fresh worker for that phase, giving it the refusal's
-   text. Each one uses an attempt; at the third the CLI blocks the task and the effort waits for the human.
+   text. Each one uses an attempt; at the third the CLI blocks the task and the effort waits for the human. A `try again`
+   from `nio flow` is retried after a few seconds, not counted as a refusal.
 4. **On a `blocked` handoff** (a spec problem), save it to a file and run
    `nio flow block <slug> T-n --handoff <file> --by`. It files the change request and the effort waits for the human.
    Never edit the spec, plan or tasks yourself.
