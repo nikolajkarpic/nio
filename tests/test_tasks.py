@@ -541,6 +541,17 @@ def test_ac26_rated_from_stray_edit_misuse():
     print("ok")
 
 
+def test_ac28_skill_runs_rated_from():
+    skill = (Path(__file__).parent.parent / "skills/tasks/SKILL.md").read_text()
+    step3 = skill.split("3. **Rate.**", 1)[1].split("4. **Verify", 1)[0]
+    copy_at = step3.find("copy")
+    evaluator_at = step3.find("nio-evaluator")
+    rated_at = step3.find("--rated-from")
+    assert copy_at >= 0 and evaluator_at >= 0 and rated_at >= 0, step3
+    assert copy_at < evaluator_at < rated_at, step3
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_"):
