@@ -15,7 +15,8 @@
     "R-261106-37il/implementation-E-1-correctness.md": "d7f826dcc765f292a0a363dfc01f62217f0e8744cf577ca7dd0b7047d053ac04",
     "R-261106-37il/implementation-E-1-risk-rollback.md": "803eb8049e41b2d3ce6b6ce9af9a441f191c9a718339fe0f7fac8f149ec4d409",
     "R-261106-37il/implementation-E-1-refuter.md": "79c76231a5b61d38635590647de051f8094d96bca41e6158b3e4f7b1e59b2411",
-    "R-261106-6xaq/implementation-E-1-conformance.md": "34dc54b423270df991afd20af9c7712a1f1a6e420bf82f03aab0c608f609356a"
+    "R-261106-6xaq/implementation-E-1-conformance.md": "34dc54b423270df991afd20af9c7712a1f1a6e420bf82f03aab0c608f609356a",
+    "R-261106-6xaq/implementation-E-1-refuter.md": "80ca8694fa3026e8cbb5daa264d575ce52e839d5479df5e9b23a33cf31147235"
   },
   "jurors": {
     "implementation-E-1-conformance": {
@@ -93,9 +94,9 @@
           "round": 1
         }
       ],
-      "validation": "pending",
-      "reason": "implementation-E-1-conformance: The suite is recorded as `passed`, but all eight E-1 tests (lines 38, 53, 105, 131, 152, 165, 62, 85) still show `\"result\": \"unknown\"`. They are not recorded as passed. The new `epic` command has no recorded run in this evidence.",
-      "status": "open",
+      "validation": "refuted",
+      "reason": "The round-2 results.json records `suite.result: \"passed\"` for the command `for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done`, which stops at the first failing file. A pass therefore means `tests/test_waves.py` ran and exited 0. The eight E-1 tests exist at lines 38, 53, 105, 131, 152, 165, 62 and 85, which match the evidence entries, so the original stale-line-number and aborted-run situation is gone. The per-test `\"unknown\"` is how every entry in this file is recorded, including the AC-4, AC-7 and AC-9 tests, so the evidence format has no per-test result. The artefact shows no failing wave test, and the conformance juror's \"not fixed\" rests only on that recording format.",
+      "status": "refuted",
       "disposition": "",
       "by": "",
       "note": "",
@@ -583,11 +584,15 @@
       "fixed_in": 2
     }
   ],
-  "outcome": "pending",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
