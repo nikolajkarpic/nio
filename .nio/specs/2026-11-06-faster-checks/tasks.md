@@ -108,6 +108,19 @@ retired: []
 - Effort: med
 - Mode: split: parity and restore tests lead
 
+#### Fixes
+
+### T-11 Fix: AC-1 has no passing evidence
+- From: J-12 (implementation-E-4, round 1)
+- Files: `tests/test_flow.py`, `tests/test_implement.py`, `src/nio/index.py`
+- Serves: AC-1
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-5 The suite runs its test files in parallel (US-2)
 
 ### T-6 Parallel suite command in config
