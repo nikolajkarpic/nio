@@ -269,6 +269,21 @@ def test_ac9_failed_review_restores_the_main_tree():
     print("ok")
 
 
+def test_ac9_failed_review_restores_a_non_ascii_path():
+    root = waves()
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    w = root / wt(out, "T-1")
+    (w / "\u00e9.py").write_text("w = 1\n")
+    with open(w / f".nio/specs/{S}/spec.md", "a") as f:
+        f.write("x\n")
+    before = kept(root)
+    code, o = land(root, "T-1")
+    assert code == 1 and "review: failed" in o, o
+    assert not (root / "\u00e9.py").exists() and kept(root) == before
+    print("ok")
+
+
 def test_ac10_suite_runs_for_the_last_task_only():
     log = Path(tempfile.mkdtemp()) / "log"
     root = waves(n=2, cfg={"tests": {"suite": f"git log --format=%s >> {log}; ls >> {log}; echo END >> {log}; "
