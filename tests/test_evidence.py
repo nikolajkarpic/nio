@@ -342,20 +342,29 @@ ATTACK_TEST = "import unittest\n\n\nclass AttackTest(unittest.TestCase):\n    de
 TYPECHECK = 'echo "b.py:3: error: Incompatible types" >&2; exit 1'
 
 
-def gate_repo(lint=None, typecheck=None, timeout=None, remote=False):
+def gate_repo(lint=None, typecheck=None, timeout=None, remote=False, suite=None, files=None, quickstart=None, history=None, tasks=()):
     """A finished epic E-1 whose commits are `T-1: One` and `T-2: Two`, with a misuse test in tests.md, an auto and a
     manual scenario in quickstart.md, and the given checks in the config. (root, last commit); with `remote`, also the
-    bare repo `origin` points at."""
+    bare repo `origin` points at. `suite` replaces the suite command, `files` adds files, `quickstart` replaces quickstart.md,
+    `history` lines are appended to history.jsonl before the T-2 commit, `tasks` (ids) are more tasks of E-1 in tasks.md."""
     root = epic_repo(["T-1", "T-2"])
+    for t in tasks:
+        with open(root / ".nio/specs/s/tasks.md", "a") as f:
+            f.write(f"\n### {t} Extra\n- Files: `a.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: none\n- Parallel: no\n- Tier: cheap: x\n- Effort: low\n")
     git(root, "config", "user.name", "t")
     git(root, "config", "user.email", "t@t")
-    tests = {"suite": "python3 -m unittest discover -s tests -t .", "lint": lint, "typecheck": typecheck}
+    tests = {"suite": suite or "python3 -m unittest discover -s tests -t .", "lint": lint, "typecheck": typecheck}
     cfg = {"tests": {k: v for k, v in tests.items() if v}, "jury": {"run_timeout": timeout} if timeout else {}}
     (root / ".nio/config.json").write_text(json.dumps(cfg))
     (root / ".gitignore").write_text(".nio/runs/\n")
     (root / ".nio/specs/s/tests.md").write_text(MISUSE)
-    (root / ".nio/specs/s/quickstart.md").write_text(QUICKSTART)
+    (root / ".nio/specs/s/quickstart.md").write_text(quickstart or QUICKSTART)
     (root / "tests").mkdir()
+    for name, body in (files or {}).items():
+        (root / name).write_text(body)
+    if history:
+        with open(root / ".nio/specs/s/history.jsonl", "a") as f:
+            f.writelines(json.dumps(x) + "\n" for x in history)
     (root / "tests/test_attack.py").write_text(ATTACK_TEST)
     (root / "app.txt").write_text("one\n")
     (root / "big.bin").write_bytes(BIG)
@@ -385,6 +394,124 @@ def entry(results, kind, command):
     found = [x for x in results[kind] if x["command"] == command]
     assert len(found) == 1, f"{kind} holds {len(found)} entries for {command!r}: {results[kind]}"
     return found[0]
+
+
+# --- T-4: evidence reuses the review's suite and skips covered journeys (CT-5, CT-4) ---
+
+SUITE = "printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'python3 {} || exit 1'"
+OK_BODY = "import os\nopen(os.environ['NIO_COUNT'], 'a').write('x\\n')\nprint('ok')\n"
+QS1, QS2, QS3 = "python3 tests/test_ok.py", "NIO_E2E=1 python3 tests/test_ok.py", "python3 other_ok.py"
+
+
+def quickstart_of(*scenarios):
+    """quickstart.md with one auto scenario per list of step commands, each expecting `contains: ok`."""
+    out = "---\nslug: s\nretired: []\n---\n# Quickstart: s\n\n## Scenarios\n"
+    for i, steps in enumerate(scenarios, 1):
+        out += f"\n### QS-{i} Run {i} (UJ-1; auto) [derived: UJ-1]\n\n"
+        out += "".join(f"{n}. `{c}`\n   Expected:\n   ```\n   contains: ok\n   ```\n" for n, c in enumerate(steps, 1))
+        out += "- Pass when: every step matched\n"
+    return out
+
+
+def review(task, code=0, command=SUITE, passed=True, suite=True):
+    """A review line as implement.entry writes it."""
+    ev = {"task": task, "commit": "c", "passed": passed}
+    if suite:
+        ev["suite"] = {"command": command, "code": code}
+    return {"kind": "review", "from": "implementing", "to": "implementing", "end": True, "evidence": ev}
+
+
+def done(task):
+    return {"kind": "task_done", "from": "implementing", "to": "implementing", "end": True, "evidence": {"task": task, "commit": "c", "passed": True}}
+
+
+def counted(root, **kw):
+    """start(root) with NIO_COUNT set; (results, the lines NIO_COUNT holds, or None when it doesn't exist)."""
+    count = root / "count"
+    os.environ["NIO_COUNT"] = str(count)
+    try:
+        results = start(root, **kw)
+    finally:
+        del os.environ["NIO_COUNT"]
+    return results, (len(count.read_text().splitlines()) if count.exists() else None)
+
+
+def ok_repo(history=None, tasks=()):
+    return gate_repo(suite=SUITE, files={"tests/test_ok.py": OK_BODY}, tasks=tasks,
+                     quickstart=quickstart_of([QS1]), history=[*(history or []), done("T-2")])
+
+
+def test_covered_journey_is_not_run_again():
+    root, _ = gate_repo(suite=SUITE, files={"tests/test_ok.py": OK_BODY, "other_ok.py": OK_BODY},
+                        quickstart=quickstart_of([QS1], [QS2], [QS1, "echo other ok"], [QS3]))
+    results, n = counted(root)
+    assert results["suite"]["result"] == "passed" and "reused" not in results["suite"], results["suite"]
+    covered = entry(results, "journeys", QS1)
+    assert covered.get("covered") is True and covered["result"] == "passed" and covered["output"].startswith("covered by the suite run at"), covered
+    for command in (QS2, QS1 + " && echo other ok", QS3):
+        e = entry(results, "journeys", command)
+        assert "covered" not in e and e["result"] == "passed", e
+    assert n == 4, f"NIO_COUNT holds {n} lines"
+    print("ok")
+
+
+def test_review_suite_is_reused():
+    root, last = ok_repo([review("T-2")])
+    results, n = counted(root)
+    s = results["suite"]
+    assert s["result"] == "passed" and s.get("reused") == {"task": "T-2", "commit": last}, s
+    assert s["output"].startswith("reused: the review of T-2"), s["output"]
+    assert n is None, "something ran the test file"
+    assert entry(results, "journeys", QS1).get("covered") is True
+    print("ok")
+
+
+def test_review_suite_is_not_reused_unless_it_qualifies():
+    for line in (review("T-2", code=1), review("T-2", command=QS1), review("T-1"), review("T-2", passed=False), review("T-2", suite=False)):
+        root, _ = ok_repo([line])
+        results, n = counted(root)
+        assert "reused" not in results["suite"], (line, results["suite"])
+        assert n and n >= 1, f"the suite didn't run in the copy for {line}"
+    print("ok")
+
+
+def test_failed_suite_covers_no_journey():
+    root, _ = gate_repo(suite=SUITE, files={"tests/test_ok.py": OK_BODY, "tests/test_bad.py": "assert False\n"},
+                        quickstart=quickstart_of([QS1]))
+    results, n = counted(root)
+    assert results["suite"]["result"] == "failed", results["suite"]
+    assert "covered" not in entry(results, "journeys", QS1)
+    assert n == 2, f"NIO_COUNT holds {n} lines"
+    print("ok")
+
+
+def fix_commit(root, task, lines):
+    """A commit `task: Fix` that changes a.py, with `lines` added to history.jsonl; its sha."""
+    (root / "a.py").write_text(f"a = '{task}'\n")
+    with open(root / ".nio/specs/s/history.jsonl", "a") as f:
+        f.writelines(json.dumps(x) + "\n" for x in lines)
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", f"{task}: Fix")
+    return git(root, "rev-parse", "HEAD").strip()
+
+
+def test_fix_check_round_reuses_the_fix_review():
+    root, _ = ok_repo([review("T-2")], tasks=["T-3"])
+    sha = fix_commit(root, "T-3", [*(dict(done("T-3"), kind=k) for k in ("claim", "red", "green")), review("T-3"), done("T-3")])
+    results, n = counted(root, run="R-2")
+    assert results["suite"].get("reused") == {"task": "T-3", "commit": sha}, results["suite"]
+    assert n is None, "something ran the test file"
+    assert entry(results, "journeys", QS1).get("covered") is True
+    print("ok")
+
+
+def test_older_review_is_not_reused():
+    root, _ = ok_repo([review("T-2")], tasks=["T-3"])
+    fix_commit(root, "T-3", [dict(done("T-3"), kind=k) for k in ("claim", "red", "green", "review", "task_done")])
+    results, n = counted(root)
+    assert "reused" not in results["suite"], results["suite"]
+    assert n and n >= 1, "the suite didn't run in the copy"
+    print("ok")
 
 
 def test_the_results_record_the_failed_check_and_its_output():

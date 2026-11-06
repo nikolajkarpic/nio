@@ -1,5 +1,6 @@
 """The implementation jury's CLI-first evidence (2026-10-27-implementation-jury): running commands in a throwaway copy of
 the repo and the run's results file."""
+import fnmatch
 import json
 import os
 import re
@@ -126,6 +127,36 @@ def journeys(root, slug):
         bad = "no step could be read" if not steps else f"{len(steps)} of {listed} numbered steps could be read" if len(steps) < listed else ""
         out.append((qs, steps, bad))
     return out
+
+
+def reused_suite(root, slug, commit, suite):
+    """The review's suite run as a suite result, when the last review in the history at `commit` is that task's, passed, and
+    ran `suite` with exit code 0; else None (CT-5, FR-7, FR-8)."""
+    try:
+        text = "\n".join(records.git(root, "show", f"{commit}:.nio/specs/{slug}/history.jsonl"))
+        task = records.git(root, "log", "-1", "--format=%s", commit)[0].split(":")[0]
+    except Exception:
+        return None
+    lines = [json.loads(x) for x in text.splitlines() if x.strip().startswith("{")]
+    ev = ([x for x in lines if x.get("kind") == "review"] or [{}])[-1].get("evidence") or {}
+    ran = ev.get("suite") or {}
+    if not suite or ev.get("task") != task or ev.get("passed") is not True or ran.get("command") != suite or ran.get("code") != 0:
+        return None
+    return {"command": suite, "result": "passed", "output": f"reused: the review of {task} ran this suite at {commit[:8]} and it exited 0",
+            "cut": 0, "reused": {"task": task, "commit": commit}}
+
+
+def covered(step, suite):
+    """True when `step` is the suite's own per-file command on one file the suite runs (CT-5, FR-6)."""
+    try:
+        words, swords = shlex.split(step), shlex.split(suite or "")
+    except ValueError:
+        return False
+    if len(words) < 2:
+        return False
+    prefix = " ".join(shlex.quote(w) for w in words[:-1])
+    return any(fnmatch.fnmatchcase(words[-1], g) for g in swords if "*" in g) \
+        and any(f"{prefix} {m}" in suite for m in ("{}", '"$f"', "$1"))
 
 
 def matched(expected, output):
@@ -350,7 +381,7 @@ def collect(root, slug, epic, run):
     commit, base = commits[0], parent_of(root, commits[-1])
     runs = lambda commands: runs_in_copy(root, commit, commands)
     mis, rest = misuse(root, slug)
-    suite = (runs([t.get("suite")]) if t.get("suite") else [{"result": "not configured", "output": "", "cut": 0}])[0]
+    suite = reused_suite(root, slug, commit, t.get("suite")) or (runs([t.get("suite")]) if t.get("suite") else [{"result": "not configured", "output": "", "cut": 0}])[0]
     code_ok = suite["result"] == "passed"
     # ponytail: a test is failed when a failing-test line of the runner's summary names it. On a failed suite any other is
     # run alone, since `-x`, a class setup error or a cut output hide it. A suite that crashed ran none, and a runner
@@ -378,13 +409,18 @@ def collect(root, slug, epic, run):
         a["command"] = a["command"] or f"{f}:{n}"
         a["name"], a["file"], a["line"] = n, f, defs.setdefault(f, asserts_in(root, commit, f)).get(n.split(".")[-1], (0,))[0]
     found = journeys(root, slug)
-    steps = [(c, e) for _, ss, bad in found if not bad for c, e in ss]
+    cov = lambda ss: code_ok and all(covered(c, t.get("suite")) for c, _ in ss)
+    steps = [(c, e) for _, ss, bad in found if not bad and not cov(ss) for c, e in ss]
     done = iter(runs([c for c, _ in steps]))
     journeys_out, skipped = [], []
     for qs, ss, bad in found:
         if bad:
             skipped.append(f"{qs}: failed, {bad}")
             journeys_out.append({"command": "", "result": "failed", "output": f"{qs} is marked auto but {bad}; nothing ran", "cut": 0})
+            continue
+        if cov(ss):
+            journeys_out.append({"command": " && ".join(c for c, _ in ss), "result": "passed", "output": f"covered by the suite run at {commit[:8]}",
+                                 "cut": 0, "covered": True})
             continue
         rs = [next(done) for _ in ss]
         ok = all(r["result"] == "passed" and matched(e, r["output"]) for r, (_, e) in zip(rs, ss))
