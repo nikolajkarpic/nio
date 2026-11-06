@@ -476,16 +476,16 @@ def red(root, slug, tid, command, by):
         if named and not any(f in command for f in named):
             why = f"the command doesn't name {' or '.join(named)}"
         else:
-            code, out, cause = run(root, command, limit(root))
+            code, out, cause = run(worktree(root, lines, tid) or root, command, limit(root))
             # a cause first: a killed run's partial output proves nothing either way
             why = cause or ("the test passes before the code exists" if code == 0 else wrong_reason(name, code, out))
         if why:
             return refused(root, slug, state, lines, tid, "red", command, why, w)
-        mine = since_claim(lines, tid)
+        mine, tree = since_claim(lines, tid), worktree(root, lines, tid) or root
         reds = [x for x in mine if x["kind"] == "red"]
         paths = list(reds[0]["evidence"]["frozen"]) if reds else \
-            outside(slug, changed(root, mine[0]["evidence"].get("commit") or "HEAD"))  # FR-10, FR-11: never grown
-        frozen = {p: digest(root, p) for p in paths}
+            outside(slug, changed(tree, mine[0]["evidence"].get("commit") or "HEAD"))  # FR-10, FR-11: never grown
+        frozen = {p: digest(tree, p) for p in paths}
         line = entry("red", tid, command=command, output=flow.sha(out.encode()), runner=name or "unknown", frozen=frozen)
         flow.write(root, slug, [line], state, w, "implementing")
     return 0, [f"red: {tid} accepted", "frozen:"] + [f"  {p}" for p in frozen]
@@ -647,7 +647,7 @@ def green(root, slug, tid, command, by):
     with flow.lock(root, slug):
         state, lines = flow.load(root, slug)
         task, now = task_for(root, slug, lines, tid, ("claimed", "red", "green"))
-        direct = task["mode"] == "direct"
+        direct, tree = task["mode"] == "direct", worktree(root, lines, tid) or root
         if now == "claimed" and not direct:
             raise ValueError(f"{tid} has no failing test first")
         by_worker(task, w, "green")
@@ -663,9 +663,9 @@ def green(root, slug, tid, command, by):
                     why = f"the command recorded at red is {ev['command']}"
                 command = ev["command"]
                 why = why or next((f"{p} changed since red; prove red again" for p, h in ev["frozen"].items()
-                                   if digest(root, p) != h), "")
+                                   if digest(tree, p) != h), "")
             if not why:
-                code, out, cause = run(root, command, limit(root))
+                code, out, cause = run(tree, command, limit(root))
                 why = cause or (f"the command exits {code}" if code else "")
             if why:
                 return refused(root, slug, state, lines, tid, "green", command, why, w)
