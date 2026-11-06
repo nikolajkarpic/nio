@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-5",
   "subject": "2026-11-05-implement-followups",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,8 @@
     "R-261106-32fd/implementation-E-5-conformance.md": "ae4f64e6f1593b1aa33077dade389ec8c53d6da37d23fcf25331cbaf50c46dca",
     "R-261106-32fd/implementation-E-5-consistency.md": "2558b7f1e1d2f7aabd3af8d33f780c51d57657a5520d87b22cff7497b11a87ad",
     "R-261106-32fd/implementation-E-5-correctness.md": "8472e6c0d792f218e6465eac9d2f7af879616a967486d421f14561294ccf0e8b",
-    "R-261106-32fd/implementation-E-5-refuter.md": "831e655c77ad80b764643fdbc87d27b8769ec4ce93dca7ca6574c16d36411924"
+    "R-261106-32fd/implementation-E-5-refuter.md": "831e655c77ad80b764643fdbc87d27b8769ec4ce93dca7ca6574c16d36411924",
+    "R-261106-7xrm/implementation-E-5-consistency.md": "63cbcae52c85948a4de3a190064e0a6d40add85df9184f391feb0bd89f4190de"
   },
   "jurors": {
     "implementation-E-5-adversary": {
@@ -46,9 +47,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "c4301e67505f69083d7f2e08b73fe6134585b046",
-      "judged": 1
+      "round": 2,
+      "version": "777136331879a11deef937418d895ffc58a6d877",
+      "judged": 2
     },
     "implementation-E-5-correctness": {
       "attempts": 1,
@@ -207,17 +208,18 @@
       ],
       "validation": "confirmed",
       "reason": "skills/tasks/SKILL.md step 3 says \"Start a run with `nio run <slug>`\", but cli.py lines 186-188 exit with \"give the stage or task too\" when a slug has no target. CT-11 says step 3 \"starts a run with `nio run`\" (bare), so the skill text contradicts the CLI and the contract.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-18",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "skills/tasks/SKILL.md step 3 (line 50); src/nio/cli.py:184-188",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-5",
@@ -335,15 +337,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "c4301e67505f69083d7f2e08b73fe6134585b046"
+    "1": "c4301e67505f69083d7f2e08b73fe6134585b046",
+    "2": "777136331879a11deef937418d895ffc58a6d877"
   },
   "matched": {
     "AC-12": [
