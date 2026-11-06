@@ -1,0 +1,404 @@
+{
+  "gate": "implementation-E-2",
+  "subject": "2026-11-05-parallel-waves",
+  "round": 1,
+  "tier": "high",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness",
+    "risk-rollback"
+  ],
+  "collected": {
+    "R-261106-qfdt/implementation-E-2-conformance.md": "4b858ecb73807bd4e594439950a1834e88c1e04d79e49190f01c17cd3dbd21f8",
+    "R-261106-qfdt/implementation-E-2-consistency.md": "da780c16e56c3a60032b6235ac671d937aed8a494d3dc241b9a59ce4ca15302f",
+    "R-261106-qfdt/implementation-E-2-correctness.md": "69457b9d3b703572c7b4eaa32b2f1a2df6378420302a609d8a3314c6f716dc14",
+    "R-261106-qfdt/implementation-E-2-risk-rollback.md": "a167d7c073771ec3289a0c143e85f290887062f6522ee45e034a007456e9c97d",
+    "R-261106-qfdt/implementation-E-2-refuter.md": "ec61c05f3be7fc3494eb1ace36dcfaaccdf908c17781c50e467f3f7e3de45945"
+  },
+  "jurors": {
+    "implementation-E-2-conformance": {
+      "attempts": 2,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
+      "judged": 1
+    },
+    "implementation-E-2-consistency": {
+      "attempts": 3,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
+      "judged": 1
+    },
+    "implementation-E-2-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
+      "judged": 1
+    },
+    "implementation-E-2-risk-rollback": {
+      "attempts": 2,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The only journey for this epic did not run",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-7",
+        "AC-8",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "QS-1 is marked auto but 3 of 4 numbered steps could be read; nothing ran"
+      ],
+      "fix": "Repair QS-1 so that all four numbered steps are readable, or mark it manual, and rerun it. This is not a blocker for conformance.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-conformance",
+          "lens": "conformance",
+          "situation": "The only end-to-end journey for this epic did not run. It failed on a step-count mismatch in its own definition, not on the code. The integration-level ACs (AC-7, AC-8, AC-9) are therefore proven only by the unit-style tests in `tests/test_waves.py`. Those tests are sound and the suite passed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "journeys evidence of the pack (QS-1)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "The third-attempt or block shelve destroys a wave task's effort-folder edits and overwrites land's fuller patch",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-7",
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "rows = [(c, p) for c, p in porcelain(root) if outside(slug, [p])]",
+        "WHEN a wave task is committed or blocked THE SYSTEM SHALL remove its worktree, keeping a blocked task's patch in its run folder."
+      ],
+      "fix": "When a worktree is given, build the shelve patch from all of the worktree's changes, leaving out only state.json and history.jsonl. Or keep land's patch under its own name instead of overwriting it. Add a test in which a blocked wave task edited a file in the effort folder and the patch still holds that edit.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "A wave task's worker edits a file under `.nio/specs/<slug>/`. A plan file is the common case, because that is exactly what makes the review fail. After the third failed attempt, or on `nio flow block`, `shelve` writes a patch of out-of-folder paths only to `.nio/runs/<run>/T-n.patch`. That is the same path where `land` had already saved the full diff. `shelve` then force-removes the worktree. The effort-folder edits are now in no patch and in no tree. Before this change they stayed in the main tree. No test checks this: AC-12 only checks that m2_new.py is in the patch.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`shelve` builds its patch from `porcelain(tree)` filtered through `outside(slug, ...)` (implement.py:432). It then writes to `.nio/runs/<run>/T-n.patch` (line 439), the same place `land` put the full diff (line 365). It then force-removes the worktree (line 449). Effort-folder edits therefore end up in no patch and no tree. CT-7 and AC-12 don't address this.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-15",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py shelve (tree branch), attempt, block",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "An exception from commit after the apply leaves the applied files in the main tree with no restore",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the commit fails → `commit` puts history, state and the index back as today, then `restore(root, saved)`; the task stays green as today and a retry applies again",
+        "sha, report = commit(root, slug, task, w, line)"
+      ],
+      "fix": "Run `restore(root, saved)` in a try/except or finally around the review and the commit whenever `land` succeeded. Or check the branch before calling `land`. Add a test in which green on the wrong branch leaves the main tree's status unchanged.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`green` only calls `restore(root, saved)` when `commit` returns no sha. `commit` raises ValueError in two cases after `land` has already applied to the main tree: when the human switched off `nio/<slug>` (`clean()` doesn't check the branch), and when `write-tree` fails. Nothing catches these. The task's files stay applied and uncommitted. Any effort-folder edit the human made keeps the worker's hunks mixed into it. The next green is refused as dirty. This isn't a crash, so the crash non-goal doesn't cover it, and nothing tells the human to run `git apply -R`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`green` calls `restore(root, saved)` only when `commit` returns no sha (line 737). `commit` raises ValueError when the branch is wrong (line 586) or `write-tree` fails (line 592), after `land` has applied. Nothing catches the exception, and `clean()` doesn't check the branch. CT-4's rollback line covers a refused commit that returns, not a raise. The crash non-goal covers a dying process, not this case.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-16",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py green (after land), commit",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The snapshot and restore miss git-quoted (non-ASCII) paths, so a failed review or commit leaves those changes applied",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "saved = {p: (root / p).read_bytes() if (root / p).is_file() else None for p in names}"
+      ],
+      "fix": "Use `git diff -z --name-only` and split on NUL, or pass `-c core.quotepath=off`. Add a test with a non-ASCII filename on the AC-9 failed-review path.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`names` comes from `git diff --name-only`. With git's default `core.quotepath=true`, a path like é.py is printed quoted with octal escapes, so `is_file()` is false and the snapshot records the file as absent. `restore` then unlinks a name that doesn't exist, and the real file keeps the worker's change, or a new file stays in place. This breaks AC-9 (\"`git status` of the main tree matches the pre-apply state\"). `records.git` doesn't set `core.quotepath=off`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`records.git` sets no `core.quotepath=off` (records.py:46-49). `land` takes `names` from `git diff --name-only` (line 367), so a non-ASCII path arrives quoted with octal escapes. `(root/p).is_file()` is then false, and the snapshot records the file as absent. `porcelain` and `changed` only strip the quotes (lines 245, 407), so they don't decode the escapes either.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-17",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py land",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "restore puts back bytes but not file modes",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "(root / p).write_bytes(b) if b is not None else (root / p).unlink(missing_ok=True)"
+      ],
+      "fix": "Save the file mode in the snapshot and restore it with `os.chmod`. Or roll back with `git apply -R` of the same patch, using the same excludes.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`git apply --binary` applies mode changes (for example `new mode 100755`). `restore` writes back the content only, so after a failed review or commit the mode change stays. The main tree's `git status` then differs from before the apply, and the next green's `clean()` refuses because of it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "A task changing a file mode and then failing its review is rare; the next green's dirty check names the file. (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py restore",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Green on a wave task falls back to the main tree when its worktree is gone",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "CT-3",
+        "CT-4",
+        "FR-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "None when it names none or the folder is gone (CT-2)",
+        "a task whose latest claim names a worktree: the command runs with that worktree as its working directory",
+        "direct, tree = task[\"mode\"] == \"direct\", worktree(root, lines, tid) or root"
+      ],
+      "fix": "Spec: say what a named worktree that is gone does to green (for example refuse with the folder named, and record nothing). Code: when the claim names a worktree and `worktree()` returns None, refuse green with that message instead of using `or root`.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-consistency",
+          "lens": "consistency",
+          "situation": "A wave task has claimed worktree `.nio/runs/<run>/worktree`. Someone removes that folder (or runs `git worktree prune`) before its green. `worktree()` returns None, so `tree` becomes the main tree. The `--run` command runs in the main tree, `land` is skipped because `tree == root`, and `clean` is skipped. The review then judges the main tree against the claim commit, and `commit` stages the effort's state and history. Those are the only changes in the main tree, so the task can be committed as done with none of its code. The spec neither forbids this nor says to refuse it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "Line 690 does `worktree(root, lines, tid) or root`. CT-2 defines `worktree()` as None when the folder is gone, and no text refuses green in that case. This is the same problem as the `green` half of implementation-E-1 J-3. That finding was accepted as a risk by the human (\"a deleted worktree is the human's own act\"). This finding adds the claim that the task can be committed with none of its code.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-18",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "`src/nio/implement.py`, `green` (the line that sets `direct, tree`), and `review` (the `worktree(...)` test)",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "CT-7 names the default of `tree` as the root, the code uses None",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`shelve(root, slug, run, tid, tree=root)`; `attempt` and `block` pass the task's worktree when it has one",
+        "def shelve(root, slug, run, tid, tree=None):"
+      ],
+      "fix": "Either change the spec's Shape to `tree=None` (the main tree when None), or keep the code's signature and say the default is None in CT-7.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-consistency",
+          "lens": "consistency",
+          "situation": "Anyone calling `shelve` by the CT-7 shape reads `tree` as defaulting to the main root. The code defaults it to None and uses `tree or root`. Calls behave the same, so nothing breaks, but the shape in the spec and the code differ.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Same behaviour; the default None means the main tree. (delegated: the human's standing autonomy grant, recommended option)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "`src/nio/implement.py`, `shelve` signature",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "0ee8692ce537a776d4273186c9cbe2eb6c3e382b"
+  },
+  "matched": {
+    "AC-4": [
+      [
+        "tests/test_waves.py",
+        "test_ac4_no_claim_while_the_wave_is_open"
+      ],
+      [
+        "tests/test_waves.py",
+        "test_ac4_two_blocked_siblings_hold_the_claim"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_waves.py",
+        "test_ac7_each_task_lands_as_one_commit_in_green_order"
+      ]
+    ],
+    "AC-8": [
+      [
+        "tests/test_waves.py",
+        "test_ac8_a_clash_blocks_only_its_task"
+      ]
+    ],
+    "AC-9": [
+      [
+        "tests/test_waves.py",
+        "test_ac9_failed_review_restores_the_main_tree"
+      ],
+      [
+        "tests/test_waves.py",
+        "test_ac9_failed_commit_restores_and_retry_lands"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_waves.py",
+        "test_ac10_suite_runs_for_the_last_task_only"
+      ]
+    ],
+    "AC-12": [
+      [
+        "tests/test_waves.py",
+        "test_ac12_worktree_removed_at_commit_and_block"
+      ]
+    ],
+    "AC-13": [
+      [
+        "tests/test_waves.py",
+        "test_ac13_green_refuses_on_a_dirty_main_tree"
+      ]
+    ],
+    "AC-14": [
+      [
+        "tests/test_waves.py",
+        "test_ac14_review_ignores_a_landed_sibling"
+      ]
+    ],
+    "AC-15": [
+      [
+        "tests/test_waves.py",
+        "test_ac15_outside_file_is_recorded_and_a_clash_blocks"
+      ]
+    ]
+  }
+}
