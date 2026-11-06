@@ -93,6 +93,30 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: single: doc line and its string check by one worker
 
+#### Fixes
+
+### T-15 Fix: The journey that claims to run the 2-second limit sets NIO_PERF for the wrong command
+- From: J-1 (implementation-E-3, round 1)
+- Files: `tests/test_flow.py`
+- Serves: AC-18, AC-29
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-16 Fix: AC-14 and AC-15 tests sit after the `__main__` runner and never run
+- From: J-4 (implementation-E-3, round 1)
+- Files: `tests/test_implement.py`
+- Serves: AC-14, AC-15, CT-9
+- Test: TC-13
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 The tasks-gate fix check shows tasks added under Fixes (US-3)
 
 ### T-8 Record the fix tasks of each round, add `jury.fixes_added`, and show added fix tasks in the fix-check pack
