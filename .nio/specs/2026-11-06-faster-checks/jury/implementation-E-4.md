@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-4
 subject: 2026-11-06-faster-checks
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-4 jury: 2026-11-06-faster-checks
 
@@ -21,7 +21,7 @@ outcome: rejected
 | J-9 | major | contradiction | AC-4 | consistency | refuted | refuted |  | new, 0 |
 | J-10 | minor | untestable | AC-1, NFR-1 | correctness | grounded | open |  | new, 0 |
 | J-11 | minor | risk | AC-4, CT-1 | correctness | grounded | open |  | new, 0 |
-| J-12 | blocker | gap | AC-1 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-12 | blocker | gap | AC-1 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 Output from child processes escapes the in-process capture
 - quote: "then the helper returns that stdout, stderr and code n, as the subprocess did"
@@ -93,13 +93,13 @@ outcome: rejected
 - situation (cli): no passing test proves AC-1: no test no match
 - fix: add or fix a test that proves AC-1
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-11
+- disposition: accepted-risk by human: Delegated by the human: AC-1's test is TC-1, tests/test_flow.py:test_cli_runs_in_process, which passes in the reused suite; the lens matched AC-1 to none only because its 60 s is QS-1's hand measurement (47.9 s, T-5's worker; re-measured for the PR). T-11 is retired as pointless.
 
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-4-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-4-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-4-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-4-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-4-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-4-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-4-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-4-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
