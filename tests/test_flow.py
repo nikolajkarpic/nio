@@ -1353,8 +1353,8 @@ def test_uj2_idle_visible():
     print("ok")
 
 
-def test_nfr3_status_speed():
-    """TC-67: status over 20 efforts at tasks_jury, 50 history lines each, takes under 2 seconds."""
+def status_speed(clock=time.perf_counter):
+    """Status over 20 efforts at tasks_jury, 50 history lines each; the 2-second limit holds only if NIO_PERF=1."""
     slugs = [f"2026-10-{i:02d}-e" for i in range(1, 21)]
     root = effort("tasks_jury", slug=slugs[0])
     for slug in slugs[1:]:
@@ -1366,11 +1366,54 @@ def test_nfr3_status_speed():
         for x in lines:  # one record call per line, as `history` does, but with the state in hand
             at_ = x.pop("at")
             flow.record(root, slug, [x], state, flow.who(BY), "", at=at_)
-    start = time.perf_counter()
+    start = clock()
     code, out = cli(root, "status")
-    took = time.perf_counter() - start
-    assert code == 0 and len(out.splitlines()) == 20 and took < 2.0, (took, out)
-    print(f"ok ({took:.2f}s)")
+    took = clock() - start
+    assert code == 0 and len(out.splitlines()) == 20, (took, out)
+    if os.environ.get("NIO_PERF") == "1":
+        assert took < 2.0, f"status took {took:.2f}s, over the limit of 2 seconds"
+    return out
+
+
+def test_nfr3_status_speed():
+    """TC-67: status over 20 efforts at tasks_jury, 50 history lines each, takes under 2 seconds (with NIO_PERF=1)."""
+    start = time.perf_counter()
+    status_speed()
+    print(f"ok ({time.perf_counter() - start:.2f}s)")
+
+
+def test_ac18_status_speed_gated():
+    """TC-15: the 2-second limit is asserted only under NIO_PERF=1; the 20 lines always."""
+    global cli
+    def clock():
+        return next(it)
+    saved, old = cli, os.environ.pop("NIO_PERF", None)
+    try:
+        it = iter((0.0, 3.0))
+        assert len(status_speed(clock).splitlines()) == 20
+        os.environ["NIO_PERF"] = "1"
+        it = iter((0.0, 3.0))
+        try:
+            status_speed(clock)
+            raise SystemExit("no AssertionError under NIO_PERF=1")
+        except AssertionError as e:
+            assert "2 seconds" in str(e), e
+        del os.environ["NIO_PERF"]
+
+        def cutting(root, *a):  # remove one effort's folder before status runs
+            shutil.rmtree(next((Path(root) / ".nio" / "specs").iterdir()))
+            return saved(root, *a)
+        cli, it = cutting, iter((0.0, 3.0))
+        try:
+            status_speed(clock)
+            raise SystemExit("no AssertionError with 19 lines")
+        except AssertionError:
+            pass
+    finally:
+        cli = saved
+        if old is not None:
+            os.environ["NIO_PERF"] = old
+    print("ok")
 
 
 # --- park and resume as the human sees them (CT-13, CT-9) ---
