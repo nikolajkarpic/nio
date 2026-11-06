@@ -23,3 +23,5 @@ section out in a first review.
 - quote: "allowed while the order is paid or shipped"
 - situation: an order is shipped and a refund arrives: FR-1 refunds it, FR-2 rejects it
 - fix: keep one rule; if FR-2 holds, drop `shipped` from FR-1 and the table row
+- gap: missing                    # implementation gate only: missing | partial | contradicts | unrequested
+- where: src/app.py               # implementation gate only: the file or area

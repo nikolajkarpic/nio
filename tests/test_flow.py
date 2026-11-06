@@ -91,13 +91,46 @@ def history(root, slug, *lines):
         flow.record(root, slug, [line], state, flow.who(BY), "", at=at)
 
 
+def run_main(root, *args):
+    """`nio <args>` in `root`, in this process. Returns (exit code, stdout, stderr); cwd, environ and argv are restored."""
+    import io
+    import traceback
+    from contextlib import redirect_stderr, redirect_stdout
+
+    from nio.cli import main
+
+    cwd, env, argv = os.getcwd(), dict(os.environ), list(sys.argv)
+    out, err = io.StringIO(), io.StringIO()
+    code = 0
+    try:
+        os.chdir(root)
+        sys.argv = ["nio", *args]
+        with redirect_stdout(out), redirect_stderr(err):
+            try:
+                main()
+            except SystemExit as e:
+                if isinstance(e.code, int):
+                    code = e.code
+                elif e.code is not None:
+                    print(e.code, file=err)
+                    code = 1
+            except BaseException:
+                traceback.print_exc(file=err)
+                code = 1
+    finally:
+        os.chdir(cwd)
+        os.environ.clear()
+        os.environ.update(env)
+        sys.argv = argv
+    return code, out.getvalue(), err.getvalue()
+
+
 def cli(root, *args, by=True):
     """`nio flow <args>` in `root` as a subprocess, `--by` added to the writing subcommands unless `by=False`.
     Returns (exit code, stdout + stderr)."""
     extra = ["--by", BY] if by and args and args[0] in ("start", "done", "park", "abandon", "seen") else []
-    r = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "flow", *args, *extra], cwd=root,
-                       capture_output=True, text=True)
-    return r.returncode, r.stdout + r.stderr
+    code, out, err = run_main(root, "flow", *args, *extra)
+    return code, out + err
 
 
 def snap(root, slug):
@@ -2230,6 +2263,79 @@ def test_ac36_the_change_is_refused():
     assert code == 1 and "T-1 is green: needs its review" in out, out
     from nio import implement
     assert implement.status(root, S, flow.load(root, S)[1])["T-1"] == "green"
+    print("ok")
+
+
+def test_cli_runs_in_process():
+    """`cli` runs the CLI without starting a new Python process."""
+    root = effort("planning")
+    flow.start(root, S, by=BY)
+    argvs = []
+    real = subprocess.Popen.__init__
+
+    def spy(self, args, *a, **k):
+        argvs.append(args)
+        real(self, args, *a, **k)
+
+    subprocess.Popen.__init__ = spy
+    try:
+        code, out = cli(root, "next", S)
+    finally:
+        subprocess.Popen.__init__ = real
+    assert code == 0 and "state: planning" in out, out
+    assert not [a for a in argvs if a and a[0] == sys.executable], argvs
+    print("ok")
+
+
+def test_run_main_matches_subprocess():
+    """In-process (code, stdout, stderr) equal the subprocess's, for exit 0, 1 and 2."""
+    root = effort("planning")
+    flow.start(root, S, by=BY)
+    for args in (["flow", "next", S], ["flow", "next", "nosuch"], ["flow", "park", S]):
+        r = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", *args], cwd=root,
+                           capture_output=True, text=True)
+        assert run_main(root, *args) == (r.returncode, r.stdout, r.stderr), args
+    print("ok")
+
+
+def test_run_main_restores_process_state():
+    """cwd, environ and argv are as before after each call, including a failing one; no flow.lock stays."""
+    root = effort("planning")
+    flow.start(root, S, by=BY)
+    before = (os.getcwd(), dict(os.environ), list(sys.argv))
+    same = lambda: (os.getcwd(), dict(os.environ), list(sys.argv)) == before
+    run_main(root, "flow", "next", S)
+    assert same()
+    run_main(root, "flow", "next", "nosuch")
+    assert same()
+    real = flow.record
+
+    def boom(*a, **k):
+        os.environ["NIO_LEAK"] = "1"
+        os.chdir("/")
+        raise RuntimeError("boom")
+
+    flow.record = boom
+    try:
+        code, out, err = run_main(root, "flow", "park", S, "x", "--by", BY)
+    finally:
+        flow.record = real
+    assert code == 1 and "RuntimeError: boom" in err, (code, err)
+    assert same()
+    assert not list((root / ".nio/specs" / S).glob("flow.lock"))
+    assert run_main(root, "flow", "park", S, "x", "--by", BY)[0] == 0
+    assert same()
+    print("ok")
+
+
+def test_isolated_tests_keep_a_subprocess():
+    """Tests that need their own process still call subprocess.run, not cli or run_main."""
+    import inspect
+    text = (Path(__file__).parent / "test_implement.py").read_text()
+    sources = [inspect.getsource(test_cli_errors), inspect.getsource(test_nfr2_offline),
+               re.search(r"def test_nfr1_no_model_calls\(.*?(?=\ndef |\Z)", text, re.S).group(0)]
+    for src in sources:
+        assert "subprocess.run(" in src and "cli(" not in src and "run_main(" not in src, src[:80]
     print("ok")
 
 
