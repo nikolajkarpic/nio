@@ -255,6 +255,12 @@ def dirty(root, slug):
     return outside(slug, [p for _, p in porcelain(root)])
 
 
+def clean(root, slug):
+    """Refuse, recording nothing, while the main tree has uncommitted changes outside the effort folder (FR-22, FR-14)."""
+    if left := dirty(root, slug):
+        raise ValueError("uncommitted changes outside the effort folder:" + "".join(f"\n  {p}" for p in left))
+
+
 def guard(root, slug, state, lines, started):
     """CT-5's refusals, in its order; each raises ValueError and nothing is recorded (FR-2, FR-3, FR-20, FR-22)."""
     if not any(s == "tasks_jury" for _, _, s in flow.commits(root, slug)):
@@ -265,8 +271,7 @@ def guard(root, slug, state, lines, started):
     now = (records.git(root, "branch", "--show-current") or ["(detached)"])[0]
     if started and now != branch(slug):
         raise ValueError(f"on {now}, not {branch(slug)}")
-    if left := dirty(root, slug):
-        raise ValueError("uncommitted changes outside the effort folder:" + "".join(f"\n  {p}" for p in left))
+    clean(root, slug)
     if state["claims"].get("task"):
         raise ValueError(f"{state['claims']['task']} is claimed")
     if next_ready(root, slug, lines) is None:
@@ -340,6 +345,34 @@ def wave(root, slug, lines, first):
     st, ts = status(root, slug, lines), tasks_of(root, slug)
     after = ts[[t["id"] for t in ts].index(first["id"]) + 1:]
     return [first] + [t for t in after if t["epic"] == first["epic"] and t["parallel"] and st[t["id"]] == "ready"][:n - 1]
+
+
+def release(claims, tid):
+    """`claims` without `tid` (CT-1): a wave keeps its other tasks, the first left leading; {} once none is left."""
+    left = [t for t in claims.get("wave", []) if t != tid]
+    return {"task": left[0], "wave": left} if left else {}
+
+
+def land(root, slug, tid, tree, since):
+    """Apply a wave task's worktree changes since its claim commit `since`, untracked files included, to the main tree
+    (CT-4). Returns (the patch, saved next to the worktree; {path: its main-tree bytes before, None when absent};
+    git's error or "", the main tree untouched on an error). The effort's state and history are never applied."""
+    keep = [f".nio/specs/{slug}/state.json", f".nio/specs/{slug}/history.jsonl"]
+    records.git(tree, "add", "-A")
+    diff = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, full=True)[1]
+    path = tree.parent / f"{tid}.patch"
+    path.write_text(diff)
+    names = [p for p in records.git(tree, "diff", "--cached", "--name-only", "--no-renames", since) if p not in keep]
+    saved = {p: (root / p).read_bytes() if (root / p).is_file() else None for p in names}
+    code, _, err = records.git(root, "apply", "--binary", *[f"--exclude={p}" for p in keep], str(path), full=True) \
+        if names else (0, "", "")
+    return str(path.relative_to(root)), saved, err.strip() or "git apply failed" if code else ""
+
+
+def restore(root, saved):
+    """Put each path `land` saved back to its bytes before the apply, deleting one that didn't exist."""
+    for p, b in saved.items():
+        (root / p).write_bytes(b) if b is not None else (root / p).unlink(missing_ok=True)
 
 
 def worktree(root, lines, tid):
@@ -505,7 +538,8 @@ def review(root, slug, task, lines):
     full suite for the last epic or when it isn't."""
     tid = task["id"]
     mine = since_claim(lines, tid)
-    paths = changed(root, mine[0]["evidence"].get("commit") or "HEAD")
+    # a wave task's changes are applied on HEAD, which may hold a sibling's commit since its claim (CT-5)
+    paths = changed(root, "HEAD" if worktree(root, lines, tid) else mine[0]["evidence"].get("commit") or "HEAD")
     reds = [x for x in mine if x["kind"] == "red"]
     frozen = reds[-1]["evidence"]["frozen"] if reds else {}
     folder = f".nio/specs/{slug}/"
@@ -554,7 +588,7 @@ def commit(root, slug, task, who, review=None):
     parent = records.git(root, "rev-parse", "HEAD")[0]
     waiting = None if (state["waiting"] or {}).get("task") == tid else state["waiting"]
     flow.write(root, slug, [entry("task_done", tid, branch=branch(slug), parent=parent)],
-               {**state, "claims": {}, "waiting": waiting}, who, "implementing")
+               {**state, "claims": release(state["claims"], tid), "waiting": waiting}, who, "implementing")
     ends, report = epic_end(root, slug, task, review or {})
     if ends:
         flow.write(root, slug, ends, flow.load(root, slug)[0], who, "implementing")
@@ -648,6 +682,8 @@ def green(root, slug, tid, command, by):
         state, lines = flow.load(root, slug)
         task, now = task_for(root, slug, lines, tid, ("claimed", "red", "green"))
         direct, tree = task["mode"] == "direct", worktree(root, lines, tid) or root
+        if tree != root:
+            clean(root, slug)  # FR-14: the apply and its restore must not mix with the human's edits
         if now == "claimed" and not direct:
             raise ValueError(f"{tid} has no failing test first")
         by_worker(task, w, "green")
@@ -672,15 +708,27 @@ def green(root, slug, tid, command, by):
             line = entry("green", tid, command=command, output=flow.sha(out.encode()))
             flow.write(root, slug, [line], state, w, "implementing")
             lines, printed = lines + [line], [f"green: {tid} accepted"]
+        saved = {}
+        if tree != root:
+            patch, saved, err = land(root, slug, tid, tree, since_claim(lines, tid)[0]["evidence"]["commit"])
+            if err:
+                records.git(root, "worktree", "remove", "--force", str(tree), full=True)
+                why = f"{tid} blocked: its changes don't apply"
+                flow.write(root, slug, [entry("blocked", tid, cause="apply", patch=patch)],
+                           {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}, w, "implementing")
+                return 1, printed + [why, f"  {err}", f"its changes are in {patch}"]
         line = review(root, slug, task, lines)
         ev = line["evidence"]
         if not ev["passed"]:
+            restore(root, saved)
             entries, state = attempt(root, slug, state, lines, tid, line)
             flow.write(root, slug, entries, state, w, "implementing")
             return 1, printed + ["review: failed"] + [f"  {r}" for r in ev["reasons"]] + said(entries)
         flow.write(root, slug, [line], state, w, "implementing")
         printed += ["review: passed"] + [f"  outside the task's files: {p}" for p in ev["outside"]]
         sha, report = commit(root, slug, task, w, line)
+        if tree != root:
+            records.git(root, "worktree", "remove", "--force", str(tree), full=True) if sha else restore(root, saved)
     if sha:
         return 0, printed + [f"done: {tid} {sha}"] + report
     return 1, printed + [flow.load(root, slug)[0]["waiting"]["why"], f"{tid} stays green; `nio flow green {slug} {tid}` retries"]
