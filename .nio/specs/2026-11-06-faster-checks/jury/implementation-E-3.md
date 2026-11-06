@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-3
 subject: 2026-11-06-faster-checks
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-3 jury: 2026-11-06-faster-checks
 
@@ -10,13 +10,13 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-10, AC-9, CT-5 | adversary, conformance | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | AC-8, CT-5 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | AC-10, AC-9, CT-5 | adversary, conformance | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | gap | AC-8, CT-5 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | major | risk | AC-8, CT-5 | adversary, correctness | merged | merged |  | new, 0 |
 | J-4 | minor | gap | AC-8, CT-5 | adversary | grounded | open |  | new, 0 |
-| J-5 | blocker | contradiction | AC-8, CT-5 | conformance, consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | blocker | contradiction | AC-8, CT-5 | conformance, consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-6 | major | contradiction | FR-3, FR-4 | consistency | refuted | refuted |  | new, 0 |
-| J-7 | major | risk | AC-8, CT-5 | adversary, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-7 | major | risk | AC-8, CT-5 | adversary, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 
 ### J-1 Reuse never checks the review ran at this commit or on a clean tree
 - quote: "Given the review's suite result is from another commit or a dirty tree"
@@ -77,7 +77,7 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-3-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-correctness | correctness | juror / claude-code / sonnet-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-3-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-3-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-3-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
