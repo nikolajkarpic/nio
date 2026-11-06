@@ -426,8 +426,8 @@ def test_ac4_two_blocked_siblings_hold_the_claim():
 
 
 def demo():
-    """A repo with three independent parallel tasks, T-1 split and the rest direct."""
-    return waves(n=3, modes={"T-1": "split"})
+    """A repo with three independent parallel direct tasks, the quickstart's demo (T-1 and T-2 both direct)."""
+    return waves(n=3)
 
 
 def test_gone_worktree_refuses_red_and_green():
