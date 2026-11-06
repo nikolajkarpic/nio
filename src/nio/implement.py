@@ -16,7 +16,7 @@ def run(root, command, limit):
     """(code, output, cause) of a shell command in `root` (CT-1, FR-44): stdin closed, stderr merged into stdout, its own
     process group so the limit kills every child. `cause` is "", "time limit" or "program not found" (exit 127)."""
     p = subprocess.Popen(command, shell=True, cwd=root, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT, start_new_session=True)
+                         env={k: v for k, v in os.environ.items() if k != "NIO_PERF"}, stderr=subprocess.STDOUT, start_new_session=True)
     try:
         out, _ = p.communicate(timeout=limit)
         code, cause = p.returncode, "program not found" if p.returncode == 127 else ""

@@ -1667,3 +1667,64 @@ if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_") and callable(test):
             test()
+
+
+# --- T-5: the review strips NIO_PERF (CT-9, FR-11) ---
+
+def perf_suite(root, body):
+    (root / "tests/test_base.py").write_text(f"import os\nimport unittest\n\n\nclass B(unittest.TestCase):\n    def test_sum(self):\n        {body}\n")
+
+
+def test_ac14_review_strips_nio_perf():
+    root = impl(alone=True)
+    perf_suite(root, "self.assertIsNone(os.environ.get('NIO_PERF'))")
+    commit_all(root, "perf-sensitive test")
+    os.environ.pop("NIO_PERF", None)
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
+    code_with(root)
+    os.environ["NIO_PERF"] = "1"
+    try:
+        code, out = flow(root, "green", S, "T-1")
+    finally:
+        del os.environ["NIO_PERF"]
+    assert code == 0 and lines(root)[-1]["kind"] != "fail", out
+    rv = of(root, "review")[-1]["evidence"]
+    assert rv["passed"] and not rv["failing"], rv
+    assert not state(root)["attempts"].get("T-1"), state(root)["attempts"]
+    print("ok")
+
+
+def test_ac15_review_still_fails():
+    root = impl(alone=True)
+    perf_suite(root, "self.assertEqual(1, 1)")
+    commit_all(root, "sum test")
+    os.environ.pop("NIO_PERF", None)
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
+    code_with(root)
+    perf_suite(root, "assert 1 == 2")
+    code, out = flow(root, "green", S, "T-1")
+    assert code == 1 and "test_sum" in out, out
+    assert state(root)["attempts"] == {"T-1": 1}, state(root)["attempts"]
+    print("ok")
+
+
+def test_ac14_review_strips_nio_perf_misuse():
+    root = impl(alone=True)
+    perf_suite(root, "self.assertIsNone(os.environ.get('NIO_PERF'))")
+    commit_all(root, "perf-sensitive test")
+    os.environ.pop("NIO_PERF", None)
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
+    code_with(root)
+    os.environ["NIO_PERF"] = "1"
+    try:
+        flow(root, "green", S, "T-1")
+    finally:
+        del os.environ["NIO_PERF"]
+    assert not state(root)["attempts"].get("T-1"), state(root)["attempts"]
+    print("ok")
