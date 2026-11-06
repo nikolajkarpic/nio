@@ -735,7 +735,11 @@ def green(root, slug, tid, command, by):
             return 1, printed + ["review: failed"] + [f"  {r}" for r in ev["reasons"]] + said(entries)
         flow.write(root, slug, [line], state, w, "implementing")
         printed += ["review: passed"] + [f"  outside the task's files: {p}" for p in ev["outside"]]
-        sha, report = commit(root, slug, task, w, line)
+        try:
+            sha, report = commit(root, slug, task, w, line)
+        except Exception:
+            restore(root, saved)
+            raise
         if tree != root:
             records.git(root, "worktree", "remove", "--force", str(tree), full=True) if sha else restore(root, saved)
     if sha:

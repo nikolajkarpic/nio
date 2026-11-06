@@ -353,6 +353,29 @@ def test_ac9_failed_commit_restores_and_retry_lands():
     print("ok")
 
 
+def test_ac9_raising_commit_restores_the_main_tree():
+    root = waves()
+    out = flow(root, "claim", S)[1]
+    work(root, out, "T-1")
+    before, m1 = kept(root), (root / "m1.py").read_bytes()
+    real = records.git
+
+    def fake(r, *args, full=False):
+        if args[:1] == ("write-tree",):
+            return (1, "", "no tree") if full else []
+        return real(r, *args, full=full)
+    records.git = fake
+    try:
+        implement.green(root, S, "T-1", "true", BY)
+        raised = False
+    except ValueError:
+        raised = True
+    finally:
+        records.git = real
+    assert raised and kept(root) == before and (root / "m1.py").read_bytes() == m1 and not (root / "m1_new.py").exists()
+    print("ok")
+
+
 def test_ac12_worktree_removed_at_commit_and_block():
     root = waves()
     out = flow(root, "claim", S)[1]
