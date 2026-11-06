@@ -317,7 +317,7 @@ def claim(root, slug=None, by=None):
             rid = records.new_run(root, {"effort": slug, "task": t["id"],
                                          "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
             path = pack.save(root, rid, t["id"], worker_pack(root, slug, t))
-            ev = {"task": t["id"], "commit": head}
+            ev = {"task": t["id"], "commit": head, "run": rid}  # its own run: the line's `run` is one per write
             out += [f"task: {t['id']} {t['title']}", f"mode: {t['mode']}", f"card: nio-worker-{t['tier']}",
                     f"effort: {t['effort']}", f"pack: {path.relative_to(root)}"]
             if len(group) > 1:
@@ -464,7 +464,7 @@ def shelve(root, slug, run, tid, tree=None):
 
 def run_of(root, slug, lines, tid):
     """The run of the task's latest claim, else a new one: where its patch goes."""
-    return next((x.get("run") for x in reversed(since_claim(lines, tid)) if x["kind"] == "claim"), "") \
+    return next((x["evidence"].get("run") or x.get("run") for x in reversed(since_claim(lines, tid)) if x["kind"] == "claim"), "") \
         or records.new_run(root, {"effort": slug, "task": tid})
 
 
