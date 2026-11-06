@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-3
 subject: 2026-11-05-implement-followups
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-3 jury: 2026-11-05-implement-followups
 
@@ -13,7 +13,7 @@ outcome: rejected
 | J-1 | major | gap | AC-18, AC-29 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-2 | minor | risk | AC-18, CT-10 | adversary | grounded | open |  | new, 0 |
 | J-3 | minor | inconsistency | AC-18 | adversary | grounded | open |  | new, 0 |
-| J-4 | blocker | gap | AC-14, AC-15, CT-9 | conformance, consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-4 | blocker | gap | AC-14, AC-15, CT-9 | conformance, consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-5 | major | inconsistency | AC-14, AC-15 (FR-11) | consistency | merged | merged |  | new, 0 |
 
 ### J-1 The journey that claims to run the 2-second limit sets NIO_PERF for the wrong command
@@ -54,6 +54,6 @@ outcome: rejected
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
 | implementation-E-3-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-3-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-3-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
