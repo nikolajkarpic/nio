@@ -1,0 +1,22 @@
+# Research: 2026-11-06-faster-checks
+
+Facts the grill looked up instead of asking.
+
+## Grill session 1 (2026-11-06)
+
+- **RF-1** The actors and journeys come from the five issues and the implement-followups run they cite; no other run log is needed. Source: issue #71: "In implement-followups E-1, `nio jury evidence` took 14m21s and hit the 600 s tool timeout."
+- **RF-2** The tests that need their own process already start one themselves, outside the shared helpers: a stubbed flow module, a `sitecustomize` that blocks the network, and a driver that records loaded modules. Source: tests/test_flow.py:468, tests/test_flow.py:1443, tests/test_implement.py:1176: "r = subprocess.run([sys.executable, \"-c\", DRIVER, ..."
+- **RF-3** The flow lock is a file created with `O_CREAT | O_EXCL`, so a lock the test process holds still refuses a second holder in the same process; only the pid-and-host check differs. Source: src/nio/flow.py:207: "fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)"
+- **RF-4** Every test file makes its fixtures in one temp folder per process, removed at exit; none writes the repo's own `.nio`. Source: tests/test_records.py:9: "every suite imports this module: one temp folder per run, removed at exit, holds every fixture repo"
+- **RF-5** This repo's suite is a shell loop, which `implement.runner` reads as an unknown runner: only the exit code is read, never a failing-test line. Source: .nio/config.json: "for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done"; src/nio/implement.py:51: "The known runner a command's own words name, else None"
+- **RF-6** The three implementation-gate outputs rejected in implement-followups E-1 left out the `gap` and `where` lines; the lens cards ask for both only inline, in a prose sentence, and `nio jury template` shows neither. Source: session 322a1614 collect output: "needs `### F<n> <title>` and ['gap', 'where']"; src/nio/agents/conformance.md:29: "Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`"
+- **RF-7** The epic-close review keeps only the new and still-failing tests on its `review` line, not the suite's command or exit code; the line is committed with the task. Source: src/nio/implement.py:500: "return entry(\"review\", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out)"
+- **RF-8** The task commit stages every changed path outside the effort folder and nio's scratch folders, so the review's suite saw the committed code. Source: src/nio/implement.py:526: "rel = outside(slug, [p for _, p in porcelain(root)]) + [f\".nio/specs/{slug}/history.jsonl\", ...]"
+- **RF-9** Before-numbers on the maintainer's machine (12 cores, other agents' test runs sharing it), at origin/main 19c8e09: the serial suite's files took 435 s in all (test_implement 201 s, test_evidence 163 s, test_flow 36 s, every other file under 12 s), and test_implement.py alone took 238 s in a second run. A first serial run exited 1 after 276 s while `uv run nio` rebuilt the package beside it, with no test failing; every file passes on its own. Source: `/usr/bin/time` runs of the configured suite, of each file, and of `uv run python tests/test_implement.py`.
+- **RF-10** A fix task closing an epic is reviewed like any closing task, so its review runs the suite at the fix commit, the commit a fix-check round's evidence is collected at. Source: src/nio/implement.py:482: "epic_closes, all_close = closes(root, slug, task, lines)"
+
+## Plan (2026-11-06)
+
+- **RF-11** In-process, test_implement.py still spent most of its time loading the embedding model: 145 `onnxruntime` session loads, one per CLI call that builds a pack. Source: cProfile of tests/test_implement.py with the CLI called in-process: "145   36.881    0.254   36.881    0.254 ...onnxruntime_inference_collection.py:700(_create_inference_session)"
+- **RF-12** `xargs` stops starting new commands when one is killed by a signal or exits 255; wrapping each file in `sh -c '… || exit 1'` makes every failure exit 1, so `xargs` runs every file and exits 123. Source: a run of `printf '%s\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` over a passing, a failing, a SIGKILLed and a later file: "ok z ran … exit 123"
+- **RF-13** With the CLI called in-process, test_implement.py took 100 s instead of 201–238 s, and 88 s with the model loaded once per process; the machine's load average was about 15 on 12 cores (other agents' runs). Source: `/usr/bin/time` runs of a prototype copy of tests/ and src/.

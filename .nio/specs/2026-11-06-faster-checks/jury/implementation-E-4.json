@@ -1,0 +1,564 @@
+{
+  "gate": "implementation-E-4",
+  "subject": "2026-11-06-faster-checks",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-wy34/implementation-E-4-adversary.md": "2e1d36f24196e4660019f0aa383e34fc6a0fea296bfc834ce5516f4c4df227c1",
+    "R-261106-wy34/implementation-E-4-conformance.md": "97eddb0e95746832104ba1e1a3558174831adcc6f981e885fc05dd494d81543c",
+    "R-261106-wy34/implementation-E-4-consistency.md": "417eb82492f74698bcd855454af34f55634be3d9bf0b82dd82f4bfb91e89bfc0",
+    "R-261106-wy34/implementation-E-4-correctness.md": "0b809b1c5140adf6f6f535331fedd34a5b42e4dbdea00fe9b8f0e0fadf30d8a9",
+    "R-261106-wy34/implementation-E-4-refuter.md": "775e354d1079b516eb711edd85c840970e7447d839c3ccc2e601d762e28c051d",
+    "R-261106-bncj/implementation-E-4-adversary.md": "6cdbaffa09da481341575a4b7a27b4a34885d6b204dab97e17bf420576df6fc9",
+    "R-261106-bncj/implementation-E-4-conformance.md": "d466887567b8ab1acc8ff6eb747d85e0cad50d872698ac6b87c38090ccff14be",
+    "R-261106-bncj/implementation-E-4-consistency.md": "982b0580ee70ac6fe9d179e1278992481b01fad2dc3ff45b4c78a24d9b190f04",
+    "R-261106-bncj/implementation-E-4-correctness.md": "64164c35533b5b9222d4cf19000dee0fd2309e717c8e896dee378856e34efd7b"
+  },
+  "jurors": {
+    "implementation-E-4-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
+    },
+    "implementation-E-4-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
+    },
+    "implementation-E-4-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
+    },
+    "implementation-E-4-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "2924cfdaeb172be73090a97f4b3e6ddebf38024c",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Output from child processes escapes the in-process capture",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "then the helper returns that stdout, stderr and code n, as the subprocess did",
+        "what it printed to `sys.stdout` and `sys.stderr`"
+      ],
+      "fix": "compare `run_main` with the subprocess for a command that spawns a child, or capture at fd level",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`tests/test_implement.py:nio` now calls `run_main` for commands such as `nio run` or the implement commands. `implement.py:24` shows these start child processes. A child inherits the real fd 1 and fd 2, so its output goes to the terminal and is missing from the returned stdout and stderr. An assertion on that output fails, or an expected-absent string is silently never seen. The three helper tests only compare `flow next` and `flow park`, so they cannot detect this.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "implement.py:18 starts the test command with stdout=PIPE, so the CLI reads and prints the child's output itself and run_main captures it. `tests/test_implement.py:nio` is only called for `check tasks` (lines 591, 596). CT-1 keeps `tests/test_flow.py:nio` as a subprocess for the commands that spawn heavy children.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py:run_main, tests/test_implement.py:nio",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Ctrl-C is swallowed as exit code 1",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "An uncaught exception gives 1 and its traceback on stderr.",
+        "Fails: never raises"
+      ],
+      "fix": "re-raise `KeyboardInterrupt` after the `finally` restore, or catch `Exception` only",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`except BaseException` in `run_main` also catches `KeyboardInterrupt`. The runner interrupts a long test, `cli` returns `(1, traceback)`, and the test run carries on or fails on a misleading assertion. The subprocess version propagated the interrupt, because the child died and the parent was still interrupted.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "tests/test_flow.py:run_main",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "AC-3 restore covers only four things, not the other state a shared process keeps",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the test process's working directory, environment and `sys.argv` are as before the call, and no flow lock it took is left behind"
+      ],
+      "fix": "assert `flow.HELD` is empty after a failing call, and say which other global state is out of scope",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "in-process calls share `flow.HELD` (keyed by the test's pid), `sys.modules` and imported-module globals, the umask and signal handlers. A CLI path that sets a module global or leaves an entry in `HELD`, for example after a hard failure before the `finally` at `flow.py:244`, leaks into the next test. `test_run_main_restores_process_state` only globs for `flow.lock` files. It never checks `flow.HELD`, which is what would make a later in-process \"second holder\" be treated as the first. The pid-alive stale check also behaves differently, because the lock holder is now always a live pid.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "the lock assertion follows a `flow.record` stub that raises `RuntimeError` before any lock is taken, if the lock is taken inside `record`. If so, `assert not list((root / \".nio/specs\" / S).glob(\"flow.lock\"))` passes trivially. It does not show that a lock taken and then raised through is released.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py:test_run_main_restores_process_state",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "AC-1's 60 s and \"results unchanged\" claim has no observed evidence",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-1",
+        "NFR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then it finishes in under 60 s and every test result is unchanged"
+      ],
+      "fix": "record the wall-clock of `tests/test_implement.py` at this commit and its per-test pass or fail against the base",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "the pack shows every test as `unknown`. The suite is \"reused: the review of T-5 ran this suite at 72ca9e69\". The three attack tests were \"not run\". A test that silently stopped asserting after the switch to `run_main` would go unnoticed. There is also no timing check, and `embed` is cached per process (CT-2), which can hide cold-load cost.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_implement.py",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "No test measures the under-60-s runtime",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then it finishes in under 60 s and every test result is unchanged."
+      ],
+      "fix": "have the human time `uv run python tests/test_implement.py` and record it, or add a timed check.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "AC-1 is a human AC. The diff adds no test or check that times `tests/test_implement.py`. The pack's suite entry is a review reused from T-5, with no timing. Per-test results are unknown, so \"every test result is unchanged\" is also unconfirmed per test.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Plan.md:69 maps NFR-1 to \"none\" tests, and plan.md:77 says a test file can't time itself, so QS-1 is the measurement. TC-1 explicitly leaves \"the time limit itself (under 60 s)\" to QS-1. The tasks jury already refuted the same point (tasks J-3).",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_implement.py",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The once-per-process model cache has no test",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "NFR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the `TextEmbedding` for a (model, cache folder) pair is built once per process instead of on every call"
+      ],
+      "fix": "add a unit test that patches `fastembed.TextEmbedding`, calls `embed` twice, and asserts one construction.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "`src/nio/index.py` gains `_model` under `functools.cache`. No added or changed test shows that two `embed` calls build one `TextEmbedding`, or that a different (model, cache) pair builds a new one. Only the suite-level result, which is unknown per test, touches this.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Plan.md:69 maps NFR-1/CT-2 to no test, and the tasks jury already refuted the same request (jury/tasks.md J-3). CT-2 fixes the cache key as (model, cache folder), which is what `functools.cache` on `_model(model, cache)` (index.py:46) does.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/index.py:embed",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "The AC-4 test reads source text and does not show a subprocess starts",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "those tests still pass and still start a subprocess."
+      ],
+      "fix": "also cover the pid-lock, timeout and process-group tests, or spy on `Popen` in them as `test_cli_runs_in_process` does.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "`test_isolated_tests_keep_a_subprocess` only checks that the function source contains `subprocess.run(`. It does not run the tests or watch a subprocess start. It would pass with a dead branch. Its regex over `test_implement.py` also covers only `test_nfr1_no_model_calls`. The AC names lock-held-by-another-pid, timeout and process-group tests, and none of those is checked.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py:2331",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "Process-isolation tests now run the CLI in-process",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-4",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a test that needs process isolation (a lock held by another pid, a timeout, a process group), when it runs, then it still runs the CLI as a subprocess.",
+        "Tests that need their own process keep their own `subprocess.run` (FR-2, research RF-2).",
+        "return test_flow.cli(root, *args, *extra)"
+      ],
+      "fix": "keep the test's CLI call as a subprocess (for example a `subprocess.run` variant of `flow` for this test), and extend the guard to the timeout and process-group tests.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "`test_ac49_time_limit` (tests/test_implement.py line 782) is a timeout and process-group test. It calls `flow(root, \"red\", S, \"T-1\", \"--run\", RUN)`, which now goes through `test_flow.cli` and `run_main` in the test process, not a subprocess. The guard `test_isolated_tests_keep_a_subprocess` checks only `test_cli_errors`, `test_nfr2_offline` and `test_nfr1_no_model_calls`, so this regression passes the guard unnoticed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "`test_ac49_time_limit` uses the shared `flow` helper, not its own `subprocess.run`, so it is not one of the RF-2 and TC-4 tests. Its timeout and process group belong to the test command that `implement.run` spawns in a child (implement.py:18), which stays a subprocess when the CLI runs in-process. FR-1 requires the shared helper to go in-process.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "tests/test_implement.py (`flow` helper, line 346 to 349; `test_ac49_time_limit`, line 782); tests/test_flow.py (`test_isolated_tests_keep_a_subprocess`, line 2331)",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "A lock held by another pid is tested in-process",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a test that needs process isolation (a lock held by another pid, a timeout, a process group), when it runs, then it still runs the CLI as a subprocess.",
+        "these tests start their own subprocess today, outside the shared helpers [research: RF-2]"
+      ],
+      "fix": "call that CLI through a subprocess (`subprocess.run`), or state in AC-4 and CT-1 that a dead other pid is an in-process case and add the test to the guard's list if it is a subprocess case.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "`test_` at tests/test_flow.py line 730 to 741 writes a stale lock with `old_lock(root, gone.pid, ...)`, where `gone` is a dead other pid, and then calls `cli(root, \"park\", S, \"x\")`. With the diff, that call runs in-process through `run_main`, not through a subprocess. AC-4 names \"a lock held by another pid\" as a case that must keep its subprocess, and the guard does not cover this test.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "`test_ac56_stale_lock` goes through the shared `cli` helper, and CT-1 says `cli` calls `run_main` with no caller changes. The dead pid is a separate process the test itself starts. RF-3 says the lock check works in-process and only the pid-and-host check differs, and TC-4 lists the isolated tests, which do not include this one.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "tests/test_flow.py (the stale-lock park test, line 730 to 741, which calls `cli` at line 738)",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "The 60-second limit on test_implement.py is not shown anywhere in the pack",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-1",
+        "NFR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then it finishes in under 60 s and every test result is unchanged"
+      ],
+      "fix": "add a timing assertion, or record the measured time as evidence for AC-1.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "no test or check measures the wall-clock time of `tests/test_implement.py`. The pack's per-test results are all unknown and its only timing evidence is the suite's pass. The in-process helper and the model cache could both be right and the file still run over 60 s because of the other tests (the model is loaded once per process, but test_implement.py still starts many other subprocesses).",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_implement.py",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "The AC-4 test reads source text and does not show a subprocess starts",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-4",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert \"subprocess.run(\" in src and \"cli(\" not in src and \"run_main(\" not in src, src[:80]"
+      ],
+      "fix": "for at least one isolated test, spy on `Popen` and assert a subprocess was started, as `test_cli_runs_in_process` does.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "a text check that passes as long as the string `subprocess.run(` is present, including in a comment or dead branch. AC-4 says those tests \"still start a subprocess\". `test_cli_runs_in_process` already spies on `Popen`, so the same spy could confirm the isolated tests spawn one.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py:test_isolated_tests_keep_a_subprocess",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "AC-1 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-1",
+      "gap": "missing",
+      "where": "tests/test_flow.py, tests/test_implement.py, src/nio/index.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-1: no test no match",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: AC-1's test is TC-1, tests/test_flow.py:test_cli_runs_in_process, which passes in the reused suite; the lens matched AC-1 to none only because its 60 s is QS-1's hand measurement (47.9 s, T-5's worker; re-measured for the PR). T-11 is retired as pointless.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      1,
+      "approved"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "72ca9e69ee5a508615b84d9444980fe18e292e20",
+    "2": "2924cfdaeb172be73090a97f4b3e6ddebf38024c"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_flow.py",
+        "test_cli_runs_in_process"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_flow.py",
+        "test_run_main_matches_subprocess"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_flow.py",
+        "test_run_main_restores_process_state"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_flow.py",
+        "test_isolated_tests_keep_a_subprocess"
+      ]
+    ]
+  }
+}
