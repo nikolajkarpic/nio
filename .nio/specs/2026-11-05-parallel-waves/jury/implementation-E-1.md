@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-1
 subject: 2026-11-05-parallel-waves
-round: 1
-outcome: rejected
+round: 2
+outcome: pending
 ---
 # Implementation-e-1 jury: 2026-11-05-parallel-waves
 
@@ -10,37 +10,38 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | blocker | gap | AC-1, AC-2, AC-3, AC-5, AC-6, AC-11, AC-16, AC-17 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | minor | inconsistency | CT-6, FR-10, AC-5 | consistency | grounded | open |  | new, 0 |
-| J-3 | minor | risk | AC-3, CT-2 | correctness | grounded | open |  | new, 0 |
+| J-1 | blocker | gap | AC-1, AC-2, AC-3, AC-5, AC-6, AC-11, AC-16, AC-17 | conformance | pending | open |  | unchanged, 1 |
+| J-2 | minor | inconsistency | CT-6, FR-10, AC-5 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-3 | minor | risk | AC-3, CT-2 | correctness | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-4 | major | risk | CT-1, CT-2, CT-4, CT-7 | risk-rollback | refuted | refuted |  | new, 0 |
-| J-5 | minor | gap | CT-2 | risk-rollback | grounded | open |  | new, 0 |
-| J-6 | minor | untestable | AC-16, CT-2 | risk-rollback | grounded | open |  | new, 0 |
-| J-7 | blocker | gap | AC-1 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-8 | blocker | gap | AC-2 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-9 | blocker | gap | AC-3 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-10 | blocker | gap | AC-5 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-11 | blocker | gap | AC-6 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-12 | blocker | gap | AC-11 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-13 | blocker | gap | AC-16 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-14 | blocker | gap | AC-17 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | minor | gap | CT-2 | risk-rollback | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-6 | minor | untestable | AC-16, CT-2 | risk-rollback | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-7 | blocker | gap | AC-1 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-8 | blocker | gap | AC-2 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-9 | blocker | gap | AC-3 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-10 | blocker | gap | AC-5 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-11 | blocker | gap | AC-6 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-12 | blocker | gap | AC-11 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-13 | blocker | gap | AC-16 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-14 | blocker | gap | AC-17 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
 
 ### J-1 No E-1 AC test has a passing result in the evidence
 - quote: "assert code == 0 and len(out.splitlines()) == 20 and took < 2.0, (took, out)"
 - situation (conformance): The results file lists `test_ac1_claims_a_wave_of_two`, `test_ac2_one_task_when_no_wave`, `test_ac3_red_and_green_run_in_the_worktree`, `test_ac5_nio_in_a_worktree_writes_the_root_state`, `test_ac6_second_guard_is_told_to_try_again`, `test_ac11_skill_dispatches_a_wave`, `test_ac16_worktree_failure_refuses_the_claim` and `test_ac17_bad_parallel_budget_is_refused`, each as "failed". The suite stopped at `tests/test_flow.py::test_nfr3_status_speed`, which measured 2.04 s against a 2.0 s limit. The suite loop exits on the first failing file, so `tests/test_waves.py` most likely never ran, and the "failed" results do not show whether the wave tests pass. The line numbers in the results (38, 53, 105, 131, 152, 165, 62, 85) also do not match the file in the diff, which suggests the results come from a different version of the test file or from the aborted run. The test bodies do exercise the ACs, so this is missing evidence, not a wrong test.
 - fix: Re-run the evidence so `tests/test_waves.py` runs on its own and its eight E-1 tests are recorded as passed. Either re-run the suite once the speed test is not flaky, or run `tests/test_waves.py` on its own. Make sure the recorded file and line numbers match the committed test file.
-- validation: confirmed: results.json records all 19 test_waves tests as "failed" and every AC in `evidence` as "didn't run". The suite loop (`|| exit 1`) stopped at tests/test_flow.py::test_nfr3_status_speed (2.04 s against a 2.0 s limit), before tests/test_waves.py could run. No E-1 AC has a passing result.
-- disposition: fix-task by agent: fix task T-6
+- validation: pending: implementation-E-1-conformance: The suite is recorded as `passed`, but all eight E-1 tests (lines 38, 53, 105, 131, 152, 165, 62, 85) still show `"result": "unknown"`. They are not recorded as passed. The new `epic` command has no recorded run in this evidence.
 
 ### J-2 Hook events from a task's worktree are written to the worktree's own run folder, not the project root
 - quote: "root = Path(records.git(root, "rev-parse", "--show-toplevel")[0])"
 - situation (consistency): A worker in `.nio/runs/<run>/worktree` triggers a host hook. `usage.record` takes the payload cwd, asks git for the top level, which is the worktree, and sees that `.nio` is a directory there because the tracked `.nio/specs` is checked out. It appends to `<worktree>/.nio/runs/events.jsonl` instead of the project root's file. When the worktree is removed with `--force` at commit or block, those events are lost, so the effort's usage totals miss the wave task's work. CT-6 says nio inside a worktree resolves to the project root, and `repo_root()` does that, but `usage.py` bypasses it.
 - fix: In `usage.record`, resolve the root with `records.repo_root()` (or the same worktree rule) instead of `git rev-parse --show-toplevel`, and add one assert to test_waves or test_usage that an event from inside a worktree lands in the project root's `.nio/runs/events.jsonl`. If usage recording is meant to be out of scope for this effort, put that in the spec's Non-goals instead.
+- disposition: accepted-risk by human: Usage events from hooks are outside this spec (FR-10 names nio flow's state); the loss is only usage totals of wave workers. Follow-up issue to file. (delegated: the human's standing autonomy grant, recommended option)
 
 ### J-3 Missing worktree silently falls back to the main tree
 - quote: "return root / name if name and (root / name).is_dir() else None"
 - situation (correctness): `worktree()` returns None both when a claim line names no worktree and when it names one whose folder is gone. `red` and `green` then use `worktree(...) or root`, so a wave task whose worktree was deleted would run its command, and check its frozen files, in the main tree. That could give a false red or green. CT-2 says "None when it names none or the folder is gone", so this follows the contract. The gap is that a wave task with a missing worktree isn't refused.
 - fix: In `red` and `green`, refuse when the latest claim line names a worktree but `worktree()` returns None. For example, raise "worktree for T-n is gone" instead of falling back to `root`.
+- disposition: accepted-risk by human: Follows CT-2 as approved; a deleted worktree is the human's own act. (delegated: the human's standing autonomy grant, recommended option)
 
 ### J-4 A wave claimed before E-2 lands its green as an empty commit and wipes the sibling's claim
 - quote: "a wave task leaves `claims` only when it is committed or blocked, through a new `release(claims, tid) -> claims` in the same file"
@@ -52,11 +53,13 @@ outcome: rejected
 - quote: "the worktrees made so far by this claim are removed, exit 1 with `can't create a worktree for <T-n>: <git's error>`, no line written (FR-17)"
 - situation (risk-rollback): `made` is cleaned up only inside `if code:` after `git worktree add`. If `records.new_run`, `pack.save` or `flow.write` raises after a worktree was made, or the process is killed mid-loop, registered worktrees stay in `.git/worktrees` and `.nio/runs` with no claim line naming them. Nothing reaches them later. State is not corrupted, but the worktrees pile up across retries.
 - fix: Wrap the loop and the `flow.write` in try/except, and on any exception remove every path in `made` with `git worktree remove --force`, then re-raise.
+- disposition: accepted-risk by human: Leftover worktrees after a crash mid-claim are scratch under .nio/runs; same class as the crash non-goal. (delegated: the human's standing autonomy grant, recommended option)
 
 ### J-6 The rollback test for a failed claim has not been shown passing
 - quote: "AssertionError: (2.042875017003098,"
 - situation (risk-rollback): results.json records `test_ac16_worktree_failure_refuses_the_claim` as `failed`, along with every other test_waves test. The suite loop exited on test_flow's `test_nfr3_status_speed` timing assertion before it reached test_waves. So the only test proving the claim's rollback has no passing run at this gate.
 - fix: Re-run `uv run python tests/test_waves.py` on its own, or re-run the suite with the timing flake addressed, and record test_ac16 passing before closing E-1.
+- disposition: accepted-risk by human: Same cause as J-1 (the suite stopped on a timing flake before test_waves); covered by J-1's fix. (delegated: the human's standing autonomy grant, recommended option)
 
 ### J-7 AC-1 has no passing evidence
 - situation (cli): no passing test proves AC-1: no test didn't run
@@ -110,7 +113,7 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-1-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 2 | 1 |
+| implementation-E-1-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-1-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 2 | 1 |
 | implementation-E-1-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 2 | 1 |
 | implementation-E-1-risk-rollback | risk-rollback | juror / claude-code / sonnet | sufficient | yes | 2 | 1 |
