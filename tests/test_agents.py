@@ -199,6 +199,15 @@ def test_no_shipped_card_defaults_to_high_effort():
     assert not high, high
 
 
+def test_ac12_evaluator_edits_in_place():
+    """AC-12 / TC-12: the evaluator card gets Edit, never Write, and is told to edit tasks.md lines in place."""
+    meta, body = card("evaluator")
+    rendered = agents.render_claude("evaluator", meta, body, "sonnet", "medium")
+    assert 'tools: "Read, Grep, Glob, Edit"' in rendered and "Write" not in rendered.split("---")[1], rendered
+    assert "in place" in body and "never write `tasks.md` whole" in body, body
+    print("ok")
+
+
 if __name__ == "__main__":
     test_shipped_cards_are_valid()
     test_no_shipped_card_defaults_to_high_effort()
@@ -213,3 +222,4 @@ if __name__ == "__main__":
     test_ac58_the_card_runs_on_the_strong_model_and_a()
     test_ac26_it_runs_on_fable_on_a_host_that_maps_no()
     test_tier_all_renders_once_per_tier()
+    test_ac12_evaluator_edits_in_place()
