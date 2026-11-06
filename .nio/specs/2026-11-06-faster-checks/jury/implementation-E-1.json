@@ -1,0 +1,366 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-06-faster-checks",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-hy73/implementation-E-1-adversary.md": "25ff507135bcc987ad56f65d3619bcfa8f222750c682cfd9a12c380305fc9745",
+    "R-261106-hy73/implementation-E-1-conformance.md": "ebacabf47b2c2746fdb0cb3945c91f7e404ff13c02533ad3079e7132269363f6",
+    "R-261106-hy73/implementation-E-1-consistency.md": "1bb4eafe9f8733560f21be85c144d157f2cb974d8097e260227583dd7dcd74b8",
+    "R-261106-hy73/implementation-E-1-correctness.md": "9ab1ea82fca22247f50c75b5a9f3cc656bfd2179bdc0c702d16be99b7ba96b5f",
+    "R-261106-hy73/implementation-E-1-refuter.md": "918abd0221d3741f41a503712120b5ca7794b4049502ef06e2c0bdcf8a8fcd6c"
+  },
+  "jurors": {
+    "implementation-E-1-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "637591f7040494c37eafadf034b12942a3f079d1",
+      "judged": 1
+    },
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "637591f7040494c37eafadf034b12942a3f079d1",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "637591f7040494c37eafadf034b12942a3f079d1",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "637591f7040494c37eafadf034b12942a3f079d1",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "An empty `where` passes as present",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "an implementation-gate finding with no `gap` or `where`"
+      ],
+      "fix": "treat an empty value as missing, for example `not any(v for v in f.get(k, []))`, and add a test with `- where:` empty.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "a juror writes `- where:` with nothing after it, or only the guidance comment. `blocks` stores `[\"\"]`, so `missing = [k ... if not f.get(k)]` treats `where` as present. `gap` is then checked against GAPS, but `where` is never checked for content. The finding is accepted with `where: \"\"`, so the human gets a finding that points nowhere. The test `test_malformed_output_stays_invalid` only drops the whole line.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Line 117 does accept `- where:` with an empty value, because `blocks` stores `[\"\"]`, which is a truthy list. The user's note says an empty `where` was accepted before this epic too. AC-14 and FR-11 say \"reject as before\" and name only a missing `gap` or `where`. This epic's change (case folding of labels) did not cause it. I could not run `git show 19c8e09` here, so the pre-epic behaviour is taken from the caller's note.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:parse_lens (line 117 missing-field check)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "`none` followed by any number of `.` or `!` is accepted",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "AC-12",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "optionally followed by one `.` or `!`"
+      ],
+      "fix": "use `re.fullmatch(r\"none[.!]?\", text, re.I)` instead of `rstrip`, and add a `none..` case to the malformed-output test.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`.rstrip(\".!\")` removes every trailing `.` and `!`. `None...`, `none.!.!` and `none!!!` therefore read as no findings, although the AC allows one mark. `None.!` is also accepted, and the tests cover only the four listed spellings. The harm is small, but it widens what the parser accepts beyond the spec.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: `none!!` or `none...` alone still means no findings, so the looser match loses nothing; noted in the PR",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/jury.py:parse_lens (line 144)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "Labels that differ only in case merge, and the first one silently wins",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "reads those fields as if written in the expected form"
+      ],
+      "fix": "reject a repeated single-valued field (all fields except `quote` and `run`) as an error, or add a test that fixes the intended behaviour.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "a finding has `- gap: partial` and later `- Gap: contradicts`, or `- severity: minor` and `- Severity: blocker`. `blocks` lower-cases both into one list and the parser uses `[0]`, so the later value is dropped with no error. Before this change the capitalised line was ignored; now it is merged and then discarded. A juror who corrects a field by adding a second line sees no sign that the correction was ignored. Only `run` is joined, so the other fields behave this way.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/jury.py:blocks and parse_lens (`f[k][0]` reads)",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "Trailing-mark rule is looser than AC-12",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-12",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`.rstrip(\".!\").lower() != \"none\"`"
+      ],
+      "fix": "match the whole line with `re.fullmatch(r\"none[.!]?\", text, re.I)` and add a case like `none!!` to `test_malformed_output_stays_invalid`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "AC-12 and CT-6 allow `none` optionally followed by one `.` or `!`. `rstrip` removes every trailing `.` or `!`, so `none!!`, `none...` and `none.!` also parse as no findings. The test lists only the four allowed forms, so it can't catch this.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: `none!!` or `none...` alone still means no findings, so the looser match loses nothing; noted in the PR",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:parse_lens",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "Prose before findings is not rejected",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-14",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`None, but see F1` or `none yet` under `## Findings`",
+        "if findings and re.match(r\"none\\W*$\", (secs.get(\"Findings\", \"\")"
+      ],
+      "fix": "when the text before the first `### ` is not exactly a none line, and findings follow, add the error. Add a unit test with `None, but see F1` and `none yet` followed by a finding.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "a juror writes `## Findings`, then the line `None, but see F1`, then `### F1 ...` with all fields. The first line of the section does not match `none\\W*$`, so no error is added. `findings` holds F1, the output is valid, and the lens is accepted. AC-14 names this exact slip as malformed and says the parser \"still rejects it as INVALID\". The added test (`test_malformed_output_stays_invalid`) only covers `None, but see F1` and `none yet` with no findings, so this case is untested.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "`None, but see F1` or `none yet` with no `###` finding is rejected, because line 144 fires when `findings` is empty. When valid `### F1` blocks follow, the findings are all present and parsed. Line 142 rejects the `None.` plus finding case that AC-14 lists as a contradiction. Prose ahead of valid findings loses nothing, and the spec does not say it must be rejected.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:parse_lens",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Several trailing marks are accepted as no findings",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "FR-9",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`none` in any case optionally followed by one `.` or `!`"
+      ],
+      "fix": "use one rule for both checks, such as `^none[.!]?$` on the whole section text, and add `NONE!!` to the none-slip test as an invalid case.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "`## Findings` holds only `NONE!!` (or `None.!`). The no-findings check does `rstrip(\".!\")`, which strips every trailing mark, so the output is accepted as no findings. The same text with a finding after it is rejected by `none\\W*$`. FR-9 allows one `.` or `!`, so the first case should be invalid, and the two checks disagree.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: `none!!` or `none...` alone still means no findings, so the looser match loses nothing; noted in the PR",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:parse_lens (the `not findings and ... rstrip(\".!\")` line)",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "Trailing punctuation is stripped without a limit, so `none!!` and `none.!.` read as no findings",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "AC-12",
+        "FR-9",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`none` in any case optionally followed by one `.` or `!`"
+      ],
+      "fix": "match the whole text with `re.fullmatch(r\"none[.!]?\", text, re.I)`, and add a `none..` case to the malformed-output test.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "a `## Findings` text of `none...` or `NONE!!` or `none.!` is accepted as no findings. `rstrip(\".!\")` removes any run of those characters, but the spec allows a single one. Nothing in `test_none_slips_mean_no_findings` or `test_malformed_output_stays_invalid` tries a doubled mark, so the over-acceptance is untested.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: `none!!` or `none...` alone still means no findings, so the looser match loses nothing; noted in the PR",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/jury.py parse_lens (the `rstrip(\".!\")` check) and tests/test_jury.py test_malformed_output_stays_invalid",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "637591f7040494c37eafadf034b12942a3f079d1"
+  },
+  "matched": {
+    "AC-12": [
+      [
+        "tests/test_jury.py",
+        "test_none_slips_mean_no_findings"
+      ]
+    ],
+    "AC-13": [
+      [
+        "tests/test_jury.py",
+        "test_field_labels_in_any_case"
+      ]
+    ],
+    "AC-14": [
+      [
+        "tests/test_jury.py",
+        "test_malformed_output_stays_invalid"
+      ],
+      [
+        "tests/test_jury.py",
+        "test_none_with_findings_is_invalid"
+      ]
+    ],
+    "AC-15": [
+      [
+        "tests/test_jury.py",
+        "test_template_shows_gap_and_where"
+      ]
+    ]
+  }
+}
