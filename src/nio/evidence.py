@@ -137,8 +137,15 @@ def reused_suite(root, slug, commit, suite):
         task = records.git(root, "log", "-1", "--format=%s", commit)[0].split(":")[0]
     except Exception:
         return None
+    try:
+        before = "\n".join(records.git(root, "show", f"{commit}^:.nio/specs/{slug}/history.jsonl"))
+    except Exception:
+        before = ""  # no parent or no file: no lines
     lines = [json.loads(x) for x in text.splitlines() if x.strip().startswith("{")]
-    ev = ([x for x in lines if x.get("kind") == "review"] or [{}])[-1].get("evidence") or {}
+    reviews = [x for x in lines if x.get("kind") == "review"]
+    if len(reviews) <= sum(json.loads(x).get("kind") == "review" for x in before.splitlines() if x.strip().startswith("{")):
+        return None  # the last review is not new in this commit
+    ev = (reviews or [{}])[-1].get("evidence") or {}
     ran = ev.get("suite") or {}
     if not suite or ev.get("task") != task or ev.get("passed") is not True or ran.get("command") != suite or ran.get("code") != 0:
         return None
