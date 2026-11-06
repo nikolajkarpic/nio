@@ -33,6 +33,7 @@ def main():
     c.add_argument("slug", nargs="?")
     c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
+    c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
     t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
     t.add_argument("action", choices=["show"])
     t.add_argument("slug")
@@ -206,6 +207,8 @@ def main():
             sys.exit(0 if ok else 1)
         try:
             errors, notes = {"spec": spec, "plan": plan, "tasks": tasks}[a.what].check(root, a.slug, a.gate, a.base)
+            if a.rated_from and a.what == "tasks":
+                errors += tasks.rated_from(root, a.slug, a.rated_from)
         except ValueError as e:
             sys.exit(f"error: {e}")
         print("\n".join([f"ERROR {e}" for e in errors] + notes + [f"{len(errors)} errors"]))

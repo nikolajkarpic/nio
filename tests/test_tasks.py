@@ -506,6 +506,41 @@ def test_ac25_edit_withdraws_approval():
     print("ok")
 
 
+def rated_run(edit_after, edit_before=lambda t: t):
+    """Run `nio check tasks --rated-from` on a rated tasks.md; `before` holds `to be rated`."""
+    root = repo(chain(field("T-1", "Tier", "to be rated"), field("T-1", "Mode", "to be rated"), edit_before))
+    copy = root / "before.md"
+    copy.write_text(tasks.path(root, SLUG).read_text())
+    tasks.path(root, SLUG).write_text(edit_after(copy.read_text()))
+    return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "check", "tasks", SLUG,
+                           "--rated-from", str(copy)], cwd=root, capture_output=True, text=True)
+
+
+RATE = chain(field("T-1", "Tier", "strong: money moves"), field("T-1", "Mode", "split: two workers"))
+
+
+def test_ac26_rated_from_stray_edit():
+    out = rated_run(chain(RATE, field("T-2", "Files", "`other.py`")))
+    assert out.returncode == 1, out
+    assert "ERROR" in out.stdout and "- Files: `other.py`" in out.stdout, out.stdout
+    assert out.stdout.strip().splitlines()[-1].endswith("1 errors"), out.stdout
+    print("ok")
+
+
+def test_ac27_rated_from_ok():
+    out = rated_run(RATE)
+    assert out.returncode == 0, out
+    out = rated_run(field("T-1", "Effort", "high"))
+    assert out.returncode == 1 and "not rated" in out.stdout, out
+    print("ok")
+
+
+def test_ac26_rated_from_stray_edit_misuse():
+    out = rated_run(chain(RATE, lambda t: t.replace("## E-1 Customer refunds a paid order (US-1)\n", "", 1)))
+    assert out.returncode == 1, out
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_"):
