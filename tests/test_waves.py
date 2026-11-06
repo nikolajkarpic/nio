@@ -430,6 +430,20 @@ def demo():
     return waves(n=3, modes={"T-1": "split"})
 
 
+def test_gone_worktree_refuses_red_and_green():
+    root = waves(modes={"T-1": "split"})
+    code, out = flow(root, "claim", S)
+    w1 = root / wt(out, "T-1")
+    git(root, "worktree", "remove", "--force", str(w1))
+    before, mark = len(lines(root)), Path(tempfile.mkdtemp()) / "ran"
+    for verb in ("green", "red"):
+        extra = ("--run", f"touch {mark}; python -m unittest tests/test_refund.py") if verb == "red" else ()
+        code, o = flow(root, verb, S, "T-1", *extra)
+        assert code == 1 and "the worktree of T-1 is gone" in o and wt(out, "T-1") in o, o
+    assert not mark.exists() and len(lines(root)) == before
+    print("ok")
+
+
 if __name__ == "__main__":
     if "--demo" in sys.argv:
         tempfile.tempdir = tempfile.mkdtemp(prefix="nio-demo-", dir=Path(tempfile.tempdir).parent)

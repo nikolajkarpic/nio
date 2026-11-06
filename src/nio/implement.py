@@ -383,6 +383,15 @@ def worktree(root, lines, tid):
     return root / name if name and (root / name).is_dir() else None
 
 
+def tree_of(root, lines, tid):
+    """The tree a task's command runs in: its worktree, the main tree when it has none; refuses a named worktree that is gone."""
+    path = worktree(root, lines, tid)
+    name = next((x["evidence"].get("worktree") for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("task") == tid), None)
+    if name and not path:
+        raise ValueError(f"the worktree of {tid} is gone: {name}")
+    return path or root
+
+
 # --- red, green, review, attempts and unblock (CT-7, CT-8, CT-10, CT-12) ---
 
 PLAN_FILES = ("spec.md", "tasks.md", "plan.md", "contracts.md", "tests.md", "quickstart.md", "architecture.md")  # FR-25
@@ -518,12 +527,12 @@ def red(root, slug, tid, command, by):
         if named and not any(f in command for f in named):
             why = f"the command doesn't name {' or '.join(named)}"
         else:
-            code, out, cause = run(worktree(root, lines, tid) or root, command, limit(root))
+            code, out, cause = run(tree_of(root, lines, tid), command, limit(root))
             # a cause first: a killed run's partial output proves nothing either way
             why = cause or ("the test passes before the code exists" if code == 0 else wrong_reason(name, code, out))
         if why:
             return refused(root, slug, state, lines, tid, "red", command, why, w)
-        mine, tree = since_claim(lines, tid), worktree(root, lines, tid) or root
+        mine, tree = since_claim(lines, tid), tree_of(root, lines, tid)
         reds = [x for x in mine if x["kind"] == "red"]
         paths = list(reds[0]["evidence"]["frozen"]) if reds else \
             outside(slug, changed(tree, mine[0]["evidence"].get("commit") or "HEAD"))  # FR-10, FR-11: never grown
@@ -690,7 +699,7 @@ def green(root, slug, tid, command, by):
     with flow.lock(root, slug):
         state, lines = flow.load(root, slug)
         task, now = task_for(root, slug, lines, tid, ("claimed", "red", "green"))
-        direct, tree = task["mode"] == "direct", worktree(root, lines, tid) or root
+        direct, tree = task["mode"] == "direct", tree_of(root, lines, tid)
         if tree != root:
             clean(root, slug)  # FR-14: the apply and its restore must not mix with the human's edits
         if now == "claimed" and not direct:
