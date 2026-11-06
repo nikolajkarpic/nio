@@ -13,7 +13,6 @@
     }
   },
   "tests": {
-    "suite": "for f in tests/test_*.py; do uv run python \"$f\" || exit 1; done",
-    "epic": "for f in tests/test_waves.py tests/test_implement.py tests/test_records.py tests/test_talk.py tests/test_agents.py; do uv run python \"$f\" || exit 1; done"
+    "suite": "printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'"
   }
 }

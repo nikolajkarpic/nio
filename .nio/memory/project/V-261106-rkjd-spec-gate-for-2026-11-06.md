@@ -1,0 +1,31 @@
+---
+id: V-261106-rkjd
+type: verdict
+title: "spec gate for 2026-11-06-faster-checks: approved (round 2)"
+answers: jury             # why | reuse | jury
+date: 2026-11-06
+by: "jury"                # role / host / model, or human
+run: ""              # run ID; empty when written by hand
+subject: "spec:2026-11-06-faster-checks"
+outcome: approved
+tier: medium
+paths: [".nio/specs/2026-11-06-faster-checks/jury/spec.md"]
+tags: []
+supersedes: []
+---
+## Ruling
+The spec jury ruled **approved** for `2026-11-06-faster-checks` in round 2 (3 disposed, 18 fixed, 1 refuted). Ledger: `.nio/specs/2026-11-06-faster-checks/jury/spec.md`.
+## Jurors
+| Lens | Host | Model | Vote |
+| --- | --- | --- | --- |
+| adversary | claude-code | claude-sonnet-5-5 | approve |
+| consistency | claude-code | claude-haiku-5-5 | approve |
+| logic | claude-code | claude-sonnet-5-5 | approve |
+| scope | claude-code | claude-haiku-5-5 | approve |
+| testability | claude-code | claude-sonnet-5-5 | approve |
+## Reasons
+- J-1 [major/risk] Reuse and "covered" can pass what the copy would fail: disposed accepted-risk
+- J-15 [major/scope] Fix-check round narrows #75 by agent decision, and no success criterion measures the round's time: disposed accepted-risk
+- J-9 [minor/inconsistency] The `retired` list uses the plan's OP prefix in a spec: disposed accepted-risk
+## What was rejected
+- J-5 Fix-check reuse (AC-16) leaves out the same-commit, clean-tree and command checks: refuted (FR-13 reuses the suite result "under FR-6 and FR-7", which brings in the same-commit, clean-tree, exit-0 and configured-suite conditions (`tests.epic` is excluded in FR-7). FR-8 and AC-10 describe the general evidence run ("when evidence collects", "as before"), and they apply to the fix-check round too. The decision table covers a review that ran a non-configured command in its "no" row. AC-16 is shorter than FR-7, but nothing in it contradicts FR-7.)
