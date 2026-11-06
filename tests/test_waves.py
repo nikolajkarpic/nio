@@ -358,6 +358,8 @@ def test_ac12_worktree_removed_at_commit_and_block():
     out = flow(root, "claim", S)[1]
     w1, w2 = wt(out, "T-1"), wt(out, "T-2")
     work(root, out, "T-1"), work(root, out, "T-2")
+    (root / w2 / f".nio/specs/{S}").mkdir(parents=True, exist_ok=True)
+    (root / w2 / f".nio/specs/{S}/notes.md").write_text("effort edit\n")
     code, o = land(root, "T-1")
     listed = lambda: git(root, "worktree", "list")
     assert code == 0 and w1 not in listed() and not (root / w1).exists(), o
@@ -366,6 +368,7 @@ def test_ac12_worktree_removed_at_commit_and_block():
     assert "blocked: T-2 after 3 attempts" in o and w2 not in listed() and not (root / w2).exists(), o
     patch = (root / w2).parent / "T-2.patch"
     assert patch.exists() and "m2_new.py" in patch.read_text()
+    assert "notes.md" in patch.read_text()
     print("ok")
 
 
