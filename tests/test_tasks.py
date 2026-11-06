@@ -482,6 +482,30 @@ def test_own():
     print("ok")
 
 
+def test_ac10_fix_keeps_approval():
+    # TC-10: a fix task appended under #### Fixes keeps an approved tasks gate approved (CT-4, FR-8)
+    root = repo()
+    approve_tasks(root)
+    approve_commit(root)
+    tasks.path(root, SLUG).write_text(fix(tid="T-30")(tasks.path(root, SLUG).read_text()))
+    ok, why = tasks.approved(root, SLUG)
+    assert ok, why
+    print("ok")
+
+
+def test_ac25_edit_withdraws_approval():
+    # TC-21: changing one word of a planned task's title withdraws the approval (CT-4, FR-8)
+    root = repo()
+    approve_tasks(root)
+    approve_commit(root)
+    text = tasks.path(root, SLUG).read_text()
+    assert "### T-1 Refund a paid order in full" in text
+    tasks.path(root, SLUG).write_text(text.replace("### T-1 Refund a paid order in full", "### T-1 Refund a paid order in part", 1))
+    ok, why = tasks.approved(root, SLUG)
+    assert not ok and why.startswith("the tasks must be approved first"), why
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_"):
