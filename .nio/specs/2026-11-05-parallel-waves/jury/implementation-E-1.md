@@ -2,7 +2,7 @@
 gate: implementation-E-1
 subject: 2026-11-05-parallel-waves
 round: 2
-outcome: pending
+outcome: approved
 ---
 # Implementation-e-1 jury: 2026-11-05-parallel-waves
 
@@ -10,7 +10,7 @@ outcome: pending
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | blocker | gap | AC-1, AC-2, AC-3, AC-5, AC-6, AC-11, AC-16, AC-17 | conformance | pending | open |  | unchanged, 1 |
+| J-1 | blocker | gap | AC-1, AC-2, AC-3, AC-5, AC-6, AC-11, AC-16, AC-17 | conformance | refuted | refuted |  | unchanged, 1 |
 | J-2 | minor | inconsistency | CT-6, FR-10, AC-5 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-3 | minor | risk | AC-3, CT-2 | correctness | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-4 | major | risk | CT-1, CT-2, CT-4, CT-7 | risk-rollback | refuted | refuted |  | new, 0 |
@@ -29,7 +29,7 @@ outcome: pending
 - quote: "assert code == 0 and len(out.splitlines()) == 20 and took < 2.0, (took, out)"
 - situation (conformance): The results file lists `test_ac1_claims_a_wave_of_two`, `test_ac2_one_task_when_no_wave`, `test_ac3_red_and_green_run_in_the_worktree`, `test_ac5_nio_in_a_worktree_writes_the_root_state`, `test_ac6_second_guard_is_told_to_try_again`, `test_ac11_skill_dispatches_a_wave`, `test_ac16_worktree_failure_refuses_the_claim` and `test_ac17_bad_parallel_budget_is_refused`, each as "failed". The suite stopped at `tests/test_flow.py::test_nfr3_status_speed`, which measured 2.04 s against a 2.0 s limit. The suite loop exits on the first failing file, so `tests/test_waves.py` most likely never ran, and the "failed" results do not show whether the wave tests pass. The line numbers in the results (38, 53, 105, 131, 152, 165, 62, 85) also do not match the file in the diff, which suggests the results come from a different version of the test file or from the aborted run. The test bodies do exercise the ACs, so this is missing evidence, not a wrong test.
 - fix: Re-run the evidence so `tests/test_waves.py` runs on its own and its eight E-1 tests are recorded as passed. Either re-run the suite once the speed test is not flaky, or run `tests/test_waves.py` on its own. Make sure the recorded file and line numbers match the committed test file.
-- validation: pending: implementation-E-1-conformance: The suite is recorded as `passed`, but all eight E-1 tests (lines 38, 53, 105, 131, 152, 165, 62, 85) still show `"result": "unknown"`. They are not recorded as passed. The new `epic` command has no recorded run in this evidence.
+- validation: refuted: The round-2 results.json records `suite.result: "passed"` for the command `for f in tests/test_*.py; do uv run python "$f" || exit 1; done`, which stops at the first failing file. A pass therefore means `tests/test_waves.py` ran and exited 0. The eight E-1 tests exist at lines 38, 53, 105, 131, 152, 165, 62 and 85, which match the evidence entries, so the original stale-line-number and aborted-run situation is gone. The per-test `"unknown"` is how every entry in this file is recorded, including the AC-4, AC-7 and AC-9 tests, so the evidence format has no per-test result. The artefact shows no failing wave test, and the conformance juror's "not fixed" rests only on that recording format.
 
 ### J-2 Hook events from a task's worktree are written to the worktree's own run folder, not the project root
 - quote: "root = Path(records.git(root, "rev-parse", "--show-toplevel")[0])"
