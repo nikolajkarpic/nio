@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-1",
   "subject": "2026-11-05-parallel-waves",
-  "round": 1,
+  "round": 2,
   "tier": "high",
   "expect": [
     "conformance",
@@ -14,19 +14,20 @@
     "R-261106-37il/implementation-E-1-consistency.md": "46893e7b5b797e6d4e7d7138b56c147320ff53b8bb35cbd3aa77067d4766eb6f",
     "R-261106-37il/implementation-E-1-correctness.md": "d7f826dcc765f292a0a363dfc01f62217f0e8744cf577ca7dd0b7047d053ac04",
     "R-261106-37il/implementation-E-1-risk-rollback.md": "803eb8049e41b2d3ce6b6ce9af9a441f191c9a718339fe0f7fac8f149ec4d409",
-    "R-261106-37il/implementation-E-1-refuter.md": "79c76231a5b61d38635590647de051f8094d96bca41e6158b3e4f7b1e59b2411"
+    "R-261106-37il/implementation-E-1-refuter.md": "79c76231a5b61d38635590647de051f8094d96bca41e6158b3e4f7b1e59b2411",
+    "R-261106-6xaq/implementation-E-1-conformance.md": "34dc54b423270df991afd20af9c7712a1f1a6e420bf82f03aab0c608f609356a"
   },
   "jurors": {
     "implementation-E-1-conformance": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "conformance",
       "by": "juror / claude-code / claude-sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "d9e163730c3a799498ccabe08ae52f52035d3225",
-      "judged": 1
+      "round": 2,
+      "version": "481c80e8ab8f05cf63d6e29c0b7458f95d7fbe0d",
+      "judged": 2
     },
     "implementation-E-1-consistency": {
       "attempts": 2,
@@ -92,16 +93,16 @@
           "round": 1
         }
       ],
-      "validation": "confirmed",
-      "reason": "results.json records all 19 test_waves tests as \"failed\" and every AC in `evidence` as \"didn't run\". The suite loop (`|| exit 1`) stopped at tests/test_flow.py::test_nfr3_status_speed (2.04 s against a 2.0 s limit), before tests/test_waves.py could run. No E-1 AC has a passing result.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-6",
-      "baseline": "new",
-      "rounds": 0,
+      "validation": "pending",
+      "reason": "implementation-E-1-conformance: The suite is recorded as `passed`, but all eight E-1 tests (lines 38, 53, 105, 131, 152, 165, 62, 85) still show `\"result\": \"unknown\"`. They are not recorded as passed. The new `epic` command has no recorded run in this evidence.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "missing",
       "where": "tests/test_waves.py (results.json evidence)",
       "tampering": false
@@ -132,10 +133,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Usage events from hooks are outside this spec (FR-10 names nio flow's state); the loss is only usage totals of wave workers. Follow-up issue to file. (delegated: the human's standing autonomy grant, recommended option)",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -169,10 +170,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Follows CT-2 as approved; a deleted worktree is the human's own act. (delegated: the human's standing autonomy grant, recommended option)",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -244,10 +245,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Leftover worktrees after a crash mid-claim are scratch under .nio/runs; same class as the crash non-goal. (delegated: the human's standing autonomy grant, recommended option)",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -281,10 +282,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Same cause as J-1 (the suite stopped on a timing flake before test_waves); covered by J-1's fix. (delegated: the human's standing autonomy grant, recommended option)",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -319,14 +320,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-7",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-8",
@@ -354,14 +356,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-8",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-9",
@@ -389,14 +392,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-9",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-10",
@@ -424,14 +428,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-10",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-11",
@@ -459,14 +464,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-11",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-12",
@@ -494,14 +500,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-12",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-13",
@@ -529,14 +536,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-13",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-14",
@@ -564,17 +572,18 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-14",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     }
   ],
-  "outcome": "rejected",
+  "outcome": "pending",
   "recorded": [
     [
       1,
@@ -582,16 +591,57 @@
     ]
   ],
   "versions": {
-    "1": "d9e163730c3a799498ccabe08ae52f52035d3225"
+    "1": "d9e163730c3a799498ccabe08ae52f52035d3225",
+    "2": "481c80e8ab8f05cf63d6e29c0b7458f95d7fbe0d"
   },
   "matched": {
-    "AC-1": [],
-    "AC-2": [],
-    "AC-3": [],
-    "AC-5": [],
-    "AC-6": [],
-    "AC-11": [],
-    "AC-16": [],
-    "AC-17": []
+    "AC-1": [
+      [
+        "tests/test_waves.py",
+        "test_ac1_claims_a_wave_of_two"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_waves.py",
+        "test_ac2_one_task_when_no_wave"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_waves.py",
+        "test_ac3_red_and_green_run_in_the_worktree"
+      ]
+    ],
+    "AC-5": [
+      [
+        "tests/test_waves.py",
+        "test_ac5_nio_in_a_worktree_writes_the_root_state"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_waves.py",
+        "test_ac6_second_guard_is_told_to_try_again"
+      ]
+    ],
+    "AC-11": [
+      [
+        "tests/test_waves.py",
+        "test_ac11_skill_dispatches_a_wave"
+      ]
+    ],
+    "AC-16": [
+      [
+        "tests/test_waves.py",
+        "test_ac16_worktree_failure_refuses_the_claim"
+      ]
+    ],
+    "AC-17": [
+      [
+        "tests/test_waves.py",
+        "test_ac17_bad_parallel_budget_is_refused"
+      ]
+    ]
   }
 }
