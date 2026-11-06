@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-2
 subject: 2026-11-05-parallel-waves
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-2 jury: 2026-11-05-parallel-waves
 
@@ -10,12 +10,12 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | minor | gap | AC-7, AC-8, AC-9 | conformance | grounded | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | risk | CT-7, CT-2 | risk-rollback | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | risk | CT-4 | risk-rollback | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | major | risk | CT-4 | risk-rollback | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | minor | gap | AC-7, AC-8, AC-9 | conformance | grounded | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | risk | CT-7, CT-2 | risk-rollback | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-3 | major | risk | CT-4 | risk-rollback | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-4 | major | risk | CT-4 | risk-rollback | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-5 | minor | risk | CT-4 | risk-rollback | grounded | disposed | accepted-risk (human) | new, 0 |
-| J-6 | major | risk | CT-2, CT-3, CT-4, FR-5 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-6 | major | risk | CT-2, CT-3, CT-4, FR-5 | consistency | confirmed | disposed | accepted-risk (human) | unchanged, 1 |
 | J-7 | minor | inconsistency | CT-7 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 The only journey for this epic did not run
@@ -59,8 +59,8 @@ outcome: rejected
 - quote: "direct, tree = task["mode"] == "direct", worktree(root, lines, tid) or root"
 - situation (consistency): A wave task has claimed worktree `.nio/runs/<run>/worktree`. Someone removes that folder (or runs `git worktree prune`) before its green. `worktree()` returns None, so `tree` becomes the main tree. The `--run` command runs in the main tree, `land` is skipped because `tree == root`, and `clean` is skipped. The review then judges the main tree against the claim commit, and `commit` stages the effort's state and history. Those are the only changes in the main tree, so the task can be committed as done with none of its code. The spec neither forbids this nor says to refuse it.
 - fix: Spec: say what a named worktree that is gone does to green (for example refuse with the folder named, and record nothing). Code: when the claim names a worktree and `worktree()` returns None, refuse green with that message instead of using `or root`.
-- validation: confirmed: Line 690 does `worktree(root, lines, tid) or root`. CT-2 defines `worktree()` as None when the folder is gone, and no text refuses green in that case. This is the same problem as the `green` half of implementation-E-1 J-3. That finding was accepted as a risk by the human ("a deleted worktree is the human's own act"). This finding adds the claim that the task can be committed with none of its code.
-- disposition: fix-task by agent: fix task T-18
+- validation: confirmed: implementation-E-2-consistency: the code half is in place (`tree_of` raises when a named worktree is gone, and `green` and `red` use it instead of `or root`, with a test). The spec half is missing: `contracts.md` CT-2 and `spec.md` FR-5 are unchanged in the diff and still say nothing about what green does when the folder is gone. The fix asked for both halves.
+- disposition: accepted-risk by human: The code refuses a gone worktree (tree_of, tested); only the contract line is missing, and editing contracts.md would reopen the approved plan. Follow-up issue to add the line to CT-2. (delegated: the human's standing autonomy grant, recommended option)
 
 ### J-7 CT-7 names the default of `tree` as the root, the code uses None
 - quote: "`shelve(root, slug, run, tid, tree=root)`; `attempt` and `block` pass the task's worktree when it has one"
@@ -73,7 +73,7 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-2-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 2 | 1 |
-| implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | limited | yes | 3 | 1 |
+| implementation-E-2-conformance | conformance | juror / claude-code / Sonnet 5.5 | sufficient | yes | 1 | 2 |
+| implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-2-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-2-risk-rollback | risk-rollback | juror / claude-code / sonnet | sufficient | yes | 2 | 1 |
+| implementation-E-2-risk-rollback | risk-rollback | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
