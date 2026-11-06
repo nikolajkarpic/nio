@@ -194,3 +194,15 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: single: small edit with one string test
 
+#### Fixes
+
+### T-18 Fix: The tasks skill starts its run with a form the CLI refuses
+- From: J-4 (implementation-E-5, round 1)
+- Files: `skills/tasks/SKILL.md`
+- Serves: CT-11, AC-28
+- Test: TC-24
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
