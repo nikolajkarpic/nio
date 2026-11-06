@@ -161,9 +161,29 @@ def covered(step, suite):
         return False
     if len(words) < 2:
         return False
-    prefix = " ".join(shlex.quote(w) for w in words[:-1])
     return any(fnmatch.fnmatchcase(words[-1], g) for g in swords if "*" in g) \
-        and any(f"{prefix} {m}" in suite for m in ("{}", '"$f"', "$1"))
+        and _runs(suite, words[:-1])
+
+
+def _runs(text, prefix):
+    """True when some simple command of `text` is exactly `prefix` words plus a placeholder; looks inside `sh -c '...'`."""
+    lex = shlex.shlex(text.replace("\n", " ; "), posix=True, punctuation_chars=True)
+    lex.whitespace_split = True
+    try:
+        toks = list(lex)
+    except ValueError:
+        return False
+    cmd = []
+    for t in toks + [";"]:
+        if t and set(t) <= set("();|&") or t in ("do", "then"):
+            if cmd[-1:] and cmd[:-1] == prefix and cmd[-1] in ("{}", "$f", "$1"):
+                return True
+            cmd = []
+        else:
+            if cmd[-1:] == ["-c"] and _runs(t, prefix):
+                return True
+            cmd.append(t)
+    return False
 
 
 def matched(expected, output):

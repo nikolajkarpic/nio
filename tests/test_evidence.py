@@ -3365,6 +3365,15 @@ def test_a_fix_task_is_not_appended_while_another_call_holds_the_lock():
     print("ok")
 
 
+def test_covered_prefix_is_the_whole_command():
+    from nio.evidence import covered
+    suite = "printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'"
+    assert covered("uv run python tests/test_a.py", suite)
+    assert not covered("python tests/test_a.py", suite)
+    assert not covered("run python tests/test_a.py", suite)
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
