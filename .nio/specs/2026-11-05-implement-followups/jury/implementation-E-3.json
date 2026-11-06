@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-3",
   "subject": "2026-11-05-implement-followups",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,9 @@
     "R-261106-bll4/implementation-E-3-conformance.md": "85ef9e0b6e642f83c78eb33e94a8b892575d60682f434b29f14886837c38bb44",
     "R-261106-bll4/implementation-E-3-consistency.md": "bf239687310ae08de3dfeb42e3494221787b943af8dcb72775a97c772f48e7fd",
     "R-261106-bll4/implementation-E-3-correctness.md": "5dc1a4cbb6981c7fd7f93e7756015cd47d78c9b0df26769e10ffd319376de06e",
-    "R-261106-bll4/implementation-E-3-refuter.md": "11ffb2d4f3d876da99638e9c764d04b7d75403612f9627eed76012079cf07f40"
+    "R-261106-bll4/implementation-E-3-refuter.md": "11ffb2d4f3d876da99638e9c764d04b7d75403612f9627eed76012079cf07f40",
+    "R-261106-qjpe/implementation-E-3-conformance.md": "b24b93f115f2f69930e62fe585588050a4133de8f32b7c0b81183922aa1ca6cb",
+    "R-261106-qjpe/implementation-E-3-consistency.md": "7da0ab547bcc0de0db453f239f63dc08de4b4d62338ccd0bc2c142af9f883e44"
   },
   "jurors": {
     "implementation-E-3-adversary": {
@@ -35,9 +37,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6",
-      "judged": 1
+      "round": 2,
+      "version": "366009c4a7a9545574c62e92a8091cd629eb746e",
+      "judged": 2
     },
     "implementation-E-3-consistency": {
       "attempts": 1,
@@ -46,9 +48,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6",
-      "judged": 1
+      "round": 2,
+      "version": "366009c4a7a9545574c62e92a8091cd629eb746e",
+      "judged": 2
     },
     "implementation-E-3-correctness": {
       "attempts": 1,
@@ -206,17 +208,18 @@
       ],
       "validation": "confirmed",
       "reason": "In tests/test_implement.py the `__main__` runner is at lines 1662-1669, and the three T-5 tests (lines 1678, 1699, 1715) are defined after it. The loop iterates `globals()` before they exist, so they never run under `python tests/test_implement.py`. FR-11 is therefore unchecked by the suite.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-16",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "tests/test_implement.py (end of file, after the `__main__` block)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-5",
@@ -258,15 +261,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6"
+    "1": "4a0a87cce7cf6f3d5821b9faafe2246b243471a6",
+    "2": "366009c4a7a9545574c62e92a8091cd629eb746e"
   },
   "matched": {
     "AC-14": [
