@@ -362,15 +362,15 @@ def gate_repo(lint=None, typecheck=None, timeout=None, remote=False, suite=None,
     (root / "tests").mkdir()
     for name, body in (files or {}).items():
         (root / name).write_text(body)
-    if history:
-        with open(root / ".nio/specs/s/history.jsonl", "a") as f:
-            f.writelines(json.dumps(x) + "\n" for x in history)
     (root / "tests/test_attack.py").write_text(ATTACK_TEST)
     (root / "app.txt").write_text("one\n")
     (root / "big.bin").write_bytes(BIG)
     (root / "a.py").write_text("a = 1\n")
     git(root, "add", "-A")
     git(root, "commit", "-qm", "T-1: One")
+    if history:
+        with open(root / ".nio/specs/s/history.jsonl", "a") as f:
+            f.writelines(json.dumps(x) + "\n" for x in history)
     (root / "b.py").write_text("b = 1\n# line 3\n")
     git(root, "add", "-A")
     git(root, "commit", "-qm", "T-2: Two")
