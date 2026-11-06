@@ -1503,6 +1503,21 @@ def test_memory_records_are_the_humans():
     print("ok")
 
 
+def test_closing_review_records_its_suite():
+    """TC-20: only the review of the task that closes its epic carries the suite command and exit code it ran."""
+    root = impl(tasks=TWO)
+    for tid in ("T-1", "T-2"):
+        assert flow(root, "claim", S)[0] == 0
+        write_test(root)
+        code_with(root)
+        code, out = flow(root, "green", S, tid, "--run", RUN)
+        assert code == 0 and "review: passed" in out, out
+    reviews = [x for x in lines(root) if x["kind"] == "review"]
+    assert len(reviews) == 2 and "suite" not in reviews[0]["evidence"], reviews
+    assert reviews[1]["evidence"].get("suite") == {"command": SUITE, "code": 0}, reviews[1]
+    print("ok")
+
+
 def demo():
     """quickstart.md's demo effort: the refunds tasks with T-1 split and T-2, T-3 direct; its folder."""
     root = impl(modes={"T-2": "direct", "T-3": "direct"})
