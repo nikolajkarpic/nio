@@ -353,6 +353,37 @@ def test_ac9_failed_commit_restores_and_retry_lands():
     print("ok")
 
 
+def test_ac12_worktree_removed_at_commit_and_block():
+    root = waves()
+    out = flow(root, "claim", S)[1]
+    w1, w2 = wt(out, "T-1"), wt(out, "T-2")
+    work(root, out, "T-1"), work(root, out, "T-2")
+    code, o = land(root, "T-1")
+    listed = lambda: git(root, "worktree", "list")
+    assert code == 0 and w1 not in listed() and not (root / w1).exists(), o
+    for _ in range(3):
+        o = flow(root, "green", S, "T-2", "--run", "false")[1]
+    assert "blocked: T-2 after 3 attempts" in o and w2 not in listed() and not (root / w2).exists(), o
+    patch = (root / w2).parent / "T-2.patch"
+    assert patch.exists() and "m2_new.py" in patch.read_text()
+    print("ok")
+
+
+def test_ac4_two_blocked_siblings_hold_the_claim():
+    root = waves(n=3)
+    out = flow(root, "claim", S)[1]
+    for t in ("T-1", "T-2"):
+        work(root, out, t)
+    for t in ("T-1", "T-2"):
+        for _ in range(3):
+            flow(root, "green", S, t, "--run", "false")
+    flow(root, "unblock", S, "T-2", "--human", "x", "--by", "human")
+    n = len(lines(root))
+    code, o = flow(root, "claim", S)
+    assert code == 1 and "T-1 is blocked" in o and "nio flow unblock" in o and len(lines(root)) == n, o
+    print("ok")
+
+
 def demo():
     """A repo with three independent parallel tasks, T-1 split and the rest direct."""
     return waves(n=3, modes={"T-1": "split"})
