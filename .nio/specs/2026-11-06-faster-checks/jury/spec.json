@@ -1,0 +1,910 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-06-faster-checks",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261106-kxam/spec-adversary.md": "06f49164b03f39abbc2904e72d95ae8fec49cc624f3fd9ddb473128401bd5bde",
+    "R-261106-kxam/spec-consistency.md": "827d715f0c72eb5f49e55524bf4e3410cfbfecd95bd1fe9008cd2950cacae05e",
+    "R-261106-kxam/spec-logic.md": "bf0367f034a8d5d9ba3ef3619ca4ddad49c0c9e0e159d73579002f4aab2bdd59",
+    "R-261106-kxam/spec-scope.md": "4f2743009c90686dc60345d587c48410c62d4b8e8018e425d2f0d2db0b9c3f3d",
+    "R-261106-kxam/spec-testability.md": "c7b5b3de27122104668afe5eaaec92e0134a32452a732c7fefeb2d95c9a91504",
+    "R-261106-kxam/spec-refuter.md": "b12540bc4908c7783d624b1aa269cb2352be99f8105d09a5eabb6dc3ee6c299f",
+    "R-261106-7vh6/spec-adversary.md": "6dc7f513436baa96264eee160881e7bcf17aa2b7e8942103be18034fe2893d02",
+    "R-261106-7vh6/spec-consistency.md": "3249ec861ed37a31b7ce9a66dce3e6163cad55465db38da6bee34cf76371c5e8",
+    "R-261106-7vh6/spec-logic.md": "58e98779d13c4e96e72a5142719a7ad5085fb75e17b94de7c998c2806f134404",
+    "R-261106-7vh6/spec-scope.md": "7c6db99e4297bb520dbeeb287dd96d4785d3b35ac76c432552f8fa6f941bf8c0",
+    "R-261106-7vh6/spec-testability.md": "650de3537e0a428480cde04b91aa1f90f42e5d17d62f2134f13c9879bebcfbdd"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bd21ee203af1c8bdfaf68ce5af77bdcc342c004d",
+      "judged": 2
+    },
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bd21ee203af1c8bdfaf68ce5af77bdcc342c004d",
+      "judged": 2
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bd21ee203af1c8bdfaf68ce5af77bdcc342c004d",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bd21ee203af1c8bdfaf68ce5af77bdcc342c004d",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bd21ee203af1c8bdfaf68ce5af77bdcc342c004d",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Reuse and \"covered\" can pass what the copy would fail",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "FR-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "The review's suite ran in the working tree, not a fresh copy, so a file ignored by git could make it pass where the copy fails (RF-8).",
+        "THE SYSTEM SHALL reuse that suite result in evidence instead of running the suite in the copy"
+      ],
+      "fix": "add an AC or FR that contains it, for example reuse only when the review ran in a copy, or check for ignored files. Otherwise state that this is an accepted gap and which AC would catch it.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a gitignored or untracked-but-ignored file makes the review's suite pass in the working tree. The tree counts as \"clean\", so evidence reuses the pass. FR-6 then marks every file journey \"covered\" and nothing is ever run in a fresh copy. The jury sees green for a commit that fails when cloned. The Risks section records this but no FR or AC contains it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "Risks records that a git-ignored file can make the review's suite pass where the copy fails (RF-8). FR-7's \"clean tree\" condition does not catch this, because ignored files do not dirty the tree. No FR or AC contains the risk, and the decision table has no row for it.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human (standing authority): ignored files are the environment every run already depends on; grill Call J-1",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "A lost or crashed file can leave the parallel suite at exit 0",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "AC-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF any test file fails THEN THE SYSTEM SHALL exit the suite non-zero once every file has run."
+      ],
+      "fix": "define a file failure as any non-zero status, a signal, or a timeout, and add an AC for a killed or hung file.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "one of the eight parallel workers is killed by a signal or OOM, hangs, or the file imports fine but runs zero tests. \"Fails\" is undefined for these cases, so the aggregate exit code may be 0. FR-6 then trusts that \"the suite passed\" and skips the journeys. AC-6 only tests a deliberately failing assertion. There is also no per-file timeout, so one hung file blocks the whole suite.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-4 says \"any test file fails\" and never defines failure for a killed, timed-out or zero-test file. AC-6 tests only one deliberately failing file, and no per-file timeout appears anywhere in the spec. FR-6 trusts \"the suite passed\", so a wrongly passing suite would also skip journeys.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-4 and AC-6 define a failing file (non-zero exit or signal; hung file stopped by tests.timeout); grill Q7, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "In-process isolation covers only cwd and env",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-3",
+        "FR-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "then the test process's working directory and environment are as before the call."
+      ],
+      "fix": "widen the AC to cover the other process-wide state a `main()` call can change (argv, logging, module caches, locks), and state that parallel files must not share a state directory.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "`main()` run in-process can leak other state. It can call `sys.exit` or leave a changed `sys.argv`, change logging handlers, hold module-level caches, or leave open file handles and locks. The next test then sees contaminated state, so one test's result depends on the one before it. AC-1 says \"every test result is unchanged\" but only checks per-test pass/fail, so an order-dependent false pass goes unnoticed. The eight parallel files add the same risk if they share a `.nio` directory or lock files.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-1 and AC-3 name only the working directory and environment. Nothing else in the spec covers `sys.argv`, logging handlers, module caches, locks, or parallel files sharing a state directory. AC-1 checks only per-test pass/fail, so order dependence between tests would go unnoticed.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-3 restores cwd, env and sys.argv, also on error, and leaves no flow lock; grill Q8, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "A lenient `none` can discard real findings",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "FR-11",
+        "AC-12"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHEN `## Findings` holds `none` in any case with trailing punctuation THE SYSTEM SHALL accept it as no findings."
+      ],
+      "fix": "require that the whole section is only the none token, and reject it when any finding or other text is present. Add an AC for none together with findings, and for conflicting duplicate labels.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a juror writes \"None.\" and then also lists `### F1` findings, or writes \"None of the above hold.\" or \"none yet\". It is unclear whether this is accepted as zero findings. If it is, a real blocker is silently dropped as a clean pass. AC-14 only covers prose that is \"neither a finding nor none\". It does not cover none plus findings. Duplicate labels in different case (`gap:` and `Gap:`) could also give a conflicting value without being rejected.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 says \"`## Findings` holds `none`\" and does not say whether the whole section must be only that token. AC-14 covers prose that is \"neither a finding nor none\", not none together with findings. FR-11 says \"malformed beyond those slips\" and does not settle the none-plus-findings case. The duplicate-label-conflict part of the finding is speculative, but the none-plus-findings gap is real.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-9/AC-12: exactly one line none plus at most one . or !; AC-14 rejects None plus findings; grill Q9, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "Fix-check reuse (AC-16) leaves out the same-commit, clean-tree and command checks",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-16",
+        "FR-13",
+        "FR-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Given a fix task closed the epic and its review ran the configured suite, which passed, when evidence collects for the fix-check round, then it reuses that suite result"
+      ],
+      "fix": "make AC-16 repeat the FR-7 conditions (same commit, clean tree, exit 0, configured suite). Tie FR-8 and AC-10 to the fix-check round, and add a table row for a non-configured command.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "AC-16 names no same-commit or clean-tree condition and no `tests.epic` exclusion. Between the fix task's review and the fix-check round, a later commit, a dirty tree or a retried round could occur. The stale pass is reused and the one-line fix is never verified at the commit under review. FR-13 says \"under FR-6 and FR-7\", but FR-8 and AC-10 are not tied to the fix-check path. The decision table also has no row for a review that ran a command other than the configured suite.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-13 reuses the suite result \"under FR-6 and FR-7\", which brings in the same-commit, clean-tree, exit-0 and configured-suite conditions (`tests.epic` is excluded in FR-7). FR-8 and AC-10 describe the general evidence run (\"when evidence collects\", \"as before\"), and they apply to the fix-check round too. The decision table covers a review that ran a non-configured command in its \"no\" row. AC-16 is shorter than FR-7, but nothing in it contradicts FR-7.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "FR-6 reuses a suite pass without the clean-tree condition that UJ-2 names as misuse",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-6",
+        "AC-8",
+        "UJ-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and the suite passed at that commit, THE SYSTEM SHALL skip it and record it as covered by that suite run",
+        "a suite result from another commit or a dirty tree is reused"
+      ],
+      "fix": "add \"on a clean tree\" to FR-6 and AC-8, and say which suite run counts (the review's or the copy's).",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the epic-close review runs the suite on a tree with an uncommitted edit, and the suite passes. FR-6 says \"the suite passed at that commit\", so evidence skips the auto journey and records it as covered. UJ-2 names exactly this as misuse. FR-7 and AC-9 require a clean tree, but FR-6 and AC-8 don't, and neither says which suite run they mean.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-6 and AC-8 say only \"the suite passed at that commit\", with no clean-tree condition and no statement of which run counts, the review's or the copy's. UJ-2 names a dirty-tree reuse as misuse, and only FR-7 and AC-9 carry the clean-tree condition.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-6/AC-8 name the suite result evidence uses (reused under FR-7 or run in the copy); grill Q10, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "FR-8 leaves out the failed-review row that the decision table gives",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "FR-7",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF no review suite result exists for the same commit and a clean tree THEN THE SYSTEM SHALL run the suite in the copy as before.",
+        "| yes | yes | no | run the suite in the copy | [agent] |"
+      ],
+      "fix": "rewrite FR-8 as \"IF the review's suite result is missing, not at the same commit, not from a clean tree, or not exit 0 THEN ...\".",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the review ran the configured suite at the same commit on a clean tree, and it exited non-zero. FR-7 reuses only on exit 0, and FR-8's condition (\"no review suite result exists\") is false here, so neither requirement fires. Only AC-10 and the table cover this case, so a reader working from FR-8 alone gets no rule.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-8 now lists every failed condition of FR-7",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "The exit-0 reuse rule cites a decision with no record ID",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-7",
+        "Decisions"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Reuse the review's suite result only when it ran the configured suite and exited 0: D- record in grill Q4 (grill Q4, agent, 2026-11-06)."
+      ],
+      "fix": "write the decision record for grill Q4 and cite its D- ID in this entry.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the Decisions entry gives no ID, so no record in `.nio/memory` backs the exit-0 and configured-suite rule. The pack has no decision to check FR-7 against, and a later juror can't trace the rule to a record.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Decisions line cites D-261106-grjt",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "The `retired` list uses the plan's OP prefix in a spec",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "retired (front matter)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "retired: [OP-1, OP-2, OP-3, OP-4, OP-5, OP-6, OP-7, OP-8, OP-9]"
+      ],
+      "fix": "set `retired: []`, or list only FR, AC or US IDs this spec actually removed.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`src/nio/templates/plan.md` defines `retired` as \"OP IDs removed from this plan\", while `templates/spec.md` uses it for spec IDs. This spec's body has no OP IDs, so the list retires IDs from the plan's namespace. A later plan that numbers an open point OP-3 would then appear retired by this spec, against \"never reused\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: kept as is; the grill skill (step 2) moves a resolved OP to the spec's retired list, so OP IDs there are this spec's own",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "AC-7 requires failing tests to be named and also says only the exit code is read",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-7",
+        "FR-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then they detect the same runner and name the same failing tests as with the serial suite",
+        "(unknown, so only the exit code is read [research: RF-5])"
+      ],
+      "fix": "pick one: either the parsing names failing tests, or only the exit code is read and the failing file is merely visible in the output. State it in AC-7 and FR-5.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the parallel suite output has one failing file. The Given/Then clause requires the failing-test parsing to name the same failing tests as the serial run. The Observable says the runner is unknown and only the exit code is read, so no tests can be named. A test for the first reading and a test for the second give opposite results. The Observable's \"failing file's name and assertion appear in the output\" is a third, weaker claim.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-7's Then clause requires the parsing to \"name the same failing tests as with the serial suite\". Its Observable says the runner is unknown, so \"only the exit code is read\" [RF-5]. These cannot both hold, and the Observable adds a third, weaker claim (the failing file's name and assertion appear in the output). FR-5 says only \"readable\" and does not settle which one applies.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-7: the runner is unknown, only the exit code is read, as today; grill Q11, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "\"Roughly as long as its slowest file\" contradicts \"eight at a time\"",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-5",
+        "FR-3",
+        "SC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "then it exits 0 and takes roughly as long as its slowest file",
+        "run the test files in parallel, eight at a time"
+      ],
+      "fix": "state the number of files and the target as a bound (for example \"under X s\"), or drop \"roughly its slowest file\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "test_implement.py takes 178 s serially, and the pre-change suite takes 346 s. With a fixed cap of eight and more than eight files, a file waits for a free slot. Wall-clock is then at least the slowest file plus queued work, not roughly the slowest file. The spec does not give the file count or the in-process time, so AC-5 and SC-2 may be unmeetable or only loosely testable.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-5/SC-2: at most 1.5 x the slowest file; grill Q11, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "A finding without `gap` is both invalid and valid at the spec gate",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-14",
+        "AC-15",
+        "FR-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a finding with no gap",
+        "a spec-gate output that leaves them out is still valid",
+        "Filling a missing `gap` or `where` with a guess: a finding without them stays invalid."
+      ],
+      "fix": "scope AC-14 and the non-goal to the implementation gate, and say plainly that spec, plan and tasks findings need no `gap` or `where`.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a spec-gate lens output has findings with `cites`, `kind` and `severity` but no `gap` or `where`. AC-15 says such output is valid. AC-14 and the non-goal say a finding with no gap is rejected as INVALID. The parser can't satisfy both unless the spec says `gap` is required only at the implementation gate.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-14 and the non-goal say a finding with no gap is rejected as INVALID. AC-15 says a spec-gate output that leaves out `gap` and `where` \"is still valid\". Nothing scopes the gap requirement to the implementation gate.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-14 and the non-goal scope gap/where to the implementation gate, as the parser already does",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "FR-8 does not cover the failed-review and other-command rows of the decision table",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF no review suite result exists for the same commit and a clean tree THEN THE SYSTEM SHALL run the suite in the copy as before.",
+        "ran a command other than the configured suite, or failed"
+      ],
+      "fix": "reword FR-8 as \"unless FR-7's conditions all hold, run the suite in the copy\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the review ran the configured suite at the same commit on a clean tree, but it exited 1. A result \"exists\", so FR-8's condition is false and no requirement says what to do. AC-10 and the table row 2 say to run the suite in the copy. FR-7 covers only the exit-0 case.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-8 now lists every failed condition of FR-7",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "FR-12 changes the lens text every juror sees, which the parser fix does not need",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-12",
+        "AC-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "show the implementation gate's `gap` and `where` lines, marked as for that gate only.",
+        "WHEN a finding writes a field label in another case THE SYSTEM SHALL accept it as that field."
+      ],
+      "fix": "drop FR-12 and AC-15 unless the human confirms the template change; otherwise label it as a human decision with its reason.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "a juror writes `- Gap: missing` under a spec gate. FR-10 accepts it and FR-11 still rejects real malformation, so the human gets everything #74 asked for. FR-12 instead adds gate-specific `gap` and `where` lines to the printed template, which changes what every juror is told to write. Nothing in the intake asks for that, and NFR-2 and the Summary's \"smallest diff that works\" rule against it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-10 (case-insensitive labels) and FR-11 cover the inline-slip parser fix that #74 asks for in the intake. FR-12 changes the printed template for every juror, is tagged only [agent], and has no human request behind it. NFR-2 asks for the smallest diff that works. The Decisions entry gives a rationale (fix at the root), but the human did not confirm it.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Kept FR-12: the root fix for the observed omission (RF-6); grill Q12, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "Fix-check round narrows #75 by agent decision, and no success criterion measures the round's time",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-13",
+        "Non-goals (fix-check round item)",
+        "Decisions (#75 item)",
+        "SC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "In the fix-check round, re-running only what the fix diff touched for lint, type checks, misuse tests and non-test journeys: they run as in round 1.",
+        "re-running only what the fix touched is a non-goal (grill Q6, agent, 2026-11-06)."
+      ],
+      "fix": "have the human confirm the narrowed #75 design, or restore the \"re-run what the fix touched\" rule. Either way, add a success criterion for the fix-check round's wall-clock.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the coordinator's text in the intake asks that the fix-check round \"re-run only what the fix touched\". The spec instead makes that a non-goal, so a one-line fix still re-runs lint, type checks, misuse tests and every non-test journey in full, as round 1 did. The only success criteria are the suite and test_implement.py wall-clock (SC-1, SC-2), so nothing shows whether the round-2 cost #75 targets is actually cut. The human folded in an issue whose design is changed here by an agent decision, with no human confirmation.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-scope: SC-3 is added, but it measures which commands run, not the fix-check round's wall-clock as the finding asked. The narrowed #75 design rests on the delegated grill answer (Q6), which is accepted under the same authority.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated by the human: SC-3 measures what drives the round's time (the suite and covered journeys no longer run); a wall-clock target needs a fix-check round this effort may not have",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-16",
+      "title": "Spec uses a provenance tag the template does not define",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "Summary",
+        "AC-2",
+        "AC-3",
+        "AC-10",
+        "AC-11",
+        "AC-15",
+        "AC-16",
+        "FR-8",
+        "FR-12",
+        "FR-13",
+        "Decisions"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Eight files run at once, a fixed count [agent]",
+        "or [default] (your proposal; the grill must confirm it)"
+      ],
+      "fix": "either map `[agent]` to `[default]` and record the delegation once in Decisions, or add `[agent]` to the template's provenance list.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the template defines only `[human]`, `[research: RF-n]` and `[default]`, where a default is a proposal the grill must confirm. About 20 items carry `[agent]`, so a reader cannot tell which items the human confirmed. `nio check spec` reports 0 errors and does not catch the tag.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "The spec's provenance comment now defines [agent], as the grill skill does",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-17",
+      "title": "The reuse rule's decision has no real ID, so FR-7's boundary cannot be traced",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-7",
+        "Decisions (reuse-the-review item)"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Reuse the review's suite result only when it ran the configured suite and exited 0: D- record in grill Q4"
+      ],
+      "fix": "assign the decision a real ID, the same way the other decision entries are numbered.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "this decision is the fence on FR-7 (configured suite only, exit 0 only). Its ID is an incomplete \"D-\" placeholder, so a reader or a later fix-check cannot find or cite the decision that sets that boundary.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Decisions line cites D-261106-grjt",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-18",
+      "title": "Parallel speed-up has no pass/fail threshold",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "SC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "takes roughly as long as its slowest file",
+        "wall-clock well under the 346 s serial time"
+      ],
+      "fix": "give a number, for example wall-clock <= slowest file + 30 s, or < 120 s, on the maintainer's machine. Use the same figure in SC-2.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the suite takes 120 s in a run where the slowest file takes 60 s. One reviewer calls that \"well under 346 s\" and another calls it not \"roughly\" the slowest file. No test can fail on either phrase, so AC-5 passes even if the files run only two at a time.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-5 says \"roughly as long as its slowest file\" and \"well under the 346 s serial time\". SC-2 says \"roughly its slowest file\". None of these gives a number, so no test can fail on them, and a two-at-a-time run could still pass.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-5/SC-2 give 1.5 x the slowest file; grill Q11, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-19",
+      "title": "\"Trailing punctuation\" is unbounded, so the none/malformed line is untestable",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "AC-12",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`none` in any case with trailing punctuation",
+        "prose under `## Findings` that is neither a finding nor none"
+      ],
+      "fix": "name the allowed punctuation set (for example `.`, `!`) and add a rejected example such as `None, but see F1` to AC-14.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "`## Findings` holds `None, nothing to report`, `none...`, `none?` or `none - all clear`. FR-9 can be read as accepting or rejecting each of them, and AC-14 as rejecting each as prose. AC-12 lists only four examples (`none`, `None`, `None.`, `NONE!`), so a parser accepting any text that starts with \"none\" would pass AC-12, and AC-14's fixture would not catch it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 says \"trailing punctuation\" without naming a set. AC-12 lists only four examples, and AC-14 has no rejected example that starts with \"none\", such as `None, but see F1`. A parser that accepts any text starting with \"none\" would pass AC-12 and AC-14.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-9 names the set: one . or !; AC-14 rejects None, but see F1; grill Q9, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-20",
+      "title": "AC-11 does not say what the journey's result is",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-11",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a journey on a test file is not recorded as passed by reuse"
+      ],
+      "fix": "state the outcome, for example \"the journey runs normally and is not marked covered\", and make the Observable check that the command was run.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the suite failed and a journey names a file the suite ran. The AC only says \"not passed\". A test cannot assert whether the journey must run, be recorded as failed, or be recorded as not covered. An implementation that records nothing satisfies the AC.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-11 and its Observable say only that the journey is \"not recorded as passed by reuse\". They do not say whether the journey runs, is recorded failed, or is recorded not covered. An implementation that records nothing would satisfy the AC.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-11: the journey runs in the copy and is not recorded as covered; grill Q10, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-21",
+      "title": "Covered-journey rule has no case for mixed or partly matching steps",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-8",
+        "FR-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "whose every step runs, with the suite's own per-file command and nothing added"
+      ],
+      "fix": "add an AC (Level integration) for a journey with one covered step and one other step, or a file outside the suite, that must still run.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a journey has two steps, one a covered test file and one a quickstart command, or its one step names a file the suite does not run (not in the suite's file list). FR-6 says \"every step\", so the journey should run. No AC makes a test fail if the system skips it because one step matches. AC-8 tests only the all-match and the added-argument cases.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-8 Observable: a mixed journey or a file the suite doesn't run is not covered; grill Q10, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-22",
+      "title": "Only a single failing file is tested, so hidden or interleaved failures are not caught",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-6",
+        "AC-7",
+        "UJ-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "name the same failing tests as with the serial suite",
+        "a failing file is hidden by parallel output"
+      ],
+      "fix": "add an AC with two or more failing files that checks each file's name and assertion appears once in the output and the exit is non-zero.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "three files fail at the same time under the eight-way run and their output interleaves. AC-6 and AC-7 use \"one deliberately failing file\", so a runner that reports only the last or first failure still passes both. The UJ-1 misuse (a failing file hidden) is then not covered by any test.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-6 uses two failing files and one killed file; grill Q7, delegated",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "7fcb3c1be7772e496efedbc653efe1487819ab06",
+    "2": "bd21ee203af1c8bdfaf68ce5af77bdcc342c004d"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-15"
+    ],
+    "final": null,
+    "flagged": []
+  }
+}
