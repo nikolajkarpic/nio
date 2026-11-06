@@ -297,6 +297,8 @@ def claim(root, slug=None, by=None):
         guard(root, slug, state, lines, started)
         if state["abandon"] is not None or state["pause"] or started and state["waiting"]:
             return 1, flow.talk(slug, flow.where(root, slug, state, lines))  # a blocked task holds the stage (AC-23)
+        if t := next((t for t, v in status(root, slug, lines).items() if v == "blocked"), None):
+            return 1, [f'{t} is blocked: nio flow unblock {slug} {t} --human "<reason>" --by human']
         base = []
         if not started:
             entry, state, why = start_stage(root, slug, state)
@@ -422,9 +424,11 @@ def limit(root):
     return (records.config(root).get("tests") or {}).get("timeout") or DEFAULT_LIMIT
 
 
-def shelve(root, slug, run, tid):
+def shelve(root, slug, run, tid, tree=None):
     """Save the task's uncommitted changes outside the effort folder (`git diff HEAD` plus untracked files) as
-    `.nio/runs/<run>/T-n.patch`, then restore those paths to HEAD (CT-10). Returns the patch's path."""
+    `.nio/runs/<run>/T-n.patch` of the main tree, then restore those paths to HEAD (CT-10). `tree` is the task's
+    worktree, when it has one. Returns the patch's path."""
+    main, root = root, tree or root
     rows = [(c, p) for c, p in porcelain(root) if outside(slug, [p])]
     paths = [p for _, p in rows]
     diff = ""
@@ -432,7 +436,7 @@ def shelve(root, slug, run, tid):
         if new := [p for c, p in rows if c == "??"]:
             records.git(root, "add", "-N", "--", *new)  # so `git diff` shows untracked files too
         diff = records.git(root, "diff", "HEAD", "--binary", "--", *paths, full=True)[1]
-    path = root / ".nio/runs" / run / f"{tid}.patch"
+    path = main / ".nio/runs" / run / f"{tid}.patch"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(diff)  # written before anything is restored: the work is never only in the tree
     for p in paths:
@@ -441,7 +445,9 @@ def shelve(root, slug, run, tid):
         else:
             records.git(root, "rm", "-q", "--cached", "--ignore-unmatch", "--", p)
             (root / p).unlink(missing_ok=True)
-    return str(path.relative_to(root))
+    if tree:
+        records.git(main, "worktree", "remove", "--force", str(tree), full=True)
+    return str(path.relative_to(main))
 
 
 def run_of(root, slug, lines, tid):
@@ -457,10 +463,10 @@ def attempt(root, slug, state, lines, tid, line):
     state = {**state, "attempts": {**state["attempts"], tid: n}}
     if n < 3:
         return [line], state
-    patch = shelve(root, slug, run_of(root, slug, lines, tid), tid)
+    patch = shelve(root, slug, run_of(root, slug, lines, tid), tid, worktree(root, lines, tid))
     why = f"{tid} blocked after 3 attempts"
     return [line, entry("blocked", tid, cause="attempts", patch=patch)], \
-        {**state, "claims": {}, "waiting": {"why": why, "task": tid}}
+        {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}
 
 
 def refused(root, slug, state, lines, tid, step, command, why, w):
@@ -786,7 +792,7 @@ def block(root, slug, tid, handoff, by):
         found = next((p for p in sorted((root / ".nio/memory").rglob("C-*.md"))
                       if f"Handoff: {hsh}" in p.read_text() and records.parse(p)[0].get("outcome") == "pending"), None)
         kept = found.read_text() if found else ""
-        patch = "" if mine else shelve(root, slug, run_of(root, slug, lines, tid), tid)  # first: it cleans every untracked file
+        patch = "" if mine else shelve(root, slug, run_of(root, slug, lines, tid), tid, worktree(root, lines, tid))  # first: it cleans every untracked file
         if found is None:
             areas = records.areas(root)
             found = records.new(root, "change", "project" if "project" in areas else areas[0],
@@ -799,6 +805,6 @@ def block(root, slug, tid, handoff, by):
         cid = records.parse(found)[0]["id"]
         if not mine:  # the line and the state it leaves go in one write, so a blocked line means waiting is set too
             line = {**entry("blocked", tid, cause="spec", handoff=hsh, patch=patch), "change": cid}
-            flow.write(root, slug, [line], {**state, "claims": {}, "waiting": {"why": f"spec problem in {tid}", "task": tid, "change": cid}},
+            flow.write(root, slug, [line], {**state, "claims": release(state["claims"], tid), "waiting": {"why": f"spec problem in {tid}", "task": tid, "change": cid}},
                        w, "implementing")
     return 0, [f"blocked: {tid}", cid]
