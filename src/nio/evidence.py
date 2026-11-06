@@ -164,8 +164,14 @@ def covered(step, suite):
         return False
     if len(words) < 2:
         return False
-    return any(fnmatch.fnmatchcase(words[-1], g) for g in swords if "*" in g) \
+    return any(_glob(words[-1], g) for g in swords if "*" in g) \
         and _runs(suite, words[:-1])
+
+
+def _glob(path, g):
+    """Shell glob: `*` stays inside one path segment."""
+    a, b = path.split("/"), g.split("/")
+    return len(a) == len(b) and all(fnmatch.fnmatchcase(x, y) for x, y in zip(a, b))
 
 
 def _runs(text, prefix):

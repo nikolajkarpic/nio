@@ -3382,6 +3382,15 @@ def test_covered_serial_suite_with_semicolon():
     print("ok")
 
 
+def test_covered_glob_star_stays_in_one_path_segment():
+    from nio.evidence import covered
+    suite = "printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'"
+    assert not covered("uv run python tests/sub/test_x.py", suite)
+    assert not covered("uv run python tests/test_sub/x.py", suite)
+    assert covered("uv run python tests/test_x.py", suite)
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
