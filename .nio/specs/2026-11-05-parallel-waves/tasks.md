@@ -41,6 +41,107 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Effort: low
 - Mode: direct: docs, the test only checks phrases in the text
 
+#### Fixes
+
+### T-6 Fix: No E-1 AC test has a passing result in the evidence
+- From: J-1 (implementation-E-1, round 1)
+- Files: `tests/test_waves.py`
+- Serves: AC-1, AC-2, AC-3, AC-5, AC-6, AC-11, AC-16, AC-17
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-7 Fix: AC-1 has no passing evidence
+- From: J-7 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
+- Serves: AC-1
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-8 Fix: AC-2 has no passing evidence
+- From: J-8 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
+- Serves: AC-2
+- Test: TC-2
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-9 Fix: AC-3 has no passing evidence
+- From: J-9 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `src/nio/records.py`, `tests/test_waves.py`
+- Serves: AC-3
+- Test: TC-3
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-10 Fix: AC-5 has no passing evidence
+- From: J-10 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `src/nio/records.py`, `tests/test_waves.py`
+- Serves: AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-11 Fix: AC-6 has no passing evidence
+- From: J-11 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `src/nio/records.py`, `tests/test_waves.py`
+- Serves: AC-6
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-12 Fix: AC-11 has no passing evidence
+- From: J-12 (implementation-E-1, round 1)
+- Files: `skills/implement/SKILL.md`, `src/nio/agents/worker.md`, `tests/test_waves.py`
+- Serves: AC-11
+- Test: TC-11
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-13 Fix: AC-16 has no passing evidence
+- From: J-13 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
+- Serves: AC-16
+- Test: TC-16
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-14 Fix: AC-17 has no passing evidence
+- From: J-14 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `tests/test_waves.py`
+- Serves: AC-17
+- Test: TC-17
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-2 Land each wave task as one commit (US-2)
 
 ### T-4 Land a green wave task on the main tree, release it from claims, restore on a failed review or commit; the review judges only its own changes

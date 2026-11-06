@@ -1,0 +1,597 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-05-parallel-waves",
+  "round": 1,
+  "tier": "high",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness",
+    "risk-rollback"
+  ],
+  "collected": {
+    "R-261106-37il/implementation-E-1-conformance.md": "9d00c525d68f1bbbd7beeb3329d338e10fcc4697e632d869f1b9a0dc092a570c",
+    "R-261106-37il/implementation-E-1-consistency.md": "46893e7b5b797e6d4e7d7138b56c147320ff53b8bb35cbd3aa77067d4766eb6f",
+    "R-261106-37il/implementation-E-1-correctness.md": "d7f826dcc765f292a0a363dfc01f62217f0e8744cf577ca7dd0b7047d053ac04",
+    "R-261106-37il/implementation-E-1-risk-rollback.md": "803eb8049e41b2d3ce6b6ce9af9a441f191c9a718339fe0f7fac8f149ec4d409",
+    "R-261106-37il/implementation-E-1-refuter.md": "79c76231a5b61d38635590647de051f8094d96bca41e6158b3e4f7b1e59b2411"
+  },
+  "jurors": {
+    "implementation-E-1-conformance": {
+      "attempts": 2,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d9e163730c3a799498ccabe08ae52f52035d3225",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d9e163730c3a799498ccabe08ae52f52035d3225",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 2,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d9e163730c3a799498ccabe08ae52f52035d3225",
+      "judged": 1
+    },
+    "implementation-E-1-risk-rollback": {
+      "attempts": 2,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d9e163730c3a799498ccabe08ae52f52035d3225",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "No E-1 AC test has a passing result in the evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "AC-5",
+        "AC-6",
+        "AC-11",
+        "AC-16",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert code == 0 and len(out.splitlines()) == 20 and took < 2.0, (took, out)"
+      ],
+      "fix": "Re-run the evidence so `tests/test_waves.py` runs on its own and its eight E-1 tests are recorded as passed. Either re-run the suite once the speed test is not flaky, or run `tests/test_waves.py` on its own. Make sure the recorded file and line numbers match the committed test file.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "The results file lists `test_ac1_claims_a_wave_of_two`, `test_ac2_one_task_when_no_wave`, `test_ac3_red_and_green_run_in_the_worktree`, `test_ac5_nio_in_a_worktree_writes_the_root_state`, `test_ac6_second_guard_is_told_to_try_again`, `test_ac11_skill_dispatches_a_wave`, `test_ac16_worktree_failure_refuses_the_claim` and `test_ac17_bad_parallel_budget_is_refused`, each as \"failed\". The suite stopped at `tests/test_flow.py::test_nfr3_status_speed`, which measured 2.04 s against a 2.0 s limit. The suite loop exits on the first failing file, so `tests/test_waves.py` most likely never ran, and the \"failed\" results do not show whether the wave tests pass. The line numbers in the results (38, 53, 105, 131, 152, 165, 62, 85) also do not match the file in the diff, which suggests the results come from a different version of the test file or from the aborted run. The test bodies do exercise the ACs, so this is missing evidence, not a wrong test.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "results.json records all 19 test_waves tests as \"failed\" and every AC in `evidence` as \"didn't run\". The suite loop (`|| exit 1`) stopped at tests/test_flow.py::test_nfr3_status_speed (2.04 s against a 2.0 s limit), before tests/test_waves.py could run. No E-1 AC has a passing result.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-6",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_waves.py (results.json evidence)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Hook events from a task's worktree are written to the worktree's own run folder, not the project root",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "FR-10",
+        "AC-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "root = Path(records.git(root, \"rev-parse\", \"--show-toplevel\")[0])"
+      ],
+      "fix": "In `usage.record`, resolve the root with `records.repo_root()` (or the same worktree rule) instead of `git rev-parse --show-toplevel`, and add one assert to test_waves or test_usage that an event from inside a worktree lands in the project root's `.nio/runs/events.jsonl`. If usage recording is meant to be out of scope for this effort, put that in the spec's Non-goals instead.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "A worker in `.nio/runs/<run>/worktree` triggers a host hook. `usage.record` takes the payload cwd, asks git for the top level, which is the worktree, and sees that `.nio` is a directory there because the tracked `.nio/specs` is checked out. It appends to `<worktree>/.nio/runs/events.jsonl` instead of the project root's file. When the worktree is removed with `--force` at commit or block, those events are lost, so the effort's usage totals miss the wave task's work. CT-6 says nio inside a worktree resolves to the project root, and `repo_root()` does that, but `usage.py` bypasses it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/usage.py (`record`)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "Missing worktree silently falls back to the main tree",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-3",
+        "CT-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "return root / name if name and (root / name).is_dir() else None"
+      ],
+      "fix": "In `red` and `green`, refuse when the latest claim line names a worktree but `worktree()` returns None. For example, raise \"worktree for T-n is gone\" instead of falling back to `root`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`worktree()` returns None both when a claim line names no worktree and when it names one whose folder is gone. `red` and `green` then use `worktree(...) or root`, so a wave task whose worktree was deleted would run its command, and check its frozen files, in the main tree. That could give a false red or green. CT-2 says \"None when it names none or the folder is gone\", so this follows the contract. The gap is that a wave task with a missing worktree isn't refused.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py (worktree, red, green)",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "A wave claimed before E-2 lands its green as an empty commit and wipes the sibling's claim",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-2",
+        "CT-4",
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a wave task leaves `claims` only when it is committed or blocked, through a new `release(claims, tid) -> claims` in the same file"
+      ],
+      "fix": "Until T-4 and T-5 land, either refuse `green`, `attempt` and `block` for a task whose claim names a worktree (for example, \"wave landing not implemented\"), or default `budgets.parallel` to 1 in E-1 and raise it in E-2.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "E-1 turns on wave claims by default and tells the skill to dispatch them. But `commit` still writes `{**state, \"claims\": {}, \"waiting\": waiting}, who, \"implementing\")` and stages only the main tree's porcelain, while `attempt` and `block` still call `shelve(root, ...)`. A wave task that goes green between E-1 and E-2 is recorded `task_done` with none of its worktree's code, its sibling's claim is overwritten, and a third attempt or `block` records an empty patch. The worktree's work then sits only in a folder no state line points to once the claim is gone.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "E-1 stops short of landing on purpose. tasks.md puts landing and release (T-4) and the shelve and block path (T-5) in E-2, \"Depends on: T-2\". The earlier tasks-jury J-4 (jury/tasks.md) refuted the same point: the gap is between two epics of one unshipped spec, and ownership is stated. `commit` still writing `\"claims\": {}` (implement.py:557) is the T-4 work, and the artefact does not require E-1 to ship alone. The `parallel` default of 2 (implement.py:335) was set in the spec, not chosen by this epic.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py (commit, attempt, block)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "Claim cleans up worktrees only when git fails, not when a later step raises",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the worktrees made so far by this claim are removed, exit 1 with `can't create a worktree for <T-n>: <git's error>`, no line written (FR-17)"
+      ],
+      "fix": "Wrap the loop and the `flow.write` in try/except, and on any exception remove every path in `made` with `git worktree remove --force`, then re-raise.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`made` is cleaned up only inside `if code:` after `git worktree add`. If `records.new_run`, `pack.save` or `flow.write` raises after a worktree was made, or the process is killed mid-loop, registered worktrees stay in `.git/worktrees` and `.nio/runs` with no claim line naming them. Nothing reaches them later. State is not corrupted, but the worktrees pile up across retries.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/implement.py (claim)",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The rollback test for a failed claim has not been shown passing",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-16",
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "AssertionError: (2.042875017003098,"
+      ],
+      "fix": "Re-run `uv run python tests/test_waves.py` on its own, or re-run the suite with the timing flake addressed, and record test_ac16 passing before closing E-1.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "results.json records `test_ac16_worktree_failure_refuses_the_claim` as `failed`, along with every other test_waves test. The suite loop exited on test_flow's `test_nfr3_status_speed` timing assertion before it reached test_waves. So the only test proving the claim's rollback has no passing run at this gate.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_waves.py (test_ac16_worktree_failure_refuses_the_claim)",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "AC-1 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-1",
+      "gap": "missing",
+      "where": "src/nio/implement.py, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-1: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-7",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "AC-2 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-2",
+      "gap": "missing",
+      "where": "src/nio/implement.py, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-2: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-8",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "AC-3 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-3"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-3",
+      "gap": "missing",
+      "where": "src/nio/implement.py, src/nio/records.py, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-3: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-9",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "AC-5 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-5",
+      "gap": "missing",
+      "where": "src/nio/implement.py, src/nio/records.py, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-5: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-10",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "AC-6 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-6",
+      "gap": "missing",
+      "where": "src/nio/implement.py, src/nio/records.py, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-6: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-11",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "AC-11 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-11",
+      "gap": "missing",
+      "where": "skills/implement/SKILL.md, src/nio/agents/worker.md, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-11: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-12",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "AC-16 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-16",
+      "gap": "missing",
+      "where": "src/nio/implement.py, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-16: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-13",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "AC-17 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-17",
+      "gap": "missing",
+      "where": "src/nio/implement.py, tests/test_waves.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-17: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-14",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "d9e163730c3a799498ccabe08ae52f52035d3225"
+  },
+  "matched": {
+    "AC-1": [],
+    "AC-2": [],
+    "AC-3": [],
+    "AC-5": [],
+    "AC-6": [],
+    "AC-11": [],
+    "AC-16": [],
+    "AC-17": []
+  }
+}
