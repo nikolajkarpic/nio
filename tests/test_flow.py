@@ -2276,6 +2276,13 @@ def test_ac36_the_change_is_refused():
     print("ok")
 
 
+def test_ac29_perf_selfcheck_listed():
+    """CLAUDE.md lists the NIO_PERF=1 status-speed self-check, to run after a change to `nio flow status`."""
+    text = (Path(__file__).resolve().parents[1] / "CLAUDE.md").read_text()
+    assert "NIO_PERF=1 uv run python tests/test_flow.py" in text and "nio flow status" in text, text
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_"):
