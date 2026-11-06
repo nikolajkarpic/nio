@@ -514,6 +514,16 @@ def test_older_review_is_not_reused():
     print("ok")
 
 
+def test_review_suite_is_not_reused_after_a_hand_made_commit():
+    root, _ = ok_repo([review("T-2")])
+    fix_commit(root, "T-2", [])
+    git(root, "commit", "-q", "--amend", "-m", "T-2: tweak")
+    results, n = counted(root)
+    assert "reused" not in results["suite"], results["suite"]
+    assert n and n >= 1, "the suite didn't run in the copy"
+    print("ok")
+
+
 def test_the_results_record_the_failed_check_and_its_output():
     import subprocess
     import sys
