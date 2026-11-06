@@ -10,7 +10,7 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-18, AC-29 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | AC-18, AC-29 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-2 | minor | risk | AC-18, CT-10 | adversary | grounded | open |  | new, 0 |
 | J-3 | minor | inconsistency | AC-18 | adversary | grounded | open |  | new, 0 |
 | J-4 | blocker | gap | AC-14, AC-15, CT-9 | conformance, consistency | confirmed | disposed | fix-task (agent) | new, 0 |
@@ -21,7 +21,7 @@ outcome: rejected
 - situation (adversary): Shell inline variables apply to the first command only. `tests/test_flow.py`, the file that holds `test_nfr3_status_speed`, runs with `NIO_PERF` unset. If `nio flow status` regresses to 5 seconds, this journey still passes. The output shows "ok (3.00s)" and "ok (2.80s)" with no failure. The `NIO_PERF=1` environment is only passed to `test_implement.py`, which does not use it.
 - fix: change the journey command so that `NIO_PERF=1` is on `test_flow.py`: `uv run python tests/test_implement.py && NIO_PERF=1 uv run python tests/test_flow.py && echo ok`.
 - validation: confirmed: results.json line 242 holds the command `NIO_PERF=1 uv run python tests/test_implement.py && uv run python tests/test_flow.py && echo ok`. An inline variable applies only to the first command, so `test_flow.py` runs with `NIO_PERF` unset. That means the 2-second assert in `test_nfr3_status_speed` never fires, which is what AC-18 and AC-29 are about.
-- disposition: fix-task by agent: fix task T-15
+- disposition: accepted-risk by human: Delegated human (orchestrator): QS-5 checks UJ-5, a review on a loaded machine with NIO_PERF=1 in the caller's env; asserting the 2-second limit there would fail under load, which US-5 removes. The limit stays the manual self-check of FR-15/FR-18. C-261106-mao2 rejected, T-15 retired.
 
 ### J-2 The status-speed assertion was weakened and nothing automated runs it
 - quote: "if os.environ.get("NIO_PERF") == "1":"

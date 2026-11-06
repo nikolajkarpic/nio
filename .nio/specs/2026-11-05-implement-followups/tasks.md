@@ -99,12 +99,12 @@ retired: []                      # task IDs removed from this file; never reused
 - From: J-1 (implementation-E-3, round 1)
 - Files: `tests/test_flow.py`
 - Serves: AC-18, AC-29
-- Test: TC-15
+- Test: TC-15; J-1 was accepted as risk and its change request C-261106-mao2 rejected (QS-5 serves UJ-5, a review on a loaded machine), so nothing changes: this task only re-runs TC-15 to confirm the limit stays gated
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
 - Effort: med
-- Mode: single: a fix from a jury finding
+- Mode: direct: no change to make; the run confirms TC-15 still passes
 
 ### T-16 Fix: AC-14 and AC-15 tests sit after the `__main__` runner and never run
 - From: J-4 (implementation-E-3, round 1)
