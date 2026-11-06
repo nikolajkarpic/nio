@@ -47,7 +47,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    CLI command. If it stops on a design choice nothing settles, stop too: on a full spec, tell the human the plan or
    the spec needs a change request (`@nio:remember`); on a bug fix, that the spec must be re-routed to a full spec
    with a plan.
-3. **Rate.** Run the `nio-evaluator` subagent on `tasks.md`. It sets every `Tier:` (with a reason) and `Effort:`.
+3. **Rate.** Start a run with `nio run <slug>`. Before the evaluator, make a copy of `tasks.md` at `.nio/runs/<run>/tasks.before.md`. Then run the `nio-evaluator` subagent on `tasks.md`. It sets every `Tier:` (with a reason), `Mode:` and `Effort:`. Then run `nio check tasks <slug> --rated-from .nio/runs/<run>/tasks.before.md`. If it fails, send the errors back to the evaluator once; it may change only the rating lines.
 4. **Verify, don't trust the reports.** Run `nio check tasks <slug>` yourself and fix every error (send structural
    ones back to the drafter once). It prints the estimate.
 5. **Jury.** Run the tasks jury with `@nio:jury` at the `tasks` gate (`nio jury plan <slug> tasks` refuses until the
