@@ -50,9 +50,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-1
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-7 Fix: AC-1 has no passing evidence
 - From: J-7 (implementation-E-1, round 1)
@@ -61,9 +61,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-1
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-8 Fix: AC-2 has no passing evidence
 - From: J-8 (implementation-E-1, round 1)
@@ -72,9 +72,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-2
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-9 Fix: AC-3 has no passing evidence
 - From: J-9 (implementation-E-1, round 1)
@@ -83,9 +83,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-3
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-10 Fix: AC-5 has no passing evidence
 - From: J-10 (implementation-E-1, round 1)
@@ -94,9 +94,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-5
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-11 Fix: AC-6 has no passing evidence
 - From: J-11 (implementation-E-1, round 1)
@@ -105,9 +105,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-6
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-12 Fix: AC-11 has no passing evidence
 - From: J-12 (implementation-E-1, round 1)
@@ -116,9 +116,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-11
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-13 Fix: AC-16 has no passing evidence
 - From: J-13 (implementation-E-1, round 1)
@@ -127,9 +127,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-16
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ### T-14 Fix: AC-17 has no passing evidence
 - From: J-14 (implementation-E-1, round 1)
@@ -138,9 +138,9 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-17
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: cheap: no code change: the evidence suite stopped on an unrelated timing flake before tests/test_waves.py
+- Effort: low
+- Mode: direct: a passing run of tests/test_waves.py is the fix
 
 ## E-2 Land each wave task as one commit (US-2)
 
