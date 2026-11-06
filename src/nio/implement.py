@@ -429,7 +429,10 @@ def shelve(root, slug, run, tid, tree=None):
     `.nio/runs/<run>/T-n.patch` of the main tree, then restore those paths to HEAD (CT-10). `tree` is the task's
     worktree, when it has one. Returns the patch's path."""
     main, root = root, tree or root
-    rows = [(c, p) for c, p in porcelain(root) if outside(slug, [p])]
+    keep = (lambda p: not p.startswith(SCRATCH) and not p.startswith(f".nio/specs/{slug}/") or  # a worktree is removed: keep
+            p.startswith(f".nio/specs/{slug}/") and p.rsplit("/", 1)[-1] not in ("state.json", "history.jsonl")) \
+        if tree else (lambda p: bool(outside(slug, [p])))  # its effort-folder edits too
+    rows = [(c, p) for c, p in porcelain(root) if keep(p)]
     paths = [p for _, p in rows]
     diff = ""
     if paths:
