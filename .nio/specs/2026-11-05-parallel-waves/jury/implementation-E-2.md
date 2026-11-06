@@ -10,7 +10,7 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | minor | gap | AC-7, AC-8, AC-9 | conformance | grounded | open |  | new, 0 |
+| J-1 | minor | gap | AC-7, AC-8, AC-9 | conformance | grounded | disposed | fix-task (agent) | new, 0 |
 | J-2 | major | risk | CT-7, CT-2 | risk-rollback | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-3 | major | risk | CT-4 | risk-rollback | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-4 | major | risk | CT-4 | risk-rollback | confirmed | disposed | fix-task (agent) | new, 0 |
@@ -22,6 +22,7 @@ outcome: rejected
 - quote: "QS-1 is marked auto but 3 of 4 numbered steps could be read; nothing ran"
 - situation (conformance): The only end-to-end journey for this epic did not run. It failed on a step-count mismatch in its own definition, not on the code. The integration-level ACs (AC-7, AC-8, AC-9) are therefore proven only by the unit-style tests in `tests/test_waves.py`. Those tests are sound and the suite passed.
 - fix: Repair QS-1 so that all four numbered steps are readable, or mark it manual, and rerun it. This is not a blocker for conformance.
+- disposition: fix-task by agent: T-19 fixes the demo so QS-1's tasks are direct
 
 ### J-2 The third-attempt or block shelve destroys a wave task's effort-folder edits and overwrites land's fuller patch
 - quote: "rows = [(c, p) for c, p in porcelain(root) if outside(slug, [p])]"
