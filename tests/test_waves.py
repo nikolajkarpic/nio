@@ -14,7 +14,7 @@ from test_tasks import git
 from nio import flow as nio_flow
 from nio import implement, records
 
-TASK = ("### T-{n} Task {n}\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: none\n- Parallel: {par}\n"
+TASK = ("### T-{n} Task {n}\n- Files: `app.py`, `m{n}.py`, `m{n}_new.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: none\n- Parallel: {par}\n"
         "- Tier: strong: fixture\n- Effort: med\n- Mode: {mode}: fixture\n")
 
 
@@ -24,7 +24,11 @@ def waves(n=3, modes=None, parallel=None, cfg=None):
     body = "".join(TASK.format(n=i, par=(parallel or {}).get(f"T-{i}", "yes"), mode=(modes or {}).get(f"T-{i}", "direct"))
                    + "\n" for i in range(1, n + 1))
     text = f"---\nslug: {S}\nretired: []\n---\n# Tasks: Refunds\n\n## E-1 Customer refunds a paid order (US-1)\n\n{body}"
-    return impl(tasks=text, cfg=cfg)
+    root = impl(tasks=text, cfg=cfg)
+    for i in range(1, n + 1):
+        (root / f"m{i}.py").write_text("v = 0\n")
+    commit_all(root, "modules")
+    return root
 
 
 def tasks_in(out):
@@ -98,8 +102,11 @@ def wt(out, tid):
 
 
 def work(root, out, tid):
-    """A change to app.py in the task's worktree."""
-    (root / wt(out, tid) / "app.py").write_text("def refund(x):\n    return x\n")
+    """A change to app.py and m<n>.py, and a new m<n>_new.py, in the task's worktree."""
+    w, n = root / wt(out, tid), tid[2:]
+    (w / "app.py").write_text("def refund(x):\n    return x\n") if tid == "T-1" else None
+    (w / f"m{n}.py").write_text("v = 1\n")
+    (w / f"m{n}_new.py").write_text("w = 1\n")
 
 
 def test_ac3_red_and_green_run_in_the_worktree():
@@ -171,6 +178,178 @@ def test_ac11_skill_dispatches_a_wave():
         assert phrase in skill, phrase
     single = worker.split("- **single:**", 1)[1].split("- **direct:**", 1)[0]
     assert "try again" in single, single
+    print("ok")
+
+
+def land(root, tid):
+    """A direct wave task's green: (code, output)."""
+    return flow(root, "green", S, tid, "--run", "true")
+
+
+def subjects(root, n):
+    return git(root, "log", f"-{n}", "--format=%s").splitlines()
+
+
+def kept(root):
+    """The main tree's porcelain, the effort's state and history and the run folders (gitignored in a project) left out."""
+    return sorted(x for x in git(root, "status", "--porcelain", "--untracked-files=all").splitlines()
+                  if not x.endswith(("state.json", "history.jsonl")) and ".nio/runs/" not in x)
+
+
+def test_ac4_no_claim_while_the_wave_is_open():
+    root = waves(n=3, cfg={"budgets": {"parallel": 2}})
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    code, o = land(root, "T-1")
+    assert code == 0, o
+    sp = root / ".nio/specs" / S / "state.json"
+    saved, before = sp.read_bytes(), len(lines(root))
+    code, o = flow(root, "claim", S)
+    assert code == 1 and "T-2 is claimed" in o and "task:" not in o, o
+    assert sp.read_bytes() == saved and len(lines(root)) == before
+    assert state(root)["claims"] == {"task": "T-2", "wave": ["T-2"]}, state(root)
+    print("ok")
+
+
+def test_ac7_each_task_lands_as_one_commit_in_green_order():
+    root = waves()
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    work(root, out, "T-2")
+    c2, o2 = land(root, "T-2")
+    c1, o1 = land(root, "T-1")
+    assert c2 == 0 and "done: T-2" in o2 and c1 == 0 and "done: T-1" in o1, (o2, o1)
+    assert subjects(root, 2) == ["T-1: Task 1", "T-2: Task 2"], subjects(root, 2)
+    prev = git(root, "show", "--name-only", "--format=", "HEAD~1").split()
+    last = git(root, "show", "--name-only", "--format=", "HEAD").split()
+    assert "m2.py" in prev and "m2_new.py" in prev and "m1.py" not in prev, prev
+    assert "m1.py" in last and "m1_new.py" in last, last
+    assert (root / "m2_new.py").read_text() == "w = 1\n"
+    print("ok")
+
+
+def test_ac8_a_clash_blocks_only_its_task():
+    root = waves(n=3, cfg={"budgets": {"parallel": 3}})
+    code, out = flow(root, "claim", S)
+    for t in ("T-1", "T-2", "T-3"):
+        work(root, out, t)
+    (root / wt(out, "T-1") / "shared.py").write_text("x = 1\n")
+    (root / wt(out, "T-2") / "shared.py").write_text("x = 2\n")
+    assert land(root, "T-1")[0] == 0
+    c2, o2 = land(root, "T-2")
+    assert c2 == 1 and "T-2 blocked: its changes don't apply" in o2, o2
+    assert implement.status(root, S, lines(root))["T-2"] == "blocked"
+    assert state(root)["waiting"]["task"] == "T-2", state(root)
+    ev = [x for x in lines(root) if x["kind"] == "blocked" and x["evidence"]["task"] == "T-2"][-1]["evidence"]
+    assert ev["cause"] == "apply" and "x = 2" in (root / ev["patch"]).read_text(), ev
+    assert (root / "shared.py").read_text() == "x = 1\n" and not (root / "m2_new.py").exists()
+    c3, o3 = land(root, "T-3")
+    assert c3 == 0 and "done: T-3" in o3 and subjects(root, 1)[0].startswith("T-3: "), o3
+    listed = trees(root)
+    for t in ("T-2", "T-3"):
+        assert str((root / wt(out, t)).resolve()) not in listed and not (root / wt(out, t)).exists(), (t, listed)
+    print("ok")
+
+
+def test_ac9_failed_review_restores_the_main_tree():
+    root = waves()
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    w = root / wt(out, "T-1")
+    sp = f".nio/specs/{S}/spec.md"
+    with open(w / sp, "a") as f:
+        f.write("x\n")
+    (root / sp).write_text("# mine\n" + (root / sp).read_text())
+    before, spec_b, m1 = kept(root), (root / sp).read_bytes(), (root / "m1.py").read_bytes()
+    code, o = land(root, "T-1")
+    assert code == 1 and "review: failed" in o and "the task edited spec.md" in o, o
+    assert kept(root) == before and (root / sp).read_bytes() == spec_b and (root / "m1.py").read_bytes() == m1
+    assert not (root / "m1_new.py").exists() and (w / "m1_new.py").exists() and (w / sp).read_text().endswith("x\n")
+    assert implement.status(root, S, lines(root))["T-1"] == "claimed"
+    print("ok")
+
+
+def test_ac10_suite_runs_for_the_last_task_only():
+    log = Path(tempfile.mkdtemp()) / "log"
+    root = waves(n=2, cfg={"tests": {"suite": f"git log --format=%s >> {log}; ls >> {log}; echo END >> {log}; "
+                                         "python -m unittest discover -s tests"}})
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    work(root, out, "T-2")
+    ends = lambda: log.read_text().splitlines().count("END")
+    assert land(root, "T-1")[0] == 0 and ends() == 1, log.read_text()
+    assert land(root, "T-2")[0] == 0 and ends() == 2, log.read_text()
+    block = log.read_text().split("END\n")[1].splitlines()
+    assert any(x.startswith("T-1: ") for x in block) and "m2_new.py" in block, block
+    print("ok")
+
+
+def test_ac13_green_refuses_on_a_dirty_main_tree():
+    root = waves()
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    (root / "stray.txt").write_text("mine\n")
+    marker, before, m1 = Path(tempfile.mkdtemp()) / "m", len(lines(root)), (root / "m1.py").read_bytes()
+    code, o = flow(root, "green", S, "T-1", "--run", f"touch {marker}")
+    assert code == 1 and "uncommitted changes outside the effort folder" in o and "stray.txt" in o, o
+    assert not marker.exists() and len(lines(root)) == before and (root / "stray.txt").read_text() == "mine\n"
+    assert (root / "m1.py").read_bytes() == m1 and not (root / "m1_new.py").exists()
+    print("ok")
+
+
+def test_ac14_review_ignores_a_landed_sibling():
+    root = waves()
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    work(root, out, "T-2")
+    assert land(root, "T-2")[0] == 0
+    code, o = land(root, "T-1")
+    assert code == 0, o
+    ev = [x for x in lines(root) if x["kind"] == "review" and x["evidence"]["task"] == "T-1"][-1]["evidence"]
+    assert ev["passed"] and ev["outside"] == [], ev
+    print("ok")
+
+
+def test_ac15_outside_file_is_recorded_and_a_clash_blocks():
+    root = waves()
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    work(root, out, "T-2")
+    (root / wt(out, "T-1") / "extra.txt").write_text("e\n")
+    for t, v in (("T-1", 1), ("T-2", 2)):
+        (root / wt(out, t) / "shared.py").write_text(f"x = {v}\n")
+    c1, o1 = land(root, "T-1")
+    assert c1 == 0 and "outside the task's files: extra.txt" in o1 and "outside the task's files: shared.py" in o1, o1
+    ev = [x for x in lines(root) if x["kind"] == "review" and x["evidence"]["task"] == "T-1"][-1]["evidence"]
+    assert sorted(ev["outside"]) == ["extra.txt", "shared.py"], ev
+    c2, o2 = land(root, "T-2")
+    assert c2 == 1 and implement.status(root, S, lines(root))["T-2"] == "blocked", o2
+    assert lines(root)[-1]["kind"] == "blocked" and lines(root)[-1]["evidence"]["cause"] == "apply", lines(root)[-1]
+    print("ok")
+
+
+def test_ac9_failed_commit_restores_and_retry_lands():
+    root = waves()
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    before, m1 = kept(root), (root / "m1.py").read_bytes()
+    real = records.git
+
+    def fake(r, *args, full=False):
+        if args[:1] == ("commit",):
+            return (1, "", "hook said no") if full else []
+        return real(r, *args, full=full)
+    records.git = fake
+    try:
+        code, said = implement.green(root, S, "T-1", "true", BY)
+    finally:
+        records.git = real
+    assert code == 1 and any("stays green" in x for x in said), said
+    assert kept(root) == before and (root / "m1.py").read_bytes() == m1 and not (root / "m1_new.py").exists()
+    assert implement.status(root, S, lines(root))["T-1"] == "green"
+    assert (root / wt(out, "T-1") / "m1_new.py").exists()
+    code, o = land(root, "T-1")
+    assert code == 0 and "done: T-1" in o and subjects(root, 1)[0].startswith("T-1: "), o
     print("ok")
 
 
