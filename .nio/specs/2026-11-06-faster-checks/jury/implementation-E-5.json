@@ -1,0 +1,322 @@
+{
+  "gate": "implementation-E-5",
+  "subject": "2026-11-06-faster-checks",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-xqp6/implementation-E-5-adversary.md": "a82652156c73a74dacf35dfd11852e317e5c2ba63ec57f49cef2205969c880e0",
+    "R-261106-xqp6/implementation-E-5-conformance.md": "76e845478796e6c012785b9668b1fc7e0e467fb1daaaae2664972b0011ff7d98",
+    "R-261106-xqp6/implementation-E-5-consistency.md": "333d3e254e3af238e47d2017c5761f875b1f0b1221b0609a74685a52cdbd4335",
+    "R-261106-xqp6/implementation-E-5-correctness.md": "0dab10d17f40b4206fe5e780a6339e0d0979871cf0c9860b1d076ccb950f4b30",
+    "R-261106-xqp6/implementation-E-5-refuter.md": "4820d9f4630e7ddcc1a08068620f536e6b431b99fe8785bace1e077f121f4040"
+  },
+  "jurors": {
+    "implementation-E-5-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "94882ddb169899ceca846f3daf4f9148a55bceac",
+      "judged": 1
+    },
+    "implementation-E-5-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "94882ddb169899ceca846f3daf4f9148a55bceac",
+      "judged": 1
+    },
+    "implementation-E-5-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "94882ddb169899ceca846f3daf4f9148a55bceac",
+      "judged": 1
+    },
+    "implementation-E-5-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "94882ddb169899ceca846f3daf4f9148a55bceac",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Failing file's output is not attributed and can interleave with seven others",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-6",
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "each failing file's output is in the suite's output",
+        "exit 0 when every file exits 0; else 123"
+      ],
+      "fix": "wrap each file so its output is buffered and printed with its name, for example `sh -c 'o=$(uv run python {} 2>&1) || { echo \"FAILED {}\"; echo \"$o\"; exit 1; }'`. Alternatively, add a test where two failing files print long output and assert each block is whole and labelled.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "eight files write straight to the same pipe. The command prints no file name, so the reader sees `AssertionError` with no `test_x.py` next to it. Chunks from concurrent files can mix. The CLI reads only the exit code (123), so the review can't say which file failed. The serial loop's output was in file order. A failure under -P8 can therefore be present in the output yet unfindable. The test only checks that the text \"B FAILED\" appears somewhere, so it can't catch this.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "AC-6's Observable asks for each failing file's assertion text in the output, not its file name. The test checks \"B FAILED\" and \"D FAILED\" appear. AC-7 and FR-5 say only the exit code is read and that the failing file's own output stays in the output. Nothing in the approved spec requires labelling or buffering.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": ".nio/config.json (tests.suite); tests/test_implement.py::test_parallel_suite_fails_on_any_file",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Wall-clock test depends on the machine having 8 free cores",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-5",
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "its wall-clock is at most 1.5 times that of its slowest file run alone in the same session",
+        "assert took <= 1.5 * one, (took, one)"
+      ],
+      "fix": "either relax the bound or size it from `os.cpu_count()`, or run this test on demand only. State in CT-3 that 1.5x holds only up to 8 files.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the test starts eight `sleep 4` files through `uv run` with -P8. On a 2-core CI box, or while another job runs, `uv run` startup (8 interpreters at once) adds to the total. Four seconds of sleep gives about 1.5 s of headroom over one run. The test then fails on load rather than on a real regression. Also, `-P8` is hard-coded, so a suite with more than 8 files or a smaller machine breaks the 1.5x promise without any error. The AC is tagged [human], and the test runs in every suite run.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_implement.py::test_parallel_suite_takes_about_its_slowest_file",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "Signal-killed file is not checked on its own, and nothing shows it was reported",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the process killed by a signal",
+        "for want in (\"B FAILED\", \"D FAILED\", \"D RAN\""
+      ],
+      "fix": "add a case where the only failure is the signal-killed file and the rest are slow. Assert exit 123 and that every other file's \"RAN\" is printed.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "`test_a.py` kills itself with SIGKILL, and the test asserts only `code != 0`, which `test_b` already causes. If `|| exit 1` were removed, xargs would stop at the kill with exit 125 and `code != 0` would still hold. The remaining files might not run, but the test's 20 or so assertions could still pass if they had already finished. The kill case is therefore only weakly pinned. `test_parallel_suite_fails_when_only_the_last_file_fails` covers the last-file case, but that attack test was not run.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_implement.py::test_parallel_suite_fails_on_any_file",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "File name is spliced into a shell script by `-I{}`",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "xargs -P8 -I{} sh -c 'uv run python {} || exit 1'"
+      ],
+      "fix": "pass the name as an argument instead: `xargs -P8 -n1 sh -c 'uv run python \"$1\" || exit 1' _`.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "`-I{}` pastes the name into the `sh -c` script text without quoting. A file named `test_x y.py` splits into two arguments, and a name containing `;`, `$(...)` or a quote runs as shell. `printf '%s\\n'` also treats a newline in a name as two entries. Only repo contributors control names, so the harm is low. A bad name would fail or mis-run silently, and `-I` also has a 255-byte limit on the replaced line.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": ".nio/config.json (tests.suite)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "A suite-level timing test, which decisions row 20 rejected",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a timing test would fail under load\" (decisions.md, row 20)",
+        "assert took <= 1.5 * one, (took, one)\" (tests/test_implement.py, new `test_parallel_suite_takes_about_its_slowest_file`)",
+        "its wall-clock is at most 1.5 times that of its slowest file run alone in the same session\" (AC-5)"
+      ],
+      "fix": "either record a change request or a decision note in decisions.md saying AC-5 is the one suite-level timing test and why row 20 does not cover it, or measure AC-5 by hand the way QS-1 measures NFR-1 and drop the assert from the suite.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "the new test runs inside the parallel suite beside seven other files. Its baseline `one` is taken while those files may load the machine, and the 8-file run is timed under the same load. If the overhead is more than half a file's wall-clock, the assert fails with no code change. Row 21 already records a 2 s bound on a CLI subprocess failing under load for this reason.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "tests/test_implement.py (test_parallel_suite_takes_about_its_slowest_file)",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The plan calls the config string `SUITE`, but the code uses `REPO_SUITE`",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`SUITE` is the `tests.suite` string read from the repo's\" (tests.md, Fixtures paragraph)",
+        "SUITE = \"python -m unittest discover -s tests\"\" (tests/test_implement.py:19, existing constant)",
+        "REPO_SUITE = json.loads((Path(__file__).parent.parent / \".nio/config.json\").read_text())[\"tests\"][\"suite\"]\" (tests/test_implement.py, new)"
+      ],
+      "fix": "update tests.md TC-5, TC-6 and TC-7 to say `REPO_SUITE`. The code needs no change.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "a reader who follows tests.md and looks for `SUITE` finds the unittest command at line 19, not the config string. The code's `REPO_SUITE` is the right choice, because the plan's name collides with that existing constant, but the plan still names it `SUITE` in TC-5 to TC-7.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "tests/test_implement.py (REPO_SUITE) against the plan text in .nio/specs/2026-11-06-faster-checks/tests.md",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "94882ddb169899ceca846f3daf4f9148a55bceac"
+  },
+  "matched": {
+    "AC-5": [
+      [
+        "tests/test_implement.py",
+        "test_parallel_suite_takes_about_its_slowest_file"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_implement.py",
+        "test_parallel_suite_fails_on_any_file"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_implement.py",
+        "test_parallel_suite_reads_as_unknown_runner"
+      ]
+    ]
+  }
+}
