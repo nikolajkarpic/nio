@@ -20,6 +20,7 @@ STAGES = {  # the state table "Flow": stage -> (where a passing guard goes, wher
     "done": (None, None)}
 EPIC_GATE = re.compile(r"implementation-E-\d+")
 NOT_BUILT = {"researching", "advocate_walking", "arch_grilling"}  # skipped on the record (FR-21)
+ROUTE_SKIPS = {"lite": {"spec_jury", "planning", "plan_jury"}}  # stages a route skips on the record (FR-2)
 # each gate stage's jury gate and approval commit message: CT-6's search, CT-7's judged versions and CT-11's commit
 GATES = {"spec_jury": ("spec", "nio: approve spec"), "plan_jury": ("plan", "nio: approve plan"),
          "tasks_jury": ("tasks", "nio: approve tasks")}
@@ -262,13 +263,22 @@ def verdict(root, slug, gate, rnd, outcome):
     return found
 
 
+def skips(root, slug):
+    """Stages skipped on the record: NOT_BUILT plus the spec's route's own (CT-1)."""
+    try:
+        route = records.parse(root / ".nio/specs" / slug / "spec.md")[0].get("route")
+    except (OSError, ValueError):
+        route = None
+    return NOT_BUILT | ROUTE_SKIPS.get(route, set())
+
+
 def guard(root, slug, stage, evidence=True):
     """(result, output, evidence) of the stage's guard, per the decision table "Guards" (CT-5, FR-12 to FR-15, FR-27):
     `pass`, `fail` or `closed` (a jury gate the human closed, `output` holding their reason). Decided only from files
     and the stage checks' results, never from an agent's word. `evidence` is CT-2's: paths read, verdict ID, output hash;
     `where`, which records nothing, skips the verdict lookup (NFR-3)."""
     from nio import jury, plan, spec, tasks
-    if stage not in STAGES or stage == "done" or stage in NOT_BUILT:
+    if stage not in STAGES or stage == "done" or stage in skips(root, slug):
         raise ValueError(f"{stage} has no guard to run")
     folder = root / ".nio/specs" / slug
     rel = lambda *names: [str((folder / n).relative_to(root)) for n in names]
@@ -322,7 +332,7 @@ def guard(root, slug, stage, evidence=True):
 
 def kind(root, slug):
     """`legacy`, `unsupported: <route>` or `effort` (CT-4, FR-29, FR-50): an undated folder is legacy; a dated one is
-    unsupported only when its spec.md names a route other than `full`."""
+    unsupported only when its spec.md names a route other than `full` or `lite`."""
     if not DATED.match(slug):
         return "legacy"
     path = root / ".nio/specs" / slug / "spec.md"
@@ -331,7 +341,7 @@ def kind(root, slug):
             route = records.parse(path)[0].get("route")
         except ValueError:  # a header that can't be read names no route yet
             route = None
-        if route and route != "full":
+        if route and route not in ("full", "lite"):
             return f"unsupported: {route}"
     return "effort"
 
@@ -599,9 +609,9 @@ def where(root, slug, state=None, lines=None):
         approved[:] = approved or [approvals(root, slug, found)]
         return passes(s) in ("pass", "closed") and gate_passed(s, ledger(s), lines, approved[0])
 
-    order = list(STAGES)
+    order, off = list(STAGES), skips(root, slug)
     for s in STAGES:
-        if s == "done" or s in NOT_BUILT:
+        if s == "done" or s in off:
             continue
         if s in GATES:
             gate, led = GATES[s][0], ledger(s)
@@ -614,7 +624,7 @@ def where(root, slug, state=None, lines=None):
             stage, ready = s, passes(s)
             break
         # a stage before a gate that has passed needs no check of its own: the gate's approval covers its files (NFR-3)
-        gate = next((g for g in order[order.index(s):] if g in GATES), None)
+        gate = next((g for g in order[order.index(s):] if g in GATES and g not in off), None)
         if gate and cleared(gate):
             continue
         if s == "drafting" and passes("grilling") == "pass":  # the gate's spec check is a superset of drafting's
@@ -634,7 +644,7 @@ def where(root, slug, state=None, lines=None):
             stage, ready, why = e["target"], None, f"{e['change']} moved it back"
     skipped = []
     for s in reversed(order[:order.index(stage)]):
-        if s not in NOT_BUILT:
+        if s not in off:
             break
         skipped.insert(0, s)
     folder = root / ".nio/specs" / slug
@@ -782,7 +792,7 @@ def next_step(root, slug=None, by=None):
     if k == "legacy":
         return 0, [f"legacy: {slug} has no flow layout; nothing to do"]
     if k != "effort":
-        return 0, [f"{k}: nio flow drives full-route specs only"]
+        return 0, [f"{k}: nio flow drives full and lite specs only"]
 
     def owes(state, lines):  # (what the call owes, as line kinds; the lines; the state they leave; where it is shown)
         parked = bool(state["pause"]) and state["pause"]["kind"] == "parked"
@@ -818,7 +828,9 @@ def next_step(root, slug=None, by=None):
         label = "claim" if here["command"].startswith("nio flow claim") else "done"
         out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines)]
         out += [f"{label}: {here['command']} {by_arg(by)}"] * bool(here["command"])
-        out += [f"skipped: {', '.join(here['skipped'])} (not built)"] * bool(here["skipped"]) + overridden(here)
+        out += [f"skipped: {', '.join(x)} ({why})" for x, why in (
+            ([x for x in here["skipped"] if x in NOT_BUILT], "not built"),
+            ([x for x in here["skipped"] if x not in NOT_BUILT], "lite route")) if x] + overridden(here)
     else:
         out = talk(slug, here)
         if here["status"] == "suspended: cap":  # FR-40: report what it used
@@ -882,11 +894,12 @@ def park(root, slug, why, by):
 RISKY = {"money", "data-deletion", "migration", "auth"}  # FR-51: with these the human always gives --commit
 
 
-def moves(stage):
+def moves(stage, off=NOT_BUILT):
     """The `skip` lines after `stage` up to the next built stage (FR-21), and that stage."""
     out, s = [], STAGES[stage][0]
-    while s in NOT_BUILT:
-        out.append({"kind": "skip", "from": s, "to": STAGES[s][0], "reason": "skipped: not built"})
+    while s in off:
+        out.append({"kind": "skip", "from": s, "to": STAGES[s][0],
+                    "reason": "skipped: not built" if s in NOT_BUILT else "skipped: lite route"})
         s = STAGES[s][0]
     return out, s
 
@@ -958,12 +971,12 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         raise ValueError(f"{slug} is at {here['stage']}, not {stage}")
     # FR-47: the files may be past stages history hasn't recorded yet; `done` records those from where history stands.
     # A stage before both is already passed (FR-17).
-    if at(stage) < at(here["stage"]) and (rec is None or at(stage) < at(rec)):
+    if at(stage) < at(here["stage"]) and (rec is None or at(stage) < at(rec) and at(rec) >= at(here["stage"])):
         return 0, [f"{slug} is past {stage}; nothing to do"]
     if stage == "done":
         return 0, [f"{slug} is done; nothing to do"]
     result, output, ev = guard(root, slug, stage)
-    skips, to = moves(stage)
+    skipl, to = moves(stage, skips(root, slug))
     if result == "fail" and human is None:  # FR-13: nothing written, but FR-41's `fail` line in auto mode
         if state["auto"]:
             with lock(root, slug):
@@ -996,7 +1009,7 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         command = f"nio flow done {stage} --commit {slug} --by human"
         return 0, [f"{slug}: the {GATES[stage][0]} gate passes; nothing is recorded until the human approves it:",
                    command]  # FR-48
-    out = [f"moved {slug}: {stage} → {to}"] + [f"skipped {s['from']} (not built)" for s in skips]
+    out = [f"moved {slug}: {stage} → {to}"] + [f"skipped {s['from']} ({s['reason'][9:]})" for s in skipl]
     if to in SKILL:
         out.append(f"next: run {typed(SKILL[to])}")
     with lock(root, slug):
@@ -1004,7 +1017,7 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         if now != lines:
             raise ValueError(f"{slug} changed while its guard ran; try again")
         owed = backs(here, lines, slug, state["auto"])
-        entries = owed + ([] if gated and pending_pass(lines, stage, ev["verdict"]) else [line] + skips)
+        entries = owed + ([] if gated and pending_pass(lines, stage, ev["verdict"]) else [line] + skipl)
         if not gated:
             write(root, slug, entries, state, w, stage)
             if to == "done":

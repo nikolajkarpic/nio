@@ -38,6 +38,11 @@ def may_start(root, slug):
     kind = route(root, slug)
     if kind == "epic":
         return False, f"`{slug}` is an epic: run the tasks stage on each slice's spec"
+    if kind == "lite":
+        from nio import spec
+        if spec.check(root, slug, gate=True)[0]:
+            return False, "the bug-fix spec must pass nio check spec --gate first (the grill)"
+        return True, "the tasks stage may start"
     if jury.standing(root, slug, "spec") not in ("approved", "closed"):
         return False, "the spec must be approved first"
     if kind == "full":

@@ -166,8 +166,8 @@ def test_ac4_no_current_effort():
         assert "no effort 2026-10-29-nothing under .nio/specs/" in str(e) and "  2026-10-21-refunds" in str(e), e
     assert flow.kind(root, "grilling") == "legacy" and flow.kind(root, S) == "effort"
     spec = root / ".nio/specs" / S / "spec.md"
-    spec.write_text(spec.read_text().replace("route: full", "route: lite", 1))
-    assert flow.kind(root, S) == "unsupported: lite" and S not in flow.efforts(root)
+    spec.write_text(spec.read_text().replace("route: full", "route: epic", 1))
+    assert flow.kind(root, S) == "unsupported: epic" and S not in flow.efforts(root)
     print("ok")
 
 
@@ -604,8 +604,8 @@ def test_next_on_legacy_unsupported_and_parked():
     assert (last["kind"], last["reason"], last["to"]) == ("resume", "parked: waiting on legal", "planning"), last
     assert flow.load(root, S)[0]["pause"] is None and not (root / ".nio/specs" / S / "flow.lock").exists()
     spec = root / ".nio/specs" / S / "spec.md"
-    spec.write_text(spec.read_text().replace("route: full", "route: lite", 1))
-    assert flow.next_step(root, S) == (0, ["unsupported: lite: nio flow drives full-route specs only"])
+    spec.write_text(spec.read_text().replace("route: full", "route: epic", 1))
+    assert flow.next_step(root, S) == (0, ["unsupported: epic: nio flow drives full and lite specs only"])
     print("ok")
 
 
@@ -1365,13 +1365,58 @@ def test_ac32_legacy_folder():
 
 
 def test_ac53_lite_unsupported():
-    """TC-53: a lite spec is unsupported in status and next, which name no skill and write nothing."""
-    root = effort("drafting", route="lite")
+    """TC-53: an epic spec is unsupported in status and next, which name no skill and write nothing."""
+    root = effort("drafting", route="epic")
     (root / ".nio/specs" / S / "spec.md").write_text(
-        re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M))
-    assert "unsupported: lite" in line_for(root, S)
+        re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-epic.md").read_text(), count=1, flags=re.M))
+    assert "unsupported: epic" in line_for(root, S)
     out = nxt(root)
-    assert "unsupported: lite" in out and "@nio:" not in out and not flow_files(root), out
+    assert "unsupported: epic" in out and "@nio:" not in out and not flow_files(root), out
+    print("ok")
+
+
+def test_lite_route_stages():
+    """TC-1: a lite effort runs only the lite stages: the rest are recorded as skipped, and no plan or spec jury."""
+    from nio import tasks
+    root = repo()
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    lite = re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M)
+    (folder / "spec.md").write_text(lite.replace(
+        "create exactly one refund. [human]", "create exactly one refund. [default]"))
+    assert flow.kind(root, S) == "effort" and S in flow.efforts(root)
+    flow.start(root, S, by=BY)
+    assert tasks.may_start(root, S) == (
+        False, "the bug-fix spec must pass nio check spec --gate first (the grill)")
+    (folder / "spec.md").write_text(lite)
+    plan_words = lambda out: "@nio:plan" not in out and "spec-jury" not in out and "jury spec" not in out
+    assert plan_words(nxt(root))
+    assert flow.done(root, "drafting", S, by=BY)[0] == 0
+    assert plan_words(nxt(root))
+    code, out = flow.done(root, "grilling", S, by=BY)
+    assert code == 0 and "next: run the nio:tasks skill" in "\n".join(out), out
+    assert plan_words(nxt(root))
+    tasks.new(root, S)
+    (folder / "tasks.md").write_text(
+        (FIXTURES / "tasks/tasks.md").read_text().replace("slug: checkout-refunds", f"slug: {S}"))
+    flow.done(root, "tasking", S, by=BY)
+    assert plan_words(nxt(root))
+    approve(root, S, "tasks")
+    flow.done(root, "tasks_jury", S, by=BY)
+    assert not (folder / "jury/spec.json").exists()
+    got = lines_of(root)
+    passes = [(x["from"], x["to"]) for x in got if x["kind"] == "pass"]
+    assert passes == [("drafting", "researching"), ("grilling", "spec_jury"), ("tasking", "tasks_jury"),
+                      ("tasks_jury", "implementing")], passes
+    skips = {x["from"]: x["reason"] for x in got if x["kind"] == "skip"}
+    want = {s: "skipped: not built" for s in ("researching", "advocate_walking", "arch_grilling")}
+    want |= {s: "skipped: lite route" for s in ("spec_jury", "planning", "plan_jury")}
+    assert skips == want, skips
+    assert S in "\n".join(flow.status(root)[1])
     print("ok")
 
 
@@ -1554,7 +1599,7 @@ def test_ac55_abandon():
 
 
 def test_ac62_abandon_refusals():
-    """TC-62: abandon refuses an empty reason, a legacy, a lite and a done effort, writing nothing anywhere."""
+    """TC-62: abandon refuses an empty reason, a legacy, an epic and a done effort, writing nothing anywhere."""
     root = effort("planning")
     flow.start(root, S, by=BY)
     (root / ".nio/specs/grilling").mkdir()
@@ -1562,7 +1607,7 @@ def test_ac62_abandon_refusals():
     fix = root / ".nio/specs/2026-10-21-fix"
     fix.mkdir()
     (fix / "spec.md").write_text(
-        re.sub(r"^slug: .*$", "slug: 2026-10-21-fix", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M))
+        re.sub(r"^slug: .*$", "slug: 2026-10-21-fix", (FIXTURES / "spec/spec-epic.md").read_text(), count=1, flags=re.M))
     finished = "2026-10-22-refunds"
     effort("implementing", slug=finished, root=root)
     flow.start(root, finished, by=BY)
