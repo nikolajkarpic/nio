@@ -103,7 +103,7 @@ retired: [T-2]
 
 ### T-10 Fix: A pytest-style failing entry matches every test of that name in any file
 - From: J-2 (implementation-E-4, round 1)
-- Files: `src/nio/evidence.py`
+- Files: `src/nio/evidence.py`, `tests/test_evidence.py`
 - Serves: CT-4, FR-8, J-2
 - Test: TC-9
 - Depends on: none

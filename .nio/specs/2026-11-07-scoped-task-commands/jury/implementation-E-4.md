@@ -10,17 +10,18 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | minor | gap | AC-9, AC-10 | conformance | grounded | open |  | new, 0 |
+| J-1 | minor | gap | AC-9, AC-10 | conformance | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-2 | major | gap | CT-4, FR-8 | consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | minor | inconsistency | CT-4 (Rules), FR-1, FR-8 | consistency | grounded | open |  | new, 0 |
-| J-4 | minor | risk | FR-8, AC-9, D-261106-grjt | consistency | grounded | open |  | new, 0 |
+| J-3 | minor | inconsistency | CT-4 (Rules), FR-1, FR-8 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-4 | minor | risk | FR-8, AC-9, D-261106-grjt | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-5 | major | contradiction | CT-4 | correctness | merged | merged |  | new, 0 |
-| J-6 | minor | risk | CT-4 | correctness | grounded | open |  | new, 0 |
+| J-6 | minor | risk | CT-4 | correctness | grounded | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 Per-test result for AC-9 and AC-10 is unknown in the results file
 - quote: "Per-test results are unknown: the suite's runner can't be read per test; the exit code and output are in `suite`."
 - situation (conformance): the `tests` array shows `unknown` for both tests. Their pass is shown only by the `journeys` entry, which ran them directly, and by a reused suite exit 0.
 - fix: none needed for the gate if the journey run counts as proof. Otherwise, make the suite runner readable per test, which T-7 now makes possible for self-check suites.
+- disposition: accepted-risk by human: Delegated: the reused passing suite carries no lines; the journey ran both tests directly and they passed
 
 ### J-2 A pytest-style failing entry matches every test of that name in any file
 - quote: "matches a test only when both its file and its name match (pytest entries have the same form)"
@@ -36,12 +37,14 @@ outcome: rejected
 - quote: "crashed = bool(implement.wrong_reason(name, 0 if code_ok else 1, suite["output"])) or"
 - situation (consistency): one self-check file runs no test because its name filter matched nothing (FR-1), so it prints `ran 0 tests, 0 failed`. `wrong_reason` returns "no tests ran", so `crashed` is True for the whole suite. The self-check branch never reads `crashed`, so today's results are the same. The flag still breaks the written rule, and it would mislead the general path if that path ever handled a self-check run.
 - fix: in the `crashed` expression, leave out the `wrong_reason` term when `sc` is True, as the `not sc` guard already does for the other term.
+- disposition: accepted-risk by human: Delegated: the self-check branch never reads crashed; no result changes
 
 ### J-4 Reused epic-close suite runs give `unknown` per test, not the per-test results of FR-8
 - quote: "WHEN jury evidence reads a suite run whose output has self-check lines"
 - quote: "reused: the review of T-7 ran this suite at 0dd6e049 and it exited 0"
 - situation (consistency): the epic's configured suite is a self-check suite. Its epic-close review run passed, so evidence reuses that run, and the reused output is the one-line note above. Neither the runner nor the self-check branch can read it, so each test is `unknown`. The per-test results that US-3 asks for do not appear on this common path, and the spec neither says so nor handles it.
 - fix: either keep the self-check lines of a passing review run with the reuse record, or state in FR-8 or D-261106-grjt that reused runs give `unknown` per test.
+- disposition: accepted-risk by human: Delegated: reuse happens only on a passing suite (D-261106-grjt); the #88 case is a failing suite, which runs fresh and is read per test. Follow-up noted in the PR
 
 ### J-5 Pytest failing entries still match by name only
 - quote: "A failing-test entry of the form `<file>::<name>` matches a test only when both its file and its name match (pytest entries have the same form)"
@@ -53,6 +56,7 @@ outcome: rejected
 - quote: "path = os.path.relpath(tests[0].__code__.co_filename) if tests else """
 - situation (correctness): the `ok` and `FAIL` lines carry a path relative to the suite's cwd, but `on()` tests `file in <path>` with the spec's repo-relative `file`. If the suite does `cd tests && python test_a.py`, the printed path is `test_a.py`, and `tests/test_a.py` is not contained in it. Every test then reads `failed` when the suite exits non-zero, or `didn't run` when it exits 0. In the opposite direction, the substring test also lets `test_a.py` match `tests/sub/test_a.py`.
 - fix: compare path suffixes (`file.endswith(path)` or the reverse) on whole segments, not a substring.
+- disposition: accepted-risk by human: Delegated: suites here run from the repo root; T-10 makes the file match compare whole paths
 
 ## Jurors
 
