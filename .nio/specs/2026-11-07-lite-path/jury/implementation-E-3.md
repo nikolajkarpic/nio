@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-3
 subject: 2026-11-07-lite-path
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-3 jury: 2026-11-07-lite-path
 
@@ -10,9 +10,9 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | inconsistency | AC-9, CT-4 | conformance, consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | inconsistency | AC-9, CT-4 | conformance, consistency, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-2 | minor | gap | AC-16 | conformance | grounded | open |  | new, 0 |
-| J-3 | major | contradiction | FR-8, AC-9, CT-7, CT-13 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-3 | major | contradiction | FR-8, AC-9, CT-7, CT-13 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-4 | minor | inconsistency | CT-4, FR-8 | consistency | grounded | open |  | new, 0 |
 | J-5 | major | contradiction | AC-9, CT-4 | correctness | merged | merged |  | new, 0 |
 | J-6 | minor | gap | CT-4 | correctness | grounded | open |  | new, 0 |
@@ -60,6 +60,6 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-3-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-3-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-3-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 1 | 2 |
+| implementation-E-3-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
