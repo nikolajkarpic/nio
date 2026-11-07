@@ -1,7 +1,7 @@
 {
   "gate": "tasks",
   "subject": "2026-11-07-fewer-gate-turns",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "executability"
@@ -9,7 +9,8 @@
   "collected": {
     "R-261107-h2pu/tasks-executability.md": "caf66805b3c633852d69046adb1c9fa1c4356b1177a76a64c296863dc986e957",
     "R-261107-h2pu/tasks-refuter.md": "116da40a6983f9d568db2263fbf7cd175d31263c18a702dd40e1d2b694f279cd",
-    "R-261107-mwpb/tasks-executability.md": "fe358a5ff1dfa699e879ee1bcffc4571423eaac2912a8d111f09723e13d2c9fc"
+    "R-261107-mwpb/tasks-executability.md": "fe358a5ff1dfa699e879ee1bcffc4571423eaac2912a8d111f09723e13d2c9fc",
+    "R-261107-wd7p/tasks-executability.md": "53ef15e2615e8608cc6f474fb2c155ff595541d0585b684f23a17319b0ef7765"
   },
   "jurors": {
     "tasks-executability": {
@@ -19,9 +20,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "0eec803b19f5963f0e78841128a34894261f4048",
-      "judged": 2
+      "round": 3,
+      "version": "68052375d4cc20863e1ac3ad0e57e16fc5f52126",
+      "judged": 3
     }
   },
   "findings": [
@@ -232,14 +233,20 @@
     [
       2,
       "approved"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "618460c0ed84500f78160e2967184cc187777ccd",
-    "2": "0eec803b19f5963f0e78841128a34894261f4048"
+    "2": "0eec803b19f5963f0e78841128a34894261f4048",
+    "3": "68052375d4cc20863e1ac3ad0e57e16fc5f52126"
   },
   "fixes": {
     "1": [],
-    "2": []
+    "2": [],
+    "3": []
   }
 }

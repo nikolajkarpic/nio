@@ -1,7 +1,7 @@
 ---
 gate: plan
 subject: 2026-11-07-fewer-gate-turns
-round: 5
+round: 6
 outcome: approved
 ---
 # Plan jury: 2026-11-07-fewer-gate-turns
@@ -115,7 +115,7 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| plan-architecture-fit | architecture-fit | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 3 |
-| plan-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 5 |
+| plan-architecture-fit | architecture-fit | juror / claude-code / opus | sufficient | yes | 1 | 6 |
+| plan-test-proof | test-proof | juror / claude-code / opus-5.5 | sufficient | yes | 1 | 6 |
 | plan-test-proof-2 | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 4 |
 | plan-test-proof-3 | test-proof | juror / claude-code / claude-opus-5-5 | limited | yes | 1 | 4 |

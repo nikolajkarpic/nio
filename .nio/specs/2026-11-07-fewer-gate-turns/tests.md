@@ -96,7 +96,7 @@ Helpers used below:
 - Covers: CT-1, CT-2
 - Setup: `gate_spec()` (its risk flags are `[money]`) with `agents.hosts` set to `["claude"]` in `.nio/config.json`.
 - Action: `lines = step(root, "", ["scope:asked", "consistency:D-1"])`.
-- Assert: one `run <lens>:` line per planned lens (testability, logic, adversary, scope, consistency), each naming `packs/<lens>.md` and `spec-<lens>.md`; every pack holds `.nio/specs/refund-double-charge/spec.md`, the `nio check spec` output's last line (`0 errors`), the template's `## Findings` heading, and the `## Your output` line with its own output path; only `scope.md` holds `intake.md`; only `consistency.md` holds `# Memory for`; a file under `<run>/packs/` holds that memory pack; the next line names `nio jury next refund-double-charge spec --run <run>`. `.claude/agents/nio-logic.md` exists and its `tools:` line holds `Write` (the step rendered the agents).
+- Assert: one `run <lens>:` line per planned lens (testability, logic, adversary, scope, consistency), each naming `packs/<lens>.md` and `spec-<lens>.md`; every pack holds `.nio/specs/refund-double-charge/spec.md`, the `nio check spec` output's last line (`0 errors`), the template's `## Findings` heading, and the `## Your output` line with its own output path; only `scope.md` holds `intake.md`; only `consistency.md` holds `# Memory for`; a file under `<run>/packs/` holds that memory pack; the next line names `nio jury next refund-double-charge spec --run <run>`. `.claude/agents/nio-logic.md` exists (the step rendered the agents; that it grants `Write` is TC-8's, after T-4 changes the cards).
 
 ### TC-13 A needs-more lens is re-run (AC-13; integration) [agent]
 - File: `tests/test_jury.py:test_ac13_needs_more_is_rerun` (new)
