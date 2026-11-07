@@ -1,0 +1,283 @@
+{
+  "gate": "implementation-E-2",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-ahwj/implementation-E-2-adversary.md": "a7fa03fcbde92a9b62a2f191bf9c2300676edbc23e49cb8dedfdb412d226b348",
+    "R-261107-ahwj/implementation-E-2-conformance.md": "23cee9ac185066444e3156716448cbbade5b35882baa2a86d11dc727973205ac",
+    "R-261107-ahwj/implementation-E-2-consistency.md": "ed33e31ca0373da0da74444b362f40de262ca22c918fec15f9e923dddca14409",
+    "R-261107-ahwj/implementation-E-2-correctness.md": "513c66c61ec03abeba12fb0625ff2edb380b9a9a35e126b7bc5c0d1a3e162dbf",
+    "R-261107-ahwj/implementation-E-2-refuter.md": "90467f77c616c17ccc9128f96b29a1b71fe9c9ba3e276341b01ccdf864d36500"
+  },
+  "jurors": {
+    "implementation-E-2-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "cf64c154fc97229cd0e480a3e959c025d841445c",
+      "judged": 1
+    },
+    "implementation-E-2-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "cf64c154fc97229cd0e480a3e959c025d841445c",
+      "judged": 1
+    },
+    "implementation-E-2-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "cf64c154fc97229cd0e480a3e959c025d841445c",
+      "judged": 1
+    },
+    "implementation-E-2-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "cf64c154fc97229cd0e480a3e959c025d841445c",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Two overlapping dispose calls lose one call's dispositions without any error",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "every check runs on one loaded ledger before one `save` (FR-8)"
+      ],
+      "fix": "Have the `dispose` step say the calls must run one after another. Better, make `save` refuse when the ledger file changed since `load` (compare a mtime or a hash).",
+      "sources": [
+        {
+          "juror": "implementation-E-2-adversary",
+          "lens": "adversary",
+          "situation": "The `rejected` next action asks for \"one nio jury dispose <slug> <gate> J-a,J-b <disposition> --by <by> --note <note> call per disposition\". An orchestrator that issues those calls in parallel has call A and call B each `load` the same ledger. A saves J-1,J-2 as disposed. B then saves its own copy, in which J-1 and J-2 are still open, and overwrites the whole file. Both calls exit 0 and print `J-n: ... by ...`, yet the ledger lost A's dispositions. The next `check` then reports those findings as still open, or the gate fails to close, with no trace of why. The batching widens this window, because each call now holds the ledger longer across its many checks.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/jury.py:dispose and src/nio/jury.py:save",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "A batch is checked against a ledger that earlier IDs in the same call have already changed",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "CT-3",
+        "AC-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "every check runs on one loaded ledger before one `save` (FR-8)"
+      ],
+      "fix": "Run every check against an unmutated ledger, for example on `copy.deepcopy(led)`, and apply the updates only once all checks pass. Or add a test with a mixed batch. Give a blank note its own error message.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-adversary",
+          "lens": "adversary",
+          "situation": "`_dispose_one` mutates the shared `led`, and its later checks read that ledger (`state(root, slug, led)` for a finding already disposed as `spec-change`, and `led[\"list\"]` flags). So whether J-2 is refused can depend on whether J-1 was in the same call. For example, `J-1,J-2 spec-change --by human` first disposes J-1, then the waiting-on-spec check may refuse J-2, or it may not. The same calls made singly give different results. This breaks the promise that \"one ID with one note behaves as today\". An empty or whitespace-only note on one ID of many also reports the misleading \"disposition must be one of ...\" text, which does not name the real cause.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:_dispose_one",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "AC-7 empty-ID case has no test",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-7",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "or the call has a duplicate or empty ID"
+      ],
+      "fix": "add a case such as `dispose_args(\"J-1,,J-2\", \"n\")` expecting `non-empty` in the error and unchanged ledger bytes",
+      "sources": [
+        {
+          "juror": "implementation-E-2-conformance",
+          "lens": "conformance",
+          "situation": "`dispose` refuses `\"\"` in the ID list, for example `J-1,,J-2`, with `IDs must be distinct and non-empty`. `test_ac7_refused_dispose_changes_nothing` covers the unknown ID, the human-only disposition, the duplicate ID and the note-count mismatch, but passes no empty ID. A regression on that branch would go unnoticed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The dispose help still describes one finding",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-7",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "set a finding's disposition; accepted-risk, out-of-scope and overruled need --by human"
+      ],
+      "fix": "update the `dispose` help string in `src/nio/cli.py` to name the comma-separated IDs and the one-note-or-one-per-ID rule, as CT-3 states it.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-consistency",
+          "lens": "consistency",
+          "situation": "a user runs `nio jury dispose --help` after this change and reads a singular \"a finding's disposition\". They don't learn that `J-n,J-m` is accepted, or that `--note` may be repeated once per ID. CT-3's usage line is `nio jury dispose <slug> <gate> <J-n[,J-m...]> <disposition> --by <by> --note <note> [--note <note> ...]`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/cli.py (the `jsub.add_parser(\"dispose\", ...)` line)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "The gate step command and its tests are not present",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio jury next <slug> <gate> [--run <run>] [--add <lens:reason> ...] [--pick <lens,lens>]`"
+      ],
+      "fix": "land CT-1 (`step`, the `next` subcommand) and CT-2 (`packs`) with the tests the spec names, or narrow the epic's gate to the tasks that are done.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-correctness",
+          "lens": "correctness",
+          "situation": "the journey ran `uv run nio jury next --help` and the CLI answered `invalid choice: 'next'`. The tests for AC-1 to AC-5, AC-11 to AC-14 and AC-16 are not found in `tests/test_jury.py` (line 0, \"no test named …\"). `jury.step` and `jury.packs` are not in the diff, so the step's behaviour is unserved.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tasks.md puts the epic E-2 as T-2 alone (dispose with comma-separated IDs). It puts `nio jury next` and the pack files in T-3 under E-3, and T-3 depends on T-2. So CT-1, CT-2 and the AC-1 to AC-5, AC-11 to AC-14 and AC-16 tests are not due at this gate, and their absence is expected rather than a gap in E-2.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/cli.py, src/nio/jury.py (step, packs), tests/test_jury.py",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "cf64c154fc97229cd0e480a3e959c025d841445c"
+  },
+  "matched": {
+    "AC-6": [
+      [
+        "tests/test_jury.py",
+        "test_ac6_dispose_three_in_one_call"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_jury.py",
+        "test_ac7_refused_dispose_changes_nothing"
+      ]
+    ],
+    "AC-15": [
+      [
+        "tests/test_jury.py",
+        "test_ac15_notes_per_finding_in_order"
+      ]
+    ]
+  }
+}
