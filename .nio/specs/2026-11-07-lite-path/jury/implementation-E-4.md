@@ -2,7 +2,7 @@
 gate: implementation-E-4
 subject: 2026-11-07-lite-path
 round: 1
-outcome: rejected
+outcome: human
 ---
 # Implementation-e-4 jury: 2026-11-07-lite-path
 
@@ -11,10 +11,10 @@ outcome: rejected
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | J-1 | minor | ambiguity | AC-14, CT-5 | correctness | grounded | open |  | new, 0 |
-| J-2 | blocker | gap | AC-13 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | blocker | gap | AC-14 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | blocker | gap | AC-15 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-5 | blocker | gap | AC-16 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-2 | blocker | gap | AC-13 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-3 | blocker | gap | AC-14 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-4 | blocker | gap | AC-15 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-5 | blocker | gap | AC-16 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 Full-when-any-fails is attached to the risk-flag clause only
 - quote: "no risk flag of auth, money, data-deletion, migration or pii, else `full`."
@@ -25,25 +25,25 @@ outcome: rejected
 - situation (cli): no passing test proves AC-13: no test didn't run
 - fix: add or fix a test that proves AC-13
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-21
+- disposition: accepted-risk by human: Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.
 
 ### J-3 AC-14 has no passing evidence
 - situation (cli): no passing test proves AC-14: no test didn't run
 - fix: add or fix a test that proves AC-14
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-22
+- disposition: accepted-risk by human: Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.
 
 ### J-4 AC-15 has no passing evidence
 - situation (cli): no passing test proves AC-15: no test didn't run
 - fix: add or fix a test that proves AC-15
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-23
+- disposition: accepted-risk by human: Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.
 
 ### J-5 AC-16 has no passing evidence
 - situation (cli): no passing test proves AC-16: no test didn't run
 - fix: add or fix a test that proves AC-16
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-24
+- disposition: accepted-risk by human: Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.
 
 ## Jurors
 
