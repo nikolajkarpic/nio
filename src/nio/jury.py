@@ -567,7 +567,23 @@ def answers(root, slug):
     return out
 
 
-def collect(root, slug, gate, run, expect=(), tier=None):
+def moved(root, slug, gate, run, led):
+    """CT-3: new lens outputs in a run whose judged version changed since its packs were written are refused."""
+    sj = root / ".nio/runs" / run / "jury/packs/step.json"
+    if not sj.exists() or json.loads(sj.read_text())["version"] == version_now(root, slug, gate):
+        return
+    for path in (root / ".nio/runs" / run / "jury").glob(f"{gate}-*.md"):
+        if path.stem != f"{gate}-refuter" and led["collected"].get(f"{run}/{path.name}") != hashlib.sha256(path.read_bytes()).hexdigest():
+            raise ValueError(f"the {gate} changed after {run}'s packs were written: restore it, or start a new run (nio jury next without --run)")
+
+
+def ask_refuter(root, slug, gate, run, ids):
+    led = load(root, slug, gate)
+    led.setdefault("asked", {})[run] = sorted(set(led.get("asked", {}).get(run, [])) | set(ids))
+    save(root, led)
+
+
+def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
     """Merge the run's new lens outputs into the ledger, then apply the refuter's output if present.
     Returns lines to print, ending with the refuter batch when blocker or major findings still need validating."""
     impl = gate.startswith("implementation")
@@ -582,6 +598,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
                 raise ValueError(f"{path.name}: lens {lens} was not picked for {gate} (picked: {', '.join(led['picked'])})")
         # a round judges the epic's last commit; the cites are checked against the spec and contracts (CT-12)
         commit = evidence.commits_of(root, slug, epic)[0]
+        moved(root, slug, gate, run, led)
         evidence.current(root, slug, epic, evidence.load(root, run))  # before the ledger marks anything collected: a retry must still join
         text = ground = "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in ("spec.md", "contracts.md")) if p.exists())
         human = ""
@@ -594,6 +611,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         text = artefact(root, slug, gate)
         if not text:
             raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
+        moved(root, slug, gate, run, led)
         human, ground = human_words(root, slug), grounding(root, slug, gate)
     led["expect"] = sorted(set(led["expect"]) | set(expect))
     led["tier"] = tier or led["tier"]
@@ -636,8 +654,11 @@ def collect(root, slug, gate, run, expect=(), tier=None):
     if refuter.exists():
         sha = hashlib.sha256(refuter.read_bytes()).hexdigest()
         if led["collected"].get(f"{run}/{refuter.name}") != sha:
+            asked = led.get("asked", {}).get(run)
+            if not asked:
+                raise ValueError(f"refuter output before its batch: {refuter} was not asked for; delete it and call again")
             led["collected"][f"{run}/{refuter.name}"] = sha
-            out += refute(led, refuter)
+            out += refute(led, refuter, asked)
     save(root, led)
     if impl:  # the conformance lens's matches are joined to the results (CT-21); each review round re-judges them on its results
         lens_out = next((p for p in new if p.stem == f"{gate}-conformance"), None)
@@ -656,6 +677,8 @@ def collect(root, slug, gate, run, expect=(), tier=None):
             out += [f"### {f['id']} {f['title']}", f"- kind: {f['kind']}, severity: {f['severity']}, cites: {', '.join(f['cites'])}"]
             out += [f'- quote: "{q}"' for q in f["quotes"]]
             out += [f"- situation ({s['lens']}): {s['situation']}" for s in f["sources"]] + [f"- fix: {f['fix']}", ""]
+        if ask:
+            ask_refuter(root, slug, gate, run, [f["id"] for f in pending])
     if impl:  # the runs the findings asked for are made now; the ones that weren't are the human's to see (CT-11)
         out += [f"listed for the human: {r['request']} (finding {r['finding']}): {r['why']}"
                 for r in evidence.requested(root, led, run)[1] if r["round"] == led["round"]]
@@ -854,12 +877,12 @@ def record_cli(root, slug, gate, findings, origin=None):
     return out
 
 
-def refute(led, path):
+def refute(led, path, asked):
     out, by_id = [], {f["id"]: f for f in led["findings"]}
     for head, f in blocks(path.read_text().splitlines()):
         fid = head.split()[0] if head else ""
         g = by_id.get(fid)
-        if not g or g["validation"] != "pending":
+        if not g or fid not in asked or g["validation"] != "pending":
             continue
         target = by_id.get((f.get("same-as") or [""])[0])
         if target and target is not g and target["status"] in ("open", "disposed"):  # never into a closed finding
@@ -1367,6 +1390,7 @@ def refuter_pack(root, slug, gate, run, batch):
             *[str(f.relative_to(root)) for f in sources(root, slug, gate)], "", f"Ledger: .nio/specs/{slug}/jury/{gate}.md", ""]
     if gate == "spec":
         text += ["## The human's grill answers", *answers(root, slug), ""]
+    ask_refuter(root, slug, gate, run, re.findall(r"^### (J-\d+)", "\n".join(batch), re.M))
     p.write_text("\n".join(text) + "\n" + _out_line(gate, "refuter", run).replace("{slug}", slug).split("Set lens:")[0].rstrip() + "\n")
     return p
 
@@ -1419,7 +1443,7 @@ def step(root, slug, gate, run="", add=(), pick=None):
         lens = re.sub(r"-\d+$", "", p.stem[len(gate) + 1:])
         if lens != "refuter" and lens not in names:
             raise ValueError(f"{p.name}: {lens} is not planned for {gate} (planned: {', '.join(names)}); rename or remove it")
-    got = collect(root, slug, gate, run, names, tier)
+    got = collect(root, slug, gate, run, names, tier, ask=False)
     cut = next((i for i, x in enumerate(got) if x.startswith("## Refuter batch")), len(got))
     end = next((i for i, x in enumerate(got) if i > cut and x.startswith("listed for the human")), len(got))
     batch = got[cut:end]
