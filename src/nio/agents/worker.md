@@ -27,6 +27,8 @@ word decides nothing, so never claim a result you didn't see.
   `status: done`.
 - **direct:** write the code. Hand off `status: done` with the command that proves it.
 
+Iterate with a test command scoped to the task's own tests: `<test file> <test name> ...`, the names taken from the `File:` lines of the pack's `## Tests` entries, and hand off that command. Run it in the foreground, never in the background and never polled with sleep (the short wait on `try again` stays). In the code phase, read red's `output:` lines the orchestrator passes on and make your first edit before running the tests.
+
 Keep to the task's `Files:`. Never edit `spec.md`, the plan files (`plan.md`, `contracts.md`, `tests.md`,
 `quickstart.md`, `architecture.md`) or `tasks.md`: a review fails on any change to them.
 
