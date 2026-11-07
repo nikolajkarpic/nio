@@ -2506,6 +2506,19 @@ def test_lite_skill_texts():
     assert step4, "step 4 (The bar) not found"
     paras = [p for p in step4.group(0).split("\n\n") if p.strip()]
     assert any(all(k in p for k in ("six-facet coverage", "zero questions", "lite")) for p in paras), paras
+    # AC-8 / TC-8 (CT-7, CT-8, CT-14): a bug fix's unchanged-behaviour tests are their own direct tasks.
+    root = Path(__file__).parent.parent
+    drafter = (root / "src/nio/agents/tasks-drafter.md").read_text()
+    evaluator = (root / "src/nio/agents/evaluator.md").read_text()
+    skill = (root / "skills/tasks/SKILL.md").read_text()
+    bullets = ["- " + b for b in drafter.split("\n- ")]
+    assert any(all(k in b for k in ("unchanged-behaviour", "Mode: direct", "depends on")) for b in bullets), "drafter"
+    assert any("unchanged-behaviour" in ln and "Mode: direct" in ln for ln in evaluator.splitlines()), "evaluator"
+    step1 = re.search(r"^1\. \*\*Check the inputs\.\*\*.*?(?=^2\. )", skill, re.S | re.M)
+    step3 = re.search(r"^3\. \*\*Rate\.\*\*.*?(?=^4\. )", skill, re.S | re.M)
+    assert step1 and "nio check spec" in step1.group(0) and "--gate" in step1.group(0), "skill step 1"
+    assert step3 and any("unchanged-behaviour" in ln and "Mode: direct" in ln
+                         for ln in step3.group(0).splitlines()), "skill step 3"
 
 
 if __name__ == "__main__":
