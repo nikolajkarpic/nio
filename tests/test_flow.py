@@ -2435,5 +2435,14 @@ def test_isolated_tests_keep_a_subprocess():
     print("ok")
 
 
+def test_lite_skill_texts():
+    """AC-2 / CT-6: step 4 of the grill says a lite spec skips six-facet coverage and asks zero questions."""
+    text = (Path(__file__).parent.parent / "skills/grill/SKILL.md").read_text()
+    step4 = re.search(r"^4\. \*\*The bar\.\*\*.*?(?=^5\. )", text, re.S | re.M)
+    assert step4, "step 4 (The bar) not found"
+    paras = [p for p in step4.group(0).split("\n\n") if p.strip()]
+    assert any(all(k in p for k in ("six-facet coverage", "zero questions", "lite")) for p in paras), paras
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

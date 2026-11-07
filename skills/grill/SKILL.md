@@ -77,7 +77,7 @@ it and read `grill.md`: an `Asked` entry with no answer after it is the question
    of its alternatives changes (1) what a user can do, (2) what a user sees, (3) who may do it, (4) what data is kept or
    changed, or (5) what it costs. Any yes means ask. Below the bar, take the recommended answer yourself, tag it
    `[agent]`, and log the call with its five no's. Permissions, irreversible operations, money, deletion and breaking
-   changes are never below the bar.
+   changes are never below the bar. On a lite spec (a bug fix, `route: lite`) skip the six-facet coverage and ask only open points of kind decision and `[default]` items over the bar, so a spec with neither gets zero questions; an answer that would hit an FR-8 trigger (a new dependency, an interface used outside the bug's folder, stored data) stops the grill and offers the full flow (@nio:spec, "Escalating a bug fix").
 5. **Settle what follows.** When an answer makes another point certain, write that point in as `[derived: <sources>]`
    instead of asking it. Never derive permissions, irreversible operations, money, deletion or new states.
 6. **Ask one question** (or a round, see below), in the shape of the block above:
@@ -179,4 +179,4 @@ point, but never closes its jury finding: `--by grill` means the human answered.
 ## When to stop
 
 Stop when the human (or the delegated agent) chooses finish at the finish gate, or the session ends early with every
-unsettled point deferred. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the spec jury.
+unsettled point deferred. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the spec jury, or for a bug fix the tasks stage.
