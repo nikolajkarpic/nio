@@ -1398,7 +1398,7 @@ def refuter_pack(root, slug, gate, run, batch):
 
 def _begin(root, slug, gate, run, lenses, fix):
     """CT-1 case 2: the run's packs and the lines that start its jurors; no lenses, no run (CT-6)."""
-    if not lenses and (gate in GATES or (run and evidence.path(root, run).exists())):
+    if not lenses:
         return [f"next: show the human: the {gate} changed but no lens has a fix to check"]
     run = run or _reusable(root, slug, gate) or records.new_run(root)
     if gate not in GATES and not evidence.path(root, run).exists():
