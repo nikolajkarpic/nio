@@ -453,7 +453,8 @@ def changed(root, slug, gate):
     else:
         rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
         rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] not in ("deferred", "cli")}
-    if not rerun and (ids or secs) and led["recorded"] and led["recorded"][-1][1] in ("approved", "human", "closed"):
+    if not rerun and (ids or secs) and led["recorded"] and (
+            led["recorded"][-1][1] in ("approved", "human", "closed") or (gate in GATES and any(o == "rejected" for _, o in led["recorded"]))):
         # an approved or closed gate whose artefact changed since (a change request, #57 FR-35, FR-47): every lens that
         # judged it re-checks only what changed, from its fix-check pack
         rerun = set(votes(led))
@@ -1396,7 +1397,10 @@ def refuter_pack(root, slug, gate, run, batch):
 
 
 def _begin(root, slug, gate, run, lenses, fix):
-    """CT-1 case 2: the run's packs and the lines that start its jurors."""
+    """CT-1 case 2: the run's packs and the lines that start its jurors; no lenses, no run (CT-6)."""
+    if not lenses and (gate in GATES or (run and evidence.path(root, run).exists())):
+        return [f"next: show the human: the {gate} changed but no lens has a fix to check"]
+    run = run or _reusable(root, slug, gate) or records.new_run(root)
     if gate not in GATES and not evidence.path(root, run).exists():
         sj = root / ".nio/runs" / run / "jury/packs/step.json"
         sj.parent.mkdir(parents=True, exist_ok=True)
@@ -1436,7 +1440,6 @@ def step(root, slug, gate, run="", add=(), pick=None):
         errors = agents.sync(root)[1]
         if errors:
             raise ValueError("; ".join(errors))
-        run = run or _reusable(root, slug, gate) or records.new_run(root)
         fix = bool(led["round"])
         return _begin(root, slug, gate, run, changed(root, slug, gate)[1] if fix else names, fix)
     for p in outputs:
@@ -1471,8 +1474,7 @@ def step(root, slug, gate, run="", add=(), pick=None):
     lines += cl
     impl = gate not in GATES
     if outcome == "rerun":
-        fresh = _reusable(root, slug, gate) or records.new_run(root)
-        return lines + _begin(root, slug, gate, fresh, changed(root, slug, gate)[1], True)
+        return lines + _begin(root, slug, gate, "", changed(root, slug, gate)[1], True)
     return lines + [{
         "rejected": f"next: nio flow next {slug}" if impl else f"next: dispose of each open finding in one nio jury dispose {slug} {gate} J-a,J-b <disposition> --by <by> --note <note> call per disposition, fix the artefact, then {again.format(run)}",
         "human": "next: show the human the listed findings and wait for their ruling",
