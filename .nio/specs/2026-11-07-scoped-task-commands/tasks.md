@@ -39,6 +39,19 @@ retired: [T-2]
 - Effort: med
 - Mode: split: a testable behavior change
 
+#### Fixes
+
+### T-8 Fix: Tests named for AC-7 to AC-10 do not exist
+- From: J-2 (implementation-E-2, round 1)
+- Files: `tests/test_agents.py`, `tests/test_evidence.py`, `tests/test_implement.py`
+- Serves: CT-3, J-2
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-3 Workers iterate fast and quietly (US-2)
 
 ### T-5 Worker card: scoped, foreground, no re-run before first edit
