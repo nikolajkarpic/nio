@@ -57,7 +57,8 @@ def wrong_reason(name, code, output):
     (pytest exit 2 or 4 too), or that no tests ran (pytest exit 5 too). An unknown runner has no wrong reason (FR-9)."""
     r = RUNNERS.get(name)
     if not r:
-        return ""
+        crash = re.search(r"^(?:SyntaxError|IndentationError|ImportError|ModuleNotFoundError)\b", output, re.M)
+        return f"collection, import or syntax error: {crash[0]}" if crash and not re.search(r"^ran \d+ tests?", output, re.M | re.I) else ""
     marker = next((m for m in r["error"] if m in output), f"exit {code}" if name == "pytest" and code in (2, 4) else "")
     if marker:
         return f"collection, import or syntax error: {marker}"

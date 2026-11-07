@@ -105,6 +105,15 @@ def test_ac12_wrong_reason_on_each_runner():
     print("ok")
 
 
+def test_wrong_reason_unknown_runner_crash():
+    for tail in ("SyntaxError: invalid syntax", "IndentationError: bad", "ImportError: x", "ModuleNotFoundError: No module named 'y'"):
+        got = implement.wrong_reason(None, 1, "Traceback (most recent call last):\n  File \"t.py\"\n" + tail + "\n")
+        assert got.startswith("collection, import or syntax error"), (tail, got)
+    assert implement.wrong_reason(None, 1, "ran 3 tests\nImportError: x\n") == ""
+    assert implement.wrong_reason(None, 1, "AssertionError: 1 != 2\n") == ""
+    print("ok")
+
+
 # --- T-2: suite (CT-3) ---
 
 def suite_of(root, command):
