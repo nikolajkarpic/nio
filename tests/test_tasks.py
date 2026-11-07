@@ -584,5 +584,20 @@ def test_lite_escalate_note():
     print("ok")
 
 
+def test_ac1_lite_epic_without_suffix_is_not_foundation():
+    root = lite_repo(["src/a/x.py"])
+    p = tasks.path(root, SLUG)
+    p.write_text(p.read_text().replace("## E-1 Customer refunds a paid order (US-1)", "## E-1 Fix the double refund"))
+    assert "## E-1 Fix the double refund" in p.read_text()
+    bad = [e for e in errs(root) if "which no task depending on it serves" in e]
+    assert bad == [], bad
+    print("ok")
+
+
+def test_ac2_full_foundation_epic_still_fails():
+    test_ac46_it_fails_naming_t_1_and_ac_4()
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
