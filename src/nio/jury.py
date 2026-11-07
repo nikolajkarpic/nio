@@ -251,6 +251,10 @@ def rung(risk):
     return "low" if not risk else "high" if set(risk) & HIGH_RISK else "medium"
 
 
+class Lines(list):
+    lenses = ()
+
+
 def plan(root, slug, gate, extra=(), pick=None):
     """(lines, ok): the lens runs this gate needs, why each runs, the tier, and the run budget. Not ok when the gate's
     own check fails or a lens has no card; over the cap is reported for the human to choose, not refused."""
@@ -324,9 +328,10 @@ def plan(root, slug, gate, extra=(), pick=None):
             raise ValueError(f"--pick {pick}: cannot drop {', '.join(held)} (its output is already collected)")
         led.update(picked=picked, dropped=[x for x in lenses if x not in picked])
         save(root, led)
-    out = [f"tier: {tier}" + (f" ({', '.join(sorted(set(risk) & HIGH_RISK) or risk)})" if risk else ""),
+    out = Lines([f"tier: {tier}" + (f" ({', '.join(sorted(set(risk) & HIGH_RISK) or risk)})" if risk else ""),
            "lenses: " + ", ".join(f"{lens} ({why})" for lens, why in lenses.items()),
-           f"runs: {len(lenses)} of {cap}" + (" — over the cap: the human chooses what runs" if len(lenses) > cap else "")]
+           f"runs: {len(lenses)} of {cap}" + (" — over the cap: the human chooses what runs" if len(lenses) > cap else "")])
+    out.lenses = list(lenses)  # the names, so no caller parses them out of the display line (a `--add` reason can hold " (")
     if over:
         cfg = records.config(root)
         out += [f"run: {lens} ({why}) — {agents.resolve(cfg, lens, cards[lens][0], 'claude')[0]}" for lens, why in lenses.items() if lens in cards]
@@ -580,7 +585,7 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         evidence.current(root, slug, epic, evidence.load(root, run))  # before the ledger marks anything collected: a retry must still join
         text = ground = "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in ("spec.md", "contracts.md")) if p.exists())
         human = ""
-        planned = re.findall(r"([a-z][a-z-]*) \(", next(x for x in plan(root, slug, gate)[0] if x.startswith("lenses: ")))
+        planned = plan(root, slug, gate)[0].lenses
         expect = set(expect) | {x for x in planned if x not in led.get("dropped", [])}
     elif gate not in GATES:
         raise ValueError(f"gate must be one of {sorted(GATES)}")
@@ -1398,7 +1403,7 @@ def step(root, slug, gate, run="", add=(), pick=None):
     led = load(root, slug, gate)
     if pick is None and "picked" not in led and any(x.startswith("choices:") for x in lines):
         return lines + [f"next: show the human the planned runs and let them choose, then nio jury next {slug} {gate} --pick <lens,lens>"]
-    names = re.findall(r"([a-z][a-z-]*) \(", next(x for x in lines if x.startswith("lenses: ")))
+    names = lines.lenses
     names = [x for x in names if x not in led.get("dropped", [])]
     tier = lines[0].split()[1]
     again = f"nio jury next {slug} {gate} --run {{}}"
