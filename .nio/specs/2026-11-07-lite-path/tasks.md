@@ -205,3 +205,49 @@ retired: [T-13, T-14]                      # task IDs removed from this file; ne
 - Tier: cheap: substring checks over four files
 - Effort: low
 - Mode: direct: text already written by earlier tasks, nothing can fail first
+
+#### Fixes
+
+### T-21 Fix: AC-13 has no passing evidence
+- From: J-2 (implementation-E-4, round 1)
+- Files: `skills/spec/SKILL.md`, `tests/test_flow.py`
+- Serves: AC-13
+- Test: TC-13
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-22 Fix: AC-14 has no passing evidence
+- From: J-3 (implementation-E-4, round 1)
+- Files: `skills/spec/SKILL.md`, `tests/test_flow.py`
+- Serves: AC-14
+- Test: TC-14
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-23 Fix: AC-15 has no passing evidence
+- From: J-4 (implementation-E-4, round 1)
+- Files: `skills/spec/SKILL.md`, `tests/test_flow.py`
+- Serves: AC-15
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-24 Fix: AC-16 has no passing evidence
+- From: J-5 (implementation-E-4, round 1)
+- Files: `tests/test_flow.py`
+- Serves: AC-16
+- Test: TC-16
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
