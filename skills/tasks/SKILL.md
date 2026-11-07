@@ -1,6 +1,6 @@
 ---
 name: tasks
-description: Break an approved NIO spec (and, for a full spec, its approved plan) into epics and tasks in tasks.md, rated by model tier and effort, and show the human the estimate. Use after the plan jury approves (for a bug fix, once `nio check spec <slug> --gate` passes, with no spec jury), when the human asks to break a spec into tasks or to continue the tasks stage.
+description: Break an approved NIO spec (and, for a full spec, its approved plan) into epics and tasks in tasks.md, rated by model tier and effort, and show the human the estimate. Use after the plan jury approves (for a bug fix, once `nio check spec <slug> --gate` passes, with no spec jury; on a bug fix that outgrows lite (files in more than one folder, a new dependency, an outside interface or stored data), it stops and offers the full flow), when the human asks to break a spec into tasks or to continue the tasks stage.
 ---
 
 # @nio:tasks
