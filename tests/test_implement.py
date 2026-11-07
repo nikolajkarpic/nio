@@ -1736,6 +1736,24 @@ def test_review_fails_a_crashed_self_check_suite():
     print("ok")
 
 
+def test_review_fails_a_crash_beside_a_baseline_failure():
+    root = impl(cfg={"tests": {"suite": "python suite.py"}}, alone=True)
+    (root / "suite.py").write_text(
+        "import sys\nprint('Traceback (most recent call last):\\nFAIL tests/test_b.py::test_old\\nran 1 tests, 1 failed')\n"
+        "if 'def refund' in open('app.py').read():\n    print('Traceback (most recent call last):')\n"
+        "sys.exit(1)\n")
+    commit_all(root, "suite")
+    code, out = flow(root, "claim", S)
+    assert code == 0, out
+    scripted(root)
+    code, out = flow(root, "red", S, "T-1", "--run", SCOPED)
+    assert code == 0, out
+    code_with(root)
+    code, out = flow(root, "green", S, "T-1")
+    assert code == 1 and "a file crashed before its result lines" in out, out
+    print("ok")
+
+
 REPO_SUITE = json.loads((Path(__file__).parent.parent / ".nio/config.json").read_text())["tests"]["suite"]
 
 
