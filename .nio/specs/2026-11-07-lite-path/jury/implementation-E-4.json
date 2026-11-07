@@ -113,9 +113,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-21",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -148,9 +148,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-22",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -183,9 +183,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-23",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -218,20 +218,24 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-24",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the conformance juror matched AC-13..AC-16 to assert lines inside tests/test_flow.py:test_lite_skill_texts (2589, 2590, 2592, 2571), which the journey run passed; the free check only knows the test's def line (2528), so it reads no evidence. A format slip, not a gap.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      1,
+      "closed"
     ]
   ],
   "versions": {
@@ -242,5 +246,10 @@
     "AC-14": [],
     "AC-15": [],
     "AC-16": []
-  }
+  },
+  "closed": [
+    1,
+    "1cc9db6b884f1b4db963f2d9f1812a39901eff76",
+    "Delegated: the four open findings are a conformance matching slip (assert lines vs the test's def line); accepted as risk. J-1 (minor wording) noted."
+  ]
 }
