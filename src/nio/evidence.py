@@ -417,6 +417,14 @@ def collect(root, slug, epic, run):
     commit, base = commits[0], parent_of(root, commits[-1])
     runs = lambda commands: runs_in_copy(root, commit, commands)
     mis, rest = misuse(root, slug)
+    if not (root / ".nio/specs" / slug / "tests.md").exists():  # a lite spec: the tests the epic's commits add
+        file = ""
+        for ln in records.git(root, "diff", base, commit):
+            if ln.startswith("+++ "):
+                file = ln[6:] if ln.startswith("+++ b/") else ""
+                file = file if re.search(r"(^|/)(tests?/|test_)", file) else ""
+            elif file and (m := re.match(r"\+\s*def (test_\w+)", ln)):
+                rest.append((file, m[1]))
     suite = reused_suite(root, slug, commit, t.get("suite")) or (runs([t.get("suite")]) if t.get("suite") else [{"result": "not configured", "output": "", "cut": 0}])[0]
     code_ok = suite["result"] == "passed"
     # ponytail: a test is failed when a failing-test line of the runner's summary names it. On a failed suite any other is
