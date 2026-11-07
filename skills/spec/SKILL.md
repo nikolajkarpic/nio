@@ -75,7 +75,24 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
      will ask you);
    - the reviews the jury will run, by what each checks, as `nio check spec` lists them from the risk flags.
 
-Stop after step 7. Don't answer the open points yourself and don't start the grill. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the grill.
+Stop after step 7. Don't answer the open points yourself and don't start the grill. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (no `nio`), say the next stage is the grill.
+
+## Escalating a bug fix
+
+A bug-fix spec (route `lite`) escalates when the fix turns out bigger. Check these triggers (FR-8) once the spec is
+drafted, and again if the work later shows one:
+- files in more than one folder;
+- a new dependency;
+- a change to an interface used outside the bug's folder;
+- a change to stored data.
+
+If any holds, stop and offer the full flow, saying what it costs: more stages (spec jury, plan, plan jury) before any
+code. If the human says yes, rewrite the same `spec.md` on the full template with `route: full`. Each current, expected
+and unchanged item becomes an FR with its AC and keeps its tag. Then run `nio check spec <slug>` and `nio flow next
+<slug>`; it stands at the spec jury, or at the grill if anything is open.
+
+If the human says no, continue on lite and log `## Call · escalation declined` in `grill.md`, naming the trigger it
+overrides.
 
 ## When `nio` is missing or fails
 
