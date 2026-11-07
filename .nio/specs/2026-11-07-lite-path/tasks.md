@@ -46,6 +46,41 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: direct: only tests existing behaviour, nothing can fail first
 
+#### Fixes
+
+### T-13 Fix: T-3: src/nio/implement.py isn't in the epic's diff
+- From: J-1 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`
+- Serves: AC-4
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-14 Fix: T-4: src/nio/jury.py isn't in the epic's diff
+- From: J-2 (implementation-E-1, round 1)
+- Files: `src/nio/jury.py`
+- Serves: AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-15 Fix: Re-running an earlier stage's done is no longer treated as passed when history lags the files
+- From: J-3 (implementation-E-1, round 1)
+- Files: `src/nio/flow.py`
+- Serves: FR-2, FR-15, J-3
+- Test: new: FR-2
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-2 Write a mini bugfix spec (US-2)
 
 ### T-5 Test the bugfix template and the empty unchanged-behaviour check (CT-9)
