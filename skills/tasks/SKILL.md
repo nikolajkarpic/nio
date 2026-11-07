@@ -1,6 +1,6 @@
 ---
 name: tasks
-description: Break an approved NIO spec (and, for a full spec, its approved plan) into epics and tasks in tasks.md, rated by model tier and effort, and show the human the estimate. Use after the plan jury approves (or, for a bug fix, after the spec jury does), when the human asks to break a spec into tasks or to continue the tasks stage.
+description: Break an approved NIO spec (and, for a full spec, its approved plan) into epics and tasks in tasks.md, rated by model tier and effort, and show the human the estimate. Use after the plan jury approves (for a bug fix, once `nio check spec <slug> --gate` passes, with no spec jury), when the human asks to break a spec into tasks or to continue the tasks stage.
 ---
 
 # @nio:tasks
@@ -16,7 +16,8 @@ Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit 
 ## Inputs and outputs
 
 - **Input:** the slug of a spec whose spec jury approved it, or which the human closed with a reason; on a full spec,
-  its plan approved too (`nio check plan <slug> --approved` exits 0).
+  its plan approved too (`nio check plan <slug> --approved` exits 0). A bug fix starts once
+  `nio check spec <slug> --gate` passes, with no spec jury; a full spec's stage starts after its plan, as before.
 - **Outputs:** `.nio/specs/<slug>/tasks.md`, passing `nio check tasks <slug>`; the tasks jury's ledger; one
   `nio: approve tasks` commit once the human approves the estimate.
 
@@ -67,7 +68,7 @@ record's ID) and the seven lines. A task made pointless is removed and its ID li
 
 ## When to stop
 
-Stop after step 7, or when step 1 or 2 stops. Don't start the implement stage. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the implement stage.
+Stop after step 7, or when step 1 or 2 stops. Don't start the implement stage. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (no `nio`), say the next stage is the implement stage.
 
 ## When `nio` is missing or fails
 
