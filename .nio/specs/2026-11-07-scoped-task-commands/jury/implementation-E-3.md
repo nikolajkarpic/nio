@@ -11,10 +11,10 @@ outcome: rejected
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | J-1 | major | inconsistency | AC-7, CT-5, FR-6 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | minor | inconsistency | CT-3, CT-7, FR-4 | consistency | grounded | open |  | new, 0 |
-| J-3 | minor | inconsistency | CT-7 | consistency | grounded | open |  | new, 0 |
-| J-4 | minor | ambiguity | CT-6, AC-8, FR-7 | consistency | grounded | open |  | new, 0 |
-| J-5 | minor | risk | AC-7 | correctness | grounded | open |  | new, 0 |
+| J-2 | minor | inconsistency | CT-3, CT-7, FR-4 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-3 | minor | inconsistency | CT-7 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-4 | minor | ambiguity | CT-6, AC-8, FR-7 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-5 | minor | risk | AC-7 | correctness | grounded | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 The worker card's no-re-run rule covers only the code phase
 - quote: "and not re-run before its first edit"
@@ -30,21 +30,25 @@ outcome: rejected
 - quote: "`none = (last[-1] == "0" if last else False) if name == "self-check" else \`"
 - situation (consistency): a self-check run prints `ran 0 tests, 0 failed` and then `ran 3 tests, 1 failed`, and exits 1. `red` reads the last count line (3), so `none` is False, and the run is refused through `wrong_reason`, which matches the substring "ran 0 tests" in RUNNERS["self-check"]["none"] and returns "no tests ran". FR-4 says the output ends with `ran 0 tests`, so this run should be judged on its failure.
 - fix: pick one rule. Either `red` and `wrong_reason` both read the last count line, or the spec and RUNNERS both say substring. Then make the spec's wording match.
+- disposition: accepted-risk by human: Delegated: red runs one scoped file, so an earlier ran 0 tests line before a later count line can't happen unless a test prints it
 
 ### J-3 RUNNERS["self-check"] differs in shape from CT-7
 - quote: "`RUNNERS["self-check"]` is `{"match": r"(?!)", "error": [], "none": ["ran 0 tests"]}`, plain substrings like every other entry"
 - situation (consistency): the code entry is `"self-check": {"error": [], "none": ["ran 0 tests"]},` with no `"match"` key. `runner` supplies the default `r"(?!)"`, so behaviour is the same. But a reader who checks the entry against CT-7 finds a different shape, and a later edit to `runner` that reads `r["match"]` would raise a KeyError.
 - fix: add the `"match": r"(?!)"` key the spec names, or change CT-7 to say the key is omitted.
+- disposition: accepted-risk by human: Delegated: same as E-2 J-4; behaviour identical
 
 ### J-4 The red-output sentence is ambiguous about the pack
 - quote: "Give the code-phase worker the `output:` lines `nio flow red` printed, with the pack. Then a fresh code-phase worker, given the same pack, writes the"
 - situation (consistency): "with the pack" and then "given the same pack" can be read as the output lines being part of the pack or as sitting beside it. The orchestrator might hand the fresh worker the pack without the output lines. CT-6 means the lines go with the pack, so the wording should say so.
 - fix: say once that the output lines are added to the pack the fresh worker is given.
+- disposition: accepted-risk by human: Delegated: wording; the sentence says the lines go with the pack
 
 ### J-5 The AC-7 card test keeps an assertion that passes whatever the new sentence says
 - quote: "for text in ["scoped to the task's own tests", "File:", "in the foreground", "never polled with sleep", "before running the tests", "try again"]:"
 - situation (correctness): "try again" already appears in the card's unchanged line 26 ("If `nio flow` says `try again`, wait a few seconds"). Deleting the new parenthesis "(the short wait on `try again` stays)" would not make the test fail. The "not re-run before the first edit" instruction is checked only by the fragment "before running the tests". The card could lose "make your first edit" and the test would still pass.
 - fix: assert the full phrases, such as "the short wait on `try again` stays" and "make your first edit before running the tests".
+- disposition: accepted-risk by human: Delegated: T-9 tightens the card test's phrases while fixing J-1
 
 ## Jurors
 
