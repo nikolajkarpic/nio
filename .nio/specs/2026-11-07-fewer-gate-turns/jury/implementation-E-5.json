@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-5",
   "subject": "2026-11-07-fewer-gate-turns",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,10 @@
     "R-261107-kknf/implementation-E-5-conformance.md": "2b764c9b0e7d961ce48e5985c7a8a317e1033737129de646def7e8a605eac4d7",
     "R-261107-kknf/implementation-E-5-consistency.md": "1809ca93d5c1d7b48c89c0febb5acc2f95267f8c9a8a60ee262c75cff0821291",
     "R-261107-kknf/implementation-E-5-correctness.md": "f5a2dfb49f0e3a67b5cb8aba431e280869b6b58e6b3914cdbdd4887c09ce7a44",
-    "R-261107-kknf/implementation-E-5-refuter.md": "be88216994172219d4df5fc2cfc5f2dc1d5791b95491502c90d35203c600fe26"
+    "R-261107-kknf/implementation-E-5-refuter.md": "be88216994172219d4df5fc2cfc5f2dc1d5791b95491502c90d35203c600fe26",
+    "R-261107-ve4q/implementation-E-5-adversary.md": "819af61701aa799351f7f82b5f932bcb5ef3e098ca57cda0750067474dd0ba08",
+    "R-261107-ve4q/implementation-E-5-consistency.md": "0b0d4864a8f64a8589ecb5350343b8c68465a0d31bed2a0f6028781a2eb03258",
+    "R-261107-ve4q/implementation-E-5-correctness.md": "bd584227a75274f901cc2f033ff05a38acc67c463a8434d3901e7623a8c775a9"
   },
   "jurors": {
     "implementation-E-5-adversary": {
@@ -24,9 +27,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "c6e37e1651f550bce10469711640b2d079f2704d",
-      "judged": 1
+      "round": 2,
+      "version": "5ebac350d9f2291073986070ee8710dd5950fe57",
+      "judged": 2
     },
     "implementation-E-5-conformance": {
       "attempts": 1,
@@ -46,9 +49,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "c6e37e1651f550bce10469711640b2d079f2704d",
-      "judged": 1
+      "round": 2,
+      "version": "5ebac350d9f2291073986070ee8710dd5950fe57",
+      "judged": 2
     },
     "implementation-E-5-correctness": {
       "attempts": 1,
@@ -57,9 +60,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "c6e37e1651f550bce10469711640b2d079f2704d",
-      "judged": 1
+      "round": 2,
+      "version": "5ebac350d9f2291073986070ee8710dd5950fe57",
+      "judged": 2
     }
   },
   "findings": [
@@ -88,17 +91,18 @@
       ],
       "validation": "confirmed",
       "reason": "SKILL.md lines 73-77 have the orchestrator hand-copy the blocker's fix-check pack and edit `## Your output`, and the text says \"the step never writes these\". Nothing in the artefact makes collect or the step detect a juror that wrote the first-review filename, so the one-mistake overwrite is possible as written.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-10",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "skills/jury/SKILL.md (escalate bullet)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -232,15 +236,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "SKILL.md lines 127-128 still send the orchestrator to `nio jury check <slug> plan` for `state: waiting-on-spec`. Line 130 now reads status from the step (\"While the step prints `state: with-human`\"). Nothing in the file settles which command gives the status for the paused state.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-11",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "implementation-E-5-consistency: the skill text now says `nio jury next <slug> plan` prints `state: waiting-on-spec` (`skills/jury/SKILL.md`, the plan-gate paragraph). The CLI does not do that. `plan()` (`src/nio/jury.py:258`) prints no state line, and `next` only raises the paused message when new packs arrive (`jury.py:608-609`). The `state:` line comes from `nio jury check <slug> plan` (`jury.py:1121`). The fix ask's example is what the code does not do, so the sentence needs to name `nio jury check <slug> plan`, or the CLI must print the line from `next`.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "partial",
       "where": "skills/jury/SKILL.md, \"At the plan gate\", \"Findings rooted in the spec\"",
       "tampering": false
@@ -350,17 +354,18 @@
       ],
       "validation": "confirmed",
       "reason": "In test_jury.py, `calls` is raised only by hand-written `calls += 1` lines (lines 1952-1979), and the final check is `assert calls <= 15`. No change to the skill or the CLI can make that assertion fail.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-12",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "tests/test_jury.py (test_ac11_scenario_a_in_at_most_15_calls)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-9",
@@ -436,15 +441,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "human"
     ]
   ],
   "versions": {
-    "1": "c6e37e1651f550bce10469711640b2d079f2704d"
+    "1": "c6e37e1651f550bce10469711640b2d079f2704d",
+    "2": "5ebac350d9f2291073986070ee8710dd5950fe57"
   },
   "matched": {
     "AC-11": [
@@ -453,5 +463,13 @@
         "test_ac11_scenario_a_in_at_most_15_calls"
       ]
     ]
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-5"
+    ],
+    "final": null,
+    "flagged": []
   }
 }
