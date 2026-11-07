@@ -13,6 +13,7 @@ from test_tasks import git
 
 from nio import flow as nio_flow
 from nio import implement, records
+import selfcheck
 
 TASK = ("### T-{n} Task {n}\n- Files: `app.py`, `m{n}.py`, `m{n}_new.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: none\n- Parallel: {par}\n"
         "- Tier: strong: fixture\n- Effort: med\n- Mode: {mode}: fixture\n")
@@ -449,6 +450,4 @@ if __name__ == "__main__":
         tempfile.tempdir = tempfile.mkdtemp(prefix="nio-demo-", dir=Path(tempfile.tempdir).parent)
         print(demo())
         sys.exit()
-    for name, test in list(globals().items()):
-        if name.startswith("test_") and callable(test):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

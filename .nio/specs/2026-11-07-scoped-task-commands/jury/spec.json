@@ -1,0 +1,687 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-07-scoped-task-commands",
+  "round": 3,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "testability"
+  ],
+  "collected": {
+    "R-261107-5i36/spec-consistency.md": "243109b307e2d9728b82968ee107ba06493302d25894689ac498d0751bec5f77",
+    "R-261107-5i36/spec-logic.md": "ae64b0eb38d7c60efde9584c603681cbc00224c361b87c69ad7513d3c34bcf98",
+    "R-261107-5i36/spec-testability.md": "ff1471116dbfc63f097c295b3df0f42d8418c97868cdb34fa98c4a392d6717ad",
+    "R-261107-5i36/spec-refuter.md": "ca46003e4ae52ce1dfa911b4c2bb9c94c14b9755e2db8d5978a7de9333c7eb22",
+    "R-261107-6mg5/spec-consistency.md": "099d348d1d7a1ebd98010ebb53b98e40757d870ad1db81efe968d358809d66cb",
+    "R-261107-6mg5/spec-logic.md": "cd27845d0c73ac07574a389b15570455b8feee37c72b6a7b83acea79e952c352",
+    "R-261107-6mg5/spec-testability.md": "0d4befcb0f412ff43e9c249a33e84ba5352e49a462201ab062671a98c0ebfba0"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "9bfe0f04c130e54f48b0b66e94787f6666e67cef",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 2,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "9bfe0f04c130e54f48b0b66e94787f6666e67cef",
+      "judged": 3
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "9bfe0f04c130e54f48b0b66e94787f6666e67cef",
+      "judged": 3
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Zero-test selection gets two different refusal reasons",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "FR-4",
+        "decision table row \"zero\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then red is refused as \"no tests ran\"",
+        "→ refused: the test passes before the code exists"
+      ],
+      "fix": "state the exit code a self-check run gives when no name matches, and make the table's zero-exit row say \"some\" tests ran (or add a row \"zero | none → refused: no tests ran\").",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "logic",
+          "situation": "a scoped command names a test that does not exist, so the script selects zero tests. If the script exits 0 (the spec never says what it exits with), the table's zero-exit row applies, since its \"Tests run\" cell is \"-\", and red is refused as \"the test passes before the code exists\". AC-5 requires \"no tests ran\". The table and AC-5 disagree on the one case UJ-1 names as the misuse to catch.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A worker hands off `uv run python tests/test_x.py test_typo`. No test matches, so nothing runs and nothing fails. Decision 4 says this \"counts as no tests ran\". If the script exits 0, which AC-1's \"exit code 0\" suggests for a run with nothing failing, row 1 matches (\"zero\", any tests) and refuses with \"the test passes before the code exists\". FR-4 and AC-5 require \"no tests ran\". The table's only \"no tests ran\" row needs a non-zero exit. The spec does not say that a zero-test run exits non-zero. It is also unclear whether FR-4 applies when the exit code is zero.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a scoped command names a test that doesn't exist. The self-check selects nothing, so it prints no lines and plausibly exits 0 (nothing failed). Row 1 matches first and refuses with \"the test passes before the code exists\". AC-5 expects \"no tests ran\". FR-4 and row 2 only cover non-zero exit, and Decision 4 doesn't say what the exit code is when no test is selected.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "Table row 1 (zero exit, tests \"-\") matches any zero-exit run, and neither FR-1 nor FR-4 gives the exit code of a run that selects no test. A zero-exit no-match run is therefore refused as \"the test passes before the code exists\", but AC-5 requires \"no tests ran\".",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q5, delegated: red refuses a `ran 0 tests` line first, whatever the exit code",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-2",
+      "title": "\"Tests run\" has no source for a self-check script",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "FR-2",
+        "decision table row \"non-zero | none\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a red command runs zero tests",
+        "| non-zero | none | → refused: no tests ran | [agent] |"
+      ],
+      "fix": "name the signal red reads (for example, at least one `ok` or `FAIL` line in the output) and say that the FR-2 lines are what it counts.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "logic",
+          "situation": "`uv run python tests/test_x.py test_typo` exits non-zero. Red must decide whether \"no tests ran\" applies. The spec never says what counts as a test run (an `ok` or `FAIL` line, a count, a marker). Today `wrong_reason` (implement.py:52-63) returns \"\" for an unknown runner, and a self-check command matches no RUNNERS entry, so red would accept the failure as red.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-4 and the table's \"Tests run\" column never say what counts as a test run. FR-2's ok/FAIL lines are not tied to red, so a non-zero self-check run with no matching test has no defined \"none\" signal.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q5, delegated: the `ran <n> tests` line is what red counts",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-3",
+      "title": "FR-8 changes the accepted unreadable-runner rule without saying so",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "AC-9",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN jury evidence reads a self-check run THE SYSTEM SHALL record each test's result from its ok/FAIL line, so a failing file fails only its own failing tests.",
+        "no test of another file is `failed`"
+      ],
+      "fix": "cite C-261030-gk3z in the Decisions and say whether it is superseded for self-check runs, or limit FR-8 so the unreadable-runner rule still holds for the repo suite.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "logic",
+          "situation": "the repo's `tests.suite` is an xargs pipeline with no known runner (research RF-6, D-261106-qo2r). Under C-261030-gk3z, a non-zero suite on that runner keeps each matched AC's blocker because nothing shows it passed. Under FR-8, the same run's ok/FAIL lines would show which tests passed. The spec's Decisions cite D-261106-qo2r but not C-261030-gk3z, and nothing says the unreadable-runner rule stops applying to self-check runs. Either the spec supersedes that accepted change (a change request is then needed) or the two rules conflict on the repo suite.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "C-261030-gk3z exists, but it covers a runner that is \"unreadable\" per test. FR-8 makes self-check runs readable per test by their ok/FAIL lines, and AC-10 handles the crash case, where nothing is printed. A readable run was never covered by that rule, so the two do not conflict and no supersession is needed.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "An `ok <name>` line does not name its file",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "FR-8",
+        "AC-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "print one `ok <name>` or `FAIL <name>` line per test a self-check script runs",
+        "so per-file results are available"
+      ],
+      "fix": "have the line carry the file (for example `ok <file>::<name>`), or say how evidence attributes a line to its file, and state that names must be unique per file or that evidence reads only the file that printed them.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "logic",
+          "situation": "the suite runs eight files at once (D-261106-qo2r), so their output interleaves. If two self-check files share a test name, say `test_init` in both, a `FAIL test_init` line cannot be attributed to one file. AC-9 requires that no test of another file is marked failed, and the spec never says how evidence matches a line to its file. The Decisions claim \"per-file results are available\", but the line format the spec defines carries no file. I have not checked the repo for shared test names, so this is inferred.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-15",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "Two different \"before\" durations for a whole file",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "Summary",
+        "NFR-1",
+        "SC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a file that takes 75–120 s",
+        "against 11–94 s for a whole file today"
+      ],
+      "fix": "use one baseline in the Summary and NFR-1, and say which measurement it comes from.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "logic",
+          "situation": "the Summary gives the pre-change figure as 75–120 s per file, and NFR-1 gives 11–94 s \"today\". Research RF-4 measured the 11–94 s figures after #73, so the Summary's figure is the older #70 number. A reader cannot tell which baseline SC-1's before/after measurement should use.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The Summary says whole-file runs take 75–120 s. NFR-1 says 11–94 s for the same runs. The two ranges do not match, so it is unclear which baseline \"under 15 s\" improves on. A file that takes 11 s today would already pass the target without any change.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Summary says a file takes 75–120 s. NFR-1 says 11–94 s, and 94 s is below the 75–120 s range. \"The machine the before numbers were measured on\" names no machine and no recorded numbers. A tester cannot tell whether a 14 s run on a different machine passes. The 15 s limit also has no stated percentile or run count.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Summary says a file takes \"75–120 s\" and NFR-1 says \"11–94 s\" for a whole file today. The spec does not reconcile the two baselines, and SC-1 needs one baseline for its before/after measurement.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Summary and NFR-1 give one baseline each, named (RF-4, #70)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-6",
+      "title": "Zero tests run with exit 0 gets two different refusals",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "AC-5",
+        "red outcome decision table"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "| zero | - | → refused: the test passes before the code exists | [research: RF-3] |",
+        "IF a red command runs zero tests THEN THE SYSTEM SHALL refuse red with the reason \"no tests ran\"."
+      ],
+      "fix": "Put the tests-run check first in the table, with \"none\" refused as \"no tests ran\" whatever the exit code. Row 1 should apply only to \"some\". Or state in an FR that a self-check script that selects no test exits non-zero.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A worker hands off `uv run python tests/test_x.py test_typo`. No test matches, so nothing runs and nothing fails. Decision 4 says this \"counts as no tests ran\". If the script exits 0, which AC-1's \"exit code 0\" suggests for a run with nothing failing, row 1 matches (\"zero\", any tests) and refuses with \"the test passes before the code exists\". FR-4 and AC-5 require \"no tests ran\". The table's only \"no tests ran\" row needs a non-zero exit. The spec does not say that a zero-test run exits non-zero. It is also unclear whether FR-4 applies when the exit code is zero.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "Crash or import error before any result line has two outcomes",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "red outcome decision table",
+        "FR-4",
+        "AC-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "| non-zero | some | → accepted, unless a collection or import error marker shows | [research: RF-3] |"
+      ],
+      "fix": "Give the \"unless marker shows\" clause its own outcome and reason. State which marker applies to self-check scripts, or say that a crash counts as \"none ran\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A new test file fails on an import error before it prints any `ok` or `FAIL` line. Exit is non-zero and no results were printed. Row 2 says \"no tests ran\" and refuses. Row 3's marker clause also names this case, and it names no outcome. A crash that happens after some tests have printed lines is accepted or refused depending on whether a marker shows. The spec says nothing about what marker a plain self-check script prints, since the markers come from pytest. The outcome is undefined and the refusal reason is ambiguous.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q7, delegated: table has no marker clause; a crash before the ran line reads as today (non-goal)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-8",
+      "title": "Whole-file time range differs between Summary and NFR-1",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "NFR-1",
+        "Summary"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "against 11–94 s for a whole file today",
+        "a file that takes 75–120 s"
+      ],
+      "fix": "Use one measured baseline in both places. Make NFR-1 a ratio, or apply it only to the slow files.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The Summary says whole-file runs take 75–120 s. NFR-1 says 11–94 s for the same runs. The two ranges do not match, so it is unclear which baseline \"under 15 s\" improves on. A file that takes 11 s today would already pass the target without any change.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Summary says a file takes 75–120 s. NFR-1 says 11–94 s, and 94 s is below the 75–120 s range. \"The machine the before numbers were measured on\" names no machine and no recorded numbers. A tester cannot tell whether a 14 s run on a different machine passes. The 15 s limit also has no stated percentile or run count.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-9",
+      "title": "Zero-exit \"no tests ran\" gets two different refusal reasons",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "FR-4",
+        "state table row `zero`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "zero | - | → refused: the test passes before the code exists",
+        "Given a scoped command whose test names match no test, when `nio flow red` runs it, then red is refused as \"no tests ran\"."
+      ],
+      "fix": "make the table's \"tests run\" column decisive before exit code (none → \"no tests ran\" whatever the exit code). Or state that a no-match run exits non-zero.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a scoped command names a test that doesn't exist. The self-check selects nothing, so it prints no lines and plausibly exits 0 (nothing failed). Row 1 matches first and refuses with \"the test passes before the code exists\". AC-5 expects \"no tests ran\". FR-4 and row 2 only cover non-zero exit, and Decision 4 doesn't say what the exit code is when no test is selected.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-10",
+      "title": "AC-10 accepts two different outcomes",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-10",
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "those tests' results are `failed` or `didn't run`"
+      ],
+      "fix": "pick one recorded value, add it to FR-8, and put it in the Observable.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a test passes if the crashed file's tests are recorded as `failed`, and also if they are recorded as `didn't run`. Downstream per-AC fix-task logic treats the two differently. FR-8 never says how a crashed file is recorded, and `didn't run` is not defined as a result value anywhere.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-10's Observable accepts either `failed` or `didn't run`. FR-8 does not say how a crashed file is recorded, and `didn't run` is not defined as a result value anywhere in the spec.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q7, delegated: AC-10 Observable is failed only",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-11",
+      "title": "Partial misses pass red, so the vacuous-scope misuse is only half covered",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "UJ-1",
+        "AC-5",
+        "FR-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "scopes to a test name that does not exist, so red would pass vacuously",
+        "names match no test"
+      ],
+      "fix": "add an FR and AC for what happens when any requested name is unknown, such as a FAIL line or non-zero exit.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the worker runs `tests/test_x.py test_real test_typo`. One test runs and fails, so red is accepted even though the typo'd test never ran. FR-1 and FR-2 don't say what happens when a requested name doesn't exist. AC-5 only fires when every name misses.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q5, delegated: any unknown name runs no test and prints ran 0 tests",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-12",
+      "title": "The import-error clause in the table has no requirement or AC",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "state table row `non-zero`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "→ accepted, unless a collection or import error marker shows"
+      ],
+      "fix": "add an FR and AC naming the marker and the resulting refusal reason. Or drop the clause if self-checks can't produce it.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a test file with a syntax error exits non-zero and prints a traceback. Some tests may have printed ok before the crash. Which marker counts, and the resulting outcome (\"unless\" is never stated), appear in no FR and no AC. So there is no test that fails if this behaviour breaks, and the self-check scripts have no collection phase in the first place.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q7, delegated: marker clause dropped from the table",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-13",
+      "title": "Zero-test scoped run gets two different refusal reasons",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "AC-5",
+        "decision table row `zero`",
+        "UJ-1 misuse"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a red command runs zero tests THEN THE SYSTEM SHALL refuse red with the reason \"no tests ran\".",
+        "→ refused: the test passes before the code exists",
+        "red is refused as \"no tests ran\"."
+      ],
+      "fix": "state the exit code a self-check returns when the names match no test, and make the table's zero-exit row say \"some tests\" or add a zero-tests row above it. Then FR-4 and the table give one reason.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a task scopes to `tests/test_x.py test_typo`, a name that matches nothing (UJ-1 misuse). If the self-check exits 0 with zero tests run, the table's first row (exit zero, tests \"-\") refuses it as \"the test passes before the code exists\", so AC-5 fails. If it exits non-zero, the second row applies and the reason is right. FR-1 (\"run only those tests\") says nothing about the exit code, so the outcome is undecided.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-14",
+      "title": "Red cannot tell zero tests from some for a plain self-check command",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-4",
+        "decision table column \"Tests run (none",
+        "some)\"",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "| non-zero | none | → refused: no tests ran | [agent] |",
+        "IF a red command runs zero tests THEN THE SYSTEM SHALL refuse red with the reason \"no tests ran\"."
+      ],
+      "fix": "say what counts as a test run for red (for example, at least one `ok` or `FAIL` line from FR-2) and that this applies to self-check commands whose runner is unknown.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`implement.py:55-57` returns \"\" for any command whose runner is unknown, and a self-check command has no known runner. So today red has no way to count tests, and the spec does not say how red should count them (for example, by the `ok`/`FAIL` lines of FR-2). A non-zero run with no tests would be accepted as red, which is the vacuous pass the spec's misuse line warns about.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-15",
+      "title": "Per-test results have no file name to match against",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "AC-9",
+        "FR-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "print one `ok <name>` or `FAIL <name>` line per test",
+        "no test of another file is `failed`"
+      ],
+      "fix": "have the line carry the file (`FAIL <file> <name>`), or say that names are unique across the suite, and have the check enforce it.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the suite runs eight files at once (decision D-261106-qo2r in the pack). If two files each have a test with the same name and one fails, its `FAIL <name>` line carries no file, so AC-9 cannot show that no test of another file is failed. I did not check the test files for duplicate names, so this is inferred.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-2's `FAIL <name>` line carries no file, and the suite runs the files together under D-261106-qo2r. AC-9 (\"no test of another file is `failed`\") cannot be met when two files share a test name. This is inferred, since I did not check the repo for shared names.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q6, delegated: lines carry <file>::<name>",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-16",
+      "title": "\"Wait a few seconds\" conflicts with \"never poll with sleep\"",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-7",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "never poll with sleep"
+      ],
+      "fix": "state in AC-7 whether the `try again` wait is allowed, or narrow \"never poll with sleep\" to test runs.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`src/nio/agents/worker.md:26` tells the worker that on `try again` it should \"wait a few seconds and run it again\". AC-7 requires the rendered card to say \"never poll with sleep\". The spec does not say whether the existing wait stays, so a worker can read the card both ways.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-7 and FR-6 narrow no-sleep to test runs; the try-again wait stays",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "rejected"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "86063daaf7698f973ff6f29497e1e99b567a51c2",
+    "2": "86063daaf7698f973ff6f29497e1e99b567a51c2",
+    "3": "9bfe0f04c130e54f48b0b66e94787f6666e67cef"
+  }
+}

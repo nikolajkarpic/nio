@@ -1,0 +1,388 @@
+{
+  "gate": "implementation-E-2",
+  "subject": "2026-11-07-scoped-task-commands",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-5lnz/implementation-E-2-conformance.md": "64e5a43292418fdb03dc9ebd3e815fccc9975373ede4a48aea85f441e0d1dedf",
+    "R-261107-5lnz/implementation-E-2-consistency.md": "217baca8f9773391c4cc1dcfdb592905eb09d45129e94a1058e3d8fab29c1289",
+    "R-261107-5lnz/implementation-E-2-correctness.md": "1ce31fc64eab57752b7b8c7769ec0c5568645bd5e26cbc62ab1fd059aea2f4c9",
+    "R-261107-5lnz/implementation-E-2-refuter.md": "818912f3b53922fdcbbe7ecd1b76e36bfc5f6cd4b77e02a8fd87bbde24c1ec95",
+    "R-261107-ypqo/implementation-E-2-conformance.md": "bb56bfbfb7882c7c255c337c06ed66b0ea8075344427aa34836946f6c1e8179a",
+    "R-261107-ypqo/implementation-E-2-correctness.md": "4b04d8a60e0bd46aed7681c42a60474554709348084889220d6d7c743128f8e1"
+  },
+  "jurors": {
+    "implementation-E-2-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "46b07d4e564589709fbcbe64affe5bff7ba1f4e7",
+      "judged": 2
+    },
+    "implementation-E-2-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "047b1e5bf4003779e05025c064734f67dfd3e4b5",
+      "judged": 1
+    },
+    "implementation-E-2-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "46b07d4e564589709fbcbe64affe5bff7ba1f4e7",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Red does not print the tail of its output (FR-7, CT-3)",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "On acceptance red prints, after `frozen:`, `output:` and \"the last 20 lines of its output\" (FR-7), each indented two spaces."
+      ],
+      "fix": "print `output:` and the last 20 lines, each indented two spaces, and add the test.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-conformance",
+          "lens": "conformance",
+          "situation": "red is accepted, and the output ends after the `frozen:` list with no `output:` section. The code at `src/nio/implement.py:549` returns only `\"red: {tid} accepted\", \"frozen:\"` plus the frozen files.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Red's `output:` tail is FR-7/AC-8/TC-8, which tasks.md assigns to T-6 in E-3 (T-6 \"Red prints its last 20 output lines\", Depends on T-4). T-4 in E-2 serves only AC-1 to AC-6, so `implement.py:549` not printing it is not a gap in this gate's epic.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/implement.py (red, line 549)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Tests named for AC-7 to AC-10 do not exist",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "no test named test_ac9_evidence_reads_self_check_lines"
+      ],
+      "fix": "write those tests, or move the ACs to the epic that implements them.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-conformance",
+          "lens": "conformance",
+          "situation": "the pack lists `test_ac7_worker_card_scopes_its_tests`, `test_ac8_red_prints_its_tail`, `test_ac9_evidence_reads_self_check_lines` and `test_ac10_crashed_file_is_failed`, all at line 0. The journey run printed \"no test named\" for AC-9 and AC-10 and \"ran 0 tests, 0 failed\". Nothing proves the worker-card scoping, the red tail, or evidence reading of self-check lines. The crashed-suite behaviour is covered only by `test_review_fails_a_crashed_self_check_suite` (`tests/test_implement.py:1720`), which sits in the attacks list and was not run. If these ACs belong to E-2, they are missing evidence.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-2-correctness",
+          "lens": "correctness",
+          "situation": "In the epic-closing suite, file A has a pre-existing FAIL line that is in the baseline's `failing`. File B crashes before printing its lines, which is the case CT-3 says to fail. `r[\"failing\"]` is non-empty, so the new branch is skipped. `new` is empty because the FAIL is in the baseline, so `reasons` stays empty and the review passes with a crashed file.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The first situation (no tests for AC-7 to AC-10) is out of E-2. tasks.md puts them in T-5, T-6 (E-3) and T-7 (E-4), so that part is refuted. The correctness situation holds. `implement.py:585` fails a crash only when `not r[\"failing\"]`, and CT-3 words the rule the same way (\"`failing` is empty\"). A crashed file B next to a baseline-failing file A leaves `failing` non-empty and `new` empty, so review passes. The `collected < baseline` check at line 594 catches it only on a full run, not on the `quick` epic suite (line 580).",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_agents.py, tests/test_evidence.py, tests/test_implement.py",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "No per-test pass evidence for AC-1 to AC-6",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-4",
+        "AC-5",
+        "AC-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Per-test results are unknown: the suite's runner can't be read per test; the exit code and output are in `suite`."
+      ],
+      "fix": "run the suite fresh at this gate, or run the TCs that cover these tests.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-conformance",
+          "lens": "conformance",
+          "situation": "the suite pass is reused from T-4's review, and the misuse tests were not run. The bodies of the AC-4, AC-5 and AC-6 tests do exercise the criteria: the history line and command, the \"no tests ran\" refusal, and the check that no other suite command ran. A pass of the tests themselves is still unconfirmed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the suite passed at this commit (reused from T-4's review, which ran it); per-test reading lands in E-4",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_implement.py:1683-1730",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The self-check runner entry has no match key the contract names",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`RUNNERS[\"self-check\"]` is `{\"match\": r\"(?!)\", \"error\": [], \"none\": [\"ran 0 tests\"]}`",
+        "`\"self-check\": {\"error\": [], \"none\": [\"ran 0 tests\"]},`"
+      ],
+      "fix": "either add `\"match\": r\"(?!)\"` to the entry, or change CT-7 to say the key is absent. The code comment already records the choice.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-consistency",
+          "lens": "consistency",
+          "situation": "CT-7 gives the entry a `match` key that matches nothing. The diff omits it and relies on `r.get(\"match\", r\"(?!)\")` in `runner`. Behaviour is the same, but the code and the contract disagree on the shape that `wrong_reason` and later readers rely on.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-2-correctness",
+          "lens": "correctness",
+          "situation": "CT-7 anchors the line with `$`. The code matches `r\"^ran \\d+ tests?, \\d+ failed\"` with no `$`. A line such as `ran 1 tests, 0 failed ...` is therefore read as self-check. This is only a looseness, but code and spec differ.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: same behaviour (runner() defaults the missing match key to one that never matches); the code comment records it",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/implement.py:RUNNERS (the \"self-check\" entry)",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-5",
+      "title": "The self-check detection regex has no end anchor",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a line matching `^ran \\d+ tests?, \\d+ failed$` (re.M)",
+        "`re.search(r\"^ran \\d+ tests?, \\d+ failed\", output, re.M)`"
+      ],
+      "fix": "add `$` to the code regex, or drop the `$` from CT-7. The code is the simpler fix and matches CT-7 as written.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-consistency",
+          "lens": "consistency",
+          "situation": "CT-7 wants a line that ends after `failed`. The code also accepts a line such as `ran 1 tests, 0 failed (see log)`, so a non-self-check output with that line is read as `self-check`. Red then applies the self-check rules to it, and FR-2 is not the only source of such a line.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: minor; T-8 also anchors the ran line ($) and reads only the last ran line, as CT-7 and FR-4 say",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/implement.py:runner",
+      "tampering": false,
+      "right": "code"
+    },
+    {
+      "id": "J-6",
+      "title": "Red's \"no tests ran\" check matches the line anywhere, not where FR-4 says",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-4",
+        "decision table \"red outcome\" (row \"none\")"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a red command's output ends its run with `ran 0 tests`",
+        "`none = any(m in out for m in RUNNERS.get(name, {}).get(\"none\", []))`"
+      ],
+      "fix": "check only the last `ran` line of the output for the self-check runner, or amend FR-4 and the table to say \"contains\". Keep the other runners as they are, as the existing convention.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-consistency",
+          "lens": "consistency",
+          "situation": "FR-4 refuses red only when the run ends with `ran 0 tests`. The code refuses it when that text appears anywhere in the output. A failing test that prints an earlier `ran 0 tests` line, then ends with `ran 1 tests, 0 failed`, would be refused as \"no tests ran\" when a test did run and fail. I did not see such output in the pack, so this is inferred.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: minor; T-8 also anchors the ran line ($) and reads only the last ran line, as CT-7 and FR-4 say",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/implement.py:red",
+      "tampering": false,
+      "right": "code"
+    },
+    {
+      "id": "J-7",
+      "title": "An import or syntax crash in the test file is accepted as a valid red",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`\"self-check\": {\"error\": [], \"none\": [\"ran 0 tests\"]},`"
+      ],
+      "fix": "Either refuse red when the code is non-zero and there is a Traceback but no `ran` line, or accept this as the FR-9 unknown-runner behaviour and say so in the spec.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-correctness",
+          "lens": "correctness",
+          "situation": "A scoped red command crashes at import, for example a missing module or a syntax error. The script prints a Traceback and no `ran N tests` line. `runner(command, out)` returns None, because the command's own words don't match and the output has no summary line. `wrong_reason(None, ...)` returns \"\", so red is accepted (`code != 0`). The red failure is for the wrong reason, which red is meant to refuse. Because `error` is empty, self-check has no way to flag it even when it is recognised.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: a spec non-goal (a crash before the ran line reads as today); follow-up filed as #91",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py:red and RUNNERS",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "047b1e5bf4003779e05025c064734f67dfd3e4b5",
+    "2": "46b07d4e564589709fbcbe64affe5bff7ba1f4e7"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_selfcheck.py",
+        "test_ac1_one_name_runs_one_test"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_selfcheck.py",
+        "test_ac2_no_names_runs_all"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_selfcheck.py",
+        "test_ac3_fail_goes_on"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_implement.py",
+        "test_ac4_red_takes_a_scoped_command"
+      ]
+    ],
+    "AC-5": [
+      [
+        "tests/test_implement.py",
+        "test_ac5_red_refuses_zero_tests"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_implement.py",
+        "test_ac6_green_runs_only_the_scoped_command"
+      ]
+    ]
+  }
+}

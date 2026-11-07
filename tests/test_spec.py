@@ -5,6 +5,7 @@ from pathlib import Path
 from test_records import repo
 
 from nio import spec
+import selfcheck
 
 FIXTURES = Path(__file__).parent / "fixtures/spec"
 SLUGS = {"spec.md": "checkout-refunds", "spec-epic.md": "checkout", "spec-bugfix.md": "refund-double-charge"}
@@ -235,10 +236,4 @@ def test_secrets_flag_brings_in_security():
 
 
 if __name__ == "__main__":
-    test_secrets_flag_brings_in_security()
-    test_grill_provenance()
-    test_edge_cases()
-    test_examples_pass()
-    test_templates_need_filling()
-    test_broken_specs()
-    test_ids_are_permanent()
+    selfcheck.main([test_secrets_flag_brings_in_security, test_grill_provenance, test_edge_cases, test_examples_pass, test_templates_need_filling, test_broken_specs, test_ids_are_permanent])

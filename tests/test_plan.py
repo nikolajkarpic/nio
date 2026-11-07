@@ -7,6 +7,7 @@ from test_records import repo
 from test_spec import has, put
 
 from nio import plan, spec
+import selfcheck
 
 FIXTURES = Path(__file__).parent / "fixtures/plan"
 SLUG = "checkout-refunds"
@@ -327,24 +328,4 @@ def test_ac41_it_proceeds():
 
 
 if __name__ == "__main__":
-    test_example_passes()
-    test_templates_need_filling()
-    test_coverage()
-    test_broken_items()
-    test_architecture_stop()
-    test_gate_and_ids()
-    test_wrong_ids_and_duplicates()
-    test_provenance_sources()
-    test_bindings()
-    test_robustness()
-    test_second_review()
-    test_ac27_it_fails_naming_ct_2()
-    test_ac49_only_ct_6_is_an_error()
-    test_ac28_it_fails()
-    test_ac29_it_fails()
-    test_ac30_ct_2_raises_no_error()
-    test_ac31_ct_4_raises_no_error()
-    test_ac32_it_raises_no_error_for_it()
-    test_ac40_it_refuses()
-    test_ac55_it_refuses_given_a_bug_fix_spec_with_no()
-    test_ac41_it_proceeds()
+    selfcheck.main([test_example_passes, test_templates_need_filling, test_coverage, test_broken_items, test_architecture_stop, test_gate_and_ids, test_wrong_ids_and_duplicates, test_provenance_sources, test_bindings, test_robustness, test_second_review, test_ac27_it_fails_naming_ct_2, test_ac49_only_ct_6_is_an_error, test_ac28_it_fails, test_ac29_it_fails, test_ac30_ct_2_raises_no_error, test_ac31_ct_4_raises_no_error, test_ac32_it_raises_no_error_for_it, test_ac40_it_refuses, test_ac55_it_refuses_given_a_bug_fix_spec_with_no, test_ac41_it_proceeds])

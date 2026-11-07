@@ -17,6 +17,7 @@ from pathlib import Path
 from test_records import repo
 
 from nio import flow, jury, records
+import selfcheck
 
 S = "2026-10-20-refunds"
 BY = "orchestrator / test / test"
@@ -2390,6 +2391,4 @@ def test_isolated_tests_keep_a_subprocess():
 
 
 if __name__ == "__main__":
-    for name, test in list(globals().items()):
-        if name.startswith("test_"):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

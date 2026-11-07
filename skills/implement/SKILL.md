@@ -51,7 +51,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    the host takes one per call. For a wave, start one worker per claimed task at the same time, each with
    the task's worktree as its working directory. Report each red and green by its own ID. By mode:
    - **split:** a test-phase worker writes the test and hands off `status: red-ready` with its command. Report it:
-     `nio flow red <slug> T-n --run "<command>" --by`. Then a fresh code-phase worker, given the same pack, writes the
+     `nio flow red <slug> T-n --run "<command>" --by`. Give the code-phase worker the `output:` lines `nio flow red` printed, with the pack. Then a fresh code-phase worker, given the same pack, writes the
      code and hands off `status: done`. Report it: `nio flow green <slug> T-n --by`.
    - **single:** one worker writes the test, runs `nio flow red` itself, writes the code and runs `nio flow green`
      itself. When it hands off `done`, check with `nio flow next <slug>` that the task is done, not its word.
