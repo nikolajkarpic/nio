@@ -367,11 +367,15 @@
       "last_round": 1
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      1,
+      "closed"
     ]
   ],
   "versions": {
@@ -417,5 +421,10 @@
       ]
     ]
   },
-  "asked": {}
+  "asked": {},
+  "closed": [
+    1,
+    "858a29cd790fde0ae496e0a0afc73767e2803b38",
+    "Delegated (orchestrator / claude-code / claude-opus-5-5): J-1 is fixed by T-3 (858a29c, green review passed). J-7 and J-8 are accepted as risk: AC-4 and AC-5 are proved by existing tests (test_misuse_forged_refuter_on_a_peer_is_refused, test_ac2_refuter_only_for_its_batch) that lite evidence doesn't list, so T-4 and T-5 can't pass red (#115)."
+  ]
 }

@@ -2,7 +2,7 @@
 gate: implementation-E-1
 subject: 2026-11-07-refuter-batch-forge
 round: 1
-outcome: rejected
+outcome: human
 ---
 # Implementation-e-1 jury: 2026-11-07-refuter-batch-forge
 
