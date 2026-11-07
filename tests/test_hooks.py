@@ -10,6 +10,7 @@ from test_index import flag
 from test_records import GOOD_BODY, commit, fill, repo
 
 from nio import hooks, records
+import selfcheck
 
 
 def git(root, *args):
@@ -131,7 +132,4 @@ def test_allow():
 
 
 if __name__ == "__main__":
-    test_install()
-    test_allow()
-    test_checks_block_commit_and_push()
-    test_two_branches_supersede_the_same_decision()
+    selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision])

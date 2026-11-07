@@ -9,6 +9,7 @@ from pathlib import Path
 from test_records import repo
 
 from nio import agents
+import selfcheck
 
 CARD = """---
 name: {name}
@@ -209,17 +210,4 @@ def test_ac12_evaluator_edits_in_place():
 
 
 if __name__ == "__main__":
-    test_shipped_cards_are_valid()
-    test_no_shipped_card_defaults_to_high_effort()
-    test_sync()
-    test_verify()
-    test_ac12_test_proof_exists_with_an_at_plan_secti()
-    test_ac20_architecture_fit_exists_with_an_at_plan()
-    test_ac46_risk_rollback_exists_with_an_at_plan_se()
-    test_ac47_it_has_an_at_plan_section_next_to_at_spe()
-    test_ac40_executability_exists_with_tier_cheap_an()
-    test_ac44_the_evaluator_card_exists_with_tier_stro()
-    test_ac58_the_card_runs_on_the_strong_model_and_a()
-    test_ac26_it_runs_on_fable_on_a_host_that_maps_no()
-    test_tier_all_renders_once_per_tier()
-    test_ac12_evaluator_edits_in_place()
+    selfcheck.main([test_shipped_cards_are_valid, test_no_shipped_card_defaults_to_high_effort, test_sync, test_verify, test_ac12_test_proof_exists_with_an_at_plan_secti, test_ac20_architecture_fit_exists_with_an_at_plan, test_ac46_risk_rollback_exists_with_an_at_plan_se, test_ac47_it_has_an_at_plan_section_next_to_at_spe, test_ac40_executability_exists_with_tier_cheap_an, test_ac44_the_evaluator_card_exists_with_tier_stro, test_ac58_the_card_runs_on_the_strong_model_and_a, test_ac26_it_runs_on_fable_on_a_host_that_maps_no, test_tier_all_renders_once_per_tier, test_ac12_evaluator_edits_in_place])

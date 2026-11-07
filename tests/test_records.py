@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 from nio import records
+import selfcheck
 
 # every suite imports this module: one temp folder per run, removed at exit, holds every fixture repo
 _TMP = tempfile.TemporaryDirectory(prefix="nio-test-")
@@ -192,5 +193,4 @@ def test_history():
 
 
 if __name__ == "__main__":
-    test()
-    test_history()
+    selfcheck.main([test, test_history])

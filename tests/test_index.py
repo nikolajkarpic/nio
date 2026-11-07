@@ -5,6 +5,7 @@ import sys
 from test_records import GOOD_BODY, commit, fill, repo
 
 from nio import index, query, records
+import selfcheck
 
 
 def test():
@@ -143,6 +144,4 @@ def test_query():
 
 
 if __name__ == "__main__":
-    test()
-    test_standing()
-    test_query()
+    selfcheck.main([test, test_standing, test_query])

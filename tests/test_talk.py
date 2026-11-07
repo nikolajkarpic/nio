@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
+import selfcheck
 
 ROOT = Path(__file__).resolve().parent.parent
 LAST = "Before sending, ask: could they act on this without opening a file? If not, rewrite it."
@@ -61,5 +62,4 @@ def check():
 
 
 if __name__ == "__main__":
-    check()
-    print("ok")
+    selfcheck.main([check])
