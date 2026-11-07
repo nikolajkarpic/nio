@@ -41,12 +41,15 @@ RUNNERS = {
     "cargo test": {"match": r"\bcargo test\b", "error": ["error[E", "error: could not compile"], "none": []},
     "rspec": {"match": r"\brspec\b", "error": ["error occurred outside of examples", "errors occurred outside of examples",
               "An error occurred while loading"], "none": ["No examples found", "0 examples, 0 failures"]},
+    "self-check": {"error": [], "none": ["ran 0 tests"]},  # no "match": found by its `ran N tests` summary line (CT-7)
 }
 
 
-def runner(command):
-    """The known runner a command's own words name, else None: `npm test` or `bash run.sh` read as unknown (CT-2)."""
-    return next((n for n, r in RUNNERS.items() if re.search(r["match"], command)), None)
+def runner(command, output=""):
+    """The known runner a command's own words name, else `self-check` when the output has its `ran N tests` line,
+    else None: `npm test` or `bash run.sh` read as unknown (CT-2, CT-7)."""
+    found = next((n for n, r in RUNNERS.items() if re.search(r.get("match", r"(?!)"), command)), None)
+    return found or ("self-check" if re.search(r"^ran \d+ tests?, \d+ failed", output, re.M) else None)
 
 
 def wrong_reason(name, code, output):
@@ -67,6 +70,7 @@ def wrong_reason(name, code, output):
 SUMMARY = {
     "pytest": (r"^(?:FAILED|ERROR) (\S+)", r"collected (\d+) items?"),
     "unittest": (r"^(?:FAIL|ERROR): (.+?)\s*$", r"^Ran (\d+) tests?"),
+    "self-check": (r"^FAIL (\S+)", r"^ran (\d+) tests?"),
 }
 
 
@@ -78,13 +82,13 @@ def suite(root, cfg, command=None):
         raise ValueError("no `tests.suite` in the NIO config")
     command = command or t["suite"]
     code, out, cause = run(root, command, t.get("timeout") or DEFAULT_LIMIT)
-    name = runner(command)
+    name = runner(command, out)
     failing = collected = None
     if name in SUMMARY:
         fail, count = SUMMARY[name]
         failing = re.findall(fail, out, re.M)
-        m = re.search(count, out, re.M)
-        collected = int(m[1]) if m else None
+        found = re.findall(count, out, re.M)
+        collected = sum(map(int, found)) if found else None
     broken = bool(cause) or wrong_reason(name, code, out).startswith("collection")
     return {"command": command, "code": code, "cause": cause, "runner": name, "failing": failing,
             "collected": collected, "broken": broken, "output_hash": flow.sha(out.encode()), "output": out}
@@ -523,13 +527,16 @@ def red(root, slug, tid, command, by):
         if task["mode"] == "direct":
             raise ValueError(f"{tid} is in direct mode: no red")
         by_worker(task, w, "red")
-        named, name, out = test_files(root, slug, task), runner(command), ""
+        named, name, out = test_files(root, slug, task), None, ""
         if named and not any(f in command for f in named):
             why = f"the command doesn't name {' or '.join(named)}"
         else:
             code, out, cause = run(tree_of(root, lines, tid), command, limit(root))
-            # a cause first: a killed run's partial output proves nothing either way
-            why = cause or ("the test passes before the code exists" if code == 0 else wrong_reason(name, code, out))
+            name = runner(command, out)
+            # a cause first: a killed run's partial output proves nothing either way; "none ran" before the exit code (CT-7)
+            none = any(m in out for m in RUNNERS.get(name, {}).get("none", []))
+            why = cause or ("no tests ran" if none else "the test passes before the code exists" if code == 0
+                            else wrong_reason(name, code, out))
         if why:
             return refused(root, slug, state, lines, tid, "red", command, why, w)
         mine, tree = since_claim(lines, tid), tree_of(root, lines, tid)
@@ -575,6 +582,8 @@ def review(root, slug, task, lines):
         ran = {"suite": {"command": r["command"], "code": r["code"]}}
         if r["broken"]:
             reasons.append(f"the suite is broken: {r['cause'] or wrong_reason(r['runner'], r['code'], r['output'])}")
+        elif r["runner"] == "self-check" and r["code"] and not r["failing"]:
+            reasons.append(f"new failure: the suite exits {r['code']} and names no failing test")
         elif r["runner"] is None or r["failing"] is None:
             if r["code"] != 0:
                 reasons.append(f"new failure: the suite exits {r['code']} and its runner is unknown")
