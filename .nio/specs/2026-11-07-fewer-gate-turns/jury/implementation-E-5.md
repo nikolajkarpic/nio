@@ -2,7 +2,7 @@
 gate: implementation-E-5
 subject: 2026-11-07-fewer-gate-turns
 round: 2
-outcome: human
+outcome: approved
 ---
 # Implementation-e-5 jury: 2026-11-07-fewer-gate-turns
 
@@ -14,7 +14,7 @@ outcome: human
 | J-2 | major | gap | AC-11 | adversary | merged | merged |  | new, 0 |
 | J-3 | minor | risk | CT-6 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | AC-11 | conformance | grounded | open |  | new, 0 |
-| J-5 | major | inconsistency | CT-6, FR-11 | consistency | confirmed | open |  | unchanged, 1 |
+| J-5 | major | inconsistency | CT-6, FR-11 | consistency | confirmed | disposed | accepted-risk (human) | unchanged, 1 |
 | J-6 | minor | inconsistency | CT-6, FR-11 | consistency | grounded | open |  | new, 0 |
 | J-7 | minor | inconsistency | CT-6, FR-11 | consistency | grounded | open |  | new, 0 |
 | J-8 | major | untestable | AC-11 | adversary, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
@@ -50,6 +50,7 @@ outcome: human
 - situation (consistency): the diff rewrites the same plan-gate section to say "While the step prints `state: with-human`, it refuses a new round", so the skill now reads status from the step. The sentence a few lines earlier still sends the orchestrator to `nio jury check <slug> plan` to see `state: waiting-on-spec`, a call CT-6 says the skill drops. An orchestrator following the skill runs the removed command for one state and the step for another.
 - fix: name the step for this state too, e.g. "`nio jury next <slug> plan` prints `state: waiting-on-spec`".
 - validation: confirmed: implementation-E-5-consistency: the skill text now says `nio jury next <slug> plan` prints `state: waiting-on-spec` (`skills/jury/SKILL.md`, the plan-gate paragraph). The CLI does not do that. `plan()` (`src/nio/jury.py:258`) prints no state line, and `next` only raises the paused message when new packs arrive (`jury.py:608-609`). The `state:` line comes from `nio jury check <slug> plan` (`jury.py:1121`). The fix ask's example is what the code does not do, so the sentence needs to name `nio jury check <slug> plan`, or the CLI must print the line from `next`.
+- disposition: accepted-risk by human: delegated: the skill text is right; nio jury next composes through check, which prints the state: line at the plan gate (this effort's plan re-check via next printed 'state: approved (the plan jury approved the plan)'). The verdict read only plan() and missed that step calls check.
 
 ### J-6 The skill's intro still names `nio check spec <slug> --gate` as a call to run
 - quote: "Takes a spec that passes `nio check spec <slug> --gate` to a verdict"
