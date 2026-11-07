@@ -7,12 +7,12 @@ retired: []                      # OP IDs removed from this plan; never reused
 
 ## Build order
 ### Foundation
-- Delivers: CT-1, CT-2, CT-7
+- Delivers: CT-1, CT-2
 - Tests: TC-1, TC-2, TC-3, TC-11, TC-13
 
 ### US-1 Run only a task's own tests
 - Depends on: Foundation
-- Delivers: CT-3
+- Delivers: CT-3, CT-7
 - Tests: TC-4, TC-5, TC-6, TC-12
 - Scenario: QS-1
 
@@ -22,7 +22,7 @@ retired: []                      # OP IDs removed from this plan; never reused
 - Tests: TC-7, TC-8
 
 ### US-3 Evidence per test, not per suite
-- Depends on: Foundation
+- Depends on: US-1
 - Delivers: CT-4
 - Tests: TC-9, TC-10
 - Scenario: QS-2
@@ -55,7 +55,7 @@ retired: []                      # OP IDs removed from this plan; never reused
 - `tests/selfcheck.py:main` takes the script's own list of tests, so the nine scripts with a fixed order keep it (research RF-10) [agent].
 - A failing-test entry `<file>::<name>` matches only that file's test, for pytest entries too: the same one-line rule serves both (research RF-12) [agent].
 - NFR-1 is measured by QS-1, not by a test: a test can't time the red it runs inside [agent].
-- US-3 depends only on Foundation, which delivers the runner reading both US-1 and US-3 use (CT-7), so it can be built beside US-1 [agent].
+- US-3 depends on US-1, which delivers the runner reading (CT-7) US-3 uses; the tasks gate found no test Foundation could prove CT-7 with on its own, and epics run in order anyway [agent].
 - A self-check suite that exits non-zero with no FAIL line fails the epic-closing review, as an unreadable runner's does today (CT-3) [agent].
 
 ## Open points

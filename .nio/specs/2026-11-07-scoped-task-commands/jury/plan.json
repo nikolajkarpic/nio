@@ -1,7 +1,7 @@
 {
   "gate": "plan",
   "subject": "2026-11-07-scoped-task-commands",
-  "round": 2,
+  "round": 3,
   "tier": "low",
   "expect": [
     "architecture-fit",
@@ -15,7 +15,10 @@
     "R-261107-hlvu/plan-refuter.md": "42ca7339d8ff9e1ed359007933a2a98129f794ba96344ac6244150c1b7131256",
     "R-261107-us2v/plan-architecture-fit.md": "8c4b7073f401f14d40b12aff590da7a9d75d5a3167f0128cb533b15fdc6c4766",
     "R-261107-us2v/plan-logic.md": "e327a4b9f6c5fadf534d21334faf469fc838590bafed9df860d2019e01a49277",
-    "R-261107-us2v/plan-test-proof.md": "d4f8ee163ec6318f53fa4835aa810d1ef0f117b4e7d59a71a8e617df05eb1c1b"
+    "R-261107-us2v/plan-test-proof.md": "d4f8ee163ec6318f53fa4835aa810d1ef0f117b4e7d59a71a8e617df05eb1c1b",
+    "R-261107-u6sx/plan-architecture-fit.md": "569b5a32c3ef96f078bdad4c8e9f662138f24eb63e191bd78b312ee471dc6da2",
+    "R-261107-u6sx/plan-logic.md": "c85af416d62b97308542c9dba94c87e7e8f7fcfb64a599f61c0be62d012ea3c0",
+    "R-261107-u6sx/plan-test-proof.md": "59413980d78ac4a0c38b18a4d93b14fab9547dbff53b21a96c1cafa589b4121e"
   },
   "jurors": {
     "plan-architecture-fit": {
@@ -25,9 +28,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "a3c9823675c95e9f04558c2fb07b3eca3b332cec",
-      "judged": 2
+      "round": 3,
+      "version": "f337f747a5bf5a73804b88e54dee2ea024c18a24",
+      "judged": 3
     },
     "plan-logic": {
       "attempts": 1,
@@ -36,9 +39,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "a3c9823675c95e9f04558c2fb07b3eca3b332cec",
-      "judged": 2
+      "round": 3,
+      "version": "f337f747a5bf5a73804b88e54dee2ea024c18a24",
+      "judged": 3
     },
     "plan-test-proof": {
       "attempts": 1,
@@ -47,9 +50,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "a3c9823675c95e9f04558c2fb07b3eca3b332cec",
-      "judged": 2
+      "round": 3,
+      "version": "f337f747a5bf5a73804b88e54dee2ea024c18a24",
+      "judged": 3
     }
   },
   "findings": [
@@ -476,10 +479,15 @@
     [
       2,
       "approved"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "6db1b2fcd1704208897827866128714b147c329c",
-    "2": "a3c9823675c95e9f04558c2fb07b3eca3b332cec"
+    "2": "a3c9823675c95e9f04558c2fb07b3eca3b332cec",
+    "3": "f337f747a5bf5a73804b88e54dee2ea024c18a24"
   }
 }
