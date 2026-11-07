@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-11-07-lite-path",
-  "round": 1,
+  "round": 2,
   "tier": "low",
   "expect": [
     "conformance",
@@ -12,7 +12,8 @@
     "R-261107-gvlw/implementation-E-2-conformance.md": "e3cc853587278370649e7dc37a301a599c5c131e3c6e1ed3ee1aa49accce2fe6",
     "R-261107-gvlw/implementation-E-2-consistency.md": "ebf637f55b4f267cb0c98f8387d0a664c581a2bb302c3fa8b27826772bfc4d4f",
     "R-261107-gvlw/implementation-E-2-correctness.md": "f4aafe46e6cc2c1c8269e2cdc12cf1678b213c3e564789359c3ba78ff6482236",
-    "R-261107-gvlw/implementation-E-2-refuter.md": "f2bfd70a9489cb53f98f0b7b742a3d2bd6412d8392dce3d9eec9b184d24b16de"
+    "R-261107-gvlw/implementation-E-2-refuter.md": "f2bfd70a9489cb53f98f0b7b742a3d2bd6412d8392dce3d9eec9b184d24b16de",
+    "R-261107-gjin/implementation-E-2-conformance.md": "11301cc7c7499d2c21121339080f081cf97c6e4c74c076ac4e3f45f0d6ec2223"
   },
   "jurors": {
     "implementation-E-2-conformance": {
@@ -22,9 +23,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "bc58e85cb955f47db898b0884c5e08e726b8bd41",
-      "judged": 1
+      "round": 2,
+      "version": "b55c20eb1d33356e4fed614d1e50c63d8ae368d5",
+      "judged": 2
     },
     "implementation-E-2-consistency": {
       "attempts": 1,
@@ -78,9 +79,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-16",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: spec.py is reused unchanged on purpose (CT-9); fix task T-16 is pointless (#108).",
       "baseline": "new",
       "rounds": 0,
       "first_round": 0,
@@ -149,9 +150,9 @@
       "validation": "confirmed",
       "reason": "skills/tasks/SKILL.md line 3 still says \"or, for a bug fix, after the spec jury does\", and the Inputs line says \"a spec whose spec jury approved it\", while step 1 (line 45) says a bug fix starts once `nio check spec <slug> --gate` passes with no spec jury; CT-7's Shape asks for the description and Inputs to change, and nothing else settles which wins. T-9 plans the description edit, but the file is inconsistent as it stands.",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-17",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: planned task T-9 (E-3) rewrites the tasks skill's description and Inputs; fix task T-17 would duplicate it.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -186,9 +187,9 @@
       "validation": "confirmed",
       "reason": "`grep escalat skills/tasks/SKILL.md` finds nothing, and step 4 (lines 46-47) is only \"Verify, don't trust the reports\", with no `escalate:` stop, no `grill.md` exception and no full-flow offer, all of which CT-7 requires. T-9 plans this stop (\"stop on `escalate:` note and drafter stops\"), so it is not yet done, but it is a real gap in the epic's state.",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-18",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: planned task T-9 (E-3) adds the step-4 escalation stop; fix task T-18 would duplicate it.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -198,15 +199,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "bc58e85cb955f47db898b0884c5e08e726b8bd41"
+    "1": "bc58e85cb955f47db898b0884c5e08e726b8bd41",
+    "2": "b55c20eb1d33356e4fed614d1e50c63d8ae368d5"
   },
   "matched": {
     "AC-6": [
