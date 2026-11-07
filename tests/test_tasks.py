@@ -577,7 +577,7 @@ def test_lite_escalate_note():
     one = lite_repo(["src/a/x.py", "tests/test_x.py"])
     assert notes(one) == [], notes(one)
     two = lite_repo(["src/a/x.py", "src/a/sub/y.py"])
-    assert len(notes(two)) == 1 and notes(two)[0].startswith("escalate: the fix changes files in 2 folders (src/a, src/a/sub)"), notes(two)
+    assert len(notes(two)) == 1 and notes(two)[0] == 'escalate: the fix changes files in 2 folders (src/a, src/a/sub): offer the full flow (@nio:spec, "Escalating a bug fix")', notes(two)
     assert tasks.check(two, SLUG)[0] == tasks.check(one, SLUG)[0], (tasks.check(two, SLUG)[0], tasks.check(one, SLUG)[0])
     full = repo(lambda t: t.replace("`app.py`", "`src/a/x.py`, `src/b/y.py`", 1))
     assert notes(full) == [], notes(full)
