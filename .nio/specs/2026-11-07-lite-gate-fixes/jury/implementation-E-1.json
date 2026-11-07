@@ -1,0 +1,226 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-07-lite-gate-fixes",
+  "round": 1,
+  "tier": "low",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-vjyj/implementation-E-1-conformance.md": "7e0992933b8bc9f0df76b976554fc5f95cdd36d8273fc197ffd626488737321d",
+    "R-261107-vjyj/implementation-E-1-consistency.md": "51b0ddf6e4939d07fa3b0e2f7294ae8115d1cac0d0c81314809d640e0f462006",
+    "R-261107-vjyj/implementation-E-1-correctness.md": "078105ede26d2a481309c91afd12359683385571212c1cebb712a9eb0106ae9d"
+  },
+  "jurors": {
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "cad82efa8c99d26360564e7550a445e0e933ff88",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "cad82efa8c99d26360564e7550a445e0e933ff88",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "cad82efa8c99d26360564e7550a445e0e933ff88",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Lite branch keys on tests.md, not on the recorded route",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "if not (root / \".nio/specs\" / slug / \"tests.md\").exists():"
+      ],
+      "fix": "key the branch on the route (route(root, slug) == \"lite\"), or state in AC-3 that the marker is the absent tests.md and that a full spec always has one.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "the route is recorded in spec.md and read by route() in src/nio/tasks.py (D-261107-7egd makes lite a route). A full-route spec that lacks tests.md before its plan is written would take the lite branch in evidence.py and list diff test functions as its tests, while the route says full. The AC-3 precondition uses the same tests.md marker, so this is a gap in the spec's definition of a lite spec, not a bug in the test.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py (collect)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Lite test asserts a per-test result the runner may not give",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "assert len(found) == 1 and found[0][\"result\"] == \"passed\", results[\"tests\"]"
+      ],
+      "fix": "assert result in (\"passed\", \"unknown\") for a lite test, or name the runner the test relies on so the expected result is one the code can give.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "C-261030-gk3z and evidence.py lines 453 to 455 give \"unknown\" when the runner has no per-test reader, and the pack's results show \"unknown\" for each new test under the reused suite. The added test asserts \"passed\" for the same kind of result, so it passes only if the temp repo's runner is readable. Whether it is depends on the runner, which I did not run.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_evidence.py (test_a_lite_epic_s_added_test_is_listed_with_its_result)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "AC-2 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-2",
+      "gap": "missing",
+      "where": "tests/test_tasks.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-2: test_ac2_full_foundation_epic_still_fails no assertion",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-3",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "AC-4 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-4",
+      "gap": "missing",
+      "where": "src/nio/evidence.py, tests/test_evidence.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-4: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-4",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "cad82efa8c99d26360564e7550a445e0e933ff88"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_tasks.py",
+        "test_ac1_lite_epic_without_suffix_is_not_foundation"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_tasks.py",
+        "test_ac2_full_foundation_epic_still_fails"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_evidence.py",
+        "test_a_lite_epic_s_added_test_is_listed_with_its_result"
+      ]
+    ],
+    "AC-4": []
+  }
+}

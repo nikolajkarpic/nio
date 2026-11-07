@@ -25,3 +25,27 @@ retired: []                      # task IDs removed from this file; never reused
 - Tier: strong: ordinary logic (find test functions added in commits, merge with results) with a clear test
 - Effort: med
 - Mode: split: behaviour is testable up front for both lite and full paths
+
+#### Fixes
+
+### T-3 Fix: AC-2 has no passing evidence
+- From: J-3 (implementation-E-1, round 1)
+- Files: `tests/test_tasks.py`
+- Serves: AC-2
+- Test: new: AC-2
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-4 Fix: AC-4 has no passing evidence
+- From: J-4 (implementation-E-1, round 1)
+- Files: `src/nio/evidence.py`, `tests/test_evidence.py`
+- Serves: AC-4
+- Test: new: AC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
