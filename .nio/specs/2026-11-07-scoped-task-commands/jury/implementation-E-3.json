@@ -1,0 +1,267 @@
+{
+  "gate": "implementation-E-3",
+  "subject": "2026-11-07-scoped-task-commands",
+  "round": 1,
+  "tier": "low",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-zgiq/implementation-E-3-conformance.md": "6facc3755357233699309631b310174dbc6ff6dc14bd2ea6b0ca9226e2743d4d",
+    "R-261107-zgiq/implementation-E-3-consistency.md": "34c9ac42125d060ec2aac9f4901fb09bed1b17133d81b73f1bc46956cb2a12d7",
+    "R-261107-zgiq/implementation-E-3-correctness.md": "46e596f485049fac0a462d1b714ab150c5cc8122098915106af29234c6651e7e",
+    "R-261107-zgiq/implementation-E-3-refuter.md": "7e1b84d2345378d11a97e7b71bbdadc7e850615f70577a889685f0b062b3bfc0"
+  },
+  "jurors": {
+    "implementation-E-3-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c45d835cbf20dd5993cc358b0bdaff979a6455f1",
+      "judged": 1
+    },
+    "implementation-E-3-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c45d835cbf20dd5993cc358b0bdaff979a6455f1",
+      "judged": 1
+    },
+    "implementation-E-3-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c45d835cbf20dd5993cc358b0bdaff979a6455f1",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The worker card's no-re-run rule covers only the code phase",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-7",
+        "CT-5",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and not re-run before its first edit",
+        "In the code phase, read red's `output:` lines the orchestrator passes on and make your first edit before running the tests."
+      ],
+      "fix": "state the no-re-run rule once for every mode, and keep the red-output sentence for the code phase only.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "a single-mode worker, or a split test-phase worker, reads the card. Nothing in it says not to re-run the tests before the first edit, so the rule AC-7 requires is missing in those modes. The card's only such sentence sits under the code-phase instruction.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-6 and AC-7 state \"not to re-run the tests before its first edit\" with no mode limit. In worker.md line 30 the only such instruction (\"make your first edit before running the tests\") sits inside the sentence that begins \"In the code phase\". A single-mode or test-phase worker therefore gets no such rule. The spec flow (line 26) frames the rule for the code-phase worker only, so the practical impact is small. As written, the card is narrower than FR-6.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-9",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/agents/worker.md (Job section, line 30)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "\"ran 0 tests\" is read two ways in red",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-3",
+        "CT-7",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a red command's output ends its run with `ran 0 tests` THEN THE SYSTEM SHALL refuse red with the reason \"no tests ran\", whatever the exit code",
+        "\"none\" is a `ran 0 tests` line (FR-4)",
+        "`none = (last[-1] == \"0\" if last else False) if name == \"self-check\" else \\`"
+      ],
+      "fix": "pick one rule. Either `red` and `wrong_reason` both read the last count line, or the spec and RUNNERS both say substring. Then make the spec's wording match.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "a self-check run prints `ran 0 tests, 0 failed` and then `ran 3 tests, 1 failed`, and exits 1. `red` reads the last count line (3), so `none` is False, and the run is refused through `wrong_reason`, which matches the substring \"ran 0 tests\" in RUNNERS[\"self-check\"][\"none\"] and returns \"no tests ran\". FR-4 says the output ends with `ran 0 tests`, so this run should be judged on its failure.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/implement.py (red, around lines 537-541; wrong_reason line 64; RUNNERS[\"self-check\"] line 44)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "RUNNERS[\"self-check\"] differs in shape from CT-7",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`RUNNERS[\"self-check\"]` is `{\"match\": r\"(?!)\", \"error\": [], \"none\": [\"ran 0 tests\"]}`, plain substrings like every other entry"
+      ],
+      "fix": "add the `\"match\": r\"(?!)\"` key the spec names, or change CT-7 to say the key is omitted.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "the code entry is `\"self-check\": {\"error\": [], \"none\": [\"ran 0 tests\"]},` with no `\"match\"` key. `runner` supplies the default `r\"(?!)\"`, so behaviour is the same. But a reader who checks the entry against CT-7 finds a different shape, and a later edit to `runner` that reads `r[\"match\"]` would raise a KeyError.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py (RUNNERS, line 44)",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The red-output sentence is ambiguous about the pack",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "AC-8",
+        "FR-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Give the code-phase worker the `output:` lines `nio flow red` printed, with the pack. Then a fresh code-phase worker, given the same pack, writes the"
+      ],
+      "fix": "say once that the output lines are added to the pack the fresh worker is given.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "\"with the pack\" and then \"given the same pack\" can be read as the output lines being part of the pack or as sitting beside it. The orchestrator might hand the fresh worker the pack without the output lines. CT-6 means the lines go with the pack, so the wording should say so.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/implement/SKILL.md (split-mode bullet, line 16)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "The AC-7 card test keeps an assertion that passes whatever the new sentence says",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "for text in [\"scoped to the task's own tests\", \"File:\", \"in the foreground\", \"never polled with sleep\", \"before running the tests\", \"try again\"]:"
+      ],
+      "fix": "assert the full phrases, such as \"the short wait on `try again` stays\" and \"make your first edit before running the tests\".",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "\"try again\" already appears in the card's unchanged line 26 (\"If `nio flow` says `try again`, wait a few seconds\"). Deleting the new parenthesis \"(the short wait on `try again` stays)\" would not make the test fail. The \"not re-run before the first edit\" instruction is checked only by the fragment \"before running the tests\". The card could lose \"make your first edit\" and the test would still pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_agents.py (test_ac7_worker_card_scopes_its_tests)",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "c45d835cbf20dd5993cc358b0bdaff979a6455f1"
+  },
+  "matched": {
+    "AC-7": [
+      [
+        "tests/test_agents.py",
+        "test_ac7_worker_card_scopes_its_tests"
+      ]
+    ],
+    "AC-8": [
+      [
+        "tests/test_implement.py",
+        "test_ac8_red_prints_its_tail"
+      ]
+    ]
+  }
+}

@@ -74,6 +74,19 @@ retired: [T-2]
 - Effort: low
 - Mode: split: a testable behavior change
 
+#### Fixes
+
+### T-9 Fix: The worker card's no-re-run rule covers only the code phase
+- From: J-1 (implementation-E-3, round 1)
+- Files: `src/nio/agents/worker.md`
+- Serves: AC-7, CT-5, FR-6
+- Test: TC-7
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Evidence per test, not per suite (US-3)
 
 ### T-7 Evidence records results per test from self-check lines
