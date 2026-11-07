@@ -254,7 +254,7 @@ def check(root, slug, gate=False, base="HEAD"):
     # a foundational task serves only ACs its dependents serve (#42 FR-45)
     above = {t: {u for u in tasks if t in below[u]} for t in tasks}
     for e in epics:
-        if e["story"] in ("", "Foundation"):
+        if e["story"] == "Foundation" or not e["story"] and kind != "lite":
             for t in (x for x in e["tasks"] if not tasks[x]["fix"]):  # a fix task is appended with no dependents
                 theirs = {i for u in above[t] for i in ids(tasks[u]["fields"].get("Serves", ""))}
                 errs += [f"{t} serves {ac}, which no task depending on it serves" for ac in ids(tasks[t]["fields"].get("Serves", ""))
