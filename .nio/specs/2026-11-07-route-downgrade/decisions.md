@@ -1,6 +1,6 @@
 # Decisions: 2026-11-07-route-downgrade (#114, lite)
 
-Orchestrator: claude-code / claude-opus-5-5, delegated by the human (Nikolaj). Wall clock 15:58Z (`nio new spec`) to 16:43Z (done): about 45 minutes.
+Orchestrator: claude-code / claude-opus-5-5, delegated by the human (Nikolaj). Wall clock 15:59Z (`nio new spec`) to 16:29Z (done): about 30 minutes.
 
 - Built on `nio/2026-11-07-lite-path` (#112), after the #113 effort was merged into it.
 - Route lite, no risk flag: a defect in one module (`src/nio/flow.py`).
