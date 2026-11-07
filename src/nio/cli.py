@@ -103,7 +103,7 @@ def main():
     jd.add_argument("id")
     jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS))
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
-    jd.add_argument("--note", required=True)
+    jd.add_argument("--note", required=True, action="append")
     jd.add_argument("--change", default="", metavar="C-ID", help="spec-change only: the change record the finding waits on")
     je = jsub.add_parser("evidence", help="run an epic's tests, checks, attacks and journeys in a throwaway copy and write the run's results.json")
     je.add_argument("slug")
@@ -309,8 +309,8 @@ def main():
             elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
             elif a.jury_cmd == "dispose":
-                jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note, a.change)
-                print(f"{a.id}: {a.disposition} by {a.by}")
+                for i in jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note, a.change):
+                    print(f"{i}: {a.disposition} by {a.by}")
             else:
                 outcome, lines = jury.check(root, a.slug, a.gate, a.record, a.human)
                 print("\n".join(lines))

@@ -877,7 +877,29 @@ def refute(led, path):
 
 
 def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=False):
+    """`fid` one ID or comma-separated IDs, `note` a string or a list (one, or one per ID); all checks pass before the one save."""
+    ids = fid.split(",")
+    notes = [note] if isinstance(note, str) else list(note)
+    if "" in ids or len(set(ids)) != len(ids):
+        raise ValueError(f"IDs must be distinct and non-empty: {fid}")
+    if len(notes) not in (1, len(ids)):
+        raise ValueError(f"{len(notes)} notes for {len(ids)} findings; give one note, or one per finding in order")
     led = load(root, slug, gate)
+    bad = []
+    for i, n in zip(ids, notes * len(ids) if len(notes) == 1 else notes):
+        try:
+            _dispose_one(root, slug, gate, led, i, disposition, by, n, change, routed)
+        except ValueError as e:
+            if len(ids) == 1:
+                raise
+            bad.append(f"{i}: {e}")
+    if bad:
+        raise ValueError("\n".join(bad))
+    save(root, led)
+    return ids
+
+
+def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, routed):
     f = next((g for g in led["findings"] if g["id"] == fid), None)
     if not f:
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
@@ -916,7 +938,6 @@ def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=Fals
     f.update(status="overruled" if disposition == "overruled" else "disposed", disposition=disposition, by=by, note=note)
     if disposition == "overruled":
         f["reason"] = f"overruled by the human: {note}"
-    save(root, led)
 
 
 def votes(led):
