@@ -273,7 +273,7 @@ def check(root, slug, gate=False, base="HEAD"):
         paths = [PurePosixPath(f) for t in tasks.values() for f in files(t["fields"].get("Files", ""))]
         dirs = {str(q.parent) for q in paths if not ({"tests", "test"} & set(q.parts[:-1]) or q.name.startswith("test_"))}
         if len(dirs) > 1:
-            notes.append(f"escalate: the fix changes files in {len(dirs)} folders ({', '.join(sorted(dirs))}); consider a full spec")
+            notes.append(f"escalate: the fix changes files in {len(dirs)} folders ({', '.join(sorted(dirs))}): offer the full flow (@nio:spec, \"Escalating a bug fix\")")
     return errs, notes
 
 
