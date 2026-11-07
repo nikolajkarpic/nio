@@ -70,7 +70,7 @@ def test_lite_unchanged_required():
     assert errors(root, slug) == [], errors(root, slug)
     unchanged = "- **UB-1** WHEN a customer requests one refund on a paid order THE SYSTEM SHALL CONTINUE TO refund the full amount. [human]\n"
     slug = put(root, "spec-bugfix.md", lambda t: t.replace(unchanged, ""))
-    has(errors(root, slug), "section `## Unchanged behaviour` is missing or empty")
+    has(errors(root, slug), "section `## Unchanged behaviour` is missing or empty: a bug fix needs at least one unchanged-behaviour item, its regression test")
     ac2 = "- **AC-2** (UB-1) Given a paid order, when one refund request arrives, then it is refunded in full. [human]\n  Observable: order state `refunded`, amount equals total. Level: integration.\n"
     slug = put(root, "spec-bugfix.md", lambda t: t.replace(ac2, ""))
     has(errors(root, slug), "UB-1 has no AC")
