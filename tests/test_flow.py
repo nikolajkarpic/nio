@@ -1484,6 +1484,32 @@ def test_lite_epic_gate():
     print("ok")
 
 
+def test_lite_escalation_placement():
+    """TC-11: an escalated lite effort stands at the spec jury when its rewritten spec passes the gate check, and at
+    grilling while the spec keeps an open point."""
+    root = effort("tasks_jury", route="lite")
+    later = "2026-10-22-refunds-grill"
+    effort("grilling", slug=later, route="lite", root=root)
+    full = (FIXTURES / "spec/spec.md").read_text()  # route: full, OP-1 open
+    settled = re.sub(r"^- \*\*OP-1\*\*.*\n", "", full, flags=re.M).replace("[default]", "[human]")
+
+    def escalate(slug, text):
+        (root / ".nio/specs" / slug / "spec.md").write_text(text.replace("slug: checkout-refunds", f"slug: {slug}"))
+
+    escalate(S, settled)
+    got = nxt(root, S)
+    assert "state: spec_jury" in got and "state: tasking" not in got and "state: implementing" not in got, got
+    escalate(later, full)
+    got = nxt(root, later)
+    assert "state: grilling" in got and "state: spec_jury" not in got, got
+    escalate(later, settled)
+    got = nxt(root, later)
+    assert "state: spec_jury" in got and "state: implementing" not in got, got
+    skill = (Path(__file__).parent.parent / "skills/spec/SKILL.md").read_text()
+    assert "## Escalating a bug fix" in skill and "keeps its tag" in skill, "spec skill"
+    print("ok")
+
+
 def test_uj2_idle_visible():
     """TC-69: an idle effort shows when it was last active, below the newer one."""
     root = effort("planning")
@@ -2529,6 +2555,12 @@ def test_lite_skill_texts():
     for k in ("escalate:", "escalation declined", "new dependency", "outside the bug's folder", "stored data",
               "Escalating a bug fix"):
         assert k in step4, ("skill step 4", k)
+    # TC-12 (AC-12, CT-13): a declined switch continues on lite and is logged in grill.md; the rewrite keeps tags.
+    spec_skill = (root / "skills/spec/SKILL.md").read_text()
+    esc = re.search(r"^## Escalating a bug fix\n.*?(?=^## |\Z)", spec_skill, re.S | re.M)
+    assert esc, "spec skill: ## Escalating a bug fix"
+    for k in ("continue on lite", "grill.md", "keeps its tag"):
+        assert k in esc.group(0), ("spec skill escalation", k)
 
 
 if __name__ == "__main__":
