@@ -4,6 +4,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import selfcheck
+
 HERE = Path(__file__).resolve().parent
 
 
@@ -72,7 +74,11 @@ def test_misuse_unknown_name_runs_nothing():
     print("ok")
 
 
+def test_every_script_uses_selfcheck():
+    bad = [f.name for f in sorted(HERE.glob("test_*.py"))
+           if "selfcheck.main(" not in f.read_text().split('if __name__ == "__main__":')[-1]]
+    assert not bad, f"not run through selfcheck.main: {bad}"
+
+
 if __name__ == "__main__":
-    for name, test in list(globals().items()):
-        if name.startswith("test_"):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

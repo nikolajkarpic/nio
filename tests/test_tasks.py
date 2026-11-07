@@ -6,6 +6,7 @@ from pathlib import Path
 from test_jury import PLAN_FINDING, PSLUG, approve_plan, approve_spec, change, plan_lens, plan_repo
 
 from nio import jury, records, tasks
+import selfcheck
 
 SLUG = PSLUG
 TASKS = (Path(__file__).parent / "fixtures/tasks/tasks.md").read_text()
@@ -561,6 +562,4 @@ def test_ac28_skill_starts_run_with_bare_nio_run():
 
 
 if __name__ == "__main__":
-    for name, test in list(globals().items()):
-        if name.startswith("test_"):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

@@ -8,6 +8,7 @@ import tempfile
 import time
 from pathlib import Path
 
+import selfcheck
 from test_tasks import git
 
 
@@ -3396,6 +3397,4 @@ if __name__ == "__main__":
     if "--demo" in sys.argv:
         demo(sys.argv[sys.argv.index("--demo") + 1])
         sys.exit()
-    for name, test in list(globals().items()):
-        if name.startswith("test_") and callable(test):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

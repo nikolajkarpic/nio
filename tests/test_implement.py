@@ -8,6 +8,7 @@ import tempfile
 import time
 from pathlib import Path
 
+import selfcheck
 import test_flow
 from test_tasks import SLUG, TASKS, approve_commit, chain, errs, field, git, has, repo
 
@@ -1804,6 +1805,4 @@ if __name__ == "__main__":
         tempfile.tempdir = tempfile.mkdtemp(prefix="nio-demo-", dir=Path(tempfile.tempdir).parent)  # outlives this run
         print(demo())
         sys.exit()
-    for name, test in list(globals().items()):
-        if name.startswith("test_") and callable(test):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
