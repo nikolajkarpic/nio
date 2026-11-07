@@ -1510,6 +1510,142 @@ def test_lite_escalation_placement():
     print("ok")
 
 
+def test_lite_escalated_to_full_runs_full_stages():
+    """UB-1 (AC-5): a lite effort whose spec.md becomes the full fixture reports no lite-route skip and no route-change stop."""
+    root = repo()
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    flow.start(root, S, by=BY)
+    spec = lambda name: re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+    (folder / "spec.md").write_text(spec("spec-bugfix.md"))
+    nxt(root)  # the lite route is seen
+    (folder / "spec.md").write_text(spec("spec.md"))
+    out = nxt(root)
+    assert "(lite route)" not in out and "route changed" not in out, out
+    n = len(lines_of(root))
+    assert flow.park(root, S, "x", by=BY)[0] == 0 and len(lines_of(root)) > n
+    print("ok")
+
+
+def test_header_matching_route_skips_unchanged():
+    """UB-2 (AC-6): a lite effort whose header says lite lists exactly spec_jury, planning, plan_jury as skipped
+    (lite route) past grilling; a full effort whose header says full lists none."""
+    def run(name, done):
+        root = repo()
+        git(root, "config", "user.name", "t")
+        git(root, "config", "user.email", "t@t")
+        (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+        folder = root / ".nio/specs" / S
+        folder.mkdir(parents=True)
+        (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+        flow.start(root, S, by=BY)
+        text = re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+        (folder / "spec.md").write_text(text)
+        for stage in done:
+            assert flow.done(root, stage, S, by=BY)[0] == 0
+        return nxt(root)
+
+    out = run("spec-bugfix.md", ("drafting", "grilling"))
+    skipped = [ln for ln in out.splitlines() if "(lite route)" in ln]
+    assert len(skipped) == 1, out
+    assert skipped[0] == "skipped: spec_jury, planning, plan_jury (lite route)", skipped
+    out = run("spec.md", ())
+    assert "(lite route)" not in out, out
+    print("ok")
+
+
+def spec_text(name):
+    """A spec fixture under the slug S."""
+    return re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+
+
+def downgraded():
+    """A full effort at spec_jury with no approval, started by `nio flow start`, its spec.md then overwritten with the
+    bug-fix fixture (`route: lite`)."""
+    root = effort("spec_jury")
+    flow.start(root, S, by=BY)
+    (root / ".nio/specs" / S / "spec.md").write_text(spec_text("spec-bugfix.md"))
+    return root
+
+
+def test_route_recorded_by_start():
+    """EB-1 (AC-2): `nio flow start` on a full effort with no history records route full on its first line."""
+    root = effort("spec_jury")
+    flow.start(root, S, by=BY)
+    first = lines_of(root)[0]
+    assert first["evidence"].get("route") == "full", first
+    print("ok")
+
+
+def test_route_recorded_by_first_done():
+    """EB-1 (AC-2): the first `nio flow done` (drafting) on a full effort with no history records route full. With no
+    history the files decide the stage, so the spec is only its `route: full` header and the human passes drafting."""
+    root = effort("drafting")
+    (root / ".nio/specs" / S / "spec.md").write_text(spec_text("spec.md").split("\n## ")[0] + "\n")
+    assert flow.done(root, "drafting", S, human="drafted by hand", by="human")[0] == 0
+    first = lines_of(root)[0]
+    assert first["evidence"].get("route") == "full", first
+    print("ok")
+
+
+def test_downgrade_skips_nothing():
+    """EB-2 (AC-1): a full effort whose header is rewritten to lite reports no lite-route skip and is not at tasking."""
+    out = nxt(downgraded())
+    assert "(lite route)" not in out and "state: tasking" not in out, out
+    print("ok")
+
+
+def test_downgrade_refused():
+    """EB-3 (AC-3): next names both routes on a `route changed:` line; done and start refuse, recording nothing."""
+    root = downgraded()
+    out = nxt(root)
+    changed = [ln for ln in out.splitlines() if ln.startswith("route changed:")]
+    assert changed and "full" in changed[0] and "lite" in changed[0], out
+    hp = root / ".nio/specs" / S / "history.jsonl"
+    before = hp.read_bytes()
+    for call in (lambda: flow.done(root, "tasking", S, by=BY), lambda: flow.start(root, S, by=BY)):
+        try:
+            call()
+            err = ""
+        except Exception as e:
+            err = str(e)
+        assert "route changed:" in err, err
+        assert hp.read_bytes() == before
+    print("ok")
+
+
+def test_escalated_downgrade_refused():
+    """EB-2 legacy: a lite effort with no recorded route and no spec-jury round keeps its lite skips (the header
+    decides). EB-4 (AC-4): a lite effort escalated to full whose spec jury has a round, its header rewritten back to
+    lite, is refused as in AC-3."""
+    root = effort("drafting")  # intake only
+    folder = root / ".nio/specs" / S
+    flow.start(root, S, by=BY)
+    folder.joinpath("spec.md").write_text(spec_text("spec-bugfix.md"))
+    for stage in ("drafting", "grilling"):
+        assert flow.done(root, stage, S, by=BY)[0] == 0
+    hp = folder / "history.jsonl"
+    old = [json.loads(x) for x in hp.read_text().splitlines()]
+    for x in old:
+        x["evidence"].pop("route", None)
+    hp.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in old))
+    assert "(lite route)" in nxt(root), "legacy lite effort lost its skips"
+
+    settled = re.sub(r"^- \*\*OP-1\*\*.*\n", "", spec_text("spec.md"), flags=re.M).replace("[default]", "[human]")
+    folder.joinpath("spec.md").write_text(settled)  # escalated to route: full
+    approve(root, S, "spec", commit=False)  # the escalated spec's jury has a round
+    folder.joinpath("spec.md").write_text(spec_text("spec-bugfix.md"))
+    out = nxt(root)
+    changed = [ln for ln in out.splitlines() if ln.startswith("route changed:")]
+    assert changed and "full" in changed[0] and "lite" in changed[0], out
+    assert "(lite route)" not in out, out
+    print("ok")
+
+
 def test_uj2_idle_visible():
     """TC-69: an idle effort shows when it was last active, below the newer one."""
     root = effort("planning")
