@@ -83,6 +83,41 @@ retired: [T-13, T-14]                      # task IDs removed from this file; ne
 - Effort: low
 - Mode: single: text edits and their substring test are one small change
 
+#### Fixes
+
+### T-16 Fix: T-5: src/nio/spec.py isn't in the epic's diff
+- From: J-1 (implementation-E-2, round 1)
+- Files: `src/nio/spec.py`
+- Serves: AC-6, AC-7
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-17 Fix: Tasks skill description says a bug fix waits for the spec jury
+- From: J-3 (implementation-E-2, round 1)
+- Files: `skills/tasks/SKILL.md`
+- Serves: CT-7, FR-8, J-3
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-18 Fix: Tasks skill has no escalation stop in step 4
+- From: J-4 (implementation-E-2, round 1)
+- Files: `skills/tasks/SKILL.md`
+- Serves: CT-7, FR-8, J-4
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-3 Escalate a lite effort that turns out bigger (US-3)
 
 ### T-7 Folder escalation note in `tasks.check` on a lite spec (CT-4)
