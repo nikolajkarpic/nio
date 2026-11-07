@@ -2,7 +2,7 @@
 gate: implementation-E-1
 subject: 2026-11-07-lite-gate-fixes
 round: 1
-outcome: rejected
+outcome: human
 ---
 # Implementation-e-1 jury: 2026-11-07-lite-gate-fixes
 
@@ -12,8 +12,8 @@ outcome: rejected
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | J-1 | minor | inconsistency | AC-3 | consistency | grounded | open |  | new, 0 |
 | J-2 | minor | inconsistency | AC-3 | consistency | grounded | open |  | new, 0 |
-| J-3 | blocker | gap | AC-2 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | blocker | gap | AC-4 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-3 | blocker | gap | AC-2 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-4 | blocker | gap | AC-4 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 Lite branch keys on tests.md, not on the recorded route
 - quote: "if not (root / ".nio/specs" / slug / "tests.md").exists():"
@@ -29,13 +29,13 @@ outcome: rejected
 - situation (cli): no passing test proves AC-2: test_ac2_full_foundation_epic_still_fails no assertion
 - fix: add or fix a test that proves AC-2
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-3
+- disposition: accepted-risk by human: Delegated: AC-2's test delegates to the existing test_ac46 (which asserts), and AC-4 is proved by the existing test_the_packs_hold_a_hint_naming_it_and_a, which a lite epic's evidence can't list (only tests the epic adds, grill Q2). Both behaviours already pass; a test-only fix task can't pass red.
 
 ### J-4 AC-4 has no passing evidence
 - situation (cli): no passing test proves AC-4: no test didn't run
 - fix: add or fix a test that proves AC-4
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-4
+- disposition: accepted-risk by human: Delegated: AC-2's test delegates to the existing test_ac46 (which asserts), and AC-4 is proved by the existing test_the_packs_hold_a_hint_naming_it_and_a, which a lite epic's evidence can't list (only tests the epic adds, grill Q2). Both behaviours already pass; a test-only fix task can't pass red.
 
 ## Jurors
 
