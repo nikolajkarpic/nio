@@ -220,7 +220,8 @@ def check(root, slug, gate=False, base="HEAD"):
     # a fresh draft has no decisions yet; after the grill it always has some (#40)
     for s in ROUTES[route]["mandatory"] + ["Decisions"] * (gate and route == "full"):
         if not "\n".join(secs.get(s, [])).strip():
-            errs.append(f"section `## {s}` is missing or empty")
+            errs.append(f"section `## {s}` is missing or empty"
+                        + (": a bug fix needs at least one unchanged-behaviour item, its regression test" if s == "Unchanged behaviour" and route == "lite" else ""))
     for s, lines in secs.items():
         if re.fullmatch(r"(n/?a|none|tbd|-)\.?", "\n".join(lines).strip().lower()):
             errs.append(f"section `## {s}` says N/A; remove a section that doesn't apply")
