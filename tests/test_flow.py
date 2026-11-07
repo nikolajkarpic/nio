@@ -2568,6 +2568,14 @@ def test_lite_skill_texts():
     assert impl4, "implement step 4 (blocked handoff) not found"
     for k in ("new dependency", "outside the bug's folder", "stored data", "second folder", "Escalating a bug fix"):
         assert k in impl4.group(0), ("implement step 4", k)
+    # TC-16 (AC-16, CT-6, CT-8): the grill and the drafter card name the triggers; wrapped lines count as one space.
+    flat = lambda s: re.sub(r"\s+", " ", s)
+    grill_flat = flat((root / "skills/grill/SKILL.md").read_text())
+    drafter_flat = flat(drafter)
+    for k in ("new dependency", "outside the bug's folder", "stored data", "Escalating a bug fix"):
+        assert k in grill_flat, ("grill", k)
+    for k in ("new dependency", "outside the bug's folder", "stored data"):
+        assert k in drafter_flat, ("drafter card", k)
     # TC-12 (AC-12, CT-13): a declined switch continues on lite and is logged in grill.md; the rewrite keeps tags.
     spec_skill = (root / "skills/spec/SKILL.md").read_text()
     esc = re.search(r"^## Escalating a bug fix\n.*?(?=^## |\Z)", spec_skill, re.S | re.M)
