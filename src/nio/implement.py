@@ -752,11 +752,13 @@ def green(root, slug, tid, command, by):
         if tree != root:
             patch, saved, err = land(root, slug, tid, tree, since_claim(lines, tid)[0]["evidence"]["commit"])
             if err:
-                records.git(root, "worktree", "remove", "--force", str(tree), full=True)
+                if patch:  # no patch (the diff failed): the tree is the only copy of the work, so it stays
+                    records.git(root, "worktree", "remove", "--force", str(tree), full=True)
+                where = patch or str(tree.relative_to(root))
                 why = f"{tid} blocked: its changes don't apply"
                 flow.write(root, slug, [entry("blocked", tid, cause="apply", patch=patch)],
                            {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}, w, "implementing")
-                return 1, printed + [why, f"  {err}", f"its changes are in {patch}"]
+                return 1, printed + [why, f"  {err}", f"its changes are in {where}"]
         line = review(root, slug, task, lines)
         ev = line["evidence"]
         if not ev["passed"]:
