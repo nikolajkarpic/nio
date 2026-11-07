@@ -619,7 +619,7 @@ def pack(root, slug, gate, lens, run):
     current(root, slug, epic, results)
     led = jury.load(root, slug, gate)
     out = [f"# Pack: {lens}, {gate} gate of {slug}", "",
-           "You may open any file of the project to read it. You have no way to write files or run commands.", ""]
+           "You may open any file of the project to read it. You may write only your output file, named at the end; you can't run commands.", ""]
     # not `phase`: it reads `first` until the next round is collected, and this pack is what that round needs
     if led.get("versions") and any(o == "rejected" for _, o in led["recorded"]):
         judged = led["versions"][max(led["versions"], key=int)]

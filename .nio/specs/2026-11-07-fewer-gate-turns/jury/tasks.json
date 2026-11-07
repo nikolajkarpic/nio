@@ -1,0 +1,252 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261107-h2pu/tasks-executability.md": "caf66805b3c633852d69046adb1c9fa1c4356b1177a76a64c296863dc986e957",
+    "R-261107-h2pu/tasks-refuter.md": "116da40a6983f9d568db2263fbf7cd175d31263c18a702dd40e1d2b694f279cd",
+    "R-261107-mwpb/tasks-executability.md": "fe358a5ff1dfa699e879ee1bcffc4571423eaac2912a8d111f09723e13d2c9fc",
+    "R-261107-wd7p/tasks-executability.md": "53ef15e2615e8608cc6f474fb2c155ff595541d0585b684f23a17319b0ef7765"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "68052375d4cc20863e1ac3ad0e57e16fc5f52126",
+      "judged": 3
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "AC-4 forbids a composed outcome, but CT-1 composes one before the re-run branch",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-4",
+        "CT-1",
+        "TC-4",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "no outcome is composed",
+        "otherwise `check(root, slug, gate, record=True)` and all its lines (FR-3), then by outcome:"
+      ],
+      "fix": "state in CT-1 that the \"some not usable\" row of the decision table is checked before `check` runs, so no outcome is composed for missing, invalid or needs-more outputs; add an assert that no `outcome:` line appears to TC-4.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a run has testability with no output, logic with a valid output, and adversary's file present but invalid. The step follows CT-1 in order: no refuter batch, no escalation, so it reaches \"otherwise\" and runs `check(record=True)`. `check` saves `outcome: rerun` and prints it, which AC-4 forbids. Nothing is recorded because `rerun` is never recorded, so TC-4 (which only checks `recorded` is empty) still passes and does not catch it. The worker has to choose between CT-1's order and AC-4's observable.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-4 (spec.md:49) says \"no outcome is composed\", but CT-1 (contracts.md:21) says \"otherwise `check(... record=True)` and all its lines\", and `check` (jury.py:1074) prints `outcome: rerun` even for \"no output\" (jury.py:966); TC-4 never asserts that no `outcome:` line appears.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "CT-1 checks unusable outputs before check (no outcome composed); TC-4 and TC-13 assert no outcome line; plan re-checked",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Nothing measures the skill's call count, so AC-11 and NFR-1 can pass while the skill still takes 31 calls",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-11",
+        "NFR-1",
+        "TC-11",
+        "TC-18",
+        "T-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "drive scenario A of research RF-2 the way the skill's `## Steps` say, in their order",
+        "it names `nio jury next` and `J-a,J-b` (several IDs in one dispose)",
+        "`calls <= 15` (it is 14)"
+      ],
+      "fix": "TC-18 counts the orchestrator calls its `## Steps` name for scenario A and asserts `<= 15`; or TC-11 reads the skill's steps and counts those instead of a list it holds.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "TC-11 counts a call list the test author writes by hand, and it never reads SKILL.md. TC-18 checks only that certain words appear or are absent; it does not count the calls its steps name, and its Assert list leaves out \"Every orchestrator call the steps name for scenario A is one TC-11 counts\". So a skill that still says to save each juror's answer and dispose findings one at a time, with about 25 steps, passes TC-11, TC-18 and T-5's done check. The 15-call target is then unverified, and the PR number in SC-1 would be the only check.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "the finding says TC-18's Assert list omits the call-count clause, but tests.md:142 ends with \"Every orchestrator call the steps name for scenario A is one TC-11 counts\". TC-18 also requires \"save each one's answer verbatim\" to be gone and bans the per-step calls. A skill that kept 25 calls would name calls TC-11 doesn't count, so it would fail.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "T-3 omits the file that holds the implementation pack sentence it must change",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-3",
+        "CT-2",
+        "TC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Files: `src/nio/jury.py`, `src/nio/cli.py`, `tests/test_jury.py`, `tests/test_evidence.py`",
+        "You have no way to write files or run commands."
+      ],
+      "fix": "add `src/nio/evidence.py` to T-3's Files, and say whether the replacement is made in `evidence.pack` or in `packs`.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "CT-2 says that sentence \"becomes\" \"You may write only your output file, named at the end; you can't run commands.\", and TC-17 asserts the new text in `evidence.pack`'s output. That sentence is in src/nio/evidence.py line 622, inside `pack` (line 608). The worker, told to change only the four listed files, either edits evidence.py without listing it, which breaks the \"names every file it changes\" rule, or replaces the text by string substitution inside jury.py, which CT-2 does not say. TC-17 can't pass as written without one of those.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the sentence \"You have no way to write files or run commands.\" is at src/nio/evidence.py:622 inside `pack`. CT-2 says that sentence \"becomes\" the new text and TC-17 asserts it in `evidence.pack`'s output. T-3's Files omit evidence.py and neither CT-2 nor T-3 says the replacement is made in `packs`.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-3 Files add src/nio/evidence.py; CT-2 says the sentence changes in evidence.pack itself",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "T-3 bundles most of the feature into one strong-tier task",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "T-3",
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "AC-4",
+        "AC-5",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-16",
+        "CT-1",
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Serves: AC-1, AC-2, AC-3, AC-4, AC-5, AC-12, AC-13, AC-14, AC-16",
+        "- Tier: strong: new multi-step command with many cases, but fully tested"
+      ],
+      "fix": "split T-3 into (a) the step and its packs for the spec, plan and tasks gates, and (b) the implementation-gate branch with the evidence pack and TC-17, each with its own Serves, Files and Test lines, and make (b) depend on (a).",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-3 serves 9 ACs, has 11 test cases and changes 4 files. One worker must write the step's three cases, which have five outcome branches and an escalation line, plus CT-2's pack writer for four gate kinds and the refuter batch, the FR-13 reuse rule, the FR-14 unplanned-lens refusal, and the implementation-gate branch with `evidence.pack`. The task gives no order inside it. A worker that stops after the spec-gate branch leaves TC-4, TC-13 and TC-17 red and has no passing part it can commit on its own.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "this is a judgement about task size. Nothing in the artefact or in the tasks checker sets a limit on ACs, tests or files per task. T-3 already carries Mode \"split\" (tests written first by a separate worker), and a red test partway through a task is normal. The finding shows no case where the artefact as written allows a bad outcome.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "T-3 does not depend on T-2, but its next line names the multi-ID dispose that only T-2 adds",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "T-3",
+        "T-2",
+        "CT-1",
+        "TC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Depends on: T-1",
+        "in one nio jury dispose <slug> <gate> J-a,J-b <disposition> --by <by> --note <note> call per disposition"
+      ],
+      "fix": "add T-2 to T-3's Depends on, or have TC-14 run the printed command's ID form.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "if T-3 is done before T-2, the `rejected` branch prints a dispose command with `J-a,J-b` that the CLI still refuses. TC-14 asserts only that the line contains \"nio jury dispose\", so it passes and the mistake goes unseen.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-3 depends on T-1, T-2",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "618460c0ed84500f78160e2967184cc187777ccd",
+    "2": "0eec803b19f5963f0e78841128a34894261f4048",
+    "3": "68052375d4cc20863e1ac3ad0e57e16fc5f52126"
+  },
+  "fixes": {
+    "1": [],
+    "2": [],
+    "3": []
+  }
+}

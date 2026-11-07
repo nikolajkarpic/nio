@@ -3,7 +3,7 @@ name: architecture-fit
 description: "Juror lens for whether a plan fits the code it lands in. Use at the plan gate (always): checks each new contract against the existing code its Like line names, the project's rules one by one, architecture.md, orphan components, unjustified complexity, and what each story can show when done."
 tier: max
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -38,6 +38,8 @@ The context pack from the jury skill, and nothing else:
   expecting what a callee doesn't return)?
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each finding
 cites the CT, US or rule it is about, quotes the files you were given word for word, and shows the concrete misfit:

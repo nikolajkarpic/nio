@@ -3,7 +3,7 @@ name: correctness
 description: "Juror lens for whether the code does what it should. Use at the implementation gate (always): judges the assertion hints the pack carries and the code against the spec."
 tier: strong
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -33,6 +33,8 @@ Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <
 Every hint and every AC's code has been checked, or you have 5 findings.
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Use only these values: `kind` one of contradiction, gap, ambiguity, untestable, risk, scope or inconsistency; `severity` one of blocker, major or minor; `evidence` observed or inferred. Any other value makes your whole output invalid. A finding whose quote isn't in the files you were given is dropped, so quote exactly. A finding you inferred rather than saw can't be a blocker. If nothing qualifies, the Findings section is `none`.
 

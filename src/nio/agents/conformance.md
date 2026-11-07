@@ -3,7 +3,7 @@ name: conformance
 description: "Juror lens for whether the code proves each acceptance criterion. Use at the implementation gate (always): matches every AC the epic covers to the tests that prove it, by file and line."
 tier: strong
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -33,6 +33,8 @@ Start your answer with a `## Matches` section, one line per AC matched: `- AC-n 
 Every AC the epic covers has a match line or a finding, or you have 5 findings.
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Use only these values: `kind` one of contradiction, gap, ambiguity, untestable, risk, scope or inconsistency; `severity` one of blocker, major or minor; `evidence` observed or inferred. Any other value makes your whole output invalid. A finding whose quote isn't in the files you were given is dropped, so quote exactly. A finding you inferred rather than saw can't be a blocker. If nothing qualifies, the Findings section is `none`.
 

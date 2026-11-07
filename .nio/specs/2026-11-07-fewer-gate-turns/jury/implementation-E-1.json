@@ -1,0 +1,272 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-wln5/implementation-E-1-adversary.md": "1ab06d985295e2021657fa958ef2785bf30afba48c2ae1d0e85b9556f9d564df",
+    "R-261107-wln5/implementation-E-1-conformance.md": "9de5e8100deee2d72881ae53f2fb041244046481ed7a186964e70bb734de6177",
+    "R-261107-wln5/implementation-E-1-consistency.md": "229c594a6f311af41725a28e43256e70fd10fdabc04b82f589d6ee7cdb4500a3",
+    "R-261107-wln5/implementation-E-1-correctness.md": "f1fe944dd6ec44bb83f366eaeebfd464a522b6a4052b42e67034c53500d0183a"
+  },
+  "jurors": {
+    "implementation-E-1-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "dc495dc43eec4f4e2bcc03388a3ccca32c422408",
+      "judged": 1
+    },
+    "implementation-E-1-conformance": {
+      "attempts": 2,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "dc495dc43eec4f4e2bcc03388a3ccca32c422408",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "dc495dc43eec4f4e2bcc03388a3ccca32c422408",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 2,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "dc495dc43eec4f4e2bcc03388a3ccca32c422408",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The lens suffix is stripped twice in merge but once everywhere else",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "An escalation juror's `<gate>-<lens>-2.md` counts as `<lens>`."
+      ],
+      "fix": "strip once in `merge`, as CT-4 and `collect` do (`lens = re.sub(r\"-\\d+$\", \"\", path.stem[len(gate) + 1:])`), and drop the `named` line.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "a juror writes `spec-logic-2-3.md`. `merge` strips twice and files it under `logic`. The pick check in `collect` (line 574) strips once and reads `logic-2`. Different code paths therefore disagree about which lens a file belongs to, and the extra file is counted as a real logic juror.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py merge",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "The mismatch line is shown once and never again",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "one output line names the file and the mismatch"
+      ],
+      "fix": "either record the mismatch on the juror entry (for example `juror[\"mismatch\"]`) and re-print it each time, or state that the notice is shown once only.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "the line is built only in `merge` for files that are new to `led[\"collected\"]`. A second `nio jury collect` or step on the same run prints nothing about it. If the first output was lost or not read, the misnamed file passes with no trace in the ledger.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py merge, collect",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "The lens name is stripped of its suffix twice",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-4",
+        "AC-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "lens = re.sub(r\"-\\d+$\", \"\", named)"
+      ],
+      "fix": "drop the `named` line and apply the single `re.sub` to the stem slice, as CT-4 states.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "CT-4 specifies one `re.sub(r\"-\\d+$\", \"\", path.stem[len(gate) + 1:])`. The code strips twice (`named`, then `lens`). A file such as `spec-logic-2-3.md` would be filed as `logic` instead of `logic-2`. The tests don't exercise this, and the double sub does no harm for the names the spec expects.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py merge",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The escalation test passes on a mismatch line the AC doesn't ask for",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "lens(root, \"R-1\", \"logic-2\", \"none\", lens_name=\"logic-2\")"
+      ],
+      "fix": "write the file with `lens_name=\"logic\"` and assert the juror is recorded under `logic` with no mismatch line. Add a second case with `logic-2` in the front matter if the mismatch line should still be shown.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "AC-10 only requires the juror to be recorded under `logic`. The test asserts exactly one line naming `spec-logic-2.md` and `logic-2`, and that line exists only because the front matter says `logic-2` and so triggers the mismatch line. An escalation file with `lens: logic`, which is what the card instructs, is never tested. If someone stopped emitting the mismatch line, the test would fail for a reason unrelated to AC-10.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "The `-<n>` suffix is stripped twice",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "named = re.sub(r\"-\\d+$\", \"\", path.stem[len(gate) + 1:])"
+      ],
+      "fix": "use `lens = re.sub(r\"-\\d+$\", \"\", path.stem[len(gate) + 1:])` and drop `named`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`lens` strips `named` again, so a name ending in two numeric suffixes loses both. CT-4 specifies a single `re.sub`. The extra `named` step does nothing useful.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/jury.py:merge",
+      "tampering": false,
+      "right": "spec"
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "dc495dc43eec4f4e2bcc03388a3ccca32c422408"
+  },
+  "matched": {
+    "AC-9": [
+      [
+        "tests/test_jury.py",
+        "test_ac9_file_name_gives_the_lens"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_jury.py",
+        "test_ac10_escalation_file_counts_as_its_lens"
+      ]
+    ]
+  }
+}

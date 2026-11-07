@@ -1,0 +1,974 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261107-ee72/spec-adversary.md": "bc0ee9e15eeb85cba58507646c3ba2d04f5fc85e7dbed593a7269d25cfe4407e",
+    "R-261107-ee72/spec-consistency.md": "990645993e2d1ed54e7f258446a64ea0885490aa7aaaf028db29b050f0bcb37f",
+    "R-261107-ee72/spec-logic.md": "3a397848a6e733744ca85d87c81c5d39266c78216e5be97d21a914a4c4bb2bad",
+    "R-261107-ee72/spec-scope.md": "f3f8fd09b6df3e274b218e6e139d2f94ffe1108d0b9feb60e0170f63b26ee978",
+    "R-261107-ee72/spec-testability.md": "3230394c84deeaedb352daf5ae23bb41c1d96f682aa6bf7a7ff1b6954c0490ca",
+    "R-261107-ee72/spec-refuter.md": "b9d0e05a50cb008e0f22f373849679fbc5b04216fd4610c149263f1eb9f129a7",
+    "R-261107-kms5/spec-adversary.md": "510db1fb2b82d55d03d23a328b8cc126681b794ae0d04369b98c5b6481b63f5d",
+    "R-261107-kms5/spec-consistency.md": "f174bb5633c6c3c8a993c069dcfc132250d1247d6430a7b6010bff9741dd0bb0",
+    "R-261107-kms5/spec-logic.md": "335ea28f3a81609eb568157232c1b9d992a2c7391f984b460d93a4e7dbe03179",
+    "R-261107-kms5/spec-scope.md": "f90007171d6d6c7b6988f2d8983ebf35d78b35a0938a37f458392a2ee502f27f",
+    "R-261107-kms5/spec-testability.md": "43881b829cf477d606d3db4234593d08757136b26c11e0e6a92bf40d2faae015",
+    "R-261107-ah6c/spec-logic.md": "092490afdb9ae29a17b60579674aeb0b5118228a53477a2d0acbf77d3f9249a8"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "75a42c08517ce8fe93c5f0d4896131defee7994f",
+      "judged": 2
+    },
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "75a42c08517ce8fe93c5f0d4896131defee7994f",
+      "judged": 2
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "cd9926eec5b757c4e523ac08a0540e2cd37d0007",
+      "judged": 3
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "75a42c08517ce8fe93c5f0d4896131defee7994f",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "75a42c08517ce8fe93c5f0d4896131defee7994f",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Juror-written file name and path are not validated",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "FR-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "through a write tool its card limits to that path by instruction",
+        "THE SYSTEM SHALL file each lens output's findings under the lens its file name gives"
+      ],
+      "fix": "add an AC that collect ignores and reports files not matching a planned lens, and that a lens file is only accepted if its name matches the planned set for the run.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the only containment is a card instruction, and the Decisions section admits \"no host can limit paths\". A juror, or injected artefact text, can write another lens's file, such as `spec-logic.md`, or overwrite a valid output. The file name decides the lens, so a juror can file findings as a lens that never ran, and the gate then passes with all lenses seemingly valid. No AC rejects a file whose name matches no planned lens, and no AC checks a write outside the jury folder. AC-8 only checks `git status` in one e2e case.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 relies only on card instruction and the Decisions section admits \"no host can limit paths\". FR-10 takes the lens from the file name, and no AC says a file matching no planned lens is ignored or reported.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q9, delegated: FR-14 and AC-16, a lens file of an unplanned lens stops the step and is named",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Two concurrent step calls can double-record or start two runs",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-4",
+        "AC-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Given the step command already ran and nothing new is in the run, when it runs again, then no new round starts and it prints the same next action."
+      ],
+      "fix": "add an AC and an FR that the step is idempotent under concurrent or interrupted calls. The verdict record and the new run are created once, and a partial write is detected and resumed.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the step command both records a verdict and starts a new run. Two calls at once, or a retry after a timeout in the middle of a call, can both see `rerun`. That gives two verdict records, two new runs, and fix-check packs split across them. AC-5 covers only a sequential re-run. The failure is silent, because both calls print a plausible next action.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "UJ-1 has one orchestrator calling the step command in sequence, and AC-5 covers the repeat case. The spec describes no concurrent or interrupted call, so this is speculative and belongs to the plan rather than the spec.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "Multi-ID dispose all-or-nothing is not stated as atomic",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "AC-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THEN THE SYSTEM SHALL change none of them and name each refused ID with its reason."
+      ],
+      "fix": "state that a mismatched note count, duplicate IDs and empty elements are refused whole, and that the write is atomic.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "FR-8 checks refusal up front, but nothing covers a failed write partway through, or a concurrent dispose or collect changing a finding between the check and the write. Some findings could then be disposed and others not, with the call reporting success. Duplicate IDs in the list (\"F-1,F-1\"), an empty element (\"F-1,,F-2\") and a note count that does not match the ID count (\"one `--note` per ID in order\") have no stated behaviour. A wrong note could be attached to the wrong finding silently.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-14",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "The rejected row can loop, and a stale refuter file is a replay",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "FR-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "| all valid | no | rejected | dispose of the open findings, then run the step command again | [agent] |",
+        "WHEN no finding needs validating THE SYSTEM SHALL compose and record the gate outcome"
+      ],
+      "fix": "add an AC that a refuter output must cover every finding in the current batch before an outcome is recorded. Say what the step prints when the same state repeats.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "after a rejected outcome the orchestrator disposes and re-runs. If the dispose does not change what check sees, the step prints the same next action forever, and nothing says what happens then. Also, a refuter file left in the run folder from an earlier batch, or one that covers only some pending findings, could make \"no finding needs validating\" true by mistake. The outcome would be composed and recorded on partly unvalidated findings. No AC covers a partial or stale refuter output.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-3 applies when no finding needs validating, which comes from the ledger's per-finding validation state and not from a file on disk. A refuter file that covers only some findings leaves the rest pending, so FR-2 still applies. The rejected-loop claim is speculation, and the spec relies on `nio jury check`'s existing rules (non-goals).",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "Output-line mismatch report and the \"never finding bodies\" rule can hide errors",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-5",
+        "FR-6",
+        "AC-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THE SYSTEM SHALL print only `nio jury check`'s lines, when it composed an outcome, and the next action with the paths it needs."
+      ],
+      "fix": "say that dropped or unparsed findings are always reported with a count, and let FR-5 name the exceptions (FR-6 errors and the FR-10 line).",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "FR-5 limits output to the next action. FR-10 requires a mismatch line and FR-6 requires errors, so \"only\" conflicts with both. AC-3 forbids any `new J-n` line, so a collect that drops or merges findings is invisible to the orchestrator. A swallowed collect error such as an unparsable finding block could look like success: the step moves to \"all valid\" with fewer findings than the juror wrote.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-3 says \"Given any state\", so output is only check lines plus a `next:` line. AC-9 needs a mismatch line for `spec-testability.md` vs `lens: logic`, and AC-4 needs per-lens collect errors. A test of AC-3 on the AC-9 fixture fails if the mismatch line is printed. A test of AC-9 fails if it is suppressed. Both are called for.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-5 says \"print only\" check lines and the next action, but FR-10 and AC-9 require a mismatch line, and AC-3 says \"Given any state\" with only a `next:` line and no `new J-n` line. Nothing in the spec says which of these wins. The claim that a swallowed collect error looks like success is speculative, but the FR-5/FR-10/AC-3/AC-9 conflict is real. The ledger's J-20 was already merged into this finding.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q10, delegated: FR-5 and AC-3 list the printed lines: one-line results, mismatch lines, check's lines, next",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "Pending row has no batch to run",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "FR-3",
+        "decision table row `pending`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "all valid | no | pending | run the refuter on the batch file",
+        "IF findings still need validating after collecting THEN THE SYSTEM SHALL write the refuter batch to a file",
+        "WHEN no finding needs validating THE SYSTEM SHALL compose and record the gate outcome"
+      ],
+      "fix": "make the `pending` row's findings-needing-validation column `yes`, or drop the row. Say what the next action is for a `pending` outcome with nothing to validate.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "every blocker and major is already validated, so FR-3 applies and the outcome is composed. If that outcome is `pending`, the table says \"run the refuter on the batch file\", but FR-2 writes that file only when findings still need validating. The orchestrator has no file to run and no next action.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "all lens outputs are valid and no finding needs validation, so the batch is not written under FR-2. The step command composes the outcome `pending` under FR-3. The table says to run the refuter on \"the batch file\", but no such file exists.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the `pending` row sends the orchestrator to a batch file. FR-2 only writes one when findings still need validating, and this row has \"no\" there, so the file may not exist. A test would find an unspecified path. The `rejected`, `human` and `approved` rows, and a `needs-more` lens (FR-6), have no AC. A step command that always printed the `approved` action would pass every listed AC.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The table's `pending` row says \"run the refuter on the batch file\" while its validation column is \"no\". FR-2 writes the batch only when findings still need validating, so the row names a file that does not exist.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "decision table: pending/no row says it cannot occur; AC-13 (needs-more) and AC-14 (rejected, human, approved next lines) added",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "Memory pack and trigger missing from the packs the command writes",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-12",
+        "AC-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with the content the skill gives it today plus its output path.",
+        "each planned lens has a pack file holding what the skill puts in its pack today"
+      ],
+      "fix": "name the extra input per lens in FR-12 (the memory pack to consistency only, the grill answers to scope only). Say the command runs the memory query and the consistency and scope triggers.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the skill gives the memory pack only to consistency, and the grill answers only to scope (SKILL.md step 2). Consistency is planned only when `nio pack \"<the spec's summary>\"` lists an approved or current decision, added with `--add` (step 1). The spec does not say the step command runs that query, adds those triggers, or which lens gets which extra input. If the command gives every lens the same pack, the memory pack reaches logic and testability and NFR-2 (\"the same pack content as before\") fails. If it gives the memory pack to nobody, consistency judges with no memory and its one input is missing.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-12 says \"the content the skill gives it today\" and NFR-2 says \"the same pack content as before\". Together these already cover the per-lens extras (memory pack, grill answers). How the command does it is HOW, which the spec template excludes.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "Pack path and usage log differ from D-261024-zbne",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "write each planned lens's pack to `.nio/runs/<run>/jury/packs/<lens>.md`"
+      ],
+      "fix": "either route the FR-12 packs through the pack writer so they are logged, or raise a change request against D-261024-zbne for the juror pack path before this spec goes on.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "D-261024-zbne (status human, standing drifted) says a pack is saved with `nio pack --run` under `.nio/runs/<run>/packs/`, and every pack appends its IDs to `.nio/cache/usage.log`. `save` in pack.py:108–116 writes to `folder / \"packs\"`. The spec writes `jury/packs/` and says nothing about the usage log, so a juror pack written by the command would skip the log. The skill already writes `jury/packs/` by hand, so the drift is older than this spec, but the spec is where it gets settled.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-12's `jury/packs/<lens>.md` is where the skill writes juror packs today (the finding itself says so). The path is therefore not a change this spec introduces. Usage logging is an implementation detail, and NFR-2 keeps pack content unchanged.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "Refuter already writes its file; the spec presents it as new",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-9",
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "through a write tool its card limits to that path by instruction.",
+        "each lens and refuter card grants a write tool and says to write only that path."
+      ],
+      "fix": "state what the refuter does today, and what the change adds (the write tool grant, the path), so AC-8 can be checked against the card's current text.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the refuter card already says \"Write `.nio/runs/<run>/jury/<gate>-refuter.md`\" (refuter.md:35), and its tools are `[read]`. The spec does not say whether the refuter's file write is new, or only the write tool grant. A tester cannot tell whether the refuter's current file is written by the refuter or by the orchestrator.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-9 says what the refuter does today and what changes (the write tool, the path in the pack)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "The step command has no name",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "UJ-1",
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "The orchestrator runs the step command; it plans the lenses, starts the run and writes each lens's pack",
+        "when the orchestrator runs the step command"
+      ],
+      "fix": "name the command and its arguments in the spec, as FR-7 does for dispose.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the CLI has `nio jury collect`, `check`, `changed`, `fixcheck` and `dispose`, but the spec never names the step command. UJ-1, FR-1 to FR-6, AC-1 to AC-5 and AC-12 all say \"the step command\". The glossary defines \"Gate step\" as work, not a command. An implementer may name it anything, and an integration test cannot point at it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The spec is WHAT and WHY only. \"The step command\" is used consistently, and its name and arguments are plan-level choices. Every AC states its observable behaviour, so a test can be written once the plan names the command.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "The pending row sends the refuter to a batch file that FR-2 never writes",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "FR-3",
+        "decision table row `all valid | no | pending`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF findings still need validating after collecting THEN THE SYSTEM SHALL write the refuter batch to a file",
+        "| all valid | no | pending | run the refuter on the batch file | [agent] |"
+      ],
+      "fix": "say which condition makes the outcome `pending` and when its batch is written. Otherwise make that row's next action something that doesn't need a batch.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "all lens outputs are valid and no finding needs validation, so the batch is not written under FR-2. The step command composes the outcome `pending` under FR-3. The table says to run the refuter on \"the batch file\", but no such file exists.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-6",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "A repeated step command both records once and starts a new run",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-2",
+        "AC-5",
+        "FR-3",
+        "FR-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Given the step command already ran and nothing new is in the run, when it runs again, then no new round starts and it prints the same next action.",
+        "WHEN the outcome is `rerun` because the artefact changed THE SYSTEM SHALL start a new run"
+      ],
+      "fix": "define how the step command recognises a rerun it has already handled. Say what a repeat prints, for example the existing new run's ID and packs.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the outcome is `rerun`. The first call records the verdict and starts run N+1. The same command repeated on the old run finds the same state. FR-3 records again, which breaks AC-2's \"verdict record written once\". FR-4 starts another new run, which breaks AC-5's \"no new round starts\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-5 says a repeat starts no new round. FR-3 and FR-4 are triggered by the state \"outcome is rerun\", and that state is unchanged on a repeat. The spec does not say how a handled rerun is recognised, so AC-2's \"written once\" and AC-5 cannot both hold.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q11, delegated: FR-13 and AC-5, a repeated step writes no pack, starts no run, records nothing again",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "`needs-more` and `rerun` conditions are not covered by the table or the ACs",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-6",
+        "FR-4",
+        "decision table"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF an expected lens output is missing, invalid or `needs-more` THEN THE SYSTEM SHALL name that lens as the next action",
+        "| some missing or invalid | - | - | re-run the named lenses with their errors |"
+      ],
+      "fix": "add `needs-more` to the table's lens-output column. State what happens on `rerun` when the artefact hasn't changed.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a lens file is valid but has `context: needs-more`. FR-6 says to re-run it. The table counts only \"missing or invalid\", so the row is ambiguous. If the output is \"all valid\", the table sends it down the compose path instead. A `rerun` outcome that is not caused by an artefact change has no rule, because FR-4 covers only \"because the artefact changed\". The table row says \"run each named lens\" with no condition.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-logic: The `needs-more` half is fixed. The table column now reads \"some not usable\", the row lists \"missing, invalid or `needs-more`\", and AC-13 covers it. The `rerun` half is not: FR-4 still says only \"WHEN the outcome is `rerun` because the artefact changed\", and the table row `all valid | no | rerun` still says to start a new run and run each lens on its fix-check pack, with no condition about a change. The text in the pack gives no rule for `rerun` when the artefact is unchanged. The note that this \"is the not-usable row\" is not in the spec text I was given. That row is selected by lens-output state, not by outcome, so it does not apply when all outputs are valid.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q13, delegated: FR-4 and the rerun row cover every rerun with usable outputs (changed artefact, final fix check, fix without a verdict)",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-14",
+      "title": "Several-ID dispose does not say what happens when the note count is wrong",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "FR-8",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with the one `--note` for all or one `--note` per ID in order",
+        "IF any finding in a several-ID dispose would be refused"
+      ],
+      "fix": "add a refusal reason for a note count that is neither 1 nor the ID count, and cover it in FR-8 and AC-7. Also say whether a duplicate ID is refused.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "three IDs and two `--note` values. This is neither \"one for all\" nor \"one per ID\". FR-8's refusal reasons and AC-7 name only an unknown ID or a human-only disposition. The call may apply two notes, apply none, or fail with no named reason.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "dispose is given IDs `J-1,J-2,J-3` and two `--note` values. It is also unclear whether the same ID may appear twice. The spec does not say whether this is refused, truncated or misaligned. AC-7 covers only an unknown ID and a human-only disposition, so a test has nothing to assert.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "FR-8 checks refusal up front, but nothing covers a failed write partway through, or a concurrent dispose or collect changing a finding between the check and the write. Some findings could then be disposed and others not, with the call reporting success. Duplicate IDs in the list (\"F-1,F-1\"), an empty element (\"F-1,,F-2\") and a note count that does not match the ID count (\"one `--note` per ID in order\") have no stated behaviour. A wrong note could be attached to the wrong finding silently.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-7 allows \"one `--note` for all or one `--note` per ID in order\", but FR-8 and AC-7 name only an unknown ID or a human-only disposition as refusal reasons. A note count that is neither 1 nor the ID count, duplicate IDs and empty elements have no stated behaviour. The atomic-write and concurrency part of the finding is speculative, but the note-count gap stands. The ledger's J-3 was already merged into this finding.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q12, delegated: FR-8 and AC-7 refuse a bad note count, a repeated or empty ID, whole",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "Rewriting the packs when the step command is repeated is undefined",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-12",
+        "AC-5",
+        "decision table row `none yet in the run`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHEN the step command runs on a run with no lens output for the gate yet THE SYSTEM SHALL plan the gate, render the agents and write each planned lens's pack",
+        "then no new round starts and it prints the same next action"
+      ],
+      "fix": "say that FR-12 reuses the existing packs and run when they exist. Include this case in AC-5.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the orchestrator calls the step command twice before any juror has written a file. Both calls match \"no lens output yet\". FR-12 would re-plan and rewrite the packs, possibly starting a second run, while AC-5 wants the same next action and no new round.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q11, delegated: FR-13 and AC-5, the existing packs and run are reused",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-16",
+      "title": "The first-review step adds plan, render and first-pack writing beyond the intake's proposal",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-12",
+        "UJ-1 step 1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "plan the gate, render the agents and write each planned lens's pack",
+        "it plans the lenses, starts the run and writes each lens's pack"
+      ],
+      "fix": "either label FR-12 as a scope extension with its turn saving stated, or cut planning and rendering from the command and keep the first-review packs as today.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake's command starts at collect and writes packs only on rerun. FR-12 makes the same command also plan the gate and render agent cards on a fresh run. That is a new responsibility the human did not name, and it couples the step command to the card renderer. If FR-12 is dropped, the human loses only the first-review turn saving, and the spec should say that is the trade-off.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-12 states it goes beyond #76's step and what dropping it costs (grill Q8)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-17",
+      "title": "Per-ID `--note` form in dispose is not in the intake",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-7",
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with the one `--note` for all or one `--note` per ID in order"
+      ],
+      "fix": "keep the single `--note` form, or add an AC for the per-ID form and a rule for a count mismatch.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human asked only that dispose accept several IDs in one call. A second note mode, matched to IDs by position, is an extra input form. If the notes count differs from the ID count, the spec has no rule for it, and no requirement gives that case a test. AC-6 names only \"their `by` and note\", so the per-ID mode is not covered by any acceptance criterion.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-15 covers the per-ID note form",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-18",
+      "title": "All-or-nothing refusal for several-ID dispose is not in the intake",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "change none of them and name each refused ID with its reason"
+      ],
+      "fix": "state why atomic is wanted (for example, to keep the ledger consistent), or allow partial success with a per-ID report.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake asks only that dispose take several findings in one call. Making the whole call atomic is a design choice nobody asked for. If one of three IDs is refused, the orchestrator must redo the other two in a second call, which costs the turn this change is meant to save. The spec gives no reason for choosing atomicity over partial success.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-8 states why all or nothing: the ledger never holds half a ruling",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-19",
+      "title": "One spec bundles separable changes",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "Summary",
+        "FR-10",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "This delivers one command that runs a gate step end to end and prints",
+        "It also stops a juror's copied example lens name from filing its findings under another lens (#90). [human]",
+        "`epic: \"\"`"
+      ],
+      "fix": "state in the Decisions why these are one slice, or split dispose and FR-10 into their own slices.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the multi-ID dispose (FR-7, FR-8) and the lens-name fix (FR-10) do not depend on the step command. If the step command slips, the dispose and #90 fixes wait with it. The spec has an empty `epic` field and does not say why these stay one slice. The intake allowed folding #90 in, so this is minor.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "FR-5 \"print only\" contradicts the extra lines other ACs require",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-5",
+        "AC-3",
+        "AC-9",
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "print only `nio jury check`'s lines",
+        "one output line names the file and the mismatch"
+      ],
+      "fix": "list the allowed line kinds in FR-5 (check lines, `next:`, mismatch line, lens errors) and restate AC-3 as \"no finding body lines\".",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-3 says \"Given any state\", so output is only check lines plus a `next:` line. AC-9 needs a mismatch line for `spec-testability.md` vs `lens: logic`, and AC-4 needs per-lens collect errors. A test of AC-3 on the AC-9 fixture fails if the mismatch line is printed. A test of AC-9 fails if it is suppressed. Both are called for.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-21",
+      "title": "Most decision-table rows have no AC",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF findings still need validating after collecting",
+        "| all valid | no | pending | run the refuter on the batch file | [agent] |"
+      ],
+      "fix": "add one AC per remaining row, each with its `next:` text. Say where the batch file for `pending` comes from.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the `pending` row sends the orchestrator to a batch file. FR-2 only writes one when findings still need validating, and this row has \"no\" there, so the file may not exist. A test would find an unspecified path. The `rejected`, `human` and `approved` rows, and a `needs-more` lens (FR-6), have no AC. A step command that always printed the `approved` action would pass every listed AC.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-6",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-22",
+      "title": "The turn-count criterion has no fixed baseline or counting rule",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-11",
+        "NFR-1",
+        "SC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then the count is at most half of today's"
+      ],
+      "fix": "state the before count as a number, with the fixture or transcript it comes from. Define a counted call as an orchestrator tool call to the nio CLI, a file write or a juror launch. Give the after count as a ceiling.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "\"today's\" is not a number, and the spec does not say which calls count. Juror launches, the human relay and evidence calls are all unclear. One reviewer counts 12 before and 6 after and passes it. Another excludes the juror runs, gets 8 before and 5 after, and fails it. The test is a judgement call.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-11, NFR-1 and SC-1 say \"at most half of today's\" and \"before and after counts\". They do not define which calls count (CLI calls, file writes, juror launches) or fix the baseline, so two reviewers can reach different verdicts.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-11, NFR-1, SC-1: scenario A, 31 calls before, at most 15 after, and what a counted call is",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-23",
+      "title": "AC-8 and FR-9 cannot fail deterministically",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-8",
+        "FR-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`git status` shows no other change",
+        "says to write only that path"
+      ],
+      "fix": "split it into two checks. One is a static check that each card names a write tool and the one output-path instruction. The other is an e2e snapshot of the `.nio/` and project tree (not `git status`) before and after the run.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "`.nio/runs/` may be gitignored, so `git status` would not show a stray write under it and the check passes anyway. The path restriction is only a prompt instruction. The e2e test passes or fails with the model's behaviour, not with the card's content.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-8 split into a static card check and an e2e tree listing, not git status",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "929766d0dba2c0a39f991d22fd1be3d69512e468",
+    "2": "75a42c08517ce8fe93c5f0d4896131defee7994f",
+    "3": "cd9926eec5b757c4e523ac08a0540e2cd37d0007"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-13"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}

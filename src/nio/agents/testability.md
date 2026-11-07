@@ -3,7 +3,7 @@ name: testability
 description: "Juror lens for testability. Use at the spec gate (always): finds acceptance criteria no test could check, observables that don't prove the requirement, missing failure and edge cases, and numbers left vague."
 tier: strong
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -32,6 +32,8 @@ The context pack from the jury skill, and nothing else:
   "large"?
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each cites the
 requirement, AC or table row it is about, quotes the artefact word for word, and shows the concrete situation that

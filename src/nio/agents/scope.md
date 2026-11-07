@@ -3,7 +3,7 @@ name: scope
 description: "Juror lens for scope. Use at the spec gate when the spec has more than 8 FRs, adds a dependency, or has an FR the intake doesn't ask for: finds requirements nobody asked for, scope that should be split, and non-goals the spec quietly breaks."
 tier: cheap
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -33,6 +33,8 @@ The context pack from the jury skill, and nothing else:
 - Is this one feature, or several that should be an epic with slices?
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each cites the
 requirement, AC or table row it is about, quotes the artefact word for word, and shows the concrete situation that
