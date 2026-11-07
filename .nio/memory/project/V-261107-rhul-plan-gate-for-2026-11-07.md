@@ -1,0 +1,26 @@
+---
+id: V-261107-rhul
+type: verdict
+title: "plan gate for 2026-11-07-fewer-gate-turns: approved (round 2)"
+answers: jury             # why | reuse | jury
+date: 2026-11-07
+by: "jury"                # role / host / model, or human
+run: ""              # run ID; empty when written by hand
+subject: "plan:2026-11-07-fewer-gate-turns"
+outcome: approved
+tier: medium
+paths: [".nio/specs/2026-11-07-fewer-gate-turns/jury/plan.md"]
+tags: []
+supersedes: []
+---
+## Ruling
+The plan jury ruled **approved** for `2026-11-07-fewer-gate-turns` in round 2 (9 fixed). Ledger: `.nio/specs/2026-11-07-fewer-gate-turns/jury/plan.md`.
+## Jurors
+| Lens | Host | Model | Vote |
+| --- | --- | --- | --- |
+| architecture-fit | claude-code | claude-opus-5-5 | approve |
+| test-proof | claude-code | claude-opus-5-5 | approve |
+## Reasons
+- Every lens approved and no finding is open.
+## What was rejected
+Nothing.
