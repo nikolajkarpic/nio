@@ -21,3 +21,11 @@ Every design choice of this effort, made by the orchestrator under the human's s
 | `rerun` with usable outputs, spec unchanged (grill Q13, J-13) | fix: new run + fix-check packs; accept | fix | final fix check and fix verdicts are `rerun` too | FR-4 |
 | Step state (plan) | `packs/step.json` in the run; a ledger field | `step.json` | no ledger schema change | runs stay scratch |
 | Consistency/scope triggers (plan) | orchestrator `--add`; step decides | orchestrator `--add` | the skill's own triggers stay where they are | one `nio pack` call stays |
+| Plan re-checked after the tasks jury (tasks J-1) | change CT-1's order; dispose without a change | change CT-1: unusable outputs are re-run before `check` | AC-4 forbids a composed outcome | plan re-approved (rounds 3-5), escalation 2 of 3 held J-10 |
+| T-3 blocked: TC-12 asserted T-4's card change (C-261107-tpmk) | add T-4 to T-3's deps (a cycle); move the assert to TC-8 | move to TC-8 | T-4 depends on T-3 | plan and tasks re-checked with `nio jury next` itself |
+| Older tests pinning read-only cards (C-261107-bk6v, C-261107-segr) | update them; keep cards read-only | update them | FR-9 (grill Q1) deliberately gives jurors a write tool | two block cycles on T-4 (#97) |
+| E-4 J-5: no real-model test that a juror writes only its file | add an NIO_E2E test; accept as risk | accept as risk | grill Q1 already accepted the instruction-only limit; plan put it in manual QS-2 | fix task removed (#98: its ID was then reused) |
+| E-5 J-5 "not fixed" (the step prints `state:` at the plan gate?) | fix the skill again; accept | accept: the text is right | `nio jury next` composes through `check`, which prints `state:` (seen in this effort's plan re-check) | none |
+| T-12 test-only fix in single mode (C-261107-ptwo) | game a red; direct mode | direct | red can't fail before a test-only change | — |
+| `plan` returns its lens names (E-3 J-2, T-7) | parse the display line; a `Lines` list carrying `.lenses` | `Lines.lenses` | a `--add` reason with ` (` invented a lens | collect uses it too |
+| Main records | — | D-261107-pdq4 (`nio jury next`), D-261107-ldro (jurors write their own file; lens from the file name) | — | — |
