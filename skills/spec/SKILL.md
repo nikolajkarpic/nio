@@ -41,12 +41,11 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 1. **Name and route.** If the human hasn't described the work yet, ask for it, in the shape above; that is the only question this skill
    asks. Pick a short name: 2–4 lowercase words joined by dashes. Pick a route:
-   - `lite`: a bug fix with a clear defect (something works wrong today);
+   - `lite`: all four hold: a defect (current versus expected behaviour, or an issue labelled bug); the expected behaviour is stated or obvious; the likely scope is one module (a quick `nio query --path` or grep on the symptom); no risk flag of auth, money, data-deletion, migration or pii, else `full`. External-input, multi-party and public-api may stay lite;
    - `epic`: several slices that could each ship on their own;
    - `full`: everything else.
 
-   Tell the human, starting "Nothing needed unless you want to change the name or route", the name and the route by what it means ("a bug fix", "several
-   slices that ship on their own", "one change"), and that they can change either. The name and route values go in
+   Tell the human, starting "Nothing needed unless you want to change the name or route", the name and the route in one line, by what it means ("a bug fix", "several slices that ship on their own", "one change"), and that they can change either. The name and route values go in
    `Refs:`. Ask nothing about the content: the
    grill does that later.
 2. **Create the spec:** `nio new spec <name> --route <route>`. It stamps today's date on the folder,

@@ -2574,6 +2574,14 @@ def test_lite_skill_texts():
     assert esc, "spec skill: ## Escalating a bug fix"
     for k in ("continue on lite", "grill.md", "keeps its tag"):
         assert k in esc.group(0), ("spec skill escalation", k)
+    # TC-13..15 (AC-13..15, CT-5): step 1 routes lite only when all four hold, and tells the route in one line.
+    route_step = re.search(r"^1\. \*\*Name and route\.\*\*.*?(?=^2\. )", spec_skill, re.S | re.M)
+    assert route_step, "spec skill step 1 (name and route)"
+    s1 = route_step.group(0)
+    assert all(k in s1 for k in ("defect", "stated or obvious", "one module", "risk flag", "all four")), "TC-13"
+    assert any(all(k in ln for k in ("auth", "money", "data-deletion", "migration", "pii", "full"))
+               for ln in s1.splitlines()), "TC-14"
+    assert any(all(k in ln for k in ("one line", "by what it means", "can change")) for ln in s1.splitlines()), "TC-15"
 
 
 if __name__ == "__main__":
