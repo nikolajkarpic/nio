@@ -70,8 +70,10 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    - **run `nio-refuter`** on `packs/refuter.md`, writing the output path the step printed;
    - **re-run a lens** on its pack with the INVALID lines added, once. A second failure goes to the human: say in
      plain words which review failed and why, with the error in `Refs:`;
-   - **escalate a lens** with a confirmed blocker: run it twice more as independent jurors on copies of its pack whose
-     `## Your output` line names the `-2` and `-3` output files the step printed. After the first review the copies are
+   - **escalate a lens** with a confirmed blocker: run it twice more as independent jurors on copies of its pack, written as
+     `packs/<lens>-2.md` and `packs/<lens>-3.md`, each ending with the `## Your output` line naming
+     `<gate>-<lens>-2.md` / `<gate>-<lens>-3.md` (the files the step printed). Before starting the two jurors, check
+     that neither copy names `<gate>-<lens>.md`, the first review's file. After the first review the copies are
      of the blocker's pack, `nio jury fixcheck <slug> spec --lens <lens> --blocker J-<n>` plus the lens output format
      (the step never writes these). Two of three decide. Majors and refuted blockers never escalate. Don't edit the
      artefact until the escalation is collected;
