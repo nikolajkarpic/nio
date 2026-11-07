@@ -559,6 +559,29 @@ def test_land_returns_error_when_diff_fails():
     print("ok")
 
 
+def test_failed_diff_keeps_the_worktree_and_names_it():
+    root = waves(n=2)
+    code, out = flow(root, "claim", S)
+    work(root, out, "T-1")
+    w = root / wt(out, "T-1")
+    real = records.git
+
+    def fake(r, *args, **kw):
+        if args[:1] == ("diff",) and "--binary" in args:
+            return 128, b"", "fatal: boom"
+        return real(r, *args, **kw)
+    records.git = fake
+    try:
+        code, o = land(root, "T-1")
+    finally:
+        records.git = real
+    assert code == 1 and "boom" in o, o
+    assert (w / "m1_new.py").is_file() and (w / "m1_new.py").read_text() == "w = 1\n", o
+    said = next(x for x in o.splitlines() if "its changes are in" in x)
+    assert said.split("its changes are in", 1)[1].strip() and str(w.relative_to(root)) in said, said
+    print("ok")
+
+
 def test_land_applies_edit_with_empty_error():
     root, base = byte_repo({"a.txt": b"x\n"})
     tree = byte_tree(root, base)
