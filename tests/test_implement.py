@@ -330,6 +330,9 @@ def impl(modes=None, cfg=None, tasks=None, commit=True, date=None, alone=False, 
         tasks = tasks.replace("### T-2", "## E-9 The rest (US-2)\n\n### T-2", 1)
     root = test_flow.effort("plan_jury", route=route)
     folder = root / ".nio/specs" / S
+    if route == "lite":  # a lite effort has no spec jury: drop the ledger the full fixture's approval wrote
+        for name in ("spec.json", "spec.md"):
+            (folder / "jury" / name).unlink()
     tp = folder / "tests.md"
     tp.write_text(tp.read_text().replace("tests/test_refunds.py:test_full_refund", "tests/test_refund.py:test_refund"))
     test_flow.approve(root, S, "plan")
