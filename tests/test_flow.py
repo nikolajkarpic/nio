@@ -2556,6 +2556,12 @@ def test_lite_skill_texts():
     for k in ("escalate:", "escalation declined", "new dependency", "outside the bug's folder", "stored data",
               "Escalating a bug fix"):
         assert k in step4, ("skill step 4", k)
+    # TC-16 (AC-16, CT-12): the implement skill's blocked-handoff step names the triggers and the full-flow offer.
+    impl = (root / "skills/implement/SKILL.md").read_text()
+    impl4 = re.search(r"^4\. \*\*On a `blocked` handoff\*\*.*?(?=^5\. )", impl, re.S | re.M)
+    assert impl4, "implement step 4 (blocked handoff) not found"
+    for k in ("new dependency", "outside the bug's folder", "stored data", "second folder", "Escalating a bug fix"):
+        assert k in impl4.group(0), ("implement step 4", k)
     # TC-12 (AC-12, CT-13): a declined switch continues on lite and is logged in grill.md; the rewrite keeps tags.
     spec_skill = (root / "skills/spec/SKILL.md").read_text()
     esc = re.search(r"^## Escalating a bug fix\n.*?(?=^## |\Z)", spec_skill, re.S | re.M)

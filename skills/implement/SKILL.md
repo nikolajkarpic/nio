@@ -62,7 +62,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    from `nio flow` is retried after a few seconds, not counted as a refusal.
 4. **On a `blocked` handoff** (a spec problem), save it to a file and run
    `nio flow block <slug> T-n --handoff <file> --by`. It files the change request and the effort waits for the human.
-   Never edit the spec, plan or tasks yourself.
+   Never edit the spec, plan or tasks yourself. On a bug fix, when the handoff names a new dependency, a change to an interface used outside the bug's folder or to stored data, or a fix task whose files sit in a second folder, also offer the full flow (`@nio:spec`, "Escalating a bug fix") alongside the change request.
 5. **Pass everything on.** After green, the CLI prints the review, `done: T-n <commit>`, and when an epic ends its
    report and a `notify:` line; when the last epic ends, `merge: nio/<slug>`. Tell the human each `notify:` and every
    `waiting_for_human` in the shape above, with the command that clears it. Never merge the branch: the human does.
