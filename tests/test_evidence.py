@@ -3463,6 +3463,18 @@ def test_ac12_step_at_the_implementation_gate():
     print("ok")
 
 
+def test_a_lite_epic_s_added_test_is_listed_with_its_result():
+    root, _ = join_repo()
+    (root / ".nio/specs/s/tests.md").unlink()  # a lite spec has no tests.md
+    (root / "tests/test_lite.py").write_text("import unittest\n\n\nclass Lite(unittest.TestCase):\n    def test_x(self):\n        self.assertEqual(1, 1)\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: lite test")
+    results = start(root)
+    found = [t for t in results["tests"] if t["name"].endswith("test_x")]
+    assert len(found) == 1 and found[0]["result"] == "passed", results["tests"]
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
