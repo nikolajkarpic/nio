@@ -562,5 +562,27 @@ def test_ac28_skill_starts_run_with_bare_nio_run():
     print("ok")
 
 
+def lite_repo(files):
+    """A lite repo: the bug-fix spec fixture, and tasks.md whose T-1 names `files` (T-2 and T-3 are dropped)."""
+    root = repo(write=False, route="lite")
+    bug = Path(__file__).parent / "fixtures/spec/spec-bugfix.md"
+    spec.path(root, SLUG).write_text(re.sub(r"^slug: .*$", f"slug: {SLUG}", bug.read_text(), count=1, flags=re.M))
+    text = TASKS[:TASKS.index("### T-2 ")].replace("`app.py`", ", ".join(f"`{f}`" for f in files)).replace("TC-1", "AC-1")
+    tasks.path(root, SLUG).write_text(text)
+    return root
+
+
+def test_lite_escalate_note():
+    notes = lambda root: [n for n in tasks.check(root, SLUG)[1] if n.startswith("escalate:")]
+    one = lite_repo(["src/a/x.py", "tests/test_x.py"])
+    assert notes(one) == [], notes(one)
+    two = lite_repo(["src/a/x.py", "src/a/sub/y.py"])
+    assert len(notes(two)) == 1 and notes(two)[0].startswith("escalate: the fix changes files in 2 folders (src/a, src/a/sub)"), notes(two)
+    assert tasks.check(two, SLUG)[0] == tasks.check(one, SLUG)[0], (tasks.check(two, SLUG)[0], tasks.check(one, SLUG)[0])
+    full = repo(lambda t: t.replace("`app.py`", "`src/a/x.py`, `src/b/y.py`", 1))
+    assert notes(full) == [], notes(full)
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
