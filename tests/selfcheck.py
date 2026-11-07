@@ -5,7 +5,7 @@ import traceback
 
 
 def main(tests):
-    names = sys.argv[1:]
+    names = [a for a in sys.argv[1:] if not a.startswith("-")]
     known = {t.__name__ for t in tests}
     bad = [n for n in names if n not in known]
     for n in bad:

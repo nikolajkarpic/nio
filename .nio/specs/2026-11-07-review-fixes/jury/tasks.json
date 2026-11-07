@@ -1,0 +1,175 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-07-review-fixes",
+  "round": 2,
+  "tier": "high",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261107-hlol/tasks-executability.md": "9798a4c5e3c9cc278ab46a3f82f201c02cf9de39c6f9cf9343be299716fcb6bf",
+    "R-261107-yrm2/tasks-executability.md": "492018dd91670d9c5864dd0a779f64620a572d5333ce903d3001199330884aed"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "4f668b220f205f0756f057f05e4b69f98adac8c0",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-4's Test does not prove AC-10's stated observable",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "T-4",
+        "AC-10",
+        "TC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Test: TC-10",
+        "Independent test:** run `uv run python tests/test_pack.py -v`.",
+        "`script(tmp, ...)` with two passing tests"
+      ],
+      "fix": "add to T-4's Test field \"and `uv run python tests/test_pack.py -v` exits 0 with more than 0 tests run\", so the task's done-check matches AC-10's observable.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-4's Test field names only TC-10, which runs a synthetic `script(tmp, ...)` with two passing tests. The spec's independent test runs `tests/test_pack.py -v`. A worker can pass TC-10 and still find `uv run python tests/test_pack.py -v` printing `no test named -v` if that script reaches `main` through a path the synthetic one does not. Nothing in T-4 asks the worker to run the real script.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-4's Test line also runs tests/test_pack.py -v and expects exit 0 with tests run",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "T-1 bundles two order-sensitive contracts at strong/med",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "T-1",
+        "CT-1",
+        "CT-3",
+        "AC-14",
+        "TC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Tier: strong: ledger state with clear integration tests, but the forgery cases need care",
+        "Effort: med",
+        "raised before the ledger is saved, so no round, finding or outcome is recorded",
+        "before anything is merged or saved"
+      ],
+      "fix": "either raise T-1 to max with effort high, or split it into a refuter-batch task (CT-1, CT-2; TC-1, TC-2, TC-3, TC-13, TC-15, TC-16) and a judged-version task (CT-3; TC-11, TC-12) with the next free ID, and make T-3 depend on the refuter-batch task.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-1 changes `collect`, `ask_refuter`, `refuter_pack`, `step` and `refute` in jury.py for CT-1 and CT-2, adds the judged-version refusal in `collect` for CT-3, and lands eight tests across two test files. Both CT-1 and CT-3 require their refusal to fire before a save or merge, in the same few functions. A worker who saves `asked[run]` or the merged outputs ahead of the version check can leave a refused call with a recorded change. A strong/med worker holding this in one context is the case the tier note itself flags as needing care.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "tasks-executability: only T-1's effort moved (med to high). Tier stays strong, and T-1 is not split, so neither option the finding asked for is done.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated (human's standing authority, lazy and minimal): T-1 stays one strong task at high effort; the order the finding fears (a save before the refusal) is caught by TC-1 and TC-11, which assert the ledger's round is unchanged after a refusal, and the implementation jury reviews it",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-3",
+      "title": "CT-5 and TC-6 name different git diff commands",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "T-2",
+        "CT-5",
+        "TC-6",
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the patch file is `git diff --binary`'s stdout through CT-4 with `raw=True`",
+        "the saved patch's bytes equal `git diff --cached --binary --no-renames <base>` run in the worktree",
+        "Test: TC-4, TC-5, TC-6, TC-14"
+      ],
+      "fix": "name one exact diff command in CT-5 and use the same command verbatim in TC-6's Assert.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "CT-5 says the saved patch is `git diff --binary`'s stdout. TC-6 expects the bytes of `git diff --cached --binary --no-renames <base>`. A worker who follows CT-5 may write a patch with different flags. TC-6's single edit gives the same bytes either way, so the test would still pass. A change that git detects as a rename, though, would then be checked against bytes the worker never produced.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated (human's standing authority): CT-5 names the family, land and shelve use different git diff commands by design; TC-6 tests land and names land's exact command, so a worker following CT-5 for land produces those bytes",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "8e162170794269960d46ace1ceca9560048883ca",
+    "2": "4f668b220f205f0756f057f05e4b69f98adac8c0"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-2"
+    ],
+    "final": null,
+    "flagged": []
+  }
+}
