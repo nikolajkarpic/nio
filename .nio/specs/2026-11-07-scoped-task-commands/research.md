@@ -13,3 +13,11 @@ Facts the grill looked up instead of asking.
 - **RF-7** The worker pack is written once, at claim, before red runs; red records only a hash of its output. Source: src/nio/implement.py:540: "line = entry(\"red\", tid, command=command, output=flow.sha(out.encode()), runner=name or \"unknown\", frozen=frozen)"
 - **RF-8** The per-AC fix tasks in #88 came from `join`, which files one blocker per AC with no passing test; with per-test results, a failure in another file leaves the epic's own tests `passed`, so no AC finding is filed for it. Source: src/nio/evidence.py:541: "if not any(e[\"result\"] == \"passed\" or (e[\"result\"] == \"unknown\" and e[\"line\"]) for e in mine):"
 - **RF-9** Green runs exactly the command red recorded and refuses another; only the task closing an epic runs more (the suite or `tests.epic`, per #66). Source: src/nio/implement.py:717: "if command and command != ev[\"command\"]:"
+
+## Plan (2026-11-07)
+
+- **RF-10** Eight of the nine scripts with a fixed list call their tests in an order different from definition order, so running them in definition order could change results if a test depends on an earlier one. Source: tests/test_jury.py:1551: "if __name__ == \"__main__\":\n    test_none_slips_mean_no_findings()"
+- **RF-11** `implement.runner` picks a runner from the command's words alone, and `suite`, `red` and `evidence.collect` are its only callers; `SUMMARY` holds a failing-test and a count reader per runner. Source: src/nio/implement.py:47: "def runner(command):"
+- **RF-12** Evidence matches a failing-test entry to a test by the test's short name anywhere in the entry, so `FAIL tests/test_b.py::test_x` would also fail `test_x` of another file. Source: src/nio/evidence.py:434: "else \"failed\" if any(re.search(rf\"\\b{re.escape(short)}\\b\", x) for x in failing)"
+- **RF-13** Many tests print a bare `ok` line themselves (559 calls), which no `ok <file>::<name>` reader can mistake for a result line. Source: tests/test_agents.py:46: "print(\"ok\")"
+- **RF-14** The worker card tells a single-mode worker to wait a few seconds on `try again`. Source: src/nio/agents/worker.md:26: "If `nio flow` says `try again`, wait a few seconds and run it again"

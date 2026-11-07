@@ -1,0 +1,485 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-07-scoped-task-commands",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "architecture-fit",
+    "logic",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261107-hlvu/plan-architecture-fit.md": "7c2852a5105aac76793e08de817c051d4d96dbcb0e26ab9fc567b2e6222dae74",
+    "R-261107-hlvu/plan-logic.md": "c8915bd690b0037a437054f25940ea75f1a399b49614c85e84fc6606d4ce4e46",
+    "R-261107-hlvu/plan-test-proof.md": "f5e5b4e427f50ddc72f03260047c72094df64ebd7a4ed9d0db7d0a7e35e29f30",
+    "R-261107-hlvu/plan-refuter.md": "42ca7339d8ff9e1ed359007933a2a98129f794ba96344ac6244150c1b7131256",
+    "R-261107-us2v/plan-architecture-fit.md": "8c4b7073f401f14d40b12aff590da7a9d75d5a3167f0128cb533b15fdc6c4766",
+    "R-261107-us2v/plan-logic.md": "e327a4b9f6c5fadf534d21334faf469fc838590bafed9df860d2019e01a49277",
+    "R-261107-us2v/plan-test-proof.md": "d4f8ee163ec6318f53fa4835aa810d1ef0f117b4e7d59a71a8e617df05eb1c1b"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a3c9823675c95e9f04558c2fb07b3eca3b332cec",
+      "judged": 2
+    },
+    "plan-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a3c9823675c95e9f04558c2fb07b3eca3b332cec",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a3c9823675c95e9f04558c2fb07b3eca3b332cec",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The self-check \"none\" marker is a regex, but wrong_reason matches markers as substrings and needs an error list",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "has the none marker regex `^ran 0 tests`",
+        "if (name == \"pytest\" and code == 5) or any(m in output for m in r[\"none\"]):",
+        "marker = next((m for m in r[\"error\"] if m in output)"
+      ],
+      "fix": "give the entry `\"error\": []` and the substring marker `\"ran 0 tests\"`, as the other runners do. If an anchored match is really wanted, say that CT-3 changes `wrong_reason` to use regexes, and for which runners.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "every existing `RUNNERS` entry lists plain substrings under `none` and `error`, and `wrong_reason` tests them with `m in output`. The literal `^ran 0 tests` never appears in any output, so this path never refuses with \"no tests ran\". CT-3 also gives the entry no `error` key, so `r[\"error\"]` raises KeyError the first time red, `suite()` or evidence's `crashed` reads a self-check run.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "`wrong_reason` tests each marker with `m in output`, so the literal text `^ran 0 tests` never occurs and a regex marker never matches. FR-4's refusal \"whatever the exit code\" would not fire if the contract is built as written. `wrong_reason` also reads `r[\"error\"]` unconditionally, and CT-3 gives self-check no `error` key, so the call raises KeyError. CT-4's `collect` calls `wrong_reason(name, ...)` with this same name. Separately, FR-4 says the output \"ends its run with\" `ran 0 tests`, but `^ran 0 tests` can match anywhere in the output. In a multi-file suite, one file that prints `ran 0 tests, 0 failed` makes `crashed` true in `collect`. Every test then reads \"didn't run\", including those of passing files that printed `ok`. That contradicts AC-9 and FR-8.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-3 gives `RUNNERS[\"self-check\"]` the none marker \"regex `^ran 0 tests`\", but `wrong_reason` (implement.py:58-61) tests `m in output` over plain strings and reads `r[\"error\"]` unconditionally. Built as written, the marker never matches, and the missing `error` key raises KeyError.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-7 gives self-check plain substring markers and an empty error list, read by wrong_reason unchanged",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "A readable self-check suite lets a crashed file pass the epic-closing review",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "FR-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`suite()` sums every count line's number (the suite prints one per file), so `collected` is the suite's total",
+        "elif r[\"runner\"] is None or r[\"failing\"] is None:",
+        "if not quick and r[\"collected\"] is not None and base.get(\"collected\") is not None and r[\"collected\"] < base[\"collected\"]:"
+      ],
+      "fix": "add a rule to CT-3 that a self-check suite exiting non-zero with no `FAIL` line fails review (or counts as broken), and add a test for it beside TC-6.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "today a self-check suite has no known runner, so `review()` fails any non-zero suite (\"its runner is unknown\"). Under CT-3 the runner becomes `self-check` and `failing` becomes a list. Take a file that crashes at import: it prints no `FAIL` line, the runner has no error markers so the suite isn't `broken`, and `failing` is `[]`. With `tests.epic` set (`quick`), the collected-count check is skipped too. The review then passes on a suite that exited non-zero. CT-3 never says what review does with a non-zero self-check suite that has no `FAIL` line.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "the task closing an epic runs `review()`, which runs `suite()`. A suite where file A crashes before its `ran` line and files B and C print theirs makes the runner \"self-check\", not None. `failing` is `[]` because there is no FAIL line, and the exit code is 1. `review()` adds the reason \"the suite exits N and its runner is unknown\" only for `r[\"runner\"] is None or r[\"failing\"] is None`. `broken` is false, because `wrong_reason` finds no marker. So `new = []`, no reason is recorded, and the review passes a suite that exits non-zero. Before this change, that suite's runner was unknown and the review refused it. CT-4 closes this hole for evidence only (`failed` when the suite exits non-zero), and CT-3 says nothing about review.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "implement.py:578-580 records \"exits N and its runner is unknown\" only when `runner is None or failing is None`. Under CT-3 a crashed self-check file leaves runner \"self-check\" and `failing` `[]`, with no error markers, so `new` is empty. The review passes a suite that exited non-zero, and CT-3 and CT-4 say nothing about review.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-3: review fails a non-zero self-check suite with no FAIL line; TC-12 added",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "CT-2 binds one file but changes every self-check script",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Binding: `tests/test_flow.py` (existing)",
+        "the same change in every `tests/test_*.py` `__main__` block"
+      ],
+      "fix": "bind the set (for example `tests/test_*.py`), or list the scripts. Say whether the NIO_E2E scripts are included.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "the binding, and so the task's `Files:` derived from it, names only test_flow.py. The shape edits about 16 scripts, including the real-model `test_lenses.py` and `test_tasks_e2e.py`. The worker card says \"Keep to the task's `Files:`\", so a worker following the card stops at one file or edits files outside its list.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-2 says the task's Files lists all 17 scripts, NIO_E2E ones included",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "CT-1's Like names a CLI harness, not the test loop it replaces",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Like: `tests/test_flow.py:run_main`",
+        "\"\"\"`nio <args>` in `root`, in this process. Returns (exit code, stdout, stderr); cwd, environ and argv are restored.\"\"\""
+      ],
+      "fix": "make the Like line `tests/test_flow.py` `__main__` block, and state the two deliberate changes: keep going after a failure, and print the result lines centrally.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`run_main` runs the nio CLI in-process. CT-1 is a test-running loop that replaces `for name, test in list(globals().items()): if name.startswith(\"test_\"): test()`. Those existing loops stop at the first failure and leave the `ok` printing to each test. CT-1 changes both, and its Like line points at neither pattern.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1 Like line names the __main__ loop it replaces and the two deliberate changes",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "US-3 is said to need only Foundation, but CT-4 needs what CT-3 delivers",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "US-3 depends only on Foundation, so it can be built beside US-1",
+        "the runner is `implement.runner(suite command, suite output)`"
+      ],
+      "fix": "make US-3 depend on US-1, or move the `runner`/`RUNNERS`/`SUMMARY` part of CT-3 into Foundation.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "CT-4 calls the two-argument `runner` and reads `SUMMARY[\"self-check\"]`. CT-3 defines both, and CT-3 is delivered by the US-1 block. Today `runner(command)` takes one argument and `SUMMARY` has no self-check entry. If US-3 is built beside US-1 or first, `collect` has nothing to call. The Foundation block (CT-1, CT-2) only makes the scripts print lines, so a sequential run of US-3 right after Foundation fails.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "plan.md says US-3 depends only on Foundation, but CT-4 calls the two-argument `implement.runner` and reads `SUMMARY[\"self-check\"]`. Both come from CT-3, which is delivered by US-1, so US-3 built before or beside US-1 has nothing to call.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "runner/RUNNERS/SUMMARY moved to CT-7, delivered by Foundation",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "The \"self-check\" entry of `RUNNERS` is a regex, but `wrong_reason` matches substrings and needs an `error` list",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "has the none marker regex `^ran 0 tests`",
+        "any(m in output for m in r[\"none\"])"
+      ],
+      "fix": "say how `wrong_reason` reads the entry. Either match with `re.search(..., re.M)` and give the entry `\"error\": []`, or use the string `ran 0 tests`. Say that `collect` reads `crashed` for self-check from the count line and the exit code, not from the none marker.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "`wrong_reason` tests each marker with `m in output`, so the literal text `^ran 0 tests` never occurs and a regex marker never matches. FR-4's refusal \"whatever the exit code\" would not fire if the contract is built as written. `wrong_reason` also reads `r[\"error\"]` unconditionally, and CT-3 gives self-check no `error` key, so the call raises KeyError. CT-4's `collect` calls `wrong_reason(name, ...)` with this same name. Separately, FR-4 says the output \"ends its run with\" `ran 0 tests`, but `^ran 0 tests` can match anywhere in the output. In a multi-file suite, one file that prints `ran 0 tests, 0 failed` makes `crashed` true in `collect`. Every test then reads \"didn't run\", including those of passing files that printed `ok`. That contradicts AC-9 and FR-8.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "TC-9 can't catch a FAIL line matched by test name alone",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-9",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`tests/test_b.py` `test_one` is `passed` (same name as a test in the failing file)",
+        "A failing-test entry of the form `<file>::<name>` matches a test only when both its file and its name match",
+        "else \"failed\" if any(re.search(rf\"\\b{re.escape(short)}\\b\", x) for x in failing)"
+      ],
+      "fix": "make the failing test share its name with the other file's passing test. For example, `test_a.py` prints `FAIL tests/test_a.py::test_one`, and the assert says `tests/test_b.py` `test_one` is `passed`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "the only `FAIL` line in the fixture is `tests/test_a.py::test_two`, and no other file has a `test_two`. If evidence keeps today's name-only regex for `FAIL` entries, the test still passes. Yet a real `FAIL tests/test_a.py::test_one` would mark `tests/test_b.py` `test_one` as `failed`, which breaks AC-9's \"no test of another file is `failed`\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-9's only `FAIL` line is `test_a.py::test_two`, and no other file has a `test_two`. So today's name-only regex (evidence.py:436) would also pass the test. The comment \"same name as a test in the failing file\" is wrong, because `test_a.py::test_one` is the passing one, not the failing one.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-9: the failing test shares its name with the other file's passing test",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "No test proves the self-check scripts run through `selfcheck.main` (CT-2)",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-1",
+        "TC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the same change in every `tests/test_*.py` `__main__` block",
+        "| AC-1 | CT-1, CT-2 | TC-1 |",
+        "- Covers: CT-1"
+      ],
+      "fix": "add a test that reads every `tests/test_*.py` and checks its `__main__` block ends in a `selfcheck.main(...)` call. Or run each script with one test name and check it prints `ran 1 tests`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-1, TC-2, TC-3 and TC-11 run only a generated `tests/test_demo.py`. A script left with today's `for name, test in list(globals().items())` loop, or with its fixed list in the wrong order, passes every planned test. Yet `python tests/<that file> test_new` still runs the whole file and prints no `ran` line, so red reads it as an unknown runner and accepts it as today. Evidence also gets no per-test lines for that file.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-1, TC-2, TC-3 and TC-11 run only the generated `tests/test_demo.py`, and tests.md has no test over the real `tests/test_*.py` `__main__` blocks. A script left with the old `globals()` loop would pass every planned test.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-13 checks every script's __main__ calls selfcheck.main",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "TC-6 passes on today's code",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "TC-6",
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Green is unchanged: it runs the red line's command only",
+        "Tests beyond the task's own run only for the task",
+        "why = cause or (\"the test passes before the code exists\" if code == 0 else wrong_reason(name, code, out))"
+      ],
+      "fix": "label TC-6 as a regression guard in tests.md, or drop AC-6 from what US-1 claims to deliver.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "today's red accepts the scoped command (the runner is unknown, so there is no wrong reason). Today's green then runs only `ev[\"command\"]`, and the review runs `tests.suite` only when the task closes its epic. So TC-6 is green before any work. It guards against regressions but proves no change.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-6 marked a regression guard",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "TC-8's skill check passes on any mention of `output:`",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-8",
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`skills/implement/SKILL.md` contains `output:`",
+        "the skill text says to pass them on"
+      ],
+      "fix": "assert on a phrase that carries the instruction, such as a sentence naming both the `output:` lines and the code-phase worker. Say which sentence in CT-6.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "suppose the skill gains `output:` anywhere, for example an example of red's printout, but never tells the orchestrator to give those lines to the code-phase worker. The test still passes, but AC-8's second half is broken.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-6 gives the sentence; TC-8 asserts one line with output: and code-phase worker",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "TC-9 and TC-10 fixtures may lack the `def` lines their expected results need",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "TC-9",
+        "TC-10",
+        "AC-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`test_a.py` prints `ok tests/test_a.py::test_one`, `FAIL tests/test_a.py::test_two`, `ran 2 tests, 1 failed` and exits 1",
+        "`didn't run` when it exits 0 or the test has no `def` line"
+      ],
+      "fix": "say in the Setup that each fixture script defines `def test_one` and `def test_two` and prints its lines through them, or through `selfcheck.main`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`collect` reads each test's line with `asserts_in`, and a test with no `def` gets `didn't run`. A fixture that only prints those lines yields `didn't run` for tests the assert expects as `passed` or `failed`. The writer may then fit the code to the fixture, not to CT-4.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "tests.md: every fixture script defines def test_ functions and runs through selfcheck.main",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "6db1b2fcd1704208897827866128714b147c329c",
+    "2": "a3c9823675c95e9f04558c2fb07b3eca3b332cec"
+  }
+}
