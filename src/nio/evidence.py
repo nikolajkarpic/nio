@@ -434,14 +434,16 @@ def collect(root, slug, epic, run):
     for file, tname in rest:
         short = tname.split(".")[-1]
         line = defs.setdefault(file, asserts_in(root, commit, file)).get(short, (0,))[0]
-        on = lambda x: "::" in x and file in x.split("::")[0] and x.split("::")[-1] == short
+        def on(x):  # a `<file>::<name>` entry needs both; any other entry matches by name
+            f, _, n = x.partition("::")
+            return (f == file or f.endswith("/" + file)) and n.split("::")[-1] == short if n else bool(re.search(rf"\b{re.escape(short)}\b", x))
         if sc and line:
             result = ("failed" if any(on(x) for x in failing) else "passed" if any(on(f"{f}::{n}") for f, n in oks)
                       else "didn't run" if code_ok else "failed")
             tests.append({"name": tname, "file": file, "line": line, "result": result})
             continue
         result = (("unknown" if code_ok else "failed") if not fail else "didn't run" if crashed or not line
-                  else "failed" if any(re.search(rf"\b{re.escape(short)}\b", x) for x in failing)
+                  else "failed" if any(on(x) for x in failing)
                   else "passed" if code_ok else "alone")
         tests.append({"name": tname, "file": file, "line": line, "result": result})
     alone = [x for x in tests if x["result"] == "alone"]
