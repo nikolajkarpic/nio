@@ -1665,6 +1665,77 @@ def test_closing_review_records_its_suite():
     assert reviews[1]["evidence"].get("suite") == {"command": SUITE, "code": 0}, reviews[1]
     print("ok")
 
+def script(root, body, code):
+    """A self-check-style test file at TEST: prints `body`, exits `code`."""
+    (root / TEST).write_text(f"import sys\nprint({body!r})\nsys.exit({code})\n")
+
+
+def scripted(root):
+    """A test file that fails like a new test until app.py defines refund, then passes."""
+    (root / TEST).write_text(
+        "import sys\nif 'def refund' in open('app.py').read():\n    print('ok " + TEST + "::test_new\\nran 1 tests, 0 failed')\n"
+        "    sys.exit(0)\nprint('FAIL " + TEST + "::test_new\\nran 1 tests, 1 failed')\nsys.exit(1)\n")
+
+
+SCOPED = f"python {TEST} test_new"
+
+
+def test_ac4_red_takes_a_scoped_command():
+    root = claimed()
+    script(root, f"FAIL {TEST}::test_new\nran 1 tests, 1 failed", 1)
+    code, out = flow(root, "red", S, "T-1", "--run", SCOPED)
+    assert code == 0 and "red: T-1 accepted" in out, out
+    ev = lines(root)[-1]["evidence"]
+    assert lines(root)[-1]["kind"] == "red" and ev["command"] == SCOPED and ev["runner"] == "self-check", lines(root)[-1]
+    print("ok")
+
+
+def test_ac5_red_refuses_zero_tests():
+    for exit_code in (1, 0):
+        root = claimed()
+        script(root, "no test named test_typo\nran 0 tests, 0 failed", exit_code)
+        code, out = flow(root, "red", S, "T-1", "--run", f"python {TEST} test_typo")
+        assert code == 1 and "refused: no tests ran" in out, (exit_code, out)
+        assert of(root, "refused")[-1]["evidence"]["cause"] == "no tests ran" and not of(root, "red"), lines(root)[-1]
+    print("ok")
+
+
+def test_ac6_green_runs_only_the_scoped_command():
+    marker = tempfile.mktemp(prefix="suite-ran-")
+    root = impl(cfg={"tests": {"suite": f"touch {marker}"}})
+    code, out = flow(root, "claim", S)
+    assert code == 0, out
+    scripted(root)
+    code, out = flow(root, "red", S, "T-1", "--run", SCOPED)
+    assert code == 0, out
+    code_with(root)
+    Path(marker).unlink(missing_ok=True)
+    code, out = flow(root, "green", S, "T-1")
+    assert code == 0, out
+    assert of(root, "green")[-1]["evidence"]["command"] == SCOPED and "suite" not in of(root, "review")[-1]["evidence"], out
+    assert not Path(marker).exists()
+    print("ok")
+
+
+def test_review_fails_a_crashed_self_check_suite():
+    suite = "python suite.py"
+    root = impl(cfg={"tests": {"suite": suite}}, alone=True)
+    (root / "suite.py").write_text("import sys\nif 'def refund' in open('app.py').read():\n"
+                                   "    print('ok tests/test_b.py::test_one\\nran 1 tests, 0 failed')\n"
+                                   "    print('Traceback (most recent call last):')\n    sys.exit(1)\n")
+    commit_all(root, "suite")
+    code, out = flow(root, "claim", S)
+    assert code == 0, out
+    scripted(root)
+    code, out = flow(root, "red", S, "T-1", "--run", SCOPED)
+    assert code == 0, out
+    code_with(root)
+    code, out = flow(root, "green", S, "T-1")
+    assert code == 1 and "review: failed" in out and "the suite exits 1 and names no failing test" in out, out
+    assert of(root, "review")[-1]["evidence"]["passed"] is False
+    print("ok")
+
+
 REPO_SUITE = json.loads((Path(__file__).parent.parent / ".nio/config.json").read_text())["tests"]["suite"]
 
 
