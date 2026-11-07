@@ -1531,6 +1531,33 @@ def test_lite_escalated_to_full_runs_full_stages():
     print("ok")
 
 
+def test_header_matching_route_skips_unchanged():
+    """UB-2 (AC-6): a lite effort whose header says lite lists exactly spec_jury, planning, plan_jury as skipped
+    (lite route) past grilling; a full effort whose header says full lists none."""
+    def run(name, done):
+        root = repo()
+        git(root, "config", "user.name", "t")
+        git(root, "config", "user.email", "t@t")
+        (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+        folder = root / ".nio/specs" / S
+        folder.mkdir(parents=True)
+        (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+        flow.start(root, S, by=BY)
+        text = re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+        (folder / "spec.md").write_text(text)
+        for stage in done:
+            assert flow.done(root, stage, S, by=BY)[0] == 0
+        return nxt(root)
+
+    out = run("spec-bugfix.md", ("drafting", "grilling"))
+    skipped = [ln for ln in out.splitlines() if "(lite route)" in ln]
+    assert len(skipped) == 1, out
+    assert skipped[0] == "skipped: spec_jury, planning, plan_jury (lite route)", skipped
+    out = run("spec.md", ())
+    assert "(lite route)" not in out, out
+    print("ok")
+
+
 def test_uj2_idle_visible():
     """TC-69: an idle effort shows when it was last active, below the newer one."""
     root = effort("planning")
