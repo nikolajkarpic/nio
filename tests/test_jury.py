@@ -885,7 +885,7 @@ def test_skill_and_cards():
     from pathlib import Path
     top = Path(__file__).parent.parent
     skill = (top / "skills/jury/SKILL.md").read_text()
-    step6, step8 = skill.split("6. **Decide.**")[1].split("7. **Dispose**")[0], skill.split("8. **Re-review.**")[1].split("## When to stop")[0]
+    step6 = step8 = skill.split("3. **Decide.**")[1].split("4. **Dispose**")[0]
     assert all(p in step6 for p in ("one message", "fix", "accept as risk")), step6
     assert all(p in step8 for p in ("fix-check pack", "not fixed", "only blockers")), step8
     assert "re-run only those lenses with packs that name the changed IDs" not in skill
@@ -1941,5 +1941,61 @@ def test_misuse_separate_calls_beside_the_step():
     print("ok")
 
 
+def test_ac11_scenario_a_in_at_most_15_calls():
+    """Scenario A of RF-2 (a major from testability and one from logic, a rerun with fix checks, approval).
+    Before, 31 orchestrator calls: plan, pack, run, agents sync, 3 templates, 3 check --gate, 3 packs written, 3 jurors,
+    collect, refuter pack, refuter, collect, check, 2 disposes, changed, run, 2 fixcheck, 2 packs written, 2 jurors,
+    collect, check, collect-final, check-final.
+    Now 15: plan (1), pack (1), step (1), 4 jurors (4), step (1), refuter (1), step (1), one dispose (1),
+    step (1), 2 fix-check jurors (2), step (1)."""
+    root = gate_spec()
+    calls, ADD = 0, ["consistency:D-1 current"]
+    jury.plan(root, GSLUG, "spec", ["consistency:D-1 current"]); calls += 1
+    calls += 1  # nio pack
+    first = step(root, "", ["consistency:D-1 current"]); calls += 1
+    run = run_of(first)
+    second = FINDING.replace("F1", "F1").replace("EB-1", "AC-1").replace("create exactly one refund", "one refund exists")
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic", second)
+    out(root, run, "spec", "consistency")
+    out(root, run, "spec", "adversary")
+    calls += 4
+    lines = step(root, run, ADD); calls += 1
+    (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1) + CONFIRM.format(n=2)); calls += 1
+    lines = step(root, run, ADD); calls += 1
+    assert "outcome: rejected" in lines, lines
+    jury.dispose(root, GSLUG, "spec", "J-1,J-2", "spec-fix", "agent", "wording"); calls += 1
+    sp = root / f".nio/specs/{GSLUG}/spec.md"
+    sp.write_text(sp.read_text().replace("create exactly one refund", "create exactly one refund per order").replace("then one refund exists", "then exactly one refund exists"))
+    lines = step(root, run, ADD); calls += 1
+    new = run_of(lines)
+    assert new != run and "outcome: rerun" in lines, lines
+    names = sorted(p.stem for p in (root / f".nio/runs/{new}/jury/packs").glob("*.md"))
+    assert len(names) == 2, names
+    allnext = [next_of(lines)]
+    for n in names:
+        out(root, new, "spec", n, verdicts=verdicts(**{"J_1" if n == "logic" else "J_2": "fixed"}))
+        calls += 1
+    lines = step(root, new, ADD); calls += 1
+    allnext.append(next_of(lines))
+    assert "outcome: approved" in lines and next_of(lines).startswith("tell the human"), lines
+    assert not any("re-run consistency" in n for n in allnext), allnext
+    assert calls <= 15, calls
+    print("ok")
+
+
+def test_nfr1_skill_names_the_step():
+    text = (Path(__file__).parent.parent / "skills/jury/SKILL.md").read_text()
+    steps = text.split("## Steps")[1].split("\n## ")[0]
+    assert "nio jury next" in steps and "J-a,J-b" in steps, "names the step and several IDs"
+    assert "save each one's answer verbatim" not in steps
+    kept = [b for b in steps.split("\n\n") if "--blocker" not in b and "--human" not in b]
+    rest = "\n\n".join(kept)
+    for gone in ("nio run", "nio agents sync", "nio jury template", "nio jury collect", "nio jury check",
+                 "nio jury changed", "nio jury fixcheck", "nio check spec <slug> --gate"):
+        assert gone not in rest, gone
+    print("ok")
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_grill_deferred_blocker_falls_through_to_check, test_add_reason_with_parens_invents_no_lens, test_over_cap_step_waits_for_the_human, test_ac1_step_writes_the_refuter_batch, test_ac2_rerun_writes_fix_check_packs, test_ac3_step_prints_no_finding_body, test_ac4_missing_and_invalid_lenses_rerun, test_ac5_repeated_step_changes_nothing, test_ac12_first_review_packs, test_ac13_needs_more_is_rerun, test_ac14_outcome_next_lines, test_ac16_unplanned_lens_file_stops_the_step, test_misuse_separate_calls_beside_the_step, test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_consistency_pack_memory_is_for_a_juror, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged])
+    selfcheck.main([test_grill_deferred_blocker_falls_through_to_check, test_add_reason_with_parens_invents_no_lens, test_over_cap_step_waits_for_the_human, test_ac1_step_writes_the_refuter_batch, test_ac2_rerun_writes_fix_check_packs, test_ac3_step_prints_no_finding_body, test_ac4_missing_and_invalid_lenses_rerun, test_ac5_repeated_step_changes_nothing, test_ac12_first_review_packs, test_ac13_needs_more_is_rerun, test_ac14_outcome_next_lines, test_ac16_unplanned_lens_file_stops_the_step, test_misuse_separate_calls_beside_the_step, test_ac11_scenario_a_in_at_most_15_calls, test_nfr1_skill_names_the_step, test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_consistency_pack_memory_is_for_a_juror, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged])

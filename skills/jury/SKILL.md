@@ -47,7 +47,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    the tier from the risk flags, counts runs against the cap and names missing cards.
    - If the gate fails, run no lens: tell the human the spec still has unsettled points and the grill comes next.
    - If a card is missing, run no lens: tell the human which reviewer is missing and that it needs a card at
-     `.nio/agents/<lens>.md` (`nio agents sync` only renders cards that exist).
+     `.nio/agents/<lens>.md`.
    - Add your own triggers, then plan again with `--add "<lens>:<reason>"`:
      - **consistency**, when `nio pack "<the spec's summary>"` lists any `approved` or `current` decision (the reason
        names their IDs);
@@ -55,78 +55,68 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
        answers (`nio jury answers <slug>`) ask for (the reason names them).
    - If the plan is over the cap, show the human the planned reviews, each by what it checks, and let them
      choose, each option saying what it costs: run all, drop the reviews with the lowest hit rate, or pick. Never skip a lens silently.
-2. **Run the lenses.** Start a run with `nio run`, and run `nio agents sync` so every `nio-<lens>` agent exists. Run
-   each planned lens as its own subagent, in parallel, with a fresh pack holding only:
-   - the gate (`spec`) and the slug;
-   - the path of `spec.md`;
-   - the output of `nio check spec <slug>`;
-   - the lens output format (`nio jury template`), with `by:` set to the juror's role, host and model;
-   - for **scope** only, `intake.md` and the human's grill answers (`nio jury answers <slug>`);
-   - for **consistency** only, the memory pack from step 1.
-
-   Never put `grill.md` itself (scope gets only the extracted answers), `research.md`, this conversation or another
-   juror's output in a pack: the author's reasoning sways a juror. Lens agents are read-only, so save each one's answer
-   verbatim to `.nio/runs/<run>/jury/spec-<lens>.md`.
-   - **Without subagents**, never play a lens in your own session. Write each pack to
-     `.nio/runs/<run>/jury/packs/<lens>.md` and ask the human to run it in a fresh session (or with the host's CLI, such as `claude -p`), showing the exact
-     command to copy, with `by: juror / manual session / <model>` so the verdict records the manual run.
-3. **Collect.** Run `nio jury collect <slug> spec --run <run> --tier <tier>`, with one `--expect <lens>` per planned
-   lens. A lens output that is missing, invalid or `needs-more` is re-run once under the same file name, with collect's
-   error messages added to its pack. A second failure goes to the human: say in plain words which review failed and why, with the error in `Refs:`.
-4. **Validate.** If collect prints a refuter batch, run `nio-refuter` once on the whole batch, with the path of
-   `spec.md`, the ledger `.nio/specs/<slug>/jury/spec.md` (so it can mark a duplicate of a finding outside the batch)
-   and the human's grill answers (for findings about what was or wasn't asked for). Save its answer to
-   `.nio/runs/<run>/jury/spec-refuter.md` and collect again.
-5. **Escalate.** For each lens with a blocker the refuter **confirmed**, run that lens twice more as independent
-   jurors, `spec-<lens>-2.md` and `spec-<lens>-3.md`, each with a fresh pack (after the first review, the
-   blocker's pack, `nio jury fixcheck <slug> spec --lens <lens> --blocker J-<n>`), then collect. Two of three decide. Majors
-   and refuted blockers never escalate. Every juror counts toward the cap.
-6. **Decide.** Run `nio jury check <slug> spec --record` and act on the outcome:
+     Pass their choice as `--pick <lens,lens>` to the step below.
+2. **Drive the step.** Run `nio jury next <slug> spec [--add "<lens>:<reason>" ...] [--pick <lens,lens>]`, and after it
+   `nio jury next <slug> spec --run <run>` with the run it printed, repeating the same `--add` each time. Each call
+   prints its results and ends in a `next:` line; do what that line says, then call again, until it says to tell the
+   human or to show them a list. You never judge the spec yourself. The step renders the agents, writes the packs and
+   composes the outcome. A `next:` line asks for one of:
+   - **run the jurors it lists**, each as its own subagent (`nio-<lens>`), in parallel, on its pack. A juror writes its
+     own output file; if the host's agents can't write files, save the juror's reply verbatim to the output path the
+     step printed. Never put `grill.md`, `research.md`, this conversation or another juror's output in a pack.
+     - **Without subagents**, never play a lens in your own session. Ask the human to run the pack
+       `.nio/runs/<run>/jury/packs/<lens>.md` in a fresh session (or with the host's CLI, such as `claude -p`), showing
+       the exact command to copy, with `by: juror / manual session / <model>` so the verdict records the manual run.
+   - **run `nio-refuter`** on `packs/refuter.md`, writing the output path the step printed;
+   - **re-run a lens** on its pack with the INVALID lines added, once. A second failure goes to the human: say in
+     plain words which review failed and why, with the error in `Refs:`;
+   - **escalate a lens** with a confirmed blocker: run it twice more as independent jurors on copies of its pack whose
+     `## Your output` line names the `-2` and `-3` output files the step printed. After the first review the copies are
+     of the blocker's pack, `nio jury fixcheck <slug> spec --lens <lens> --blocker J-<n>` plus the lens output format
+     (the step never writes these). Two of three decide. Majors and refuted blockers never escalate. Don't edit the
+     artefact until the escalation is collected;
+   - **dispose of findings** (step 4), then edit the artefact and call the step again;
+   - **show the human** the listed findings and wait.
+3. **Decide.** When the step prints `outcome:`, act on it:
 
    | Outcome | What you do |
    | --- | --- |
-   | `rerun` | re-run each lens it names, once, then collect; when it says the spec changed, or asks for the final fix check, re-review (step 8) |
-   | `pending` | run the refuter (step 4) |
-   | `human` with one list | after the first review there's no confirmed blocker, so no new round: show every listed finding in one message, each with two options, fix or accept as risk, in plain words (their IDs in `Refs:`); record each answer with `nio jury dispose` (a fix as you would in step 7), then check again |
-   | `human`, the final fix check flagged | show every flagged finding in one message, each with fix, accept as risk, or overrule (it is already fixed: the human says why, recorded with `overruled --by human`), saying a confirmed blocker may be among them and that no further check follows; record each with `nio jury dispose`, then check again: the jury then ends |
+   | `rerun` | the step wrote the fix-check packs of the lenses to re-check (a new run, or the one final fix check): run those jurors as its `next:` line says; each gets its fix-check pack and answers fixed or not fixed for each finding in it, and raises only blockers (a new major or minor becomes a note) |
+   | `human` with one list | after the first review there's no confirmed blocker, so no new round: show every listed finding in one message, each with two options, fix or accept as risk, in plain words (their IDs in `Refs:`); record each answer with `nio jury dispose` (a fix as you would in step 4), then call the step again |
+   | `human`, the final fix check flagged | show every flagged finding in one message, each with fix, accept as risk, or overrule (it is already fixed: the human says why, recorded with `overruled --by human`), saying a confirmed blocker may be among them and that no further check follows; record each with `nio jury dispose`, then call the step again: the jury then ends |
    | `human`, other reasons | show each reason with its findings in plain words (their IDs in `Refs:`), and wait for the human |
-   | `rejected` | dispose of each open finding (step 7), then re-review (step 8) |
+   | `rejected` | dispose of each open finding (step 4), fix the artefact, then call the step again |
    | `approved` | tell the human the outcome and give the next step (see When to stop); show the dispositions you made as a long list (see the block above), with the verdict record and their IDs in `Refs:` |
 
-   Show refuted findings too, in plain words with the refuter's reason; never hide them. Show the notes `nio jury
-   check` lists (findings below blocker raised after the first review) as one line each; they need no ruling.
-7. **Dispose** of each open finding, within your authority:
+   Show refuted findings too, in plain words with the refuter's reason; never hide them. Show the notes the step lists
+   (findings below blocker raised after the first review) as one line each; they need no ruling. After the first review
+   only a confirmed blocker starts another round; everything else comes to the human as one list. Once they settle it
+   with a fix, the step asks for the one final fix check; what it flags goes to the human, and once they settle that
+   the jury ends. A finding that has failed two rounds goes to the human, described in plain words.
+4. **Dispose** of each open finding, within your authority, several per call with comma-separated IDs and one note
+   per finding in order, or one note for all: `nio jury dispose <slug> spec J-a,J-b <disposition> --by <by> --note "<note>"`.
 
    | Disposition | Who | How |
    | --- | --- | --- |
-   | `spec-fix` that changes no behaviour (wording, an ID, a missing Observable from existing text) | you | fix the spec, then `nio jury dispose <slug> spec J-n spec-fix --by agent --note "<what changed>"` |
+   | `spec-fix` that changes no behaviour (wording, an ID, a missing Observable from existing text) | you | fix the spec, then `nio jury dispose <slug> spec J-a,J-b spec-fix --by agent --note "<what changed>"` |
    | `spec-fix` that changes behaviour | the human, through @nio:grill | grill it with the finding's fix as the recommended option, described in plain words, never by its ID, severity or reviewer, then `--by grill` |
    | `open-question` | you | add it to the spec as an `OP-n`, run @nio:grill on it before any lens re-runs, then `--by agent` |
    | `accepted-risk`, `out-of-scope` | the human only | ask in the shape above, saying what accepting it costs; then `--by human`, with their words as the note |
 
-   You judge whether a fix changes behaviour. `nio jury check` lists every disposition you made; show them to the
+   You judge whether a fix changes behaviour. The step lists every disposition you made; show them to the
    human as a long list (see the block above). A
    finding that came from a point the grill deferred is the human's, or a grill session's, never yours. A grill
    session settles one by removing its DF line from `## Deferred` (DF-n moves to `retired:`) before `--by grill`, which only a session the human answered may record;
    `nio jury dispose` refuses the spec-fix while the line is still there.
-8. **Re-review.** After the fixes, `nio check spec <slug> --gate` must pass again. Run `nio jury changed <slug> spec`:
-   it lists the IDs and sections the fixes changed, their neighbours, and the lenses to re-run. The same
-   applies when a change request edits a gate that was approved or closed: every lens that judged it re-checks the change. Start a new run and
-   give each of those lenses its fix-check pack, `nio jury fixcheck <slug> spec --lens <lens>`, exactly as printed and
-   nothing else of the spec. A lens answers fixed or not fixed for each finding in its pack and raises only blockers; a
-   new major or minor becomes a note. An escalation juror gets `--blocker J-<n>` instead and judges only that blocker.
-   Continue from step 3. After the first review only a confirmed blocker starts another re-review; everything else
-   comes to the human as one list (step 6). Once they settle it with a fix, `nio jury check` asks for the one final fix
-   check, run the same way; what it flags goes to the human, and once they settle that the jury ends without another
-   check. A finding that has failed two rounds goes to the human, described in plain words, not to another re-run
-   (`nio jury check` says so).
+   The same applies when a change request edits a gate that was approved or closed: every lens that judged it
+   re-checks the change, which the step arranges as a fix check.
+5. **Optional: a gate driver.** A host may run steps 2 to 4 in a fresh, cheaper subagent that returns the outcome and
+   the list for the human, so the main context doesn't grow. Dispositions that need the human stay with you.
 
 ## At the plan gate
 
-Run the steps above with `plan` in place of `spec` (`nio jury plan <slug> plan`, `plan-<lens>.md`, the ledger
-`jury/plan.md`), with these differences:
-- **Packs.** Each lens gets the files `nio jury files <slug> plan` prints, plus the `nio check plan <slug>` output and
-  the lens output format. Those files are also the only ones a quote may come from. The plan gate has no scope or
+Run the steps above with `plan` in place of `spec` (`nio jury plan <slug> plan`, then `nio jury next <slug> plan`, the ledger `jury/plan.md`), with these differences:
+- **Packs.** The step writes them: the plan files, and the only ones a quote may come from. The plan gate has no scope or
   consistency lens of the skill's own.
 - **Fixes in the plan.** A finding whose cause is in the plan is a `plan-fix`: fix the plan files, and dispose it as you
   would a `spec-fix` (you for a fix that changes no behaviour, the human otherwise).
@@ -137,7 +127,7 @@ Run the steps above with `plan` in place of `spec` (`nio jury plan <slug> plan`,
   joins the same open change request. The plan jury is then paused (`nio jury check <slug> plan` prints
   `state: waiting-on-spec`) until the spec jury re-approves the changed spec, or the human rejects the change request,
   which hands the finding back to them.
-- **With the human.** While `nio jury check <slug> plan` prints `state: with-human`, collect refuses a new round: show
+- **With the human.** While the step prints `state: with-human`, it refuses a new round: show
   the human the list and wait for their ruling.
 - **Approval.** When the outcome is `approved`, or the human closed the gate with a reason, and the human asks, commit
   the four plan files and the plan verdict record as one `nio: approve plan` commit. `nio check plan <slug> --approved`
@@ -156,17 +146,14 @@ the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approv
 
 Run this for one epic (`implementation-E-n`) once every task of it is done. The lenses judge the epic's diff and its
 test results, not the spec text alone. In order:
-1. `nio jury evidence <slug> E-n --run <run>` runs the epic's tests, checks, attacks and journeys in a throwaway copy
-   and writes the run's `results.json`.
-2. `nio jury plan <slug> implementation-E-n` lists the lenses. Over the cap, show the human the planned runs and let
-   them pick, then plan again with `--pick <lens,lens>`. Conformance and correctness always run.
-3. Each planned lens gets its own fresh pack from `nio jury pack <slug> implementation-E-n --lens <lens> --run <run>`,
-   with the lens output format (`nio jury template`). Run the lenses as in step 2 above.
-4. Collect with `nio jury collect <slug> implementation-E-n --run <run> --tier <tier>` and one `--expect` per lens.
-   When it prints a refuter batch, run `nio-refuter` on it and collect again. Then run
-   `nio jury check <slug> implementation-E-n --record`.
-5. When the outcome is `approved` or the human closed the gate, run
-   `nio flow done implementation-E-n <slug> --by "<role / host / model>"`.
+1. Run `nio jury next <slug> implementation-E-n`. It starts the run and says to run
+   `nio jury evidence <slug> E-n --run <run>`, which runs the epic's tests, checks, attacks and journeys in a throwaway
+   copy and writes the run's `results.json`. Over the cap, show the human the planned runs and let them pick, then call
+   again with `--pick <lens,lens>`. Conformance and correctness always run.
+2. Run `nio jury next <slug> implementation-E-n --run <run>`: it writes each lens its pack. Then loop as in step 2
+   above until it prints an outcome, running the refuter when it says so.
+3. When the outcome is `approved` or the human closed the gate, run the `nio flow done implementation-E-n <slug> --by
+   "<role / host / model>"` command the step prints.
 
 Other outcomes:
 - **rejected:** the epic goes back to the implement stage. Its fix tasks are appended under `#### Fixes`; run
