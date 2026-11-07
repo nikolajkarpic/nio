@@ -477,7 +477,7 @@ def review(root, slug, task, lines):
     reasons = [f"the task edited {p[len(folder):]}: the spec, plan and tasks are not the worker's" for p in paths
                if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
     reasons = reasons or [f"{p} changed since red" for p, h in frozen.items() if digest(root, p) != h]
-    new, still = [], []
+    new, still, ran = [], [], {}
     # #66: the full suite took about half the worker time on every task; the task's own test already ran at green
     epic_closes, all_close = closes(root, slug, task, lines)
     if not reasons and epic_closes:
@@ -485,6 +485,7 @@ def review(root, slug, task, lines):
         cfg = records.config(root)
         quick = None if all_close else (cfg.get("tests") or {}).get("epic")  # a slow suite runs in full only at the end
         r = suite(root, cfg, quick)
+        ran = {"suite": {"command": r["command"], "code": r["code"]}}
         if r["broken"]:
             reasons.append(f"the suite is broken: {r['cause'] or wrong_reason(r['runner'], r['code'], r['output'])}")
         elif r["runner"] is None or r["failing"] is None:
@@ -497,7 +498,7 @@ def review(root, slug, task, lines):
         if not quick and r["collected"] is not None and base.get("collected") is not None and r["collected"] < base["collected"]:
             reasons.append(f"{r['collected']} tests collected against the baseline's {base['collected']}")
     out = [p for p in outside(slug, paths) if p not in task["files"] and p not in frozen]
-    return entry("review", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out)
+    return entry("review", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out, **ran)
 
 
 def commit(root, slug, task, who, review=None):
