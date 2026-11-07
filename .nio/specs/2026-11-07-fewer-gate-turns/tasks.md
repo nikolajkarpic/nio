@@ -45,6 +45,52 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Effort: med
 - Mode: split: many test cases worth writing first by a separate worker
 
+#### Fixes
+
+### T-6 Fix: An over-cap plan is run in full with no human choice
+- From: J-1 (implementation-E-3, round 1)
+- Files: `src/nio/jury.py`
+- Serves: CT-1, J-1
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-7 Fix: `--add` reason text can invent a lens that gets a pack and a juror line
+- From: J-2 (implementation-E-3, round 1)
+- Files: `src/nio/jury.py`
+- Serves: CT-1, J-2
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-8 Fix: The spec-gate consistency juror is given worker instructions it cannot follow
+- From: J-6 (implementation-E-3, round 1)
+- Files: `src/nio/jury.py`
+- Serves: CT-2, J-6
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-9 Fix: Escalation loop on a grill-deferred or CLI blocker
+- From: J-8 (implementation-E-3, round 1)
+- Files: `src/nio/jury.py`
+- Serves: CT-1, AC-14
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Jurors write their own output file (US-3)
 
 ### T-4 Give juror cards a write tool limited by instruction
