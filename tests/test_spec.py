@@ -51,11 +51,29 @@ def test_templates_need_filling():
         p = spec.new(root, f"new-{route}", route, today="2026-10-26")
         assert p == spec.path(root, f"2026-10-26-new-{route}"), p
         has(errors(root, f"2026-10-26-new-{route}"), "<placeholders>")
+    # TC-6: a new lite spec is built from the bugfix template, which has the four bugfix sections
+    template = Path(spec.__file__).parent.joinpath("templates/spec-bugfix.md").read_text()
+    for heading in ("## Current behaviour", "## Expected behaviour", "## Unchanged behaviour", "## Acceptance criteria"):
+        assert heading in template, heading
     try:
         spec.new(root, "new-full", today="2026-10-27")  # same name another day is still a duplicate
         raise AssertionError("overwrote an existing spec")
     except ValueError:
         pass
+    print("ok")
+
+
+def test_lite_unchanged_required():
+    """TC-7: a bugfix spec with an empty unchanged-behaviour section, or an unchanged item with no AC, fails the check."""
+    root = repo()
+    slug = put(root, "spec-bugfix.md")
+    assert errors(root, slug) == [], errors(root, slug)
+    unchanged = "- **UB-1** WHEN a customer requests one refund on a paid order THE SYSTEM SHALL CONTINUE TO refund the full amount. [human]\n"
+    slug = put(root, "spec-bugfix.md", lambda t: t.replace(unchanged, ""))
+    has(errors(root, slug), "section `## Unchanged behaviour` is missing or empty")
+    ac2 = "- **AC-2** (UB-1) Given a paid order, when one refund request arrives, then it is refunded in full. [human]\n  Observable: order state `refunded`, amount equals total. Level: integration.\n"
+    slug = put(root, "spec-bugfix.md", lambda t: t.replace(ac2, ""))
+    has(errors(root, slug), "UB-1 has no AC")
     print("ok")
 
 
@@ -236,4 +254,4 @@ def test_secrets_flag_brings_in_security():
 
 
 if __name__ == "__main__":
-    selfcheck.main([test_secrets_flag_brings_in_security, test_grill_provenance, test_edge_cases, test_examples_pass, test_templates_need_filling, test_broken_specs, test_ids_are_permanent])
+    selfcheck.main([test_lite_unchanged_required, test_secrets_flag_brings_in_security, test_grill_provenance, test_edge_cases, test_examples_pass, test_templates_need_filling, test_broken_specs, test_ids_are_permanent])
