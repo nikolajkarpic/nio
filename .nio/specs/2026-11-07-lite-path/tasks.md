@@ -160,6 +160,30 @@ retired: [T-13, T-14]                      # task IDs removed from this file; ne
 - Effort: low
 - Mode: single: skill text and its own substring check are one small change
 
+#### Fixes
+
+### T-19 Fix: The folder note does not offer the full flow, and no test checks that it does
+- From: J-1 (implementation-E-3, round 1)
+- Files: `src/nio/tasks.py`, `tests/test_tasks.py`
+- Serves: AC-9, CT-4
+- Test: TC-9
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-20 Fix: The agent-judged folder trigger drops the non-test qualifier that FR-8 and AC-9 keep
+- From: J-3 (implementation-E-3, round 1)
+- Files: `skills/spec/SKILL.md`, `skills/tasks/SKILL.md`
+- Serves: FR-8, AC-9, CT-7, CT-13
+- Test: TC-9
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Pick lite or full at intake (US-4)
 
 ### T-11 Spec skill step 1 routes lite only when all four hold, full otherwise, in one line; adds to `test_lite_skill_texts` (CT-5)
