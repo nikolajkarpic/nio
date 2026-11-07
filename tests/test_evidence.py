@@ -3430,6 +3430,20 @@ def test_ac10_crashed_file_is_failed():
     print("ok")
 
 
+def test_pytest_entry_matches_file_and_name():
+    body = "def test_one():\n    assert 1 + 1 == 2\n"
+    root, _ = gate_repo(suite="python3 pytest", files={
+        "pytest": "import sys\nif sys.argv[1:]:\n    sys.exit(0)\nprint('FAILED tests/test_a.py::test_one - x')\nprint('1 failed')\nsys.exit(1)\n",
+        "tests/test_a.py": body, "tests/test_b.py": body})
+    (root / ".nio/specs/s/tests.md").write_text(SELF_CHECK_TESTS_MD)
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Tests")
+    results = start(root)
+    assert result_of(results, "tests/test_a.py", "test_one") == "failed", results["tests"]
+    assert result_of(results, "tests/test_b.py", "test_one") != "failed", results["tests"]
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
