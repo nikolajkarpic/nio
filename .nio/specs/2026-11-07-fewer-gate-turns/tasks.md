@@ -116,3 +116,38 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Tier: strong: skill prose must match the CLI behaviour exactly
 - Effort: low
 - Mode: single: one worker writes the prose and the check that guards it
+
+#### Fixes
+
+### T-10 Fix: Hand-made escalation packs can overwrite the first review
+- From: J-1 (implementation-E-5, round 1)
+- Files: `skills/jury/SKILL.md`
+- Serves: CT-6, J-1
+- Test: TC-11
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-11 Fix: Plan-gate section still tells the orchestrator to read status with `nio jury check`
+- From: J-5 (implementation-E-5, round 1)
+- Files: `skills/jury/SKILL.md`
+- Serves: CT-6, FR-11, J-5
+- Test: TC-11
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-12 Fix: AC-11 test counts its own increments, so it cannot fail
+- From: J-8 (implementation-E-5, round 1)
+- Files: `tests/test_jury.py`
+- Serves: AC-11
+- Test: TC-11
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding

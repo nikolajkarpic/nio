@@ -1,0 +1,457 @@
+{
+  "gate": "implementation-E-5",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-kknf/implementation-E-5-adversary.md": "d4e87e9a8de9f23a61e0ef5afcd996c211df1d51d8646c3a5ed3383a0c62cb92",
+    "R-261107-kknf/implementation-E-5-conformance.md": "2b764c9b0e7d961ce48e5985c7a8a317e1033737129de646def7e8a605eac4d7",
+    "R-261107-kknf/implementation-E-5-consistency.md": "1809ca93d5c1d7b48c89c0febb5acc2f95267f8c9a8a60ee262c75cff0821291",
+    "R-261107-kknf/implementation-E-5-correctness.md": "f5a2dfb49f0e3a67b5cb8aba431e280869b6b58e6b3914cdbdd4887c09ce7a44",
+    "R-261107-kknf/implementation-E-5-refuter.md": "be88216994172219d4df5fc2cfc5f2dc1d5791b95491502c90d35203c600fe26"
+  },
+  "jurors": {
+    "implementation-E-5-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c6e37e1651f550bce10469711640b2d079f2704d",
+      "judged": 1
+    },
+    "implementation-E-5-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c6e37e1651f550bce10469711640b2d079f2704d",
+      "judged": 1
+    },
+    "implementation-E-5-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c6e37e1651f550bce10469711640b2d079f2704d",
+      "judged": 1
+    },
+    "implementation-E-5-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c6e37e1651f550bce10469711640b2d079f2704d",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Hand-made escalation packs can overwrite the first review",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "run it twice more as independent jurors on copies of its pack whose",
+        "(the step never writes these)"
+      ],
+      "fix": "have the step write the `-2` and `-3` packs, or have it refuse a lens output file that a juror has overwritten after collect. Otherwise name the exact output paths in the skill and check them.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the orchestrator copies the blocker's fix-check pack for the `-2` and `-3` jurors and forgets to change `## Your output`, or changes only one copy. The juror writes `implementation-E-5-<lens>.md` again. The first review's findings are replaced by a fix-check output that has no findings. Collect sees a valid file, so the confirmed blocker disappears with no error, or the three votes count the same file three times.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SKILL.md lines 73-77 have the orchestrator hand-copy the blocker's fix-check pack and edit `## Your output`, and the text says \"the step never writes these\". Nothing in the artefact makes collect or the step detect a juror that wrote the first-review filename, so the one-mistake overwrite is possible as written.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-10",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/jury/SKILL.md (escalate bullet)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "The 15-call test counts calls by hand and may miss the `--run` call",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-11"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Now 15: plan (1), pack (1), step (1), 4 jurors (4), step (1), refuter (1), step (1), one dispose (1),"
+      ],
+      "fix": "count real calls by the next: lines the test follows, or state in the skill whether the `--run` call is needed for spec gates. Make the test follow the `next:` lines.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the skill requires `nio jury next` and then `nio jury next --run <run>`, but the test calls the step once before the juror outputs exist. If the second call is required, scenario A takes 16 calls and AC-11 fails, yet the test still passes. If the second call is not required, the skill sends the orchestrator to an unneeded call. Because `calls` is a manual tally, no change to the skill can make the test fail.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py test_ac11_scenario_a_in_at_most_15_calls",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "The skill-wording test skips the blocks most likely to keep old calls",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "kept = [b for b in steps.split(\"\\n\\n\") if \"--blocker\" not in b and \"--human\" not in b]"
+      ],
+      "fix": "exempt only the single allowed command strings, not whole blocks.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the escalation and human-disposal text is exempt from the check for `nio jury collect`, `nio jury check` and the other dropped calls. A leftover separate call there passes, and CT-6 asks for all of them to go.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py test_nfr1_skill_names_the_step",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The AC-11 call count is a hand-kept counter, not a measurement",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "calls += 4"
+      ],
+      "fix": "accept it, since the step is the only call path the test exercises and `test_nfr1_skill_names_the_step` guards the skill text. Optionally derive the count from the calls the test makes.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-conformance",
+          "lens": "conformance",
+          "situation": "the test adds to `calls` by hand after each step it performs. If the skill later asked for an extra call, such as a separate collect, the counter would still read 15 and the test would pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py (test_ac11_scenario_a_in_at_most_15_calls)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "Plan-gate section still tells the orchestrator to read status with `nio jury check`",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-6",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "The plan jury is then paused (`nio jury check <slug> plan` prints"
+      ],
+      "fix": "name the step for this state too, e.g. \"`nio jury next <slug> plan` prints `state: waiting-on-spec`\".",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "the diff rewrites the same plan-gate section to say \"While the step prints `state: with-human`, it refuses a new round\", so the skill now reads status from the step. The sentence a few lines earlier still sends the orchestrator to `nio jury check <slug> plan` to see `state: waiting-on-spec`, a call CT-6 says the skill drops. An orchestrator following the skill runs the removed command for one state and the step for another.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SKILL.md lines 127-128 still send the orchestrator to `nio jury check <slug> plan` for `state: waiting-on-spec`. Line 130 now reads status from the step (\"While the step prints `state: with-human`\"). Nothing in the file settles which command gives the status for the paused state.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-11",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/jury/SKILL.md, \"At the plan gate\", \"Findings rooted in the spec\"",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The skill's intro still names `nio check spec <slug> --gate` as a call to run",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Takes a spec that passes `nio check spec <slug> --gate` to a verdict"
+      ],
+      "fix": "reword the intro to \"Takes a spec the step can check (`nio jury next` checks the gate)\", or keep the precondition and say the step repeats it.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "CT-6 says the step \"checks the gate itself\" and the skill drops its `nio check <gate> --gate` calls. The intro still reads as a precondition the orchestrator must run before the jury. A host that follows it runs a gate check the step already does, which is the extra call FR-11 removes. If the gate check is kept as a precondition the human sees, say so in the intro, so the two readings do not conflict.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/jury/SKILL.md, intro (line 8)",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "CT-6 says the skill drops `nio jury check`, but the human-override line keeps it",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio jury check <slug> spec --record --human`"
+      ],
+      "fix": "add to CT-6 \"except `nio jury check <slug> <gate> --record --human`, which C-261028-quyk keeps\", or move the human-closed route to the step if the step can take `--human`.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "the \"Other outcomes\" text keeps `nio jury check <slug> spec --record --human \"<their reason>\"` for the human-closed gate. The test `test_nfr1_skill_names_the_step` skips any block that contains `--human`, so the skill passes, but CT-6 as written does not allow this call. The memory record C-261028-quyk (change accepted: \"--human at a jury gate goes through nio jury check\") requires this route, so the skill is probably right and CT-6's list of dropped calls is too broad. Either the spec or the CT-6 wording needs to say that `--record --human` stays.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/jury/SKILL.md, \"Other outcomes\"; spec CT-6 Shape",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "AC-11 test counts its own increments, so it cannot fail",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert calls <= 15, calls"
+      ],
+      "fix": "Derive the count from real events, such as the `next:` lines the step printed plus the pack and output files. Or drop the \"at most 15\" claim from the test and leave AC-11 to its human check.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-correctness",
+          "lens": "correctness",
+          "situation": "`calls` is raised by hand-written `calls += 1` lines, such as `calls += 1",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the skill requires `nio jury next` and then `nio jury next --run <run>`, but the test calls the step once before the juror outputs exist. If the second call is required, scenario A takes 16 calls and AC-11 fails, yet the test still passes. If the second call is not required, the skill sends the orchestrator to an unneeded call. Because `calls` is a manual tally, no change to the skill can make the test fail.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "In test_jury.py, `calls` is raised only by hand-written `calls += 1` lines (lines 1952-1979), and the final check is `assert calls <= 15`. No change to the skill or the CLI can make that assertion fail.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-12",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py (test_ac11_scenario_a_in_at_most_15_calls)",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "The skill test skips the whole step-2 block, so the removed calls could come back unnoticed",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "NFR-1",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "kept = [b for b in steps.split(\"\\n\\n\") if \"--blocker\" not in b and \"--human\" not in b]"
+      ],
+      "fix": "Remove only the exempt line from the text, not the whole paragraph. Or allow just `nio jury fixcheck ... --blocker` and check everything else.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-correctness",
+          "lens": "correctness",
+          "situation": "In SKILL.md, step 2 is one paragraph with no blank lines, and its escalate bullet contains `--blocker`. The filter therefore drops that whole paragraph before the banned-call check. A later edit that put `nio jury collect` or `nio agents sync` back into step 2 would pass the test. The skill's mention of `nio jury fixcheck` is only exempt because of that same filter.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py (test_nfr1_skill_names_the_step)",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "Stale `nio jury check` and record wording remains in the skill",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "The plan jury is then paused (`nio jury check <slug> plan` prints"
+      ],
+      "fix": "Say \"the step prints `state: waiting-on-spec`\" and \"call the step again\". Keep `nio jury check --record --human` only for the human's close, and say that is its one use.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-correctness",
+          "lens": "correctness",
+          "situation": "CT-6 says the skill drops its `nio jury check` calls, and the plan-gate \"With the human\" bullet was updated to say \"the step prints\". The change-request bullet in the same section still tells the orchestrator to read `state: waiting-on-spec` from `nio jury check`. \"When to stop\" still says every ruling is recorded by `--record`, and the implementation bullet says to wait \"before you check again\". An orchestrator may therefore make a separate check call beside the step, which the skill is meant to prevent.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/jury/SKILL.md (plan gate section, \"When to stop\", and the implementation \"waiting on a change request\" bullet)",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "c6e37e1651f550bce10469711640b2d079f2704d"
+  },
+  "matched": {
+    "AC-11": [
+      [
+        "tests/test_jury.py",
+        "test_ac11_scenario_a_in_at_most_15_calls"
+      ]
+    ]
+  }
+}
