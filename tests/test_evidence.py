@@ -3493,6 +3493,7 @@ def test_ac14_epic_commit_changed_while_jurors_ran():
     except ValueError as e:
         assert f"changed after {run}'s packs were written" in str(e), e
     assert jury.load(root, "s", "implementation-E-1")["round"] == 0
+    print("ok")
 
 
 if __name__ == "__main__":

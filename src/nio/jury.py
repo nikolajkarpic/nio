@@ -660,6 +660,7 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
                 raise ValueError(f"refuter output before its batch: {refuter} was not asked for; delete it and call again")
             led["collected"][f"{run}/{refuter.name}"] = sha
             out += refute(led, refuter, asked)
+            led["asked"].pop(run)  # answered: a later change to the file has no batch until the next one prints
     save(root, led)
     if impl:  # the conformance lens's matches are joined to the results (CT-21); each review round re-judges them on its results
         lens_out = next((p for p in new if p.stem == f"{gate}-conformance"), None)
