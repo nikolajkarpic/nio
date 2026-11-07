@@ -1021,6 +1021,20 @@ def test_ac22_skips_not_built():
     print("ok")
 
 
+def test_fr17_past_when_history_lags():
+    """FR-17: history behind the files; `done` for a stage before both records nothing."""
+    root = effort("planning")
+    flow.start(root, S, by=BY)
+    folder = root / ".nio/specs" / S
+    for name in ("plan.md", "contracts.md", "tests.md", "quickstart.md"):  # the files move on; history stays at planning
+        (folder / name).write_text((FIXTURES / "plan" / name).read_text().replace("slug: checkout-refunds", f"slug: {S}"))
+    approve(root, S, "plan")
+    n = count(root)
+    code, out = flow.done(root, "drafting", S, by=BY)
+    assert code == 0 and out == [f"{S} is past drafting; nothing to do"] and count(root) == n, out
+    print("ok")
+
+
 def test_uj1_no_say_so():
     """TC-68: a handoff saying the grill is done doesn't pass it; a hand-set wait in state.json breaks the effort."""
     root = effort("grilling")
@@ -1385,11 +1399,11 @@ def test_lite_route_stages():
     folder = root / ".nio/specs" / S
     folder.mkdir(parents=True)
     (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    flow.start(root, S, by=BY)  # no spec yet: drafting still fails, so `done drafting` below is a real pass
     lite = re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M)
     (folder / "spec.md").write_text(lite.replace(
         "create exactly one refund. [human]", "create exactly one refund. [default]"))
     assert flow.kind(root, S) == "effort" and S in flow.efforts(root)
-    flow.start(root, S, by=BY)
     assert tasks.may_start(root, S) == (
         False, "the bug-fix spec must pass nio check spec --gate first (the grill)")
     (folder / "spec.md").write_text(lite)
