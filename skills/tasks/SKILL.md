@@ -51,6 +51,10 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 3. **Rate.** Start a run with `nio run`. Before the evaluator, make a copy of `tasks.md` at `.nio/runs/<run>/tasks.before.md`. Then run the `nio-evaluator` subagent on `tasks.md`. It sets every `Tier:` (with a reason), `Mode:` and `Effort:`. Then run `nio check tasks <slug> --rated-from .nio/runs/<run>/tasks.before.md`. If it fails, send the errors back to the evaluator once; it may change only the rating lines. On a bug fix, a task serving only unchanged-behaviour ACs keeps `Mode: direct`.
 4. **Verify, don't trust the reports.** Run `nio check tasks <slug>` yourself and fix every error (send structural
    ones back to the drafter once). It prints the estimate.
+   On a bug fix, stop on an `escalate:` note from the check (unless `grill.md` already holds a `## Call · escalation declined`
+   naming that trigger), or when the drafter stops over a new dependency, a change to an interface used
+   outside the bug's folder, or a change to stored data. Then offer the full flow
+   (`@nio:spec`, "Escalating a bug fix"), in the shape above.
 5. **Jury.** Run the tasks jury with `@nio:jury` at the `tasks` gate (`nio jury plan <slug> tasks` refuses until the
    check passes; its core lens is executability).
 6. **Show the human the estimate**, in the shape above: per epic, the task count, how many tasks run on each model tier

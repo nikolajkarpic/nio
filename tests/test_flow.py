@@ -2525,6 +2525,10 @@ def test_lite_skill_texts():
     inp = re.search(r"^- \*\*Input:\*\*.*?(?=^- \*\*Outputs)", skill, re.S | re.M).group(0)
     assert "nio check spec <slug> --gate" in inp and "no spec jury" in inp, "skill input"
     assert "(no `nio`)" in skill and "lite or bug-fix spec, or no" not in skill, "skill fallback"
+    step4 = re.search(r"^4\. \*\*Verify.*?(?=^5\. )", skill, re.S | re.M).group(0)
+    for k in ("escalate:", "escalation declined", "new dependency", "outside the bug's folder", "stored data",
+              "Escalating a bug fix"):
+        assert k in step4, ("skill step 4", k)
 
 
 if __name__ == "__main__":
