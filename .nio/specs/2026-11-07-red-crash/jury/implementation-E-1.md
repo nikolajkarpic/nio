@@ -2,7 +2,7 @@
 gate: implementation-E-1
 subject: 2026-11-07-red-crash
 round: 1
-outcome: rejected
+outcome: human
 ---
 # Implementation-e-1 jury: 2026-11-07-red-crash
 
@@ -11,9 +11,9 @@ outcome: rejected
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | J-1 | minor | gap | AC-2 | conformance | grounded | open |  | new, 0 |
-| J-2 | blocker | gap | AC-1 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | blocker | gap | AC-2 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | blocker | gap | AC-3 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-2 | blocker | gap | AC-1 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-3 | blocker | gap | AC-2 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-4 | blocker | gap | AC-3 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-5 | minor | inconsistency | AC-1 | consistency | grounded | open |  | new, 0 |
 
 ### J-1 AC-2 is only matched indirectly
@@ -25,19 +25,19 @@ outcome: rejected
 - situation (cli): no passing test proves AC-1: no test didn't run
 - fix: add or fix a test that proves AC-1
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-2
+- disposition: accepted-risk by human: Delegated: false negative of the evidence step on a lite spec: with no tests.md it lists no tests (results.json tests: []), so every AC reads 'no passing evidence'. The new test passes in the reused suite (exit 0 at the T-1 commit). Filed as a lite-path bug, fixed in this PR by a second lite effort.
 
 ### J-3 AC-2 has no passing evidence
 - situation (cli): no passing test proves AC-2: no test no match
 - fix: add or fix a test that proves AC-2
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-3
+- disposition: accepted-risk by human: Delegated: false negative of the evidence step on a lite spec: with no tests.md it lists no tests (results.json tests: []), so every AC reads 'no passing evidence'. The new test passes in the reused suite (exit 0 at the T-1 commit). Filed as a lite-path bug, fixed in this PR by a second lite effort.
 
 ### J-4 AC-3 has no passing evidence
 - situation (cli): no passing test proves AC-3: no test didn't run
 - fix: add or fix a test that proves AC-3
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-4
+- disposition: accepted-risk by human: Delegated: false negative of the evidence step on a lite spec: with no tests.md it lists no tests (results.json tests: []), so every AC reads 'no passing evidence'. The new test passes in the reused suite (exit 0 at the T-1 commit). Filed as a lite-path bug, fixed in this PR by a second lite effort.
 
 ### J-5 Docstring still says unknown runners have no wrong reason
 - quote: "An unknown runner has no wrong reason (FR-9)."
