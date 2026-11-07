@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-1",
   "subject": "2026-11-07-review-fixes",
-  "round": 1,
+  "round": 2,
   "tier": "high",
   "expect": [
     "adversary",
@@ -16,7 +16,10 @@
     "R-261107-r4c5/implementation-E-1-consistency.md": "be154eae2bad8894d37adac7fc3a918c3d1e1d0712caf44aa2bfb630313b7ce5",
     "R-261107-r4c5/implementation-E-1-correctness.md": "fc2a8435453584f0205d61fd0b54d351a6c00c73154df7b6f6148e8aa16ee241",
     "R-261107-r4c5/implementation-E-1-risk-rollback.md": "f3653e3d5eb627cb17dc852035ec43d32f5dd24493a316aa7868c767fc3b9cb0",
-    "R-261107-r4c5/implementation-E-1-refuter.md": "3d51ba84f0575c723cbebc6a30a287cfc4cf7d5233303139c75f080dd4510302"
+    "R-261107-r4c5/implementation-E-1-refuter.md": "3d51ba84f0575c723cbebc6a30a287cfc4cf7d5233303139c75f080dd4510302",
+    "R-261107-pz5f/implementation-E-1-adversary.md": "13b36389e452f4534ef5c9c0000d1b3d2defc87f3fe864efaec9bed4215e8e2e",
+    "R-261107-pz5f/implementation-E-1-consistency.md": "f4cc58459a2c10a2a8d3c779bdda42170b2c1c345932d7d9bb9f42a486fdc86e",
+    "R-261107-pz5f/implementation-E-1-risk-rollback.md": "94f7f97a724ba5aa3f3fbeb508ea26d4fdbdc7460a723f99f5e1172f3b694203"
   },
   "jurors": {
     "implementation-E-1-adversary": {
@@ -26,9 +29,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "74218bcd1968a57d128beb9e580a485024322926",
-      "judged": 1
+      "round": 2,
+      "version": "292b596a13044bc05f4c5e333b6f78f31e33cf6b",
+      "judged": 2
     },
     "implementation-E-1-conformance": {
       "attempts": 1,
@@ -44,13 +47,13 @@
     "implementation-E-1-consistency": {
       "attempts": 1,
       "lens": "consistency",
-      "by": "juror / claude-code / claude-haiku-5-5",
+      "by": "juror / claude-code / haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "74218bcd1968a57d128beb9e580a485024322926",
-      "judged": 1
+      "round": 2,
+      "version": "292b596a13044bc05f4c5e333b6f78f31e33cf6b",
+      "judged": 2
     },
     "implementation-E-1-correctness": {
       "attempts": 1,
@@ -70,9 +73,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "74218bcd1968a57d128beb9e580a485024322926",
-      "judged": 1
+      "round": 2,
+      "version": "292b596a13044bc05f4c5e333b6f78f31e33cf6b",
+      "judged": 2
     }
   },
   "findings": [
@@ -107,17 +110,18 @@
       ],
       "validation": "confirmed",
       "reason": "`shelve` in `src/nio/implement.py` (line 454) takes `records.git(..., raw=True)[1]` and drops the exit code that `raw` returns. Line 457 then writes the possibly empty patch, and the loop at lines 458-463 checks out or unlinks every path. Nothing in CT-5 or the code guards against a failed `git diff`.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-5",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/implement.py (shelve, land)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -289,17 +293,18 @@
       ],
       "validation": "confirmed",
       "reason": "At the implementation gate `GATES` has only spec, plan and tasks (`src/nio/jury.py` line 14). With empty `lenses` and `run` \"\", the guard at line 1401 is false. `_begin` then reaches `records.new_run` and writes `step.json` with `\"lenses\": []` (lines 1403-1410). CT-6 says an empty `lenses` gives only the show-the-human line, with no run folder or `step.json`. CT-7 exempts the implementation gate only from the re-run-every-lens rule, not from CT-6.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-6",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/jury.py:_begin (line 1401)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-7",
@@ -378,15 +383,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "74218bcd1968a57d128beb9e580a485024322926"
+    "1": "74218bcd1968a57d128beb9e580a485024322926",
+    "2": "292b596a13044bc05f4c5e333b6f78f31e33cf6b"
   },
   "matched": {
     "AC-1": [

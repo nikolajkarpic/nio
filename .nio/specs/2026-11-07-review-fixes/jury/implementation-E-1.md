@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-1
 subject: 2026-11-07-review-fixes
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-1 jury: 2026-11-07-review-fixes
 
@@ -10,12 +10,12 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-5 | adversary, risk-rollback | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | risk | CT-5 | adversary, risk-rollback | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-2 | minor | risk | CT-7 | adversary | grounded | open |  | new, 0 |
 | J-3 | minor | risk | CT-3 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | AC-4 | adversary | grounded | open |  | new, 0 |
 | J-5 | minor | risk | CT-4 | adversary | grounded | open |  | new, 0 |
-| J-6 | major | contradiction | FR-5, CT-6 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-6 | major | contradiction | FR-5, CT-6 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-7 | major | risk | CT-5, CT-4 | risk-rollback | merged | merged |  | new, 0 |
 | J-8 | minor | ambiguity | CT-3, AC-14 | risk-rollback | grounded | open |  | new, 0 |
 
@@ -72,8 +72,8 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-1-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-1-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-1-consistency | consistency | juror / claude-code / haiku-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-1-risk-rollback | risk-rollback | juror / claude-code / opus-5.5 | sufficient | yes | 1 | 1 |
+| implementation-E-1-risk-rollback | risk-rollback | juror / claude-code / opus-5.5 | sufficient | yes | 1 | 2 |
