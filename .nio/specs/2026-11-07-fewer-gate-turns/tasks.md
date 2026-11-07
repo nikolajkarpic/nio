@@ -150,4 +150,4 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Parallel: no
 - Tier: strong: a fix from a jury finding
 - Effort: med
-- Mode: single: a fix from a jury finding
+- Mode: direct: a test-only fix (C-261107 change request)
