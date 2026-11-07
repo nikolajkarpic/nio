@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-11-07-scoped-task-commands",
-  "round": 1,
+  "round": 2,
   "tier": "low",
   "expect": [
     "conformance",
@@ -12,7 +12,9 @@
     "R-261107-5lnz/implementation-E-2-conformance.md": "64e5a43292418fdb03dc9ebd3e815fccc9975373ede4a48aea85f441e0d1dedf",
     "R-261107-5lnz/implementation-E-2-consistency.md": "217baca8f9773391c4cc1dcfdb592905eb09d45129e94a1058e3d8fab29c1289",
     "R-261107-5lnz/implementation-E-2-correctness.md": "1ce31fc64eab57752b7b8c7769ec0c5568645bd5e26cbc62ab1fd059aea2f4c9",
-    "R-261107-5lnz/implementation-E-2-refuter.md": "818912f3b53922fdcbbe7ecd1b76e36bfc5f6cd4b77e02a8fd87bbde24c1ec95"
+    "R-261107-5lnz/implementation-E-2-refuter.md": "818912f3b53922fdcbbe7ecd1b76e36bfc5f6cd4b77e02a8fd87bbde24c1ec95",
+    "R-261107-ypqo/implementation-E-2-conformance.md": "bb56bfbfb7882c7c255c337c06ed66b0ea8075344427aa34836946f6c1e8179a",
+    "R-261107-ypqo/implementation-E-2-correctness.md": "4b04d8a60e0bd46aed7681c42a60474554709348084889220d6d7c743128f8e1"
   },
   "jurors": {
     "implementation-E-2-conformance": {
@@ -22,9 +24,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "047b1e5bf4003779e05025c064734f67dfd3e4b5",
-      "judged": 1
+      "round": 2,
+      "version": "46b07d4e564589709fbcbe64affe5bff7ba1f4e7",
+      "judged": 2
     },
     "implementation-E-2-consistency": {
       "attempts": 1,
@@ -44,9 +46,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "047b1e5bf4003779e05025c064734f67dfd3e4b5",
-      "judged": 1
+      "round": 2,
+      "version": "46b07d4e564589709fbcbe64affe5bff7ba1f4e7",
+      "judged": 2
     }
   },
   "findings": [
@@ -118,17 +120,18 @@
       ],
       "validation": "confirmed",
       "reason": "The first situation (no tests for AC-7 to AC-10) is out of E-2. tasks.md puts them in T-5, T-6 (E-3) and T-7 (E-4), so that part is refuted. The correctness situation holds. `implement.py:585` fails a crash only when `not r[\"failing\"]`, and CT-3 words the rule the same way (\"`failing` is empty\"). A crashed file B next to a baseline-failing file A leaves `failing` non-empty and `new` empty, so review passes. The `collected < baseline` check at line 594 catches it only on a full run, not on the `quick` epic suite (line 580).",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-8",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "tests/test_agents.py, tests/test_evidence.py, tests/test_implement.py",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -329,15 +332,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "047b1e5bf4003779e05025c064734f67dfd3e4b5"
+    "1": "047b1e5bf4003779e05025c064734f67dfd3e4b5",
+    "2": "46b07d4e564589709fbcbe64affe5bff7ba1f4e7"
   },
   "matched": {
     "AC-1": [
