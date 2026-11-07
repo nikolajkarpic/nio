@@ -1396,6 +1396,8 @@ def step(root, slug, gate, run="", add=(), pick=None):
     if run and not (root / ".nio/runs" / run).is_dir():
         raise ValueError(f"no run {run} under .nio/runs/")
     led = load(root, slug, gate)
+    if pick is None and "picked" not in led and any(x.startswith("choices:") for x in lines):
+        return lines + [f"next: show the human the planned runs and let them choose, then nio jury next {slug} {gate} --pick <lens,lens>"]
     names = re.findall(r"([a-z][a-z-]*) \(", next(x for x in lines if x.startswith("lenses: ")))
     names = [x for x in names if x not in led.get("dropped", [])]
     tier = lines[0].split()[1]
