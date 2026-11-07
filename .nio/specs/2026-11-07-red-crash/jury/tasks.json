@@ -1,0 +1,39 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-07-red-crash",
+  "round": 1,
+  "tier": "low",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261107-lxmu/tasks-executability.md": "22c84f9f9320be0572581b2a5840401997eaffcaaa76a4b037f2a1fe4e7f58f6"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "62c9d8475470fdd134d94d439cf71e5bf6e34e4e",
+      "judged": 1
+    }
+  },
+  "findings": [],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "62c9d8475470fdd134d94d439cf71e5bf6e34e4e"
+  },
+  "fixes": {
+    "1": []
+  }
+}
