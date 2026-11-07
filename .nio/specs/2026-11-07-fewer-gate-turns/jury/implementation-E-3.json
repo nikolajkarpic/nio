@@ -1,0 +1,515 @@
+{
+  "gate": "implementation-E-3",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-emsy/implementation-E-3-adversary.md": "2ddd692c3c7621882a7b4e990fc4b1c8a8928f68a1d26569bbe5311de79fd6d3",
+    "R-261107-emsy/implementation-E-3-conformance.md": "18038d7bb13d59c7c1b012a36697d2fd24a78ed6d6299fa1392dec77c9624f50",
+    "R-261107-emsy/implementation-E-3-consistency.md": "f8feecbbdae69a6cc329ef31067d4d5b0e478f2a3673b69f6314885fed048e70",
+    "R-261107-emsy/implementation-E-3-correctness.md": "885c6ba17ef138d3cdd29e4fee799ee435c02134ed58c66f20887dd012177ae0",
+    "R-261107-emsy/implementation-E-3-refuter.md": "eb6183d9057b09bca5640aef18634f9a1bf696603d217182b1c2061d37f323fb",
+    "R-261107-acj4/implementation-E-3-adversary.md": "95e733ffffc1373ac00d09fbb4f0bffe4ad613076fe220c7f4195b418887a687",
+    "R-261107-acj4/implementation-E-3-consistency.md": "1cc64c9680452a0aa6a58c3e9893780765ee29122c8cdf67fc19a07d37db58f1",
+    "R-261107-acj4/implementation-E-3-correctness.md": "cea21825af686e26061b2766622a1e99145dcf98a940dfdc727cd197c6779da4"
+  },
+  "jurors": {
+    "implementation-E-3-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "7270423e81270f17c93189fd4453744313afda31",
+      "judged": 2
+    },
+    "implementation-E-3-conformance": {
+      "attempts": 2,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "63acae3d2223dc8c62b58aa7b18fd7507243fdd8",
+      "judged": 1
+    },
+    "implementation-E-3-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "7270423e81270f17c93189fd4453744313afda31",
+      "judged": 2
+    },
+    "implementation-E-3-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "7270423e81270f17c93189fd4453744313afda31",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "An over-cap plan is run in full with no human choice",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "lines, ok = plan(root, slug, gate, add, pick)"
+      ],
+      "fix": "in `step`, when `len(names)` is over the cap and `pick` is not given, return plan's `run:` and `choices:` lines plus `next: show the human the choices, then nio jury next ... --pick <lens,lens>`. Write nothing.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "more lenses are planned than `jury.max_runs` allows (for example `--add` pushes the plan past the cap). `plan` returns its lines with `ok` True and says \"over the cap: the human chooses what runs\". `step` only refuses when `ok` is False. It then reads the lens names and `_begin` writes a pack and a `run <lens>:` line for every lens. The orchestrator launches them all in parallel and spends the cost the cap exists to bound. The human's choice is skipped and nothing flags it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`plan` (jury.py ~311-336) returns ok True when over the cap and only prints the \"human chooses\" line and choices. `step` (1393-1410) returns early only when `not ok`, and `names` then go straight to `_begin`/`packs`. Nothing in `step` checks the cap or waits for `--pick`.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-6",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/jury.py step",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "`--add` reason text can invent a lens that gets a pack and a juror line",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "names = re.findall(r\"([a-z][a-z-]*) \\(\", next(x for x in lines if x.startswith(\"lenses: \")))"
+      ],
+      "fix": "get the lens names from `plan` directly (return the dict, or a structured line) instead of parsing display text. At the least, check each name against `agents.load(root)`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`nio jury next ... --add \"consistency:D-1 changed (see spec)\"` makes the display line `consistency (D-1 changed (see spec))`. The regex also matches `changed` as a lens. `missing` in `plan` was computed from the real lenses, so no card check fails. `_begin` writes `packs/changed.md` and a `run changed: card nio-changed` line for a card that does not exist. The orchestrator either fails or invents a juror, and `collect` is told to expect a lens nobody can answer. The same parse exists in `collect`, but `step` now feeds the result into pack writing.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`step` line 1399 parses the display line `lens (why)` with the regex `([a-z][a-z-]*) \\(`. A reason such as \"D-1 changed (see spec)\" also matches `changed (`. `missing` in `plan` is computed from the real lens dict, so the false name passes the card check and `packs` writes `packs/changed.md` plus a `run changed:` line.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-7",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py step",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "A `--run` value is only checked to be a directory",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "if run and not (root / \".nio/runs\" / run).is_dir():"
+      ],
+      "fix": "require `re.fullmatch(r\"R-[\\w-]+\", run)` before the `is_dir` check, and raise the same `no run` error otherwise.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`--run ..` or `--run ../../somewhere` passes, because those are existing directories. `packs()` then does `mkdir(parents=True)` and writes `jury/packs/*.md` and `step.json` under that location. `Accepts: --run an existing run folder` is not enforced. A mistyped or model-generated run name can write pack files outside `.nio/runs/R-*`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py step",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "Run reuse does not check the slug and trusts every `step.json`",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "if (s[\"gate\"], s[\"round\"], s[\"version\"]) == (gate, led[\"round\"], now)"
+      ],
+      "fix": "add `slug` to `step.json` and compare it. Treat an unreadable `step.json` as no match.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`step.json` is `{\"gate\", \"round\", \"version\", \"lenses\"}`, with no slug. A run started for another effort at the same gate name, round and version string, with no outputs yet, is returned by `_reusable`. This is plausible at implementation gates such as `implementation-E-1` when two efforts share a commit. Its packs, written for the other slug, are then handed out as this slug's. Separately, `json.loads(p.read_text())[\"gate\"]` on a truncated or old-format `step.json` raises `JSONDecodeError` or `KeyError`. Every later step without `--run` then crashes on that file.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py _reusable, packs",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "A pack that exists is never refreshed, so a stale `nio check` can reach jurors",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "if not p.exists():"
+      ],
+      "fix": "when `step.json`'s version differs from `version_now`, rewrite the packs and `step.json`. Or refuse with `next: start a new run`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "packs are written, then the artefact is edited, for example a quick fix after the first `step`. The orchestrator calls `step --run <run>` again, and the run still has no `<gate>-*.md` output. `packs()` keeps every old `<lens>.md`, with the old `0 errors` or `N errors` check output, and `step.json` keeps the old version. Jurors judge the new files against a check result for the old text, and nothing says so. The reuse rule compares versions, but this explicit-`--run` path does not.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py packs, step",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The spec-gate consistency juror is given worker instructions it cannot follow",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "D-261024-zbne"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "text, ids = memory.build(root, asked)",
+        "- Before editing a file not covered here, run: nio query --path <file>",
+        "You may write only your output file, named at the end; you can't run commands."
+      ],
+      "fix": "build the spec-gate memory with the juror instructions (`worker=False` or a juror flag) and add the same \"you can't run commands\" sentence the implementation-gate pack has, or state that the juror's reply, not the file, carries `memory-used`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "a juror at the spec gate gets the consistency pack built by `_pack_text`. That pack's memory section ends with the worker's `## How to use this` block, which tells it to run `nio query --path <file>`, to write a change request first (`@nio:remember`), and to end its reply with `memory-used:`. Its output rule says to write the whole output to one file and to no other, and the implementation-gate pack says it cannot run commands, but the spec-gate pack says neither. So when the juror finds a spec requirement against an approved record, it is told to write a change request it has no right to write and to run a command it cannot run. The juror check that D-261024-zbne says juror packs carry is never given to it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`_pack_text` (jury.py 1330) calls `memory.build(root, asked)` with the defaults `worker=True` and `diff=None`. pack.py line 80-81 then appends the WORKER \"How to use this\" block. The implementation-gate pack in evidence.py 622 has the \"you can't run commands\" sentence; the spec-gate pack has no such text.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py, `_pack_text`, consistency branch",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "The implementation-gate \"run only next\" case also prints a run line",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "only `next: nio jury evidence <slug> E-n --run <run>, then nio jury next <slug> <gate> --run <run>`, no pack written",
+        "return [f\"run: {run}\", f\"next: nio jury evidence {slug} {gate.removeprefix('implementation-')} --run {run}, "
+      ],
+      "fix": "return only the `next:` line in that case, or amend CT-1 to list the `run:` line.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "at an implementation gate whose run has no `results.json`, CT-1 says the step prints only the `next:` line. `_begin` returns a `run: <run>` line first, so the output differs from the contract. The test `test_ac12_step_at_the_implementation_gate` checks only the last line, so nothing catches the extra line. The run ID is already in the `next:` line, so the extra line is not needed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "unrequested",
+      "where": "src/nio/jury.py, `_begin`, the `evidence` branch",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "Escalation loop on a grill-deferred or CLI blocker",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "for l in dict.fromkeys(s[\"lens\"] for s in f[\"sources\"]):"
+      ],
+      "fix": "skip lenses not in `names` (the planned lenses) in the escalation loop, as `changed()` skips `deferred` and `cli`, so the step falls through to `check`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "at the spec gate a Deferred point marked \"contradiction\" becomes a finding with `validation` \"confirmed\", `severity` \"blocker\", `status` \"open\" and a source whose lens is `deferred`. No juror ever has lens `deferred`, so the `< 3` count is 0 and `step` returns \"next: escalate deferred: run 2 more jurors ...\" on every call. `check` is never reached, so no outcome is composed and the human is never shown the list. The same happens at an implementation gate for a blocker whose source lens is `cli`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "jury.py 672-677 creates a contradiction Deferred finding as blocker, confirmed and open, with source lens `deferred`. No juror carries that lens, so the escalation loop's `< 3` count in `step` (1432-1438) is 0 and it returns \"escalate deferred\" on every call, before `check` at 1439. `changed()` already skips `deferred` and `cli` (445), which shows the case is known but not handled in `step`.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-9",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:step (escalation loop)",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "AC-2's \"verdict record written once\" is not what the test asserts",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "assert verdict_count(root) == before, \"rerun records no verdict\""
+      ],
+      "fix": "reword AC-2 to say a rerun writes no new record, and assert `verdict_count` equals 1 after the rejected step.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "AC-2 says the outcome is \"composed and recorded\", with a \"verdict record written once\". `check` records only approved, rejected and human outcomes, so a rerun records nothing. The test pins that, which contradicts the AC's wording. It also does not check the prior `rejected` record is present exactly once. Either the AC text or the test is wrong, and neither says which.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py:test_ac2_rerun_writes_fix_check_packs",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "AC-2's test asserts the opposite of the AC's \"recorded\" observable",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "verdict record written once; one pack file per lens to re-run"
+      ],
+      "fix": "Settle whether `rerun` writes a verdict record. Then change the AC text to say none is written, or change the test to assert exactly one record.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "AC-2 says the outcome is \"composed and recorded\" when it is `rerun`. The test asserts `verdict_count(root) == before, \"rerun records no verdict\"`. The pack half of the AC is proven. The \"record written once\" half is not proven, and the test asserts the reverse. In `jury.step`, `check(record=True)` runs before the rerun branch. Whether `check` writes a record for `rerun` is not shown in the pack. The AC and the test cannot both be right.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py:1753 (test_ac2_rerun_writes_fix_check_packs)",
+      "tampering": false,
+      "right": "spec"
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "63acae3d2223dc8c62b58aa7b18fd7507243fdd8",
+    "2": "7270423e81270f17c93189fd4453744313afda31"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_jury.py",
+        "test_ac1_step_writes_the_refuter_batch"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_jury.py",
+        "test_ac2_rerun_writes_fix_check_packs"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_jury.py",
+        "test_ac3_step_prints_no_finding_body"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_jury.py",
+        "test_ac4_missing_and_invalid_lenses_rerun"
+      ]
+    ],
+    "AC-5": [
+      [
+        "tests/test_jury.py",
+        "test_ac5_repeated_step_changes_nothing"
+      ]
+    ],
+    "AC-12": [
+      [
+        "tests/test_jury.py",
+        "test_ac12_first_review_packs"
+      ],
+      [
+        "tests/test_evidence.py",
+        "test_ac12_step_at_the_implementation_gate"
+      ]
+    ],
+    "AC-13": [
+      [
+        "tests/test_jury.py",
+        "test_ac13_needs_more_is_rerun"
+      ]
+    ],
+    "AC-14": [
+      [
+        "tests/test_jury.py",
+        "test_ac14_outcome_next_lines"
+      ]
+    ],
+    "AC-16": [
+      [
+        "tests/test_jury.py",
+        "test_ac16_unplanned_lens_file_stops_the_step"
+      ]
+    ]
+  }
+}

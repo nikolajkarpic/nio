@@ -3,7 +3,7 @@ name: refuter
 description: "Validates other agents' claims by trying to refute them. Use on the jury's blocker and major findings after `nio jury collect`, before anything is sent to the human."
 tier: strong
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -32,7 +32,9 @@ For each finding:
 
 ## Output format
 
-Write `.nio/runs/<run>/jury/<gate>-refuter.md` with one block per finding in the batch:
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
+
+Write the file your pack names (`.nio/runs/<run>/jury/<gate>-refuter.md`) with one block per finding in the batch:
 
 ```markdown
 ### J-1

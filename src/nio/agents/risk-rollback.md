@@ -3,7 +3,7 @@ name: risk-rollback
 description: "Juror lens for undoing what a plan changes. Use at the plan gate when the spec is flagged for migration or data deletion, or the plan's contracts have a data model: checks how each migration or deletion is rolled back or recovered."
 tier: max
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -39,6 +39,8 @@ The context pack from the jury skill, and nothing else:
 - Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding), `run` and `tampering: yes`.
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each finding
 cites the CT or data model entry it is about, quotes the files you were given word for word, and names the change that

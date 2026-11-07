@@ -1,0 +1,506 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 6,
+  "tier": "medium",
+  "expect": [
+    "architecture-fit",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261107-2j7y/plan-architecture-fit.md": "576cb6953af44e89492a9d729f42d1f7f1b71c048a76e7a76dae61b096259403",
+    "R-261107-2j7y/plan-test-proof.md": "171c334448d7a2d3adfb9e9868c06d8f86904903bd7b311154582a401c469acb",
+    "R-261107-2j7y/plan-refuter.md": "c4a05b4e8302e7d66116dca2c34e1f4c8593662e088bdbb5515bc15b834128d3",
+    "R-261107-tdkf/plan-architecture-fit.md": "b8358cfce89a9cdf1b926546d03d06d4e965c9110b60e78f33187600bd7c58f0",
+    "R-261107-tdkf/plan-test-proof.md": "5e6cdf002c8051cc0054854b499dd3f5f364249ac7beeb90c41cc8a05ea4e06b",
+    "R-261107-56pm/plan-architecture-fit.md": "eb014bd22ef0b3c2f82ba367898c82762177e70c39907e2f399e8003c4f4e859",
+    "R-261107-56pm/plan-test-proof.md": "f45781e2c400cfc75e81698f7dc60289af497ab1126e4ebdea117402abbbd15c",
+    "R-261107-56pm/plan-refuter.md": "eb63905987fd43158b788b09c7eb27bf092280e4ba523fb9c83f6c66f5070bd3",
+    "R-261107-56pm/plan-test-proof-2.md": "44138a002d9432f578da58b6c2e6c4e0a29160b2c2fb1a7a5a6f59f702f742e7",
+    "R-261107-56pm/plan-test-proof-3.md": "d65947254e8cd1b4a9ce792e1d7a9bd413d578d27e27462182841386db11a391",
+    "R-261107-awxy/plan-test-proof.md": "aa743bb68070c3edaec4d1c7df02d2c982c98fe041ba4daf4a2ba7a653a1ed46",
+    "R-261107-vs2v/plan-architecture-fit.md": "dd1fe75a73d2014c64ee6ef702b9c6f2412d85cf71a76736e43e9d91e65c426c",
+    "R-261107-vs2v/plan-test-proof.md": "9b9c957e7c3c0599689c501fcb3df4a703ebd70c235cb2ed2a44c0cf9c8ac6d5"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "11ee9cf845cbadf723bfcca0ed2467c8e4c82107",
+      "judged": 6
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "11ee9cf845cbadf723bfcca0ed2467c8e4c82107",
+      "judged": 6
+    },
+    "plan-test-proof-2": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "c836dc4af111ae5b171cdced0ee1f0ff227dd701",
+      "judged": 4
+    },
+    "plan-test-proof-3": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "c836dc4af111ae5b171cdced0ee1f0ff227dd701",
+      "judged": 4
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "No contract renders the agents, and the skill loses its `nio agents sync`",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-2",
+        "CT-5",
+        "CT-6",
+        "FR-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "plan the gate, render the agents and write each planned lens's pack to `.nio/runs/<run>/jury/packs/<lens>.md`",
+        "Start a run with `nio run`, and run `nio agents sync` so every `nio-<lens>` agent exists.",
+        "steps 2–5 and 8 become one loop: plan and add your own triggers (`nio jury plan`, `nio pack`, `--add`), then run `nio jury next <slug> <gate> [--add ...]`"
+      ],
+      "fix": "in CT-1 case 2, call `agents.sync(root)` before writing packs (and refuse on its errors), or keep `nio agents sync` as a named step in CT-6's loop. Add a TC asserting that the rendered juror files grant Write after a step.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "today step 2 of the skill runs `agents.sync` before any juror starts. CT-1's shape only \"calls `collect` and `check` in turn\", and CT-2 only writes packs and step.json. Neither calls `agents.sync`, and CT-6 folds step 2 into the loop without keeping the sync. CT-5 changes every juror card to `tools: [read, write]`, so a project whose `.claude/agents/nio-*.md` were rendered before this change keeps read-only jurors. Those jurors can't write the output file the pack asks for, so the orchestrator has to save each answer again or the gate stalls on `no output`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-12 (spec.md:104) says the step renders the agents, but CT-1 (it calls only `collect` and `check`), CT-2 (writes packs and step.json) and CT-6 (folds step 2 into the loop) never call `agents.sync`. Cards already rendered read-only stay read-only after CT-5 changes the juror cards.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1 case 2 calls agents.sync first (FR-12 already says so); TC-12 asserts the rendered nio-logic grants Write",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "The escalation `next:` always uses a `fixcheck --blocker` pack, and its output file is named in no pack",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-2",
+        "CT-5",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "next: escalate <lens>: run 2 more jurors on nio jury fixcheck <slug> <gate> --lens <lens> --blocker J-n, outputs <gate>-<lens>-2.md and <gate>-<lens>-3.md",
+        "each with a fresh pack (after the first review, the blocker's pack, `nio jury fixcheck <slug> spec --lens <lens> --blocker J-<n>`)",
+        "Write your whole output to the file your pack names, and to no other file; never edit the files you judge."
+      ],
+      "fix": "have CT-1 pick the pack by phase, as the skill does. Have the step (CT-2) write `packs/<lens>-2.md` and `packs/<lens>-3.md`, each ending with the `## Your output` line for its `-2`/`-3` file, or explicitly assign this to the orchestrator in CT-6.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "the skill, which CT-6 says keeps escalation, gives first-review escalation jurors a fresh first-review pack and uses the `--blocker` pack only after the first review. CT-1 sends every escalation to the `--blocker` pack. That pack is built from `fixcheck`'s lines, which name no output file, and the step doesn't write it. So under CT-5's card sentence the juror has no file to write. The first-review pack the step does write (`packs/<lens>.md`) names `<gate>-<lens>.md`, so reusing it would overwrite the original juror's output.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-1's escalation `next:` always points at `nio jury fixcheck ... --blocker`, but skill step 5 uses that pack only after the first review. CT-2 writes no `-2`/`-3` pack and appends no `## Your output` line to a fixcheck pack, so under CT-5's card sentence the escalation juror has no output file named.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1 escalation line: the orchestrator copies the right pack per phase with the -2/-3 output line; escalation stays the skill's",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "CT-2's run rules clash with the refuter pack and with TC-5(a)",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-1",
+        "CT-2",
+        "TC-5",
+        "FR-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A run whose `packs/step.json` exists is never rewritten. Before starting a new run for a re-review, the step reuses a run whose `step.json` holds the same gate, round and version and which has no output yet.",
+        "a refuter batch printed → CT-2 writes its pack; `next: run nio-refuter on .nio/runs/<run>/jury/packs/refuter.md",
+        "(a) `gate_spec()`, `first = step(root)`; (b) TC-2's state after its action, `second = step(root, run)`.",
+        "(a) both print `run: <run_of(first)>` and the same `next:` line"
+      ],
+      "fix": "limit \"never rewritten\" to the lens packs and step.json, and state that refuter.md is rewritten for each new batch. Extend the reuse rule to any step without `--run` (first review included), keyed on gate, round and version.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "two clashes.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-2: lens packs and step.json never rewritten, refuter.md per batch; reuse rule covers any step without --run",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "The escalation trigger counts jurors the ledger keeps across rounds",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a lens with a confirmed open blocker and fewer than 3 jurors of that lens",
+        "juror = led[\"jurors\"].setdefault(path.stem, {\"attempts\": 0})"
+      ],
+      "fix": "count only the lens's jurors whose `round` is the current round (or that judged this blocker), and add a TC for a second escalation in a later round.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`merge` keys jurors by file stem and never removes them, so `spec-logic-2` and `spec-logic-3` stay in `led[\"jurors\"]` after the first escalation. In a later re-review where the refuter confirms a new blocker from logic, CT-1 sees 3 jurors of that lens, skips escalation, and composes the outcome. The skill's step 5 escalates every confirmed blocker.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1 counts only the lens's jurors of the current round",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "TC-19 expects an outcome line that CT-1 and TC-1 say the step never prints with a batch pending",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "TC-19",
+        "TC-1",
+        "AC-1",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the step prints the same `outcome:` line as the hand-run check, writes no second verdict record, and its `next:` line is the refuter action (the batch still pending).",
+        "no outcome line (`outcome:`) is printed.",
+        "a refuter batch printed → CT-2 writes its pack;",
+        "if record and outcome in (\"approved\", \"rejected\", \"human\") and entry not in led[\"recorded\"]:"
+      ],
+      "fix": "In TC-19, assert that the step prints no `outcome:` line and that its `next:` is the refuter action. For the no-second-record check, use a state that records, such as TC-2's `rejected` state with the hand-run `check`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "In TC-1's state, J-1 is pending. `collect` prints the refuter batch even when nothing new was collected, so the step takes CT-1's refuter branch and never calls `check`. A step built to CT-1 and TC-1 prints no `outcome:` line, so TC-19 fails. A step that prints one to satisfy TC-19 breaks TC-1. Separately, the hand-run `check` composes `pending`, which is never recorded, so \"writes no second verdict record\" holds whatever the step does.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`collect` (jury.py:646-652) prints the refuter batch whenever a finding is pending, so CT-1 takes the refuter branch and never calls `check`. The step therefore prints no `outcome:` line, which contradicts TC-19's \"same `outcome:` line\" and agrees with TC-1's \"no outcome line\".",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-19 asserts no outcome line while the batch is pending; the no-second-record check moved to TC-2's rejected state",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "TC-10 passes on today's code",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-10",
+        "AC-10",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`lens(root, \"R-1\", \"logic-2\", \"none\", lens_name=\"logic\")` (file `spec-logic-2.md`).",
+        "lens = meta.get(\"lens\", path.stem.split(\"-\", 1)[1])"
+      ],
+      "fix": "Give the escalation file a front matter that disagrees with its file name, such as `lens_name=\"logic-2\"`. Today that files it under `logic-2`, so the test fails before the work. Then assert the juror's lens is `logic` and that exactly one mismatch line names `spec-logic-2.md`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "The fixture's front matter already says `lens: logic`, and today's `merge` takes the lens from the front matter. So `led[\"jurors\"][\"spec-logic-2\"][\"lens\"] == \"logic\"` passes before any work, and \"no mismatch line\" passes because today's code prints none. Nothing in the test depends on the file name.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The test helper writes `lens: {lens_name or name}` (test_jury.py:34), so TC-10's front matter says `logic`. Today's `merge` (jury.py:688) already takes the lens from `meta.get(\"lens\")`, so the assertion and \"no mismatch line\" both pass before the work.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-10 front matter says logic-2, so it fails on today's code",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "Neither TC-11 nor TC-18 ties the call count to the skill's steps",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-11",
+        "TC-18",
+        "AC-11",
+        "NFR-1",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a counter `calls` that each orchestrator action below adds one to",
+        "`calls <= 15` (it is 13)",
+        "nor to run `nio jury collect` or `nio jury fixcheck` itself, except for escalation (`--blocker`)",
+        "Run `nio jury changed <slug> spec`:",
+        "6. **Decide.** Run `nio jury check <slug> spec --record` and act on the outcome:",
+        "Start a run with `nio run`, and run `nio agents sync` so every `nio-<lens>` agent exists."
+      ],
+      "fix": "In TC-18, assert that `## Steps` names none of `nio run`, `nio agents sync`, `nio jury template`, `nio jury check`, `nio jury changed` outside the escalation and closure text. Make TC-11's script follow the skill's steps, including `nio jury plan` and the gate check, and state that count.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-11 counts a fixed script the test writes itself, so `calls <= 15` can only fail if the test is edited. TC-18 rules out only `collect`, `fixcheck` and the save-answer sentence. A shipped skill that still tells the orchestrator to run `nio run`, `nio agents sync`, `nio jury template`, `nio jury check --record` after each step, and `nio jury changed` before the re-review passes both tests while needing well over 15 calls. The count also leaves out calls the CT-6 loop itself names: \"plan and add your own triggers (`nio jury plan`, `nio pack`, `--add`)\", and `nio check spec --gate` before the re-review.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-11 counts a script the test writes itself, and TC-18 only forbids `collect`, `fixcheck` and the save-answer sentence. A skill that still names `nio run`, `nio agents sync`, `nio jury template`, `nio jury check` or `nio jury changed` passes both tests, and the count leaves out the `nio jury plan` and gate-check calls that CT-6 names.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-18 lists every command the steps must no longer name; TC-11 follows the skill's steps from nio jury plan (14 calls); CT-6 names the dropped calls",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "TC-2 doesn't check which lenses get a fix-check pack",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-2",
+        "AC-2",
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "its `jury/packs/testability.md` starts with the lines",
+        "one pack file per lens to re-run, each matching what `nio jury fixcheck` prints for it."
+      ],
+      "fix": "Assert that the set of files under the new run's `jury/packs/` (`step.json` aside) is exactly `changed(root, slug, \"spec\")[1]`, here `{testability}`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "After a rejected round, `changed()` names only lenses with a fix to check, so only testability here. A step that writes a fix-check pack for every planned lens also writes logic and adversary packs (\"None: give no verdicts\"). TC-2 still passes, and each extra pack costs an extra juror launch.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-2 asserts the pack set equals changed()'s re-run lenses",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "TC-3's \"one more lens output\" clashes with the unplanned-lens refusal",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "TC-3",
+        "AC-3",
+        "AC-16",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "TC-1's setup plus one more lens output with a finding the fixture can't ground (quote `no such words`).",
+        "refuse when a `<gate>-<lens>.md` names a lens not planned"
+      ],
+      "fix": "Put the ungrounded finding inside one of the planned lenses' outputs, for example logic's in place of `none`, instead of adding a file.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-1's setup already writes outputs for all three planned lenses. A fourth lens file under any other lens name makes the step refuse under FR-14, so it prints neither the `dropped J-` line nor a `next:` line, and TC-3 fails for a reason unrelated to AC-3.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-3 puts the ungrounded finding in logic's output",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "The new re-run check makes every fix-check run ask again for lenses that have nothing to re-check",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "CT-1",
+        "TC-11",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a planned lens with no `<gate>-<lens>.md` in the run, or whose juror the ledger holds as invalid or `needs-more` in this round with fewer than 2 attempts → per lens `next: re-run <lens>",
+        "`rerun` → CT-2 in a new run, as case 2, with the fix-check packs of the lenses `changed()` names (FR-4)",
+        "`step` → new run with two fix-check packs (1); two juror outputs with `fixed` verdicts (2); `step` (1).",
+        "the last step prints `outcome: approved` and `next: tell the human`"
+      ],
+      "fix": "In the missing-output check, count only the lenses this run was given packs for (`packs/step.json` \"lenses\"), or a lens with no valid juror in the ledger at all, as `compose` does with `led[\"expect\"]`. Leave out lenses an earlier round judged and `changed()` didn't name.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "In TC-11 the re-review run holds packs and outputs only for testability and logic. The planned consistency lens has no `spec-consistency.md` in that run, so the new first branch prints `next: re-run consistency` and never calls `check`. `outcome: approved` can't be reached, and any re-review that skips a lens repeats this every time. The same happens in TC-14(b) for the lenses its fix check leaves out.",
+          "severity": "blocker",
+          "round": 3
+        },
+        {
+          "juror": "plan-test-proof-2",
+          "lens": "test-proof",
+          "situation": "In TC-11 the re-review run holds packs and outputs only for testability and logic. The planned consistency lens has no `spec-consistency.md` in that run, so the first branch prints `next: re-run consistency` and never calls `check`. `outcome: approved` can't be reached, and any re-review that skips a lens repeats this every time. The same happens in TC-14(b) for the lenses its fix check leaves out.",
+          "severity": "blocker",
+          "round": 4
+        },
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "A re-review run holds packs only for the lenses `changed()` names, which are the lenses with a fixed finding (jury.py line 446). Every other planned lens has no `<gate>-<lens>.md` in that run, so CT-1's first branch prints `next: re-run <lens>` and `step` never reaches the check. In TC-11 that is the third planned lens (consistency, per the situation given in J-10), so the expected `outcome: approved` can't be reached. TC-14(b) hits the same thing for the lenses its fix check leaves out, and every re-review that skips a lens repeats the loop.",
+          "severity": "blocker",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The quoted first branch of CT-1 counts every planned lens with no `<gate>-<lens>.md` in this run as missing. A re-review run holds packs and outputs only for the lenses `changed()` names (jury.py:437-457, which returns just those with a fix to check), so any other planned lens, such as consistency in TC-11, would print `next: re-run <lens>`. `step` would then never reach `check`, and TC-11's `outcome: approved` could not be reached. The code's own missing check, `[lens for lens in led[\"expect\"] if lens not in lenses]` at jury.py:964, is scoped to the ledger's `expect`, not to every planned lens, and nothing in the quoted text narrows the branch the same way. The finding is judged against the earlier text, as you asked. I did not re-read the edited contracts.md. This is the same finding as the two escalation re-raises, with no other duplicate.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1: only lenses this run has a pack for (step.json lenses) count as missing; TC-11 asserts no re-run consistency after the fix-check packs",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 3,
+      "last_round": 4,
+      "fixed_in": 5
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ],
+    [
+      4,
+      "rejected"
+    ],
+    [
+      5,
+      "approved"
+    ],
+    [
+      6,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "76eaaa288469404a1359aec1def695c1342aaa8d",
+    "2": "8afe64bae8e22fed2d75aa72f34dab0dfc86bce2",
+    "3": "5dd7835b8e73b29eb604a3e6528e7d7eadce9243",
+    "4": "c836dc4af111ae5b171cdced0ee1f0ff227dd701",
+    "5": "e473644366e46f8b289fa138d413b0ca0bacf150",
+    "6": "11ee9cf845cbadf723bfcca0ed2467c8e4c82107"
+  }
+}

@@ -63,7 +63,7 @@ def test_sync():
     parsed = {p.stem: tomllib.loads(p.read_text()) for p in (root / ".codex/agents").glob("*.toml")}  # hand-built TOML parses
     assert parsed["nio-triage"]["description"] == "Does one thing 🚀." and parsed["nio-logic"]["developer_instructions"], parsed
     logic = (root / ".claude/agents/nio-logic.md").read_text()
-    assert 'model: "opus"' in logic and 'effort: "medium"' in logic and 'tools: "Read, Grep, Glob"' in logic, logic
+    assert 'model: "opus"' in logic and 'effort: "medium"' in logic and 'tools: "Read, Grep, Glob, Write"' in logic, logic
     assert logic.rstrip().endswith("Also check the glossary."), logic
     codex = (root / ".codex/agents/nio-triage.toml").read_text()
     assert 'model = "gpt-mini"' in codex and 'model_reasoning_effort = "medium"' in codex and "shell_tool = false" in codex, codex
@@ -121,7 +121,7 @@ def card(name):
 
 def test_ac12_test_proof_exists_with_an_at_plan_secti():
     meta, body = card("test-proof")
-    assert (meta["tier"], meta["effort"], meta["tools"]) == ("max", "med", ["read"]) and "\n## At plan\n" in body
+    assert (meta["tier"], meta["effort"], meta["tools"]) == ("max", "med", ["read", "write"]) and "\n## At plan\n" in body
     print("ok")
 
 
@@ -210,6 +210,19 @@ def test_ac12_evaluator_edits_in_place():
     print("ok")
 
 
+def test_ac8_juror_cards_write_their_output():
+    """AC-8 / TC-8: every juror card gets read and write, and its Output format limits writes to the path its pack names."""
+    jurors = ["adversary", "architecture-fit", "conformance", "consistency", "correctness", "executability", "logic", "refuter", "risk-rollback", "scope", "security", "test-proof", "testability"]
+    for name in jurors:
+        meta, body = card(name)
+        assert meta["tools"] == ["read", "write"], (name, meta["tools"])
+        output = body.split("\n## Output format\n", 1)[1].split("\n## ", 1)[0]
+        assert "the file your pack names, and to no other file" in output, (name, output)
+    rendered = agents.render_claude("logic", *card("logic"), "opus", "medium")
+    assert 'tools: "Read, Grep, Glob, Write"' in rendered and "Edit" not in rendered.split("---")[1], rendered
+    print("ok")
+
+
 def test_ac7_worker_card_scopes_its_tests():
     """AC-7 / TC-7: the rendered worker card scopes its test runs, runs them in the foreground and does not re-run first."""
     root = Path(tempfile.mkdtemp())
@@ -226,4 +239,4 @@ def test_ac7_worker_card_scopes_its_tests():
 
 
 if __name__ == "__main__":
-    selfcheck.main([test_shipped_cards_are_valid, test_no_shipped_card_defaults_to_high_effort, test_sync, test_verify, test_ac12_test_proof_exists_with_an_at_plan_secti, test_ac20_architecture_fit_exists_with_an_at_plan, test_ac46_risk_rollback_exists_with_an_at_plan_se, test_ac47_it_has_an_at_plan_section_next_to_at_spe, test_ac40_executability_exists_with_tier_cheap_an, test_ac44_the_evaluator_card_exists_with_tier_stro, test_ac58_the_card_runs_on_the_strong_model_and_a, test_ac26_it_runs_on_fable_on_a_host_that_maps_no, test_tier_all_renders_once_per_tier, test_ac12_evaluator_edits_in_place, test_ac7_worker_card_scopes_its_tests])
+    selfcheck.main([test_shipped_cards_are_valid, test_no_shipped_card_defaults_to_high_effort, test_sync, test_verify, test_ac12_test_proof_exists_with_an_at_plan_secti, test_ac20_architecture_fit_exists_with_an_at_plan, test_ac46_risk_rollback_exists_with_an_at_plan_se, test_ac47_it_has_an_at_plan_section_next_to_at_spe, test_ac40_executability_exists_with_tier_cheap_an, test_ac44_the_evaluator_card_exists_with_tier_stro, test_ac58_the_card_runs_on_the_strong_model_and_a, test_ac26_it_runs_on_fable_on_a_host_that_maps_no, test_tier_all_renders_once_per_tier, test_ac12_evaluator_edits_in_place, test_ac7_worker_card_scopes_its_tests, test_ac8_juror_cards_write_their_output])

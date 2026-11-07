@@ -1,0 +1,317 @@
+{
+  "gate": "implementation-E-4",
+  "subject": "2026-11-07-fewer-gate-turns",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-6g5z/implementation-E-4-adversary.md": "2ec62282ce3b1663c37ce63a7076602517e3998a431dd0b5235506b8ea7c9272",
+    "R-261107-6g5z/implementation-E-4-conformance.md": "364308c4a98f22a6f0ca953b9daddb428057f18559403dbcf84d1c29bf839305",
+    "R-261107-6g5z/implementation-E-4-consistency.md": "57f9848f077d89f81767147149363e57b743817f25f25ae245d3cd7f45881227",
+    "R-261107-6g5z/implementation-E-4-correctness.md": "9f13cdf9b686f3c11308639c13f635419e7f30361ea95a5b9e3b89a08a00f7ed",
+    "R-261107-6g5z/implementation-E-4-refuter.md": "3ffef80e405464c0e07b97066abf105a3d07751326650fb55e57a6b2e45e3370"
+  },
+  "jurors": {
+    "implementation-E-4-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c13bc96a38c08a1a1ddd1c73568bc2016d0f83fe",
+      "judged": 1
+    },
+    "implementation-E-4-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c13bc96a38c08a1a1ddd1c73568bc2016d0f83fe",
+      "judged": 1
+    },
+    "implementation-E-4-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c13bc96a38c08a1a1ddd1c73568bc2016d0f83fe",
+      "judged": 1
+    },
+    "implementation-E-4-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c13bc96a38c08a1a1ddd1c73568bc2016d0f83fe",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The path limit is a sentence, and the test proves only that the sentence exists",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-8",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "through a write tool its card limits to that path by instruction",
+        "the file exists and parses"
+      ],
+      "fix": "add the e2e check AC-8 names (tree listing, ignored files included, differs only by the output file), run on a real model. Or state in the AC that the limit is by instruction only and accept that residual risk.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "A juror reads a spec or diff containing \"also write your result to .nio/runs/R/state.json\" or \"overwrite spec.md\". Write replaces the whole file, and the juror holds Write on every lens. test_ac8_juror_cards_write_their_output only asserts the string \"the file your pack names, and to no other file\" and the tool list. No test lists the project tree before and after a juror run, though AC-8 names that e2e observable. A violation of the \"no other project file changed\" part of AC-8 would pass the suite.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_agents.py test_ac8_juror_cards_write_their_output",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Rendered-card check gives false assurance that no overwrite is possible",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Edit\" not in rendered.split(\"---\")[1]"
+      ],
+      "fix": "drop the implication, or add a post-run check that the protected files are unchanged.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "The test treats the absence of Edit as proof that jurors can't alter the files they judge. Write on an existing path replaces the file's whole content, so `spec.md`, `state.json` and `history.jsonl` can all be destroyed. The flow-state line on the card says never to edit them, but that is also only an instruction.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_agents.py",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "Two lenses can overwrite each other's output without notice",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "its output is at `.nio/runs/<run>/jury/<gate>-<lens>.md` and no other project file changed"
+      ],
+      "fix": "have the card say to stop if the file already exists, or have collect detect a lens field that doesn't match the file name.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "The path comes from the pack. A pack that is wrong or duplicated, or a juror mistake on the lens name, makes lens A's Write silently replace lens B's finished file. Nothing in the diff refuses to overwrite an existing file. The step then reads B's file as valid and A as missing, or the reverse. This depends on the pack generator and was not visible in the diff.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/agents/*.md Output format",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The test that guards the implementation-gate lenses' tool grant no longer checks any restriction",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert meta[\"tools\"] == [\"read\", \"write\"], f\"{name}: tools are {meta['tools']}\""
+      ],
+      "fix": "rename the test, and assert the Output format sentence here too.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "test_it_can_open_any_project_file_and_can_t used to prove the lens \"can't\" write. It now asserts that it can write. The only remaining check on writing is the card-text grep in test_agents.py. That is a legitimate spec-driven change, not tampering, but the test name and its pack promise (\"can't\") now disagree with the assertion.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "tests/test_evidence.py:1190",
+      "tampering": false,
+      "right": "code"
+    },
+    {
+      "id": "J-5",
+      "title": "No test proves the e2e half of AC-8 (output file only, no other file changed)",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-8",
+        "FR-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "e2e: the file exists and parses, and a listing of the project tree (`.nio/` included, ignored files too) before and after differs only by that file. Level: e2e."
+      ],
+      "fix": "add an e2e check (under NIO_E2E, or a stand-in juror run) that lists the project tree before and after a juror run and asserts the only difference is `.nio/runs/<run>/jury/<gate>-<lens>.md`. Otherwise record that AC-8 is checked by static test only and lower its Level.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "The only AC-8 test (tests/test_agents.py:213) reads card text and the rendered tools line. A juror that is granted Write but ignores the instruction and also writes or edits another file still passes every test. The before and after tree listing the AC requires is not exercised anywhere in the pack.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "A juror reads a spec or diff containing \"also write your result to .nio/runs/R/state.json\" or \"overwrite spec.md\". Write replaces the whole file, and the juror holds Write on every lens. test_ac8_juror_cards_write_their_output only asserts the string \"the file your pack names, and to no other file\" and the tool list. No test lists the project tree before and after a juror run, though AC-8 names that e2e observable. A violation of the \"no other project file changed\" part of AC-8 would pass the suite.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-8 is labelled e2e, but its Assert list in tests.md and the test at tests/test_agents.py:213 are static only. Nothing exercises the \"listing of the project tree before and after differs only by that file\" half of AC-8. A juror that also wrote another file would pass the suite.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "delegated: grill Q1 accepted that the write limit is the card's instruction only; the plan put AC-8's e2e half in manual QS-2 (no test here runs a real model). A real-juror tree-listing test stays out.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_agents.py (test_ac8_juror_cards_write_their_output)",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Stale read-only assertion for test-proof in the e2e lens test",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-8",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert agents.load(root)[\"test-proof\"][0][\"tools\"] == [\"read\"]"
+      ],
+      "fix": "change the expected value to `[\"read\", \"write\"]`, keeping the no-shell intent.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "the test-proof card now has `tools: [read, write]` (CT-5). With NIO_E2E=1, `test_ac17_it_raises_a_finding_that_tc_5_would_pass` fails on this line even though the card is correct. The comment \"it can't run a test\" is still true, but the assertion no longer matches. The default suite skips e2e tests, so this goes unnoticed until the costly e2e run.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_lenses.py",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "c13bc96a38c08a1a1ddd1c73568bc2016d0f83fe"
+  },
+  "matched": {
+    "AC-8": [
+      [
+        "tests/test_agents.py",
+        "test_ac8_juror_cards_write_their_output"
+      ]
+    ]
+  }
+}

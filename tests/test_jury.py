@@ -1,7 +1,9 @@
 """Self-check for nio jury collect / dispose / check. Run: uv run python tests/test_jury.py"""
 import json
 import re
+import shutil
 import subprocess
+from pathlib import Path
 from importlib import resources
 
 from test_records import repo
@@ -145,6 +147,12 @@ def test_persisting_finding_goes_to_the_human():
     assert led["findings"][0]["rounds"] == 2 and led["findings"][0]["baseline"] == "unchanged", led["findings"][0]
     outcome, lines = jury.check(root, "refunds", "spec")
     assert outcome == "human" and any("J-1 failed 2 rounds" in line for line in lines), lines
+    print("ok")
+
+
+def test_escalate_copies_are_unmistakable():
+    text = (Path(__file__).parent.parent / "skills/jury/SKILL.md").read_text()
+    assert "packs/<lens>-2.md" in text and "packs/<lens>-3.md" in text and "<gate>-<lens>.md" in text
     print("ok")
 
 
@@ -411,6 +419,15 @@ def test_format_template_parses():
     meta, findings, errors = jury.parse_lens(path, "spec", "checkout-refunds")
     assert not errors and len(findings) == 1 and findings[0]["quotes"][1] == "allowed while the order is paid or shipped", errors
     assert findings[0]["cites"] == ["FR-1", "FR-2"] and findings[0]["kind"] == "contradiction", findings  # comments stripped
+    print("ok")
+
+
+def test_consistency_pack_memory_is_for_a_juror():
+    """The spec gate's consistency pack carries the juror instructions, not the worker's nio query step."""
+    root = setup()
+    jury.packs(root, "refunds", "spec", "R-1", ["consistency"])
+    text = (root / ".nio/runs/R-1/jury/packs/consistency.md").read_text()
+    assert "Before editing a file not covered here" not in text, text
     print("ok")
 
 
@@ -874,7 +891,7 @@ def test_skill_and_cards():
     from pathlib import Path
     top = Path(__file__).parent.parent
     skill = (top / "skills/jury/SKILL.md").read_text()
-    step6, step8 = skill.split("6. **Decide.**")[1].split("7. **Dispose**")[0], skill.split("8. **Re-review.**")[1].split("## When to stop")[0]
+    step6 = step8 = skill.split("3. **Decide.**")[1].split("4. **Dispose**")[0]
     assert all(p in step6 for p in ("one message", "fix", "accept as risk")), step6
     assert all(p in step8 for p in ("fix-check pack", "not fixed", "only blockers")), step8
     assert "re-run only those lenses with packs that name the changed IDs" not in skill
@@ -1549,5 +1566,448 @@ def test_none_with_findings_is_invalid():
     print("ok")
 
 
+def test_ac9_file_name_gives_the_lens():
+    root = setup()
+    lens(root, "R-1", "testability", MINOR, lens_name="logic")
+    lines = jury.collect(root, "refunds", "spec", "R-1", ["testability"])
+    led = jury.load(root, "refunds", "spec")
+    assert led["findings"] and all({x["lens"] for x in f["sources"]} == {"testability"} for f in led["findings"]), led
+    assert led["jurors"]["spec-testability"]["lens"] == "testability", led["jurors"]
+    assert len([l for l in lines if "spec-testability.md" in l and "logic" in l]) == 1, lines
+    assert not any("testability: no output" in l for l in jury.check(root, "refunds", "spec")[1])
+
+
+def test_ac10_escalation_file_counts_as_its_lens():
+    root = setup()
+    lens(root, "R-1", "logic-2", "none", lens_name="logic-2")
+    lines = jury.collect(root, "refunds", "spec", "R-1")
+    led = jury.load(root, "refunds", "spec")
+    assert led["jurors"]["spec-logic-2"]["lens"] == "logic", led["jurors"]
+    assert len([l for l in lines if "spec-logic-2.md" in l and "logic-2" in l]) == 1, lines
+
+
+def three_open():
+    root = setup()
+    one = lambda n, cite, quote, kind: f"""### F{n} Finding {n}
+- cites: {cite}
+- kind: {kind}
+- severity: major
+- evidence: observed
+- quote: "{quote}"
+- situation: situation number {n} differs from the others
+- fix: fix number {n}
+"""
+    lens(root, "R-1", "logic", one(1, "FR-1", "A refund is allowed while the order is paid or shipped", "gap")
+         + one(2, "FR-2", "they must be returned first", "ambiguity") + one(3, "AC-1", "then it is refunded", "untestable"))
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text("".join(CONFIRM.format(n=n) for n in (1, 2, 3)))
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert [f["status"] for f in jury.load(root, "refunds", "spec")["findings"]] == ["open"] * 3
+    return root
+
+
+def cli_run(root, *args):
+    import contextlib, io, os, sys
+    from nio import cli
+    here, argv = os.getcwd(), sys.argv
+    out, err, code = io.StringIO(), io.StringIO(), 0
+    try:
+        os.chdir(root)
+        sys.argv = ["nio", *args]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                cli.main()
+            except SystemExit as e:
+                code = e.code if isinstance(e.code, int) else 1
+                err.write(str(e.code) if isinstance(e.code, str) else "")
+        return code, out.getvalue(), err.getvalue()
+    finally:
+        os.chdir(here)
+        sys.argv = argv
+
+
+def dispose_args(ids, *notes, disp="spec-fix", by="agent"):
+    return ["jury", "dispose", "refunds", "spec", ids, disp, "--by", by] + [x for n in notes for x in ("--note", n)]
+
+
+def test_ac6_dispose_three_in_one_call():
+    root = three_open()
+    code, out, err = cli_run(root, *dispose_args("J-1,J-2,J-3", "fixed"))
+    assert code == 0, err
+    assert out.splitlines() == [f"J-{n}: spec-fix by agent" for n in (1, 2, 3)], out
+    for f in jury.load(root, "refunds", "spec")["findings"]:
+        assert (f["status"], f["disposition"], f["by"], f["note"]) == ("disposed", "spec-fix", "agent", "fixed"), f
+
+
+def test_ac7_refused_dispose_changes_nothing():
+    root = three_open()
+    path = jury.folder(root, "refunds") / "spec.json"
+    before = path.read_bytes()
+    for args, wants in [(dispose_args("J-1,J-9", "n"), ["J-9"]),
+                        (dispose_args("J-1,J-2", "n", disp="accepted-risk"), ["J-1", "J-2", "the human's call"]),
+                        (dispose_args("J-1,J-1", "n"), ["distinct"]),
+                        (dispose_args("J-1,J-2,J-3", "a", "b"), ["2 notes for 3 findings"])]:
+        code, out, err = cli_run(root, *args)
+        assert code == 1 and all(w in err for w in wants), (args, code, err)
+        assert path.read_bytes() == before, args
+
+
+def test_ac15_notes_per_finding_in_order():
+    root = three_open()
+    code, out, err = cli_run(root, *dispose_args("J-1,J-2,J-3", "one", "two", "three"))
+    assert code == 0, err
+    assert [f["note"] for f in jury.load(root, "refunds", "spec")["findings"]] == ["one", "two", "three"]
+
+
+# --- fewer gate turns: `jury.step` / `nio jury next` ---
+GSLUG = "refund-double-charge"
+FINDING = """### F1 One refund per order is not pinned down
+- cites: EB-1
+- kind: gap
+- severity: major
+- evidence: observed
+- quote: "create exactly one refund"
+- situation: two clicks arrive in one order; nothing says which request wins
+- fix: say which request wins
+"""
+UNGROUNDED = FINDING.replace("create exactly one refund", "no such words")
+
+
+def gate_spec():
+    root = setup()
+    (root / f".nio/specs/{GSLUG}").mkdir(parents=True)
+    shutil.copy(Path(__file__).parent / "fixtures/spec/spec-bugfix.md", root / f".nio/specs/{GSLUG}/spec.md")
+    return root
+
+
+def out(root, run, gate, name, findings="none", verdicts="", lens_name=None, context="sufficient"):
+    path = root / ".nio/runs" / run / "jury" / f"{gate}-{name}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"""---
+lens: {lens_name or name}
+gate: {gate}
+subject: {GSLUG}
+by: "juror / claude-code / sonnet"
+context: {context}
+---
+## Reasoning
+Checked every rule.
+{f"{chr(10)}## Verdicts{chr(10)}{verdicts}{chr(10)}" if verdicts else ""}
+## Findings
+{findings}
+""")
+
+
+def step(root, *args):
+    return jury.step(root, GSLUG, "spec", *args)
+
+
+def next_of(lines):
+    assert lines[-1].startswith("next: "), lines
+    return lines[-1][len("next: "):]
+
+
+def run_of(lines):
+    return next(l for l in lines if l.startswith("run: "))[len("run: "):]
+
+
+def test_add_reason_with_parens_invents_no_lens():
+    """A `--add` reason holding ` (` stays in the display line; it names no lens, so no pack is written for it."""
+    root = gate_spec()
+    lines = step(root, "", ["consistency:D-1 changed (see spec)"])
+    runs = [l for l in lines if l.startswith("run ")]
+    assert not any(l.startswith("run changed") for l in runs), lines
+    assert not (root / ".nio/runs" / run_of(lines) / "jury/packs/changed.md").exists()
+
+
+def test_over_cap_step_waits_for_the_human():
+    """Over the cap with no --pick, the step writes nothing and tells the orchestrator to ask the human."""
+    root = gate_spec()
+    adds = [f"{l}:why" for l in ("logic", "security", "scope", "consistency", "risk-rollback")]
+    lines = step(root, "", adds)
+    assert any(l.startswith("run: ") for l in lines) and any(l.startswith("choices:") for l in lines), lines
+    assert next_of(lines).endswith("--pick <lens,lens>") and "show the human" in next_of(lines), lines
+    assert not (root / ".nio/runs").exists() or not list((root / ".nio/runs").glob("*/jury/packs")), lines
+    print("ok")
+
+
+def cli(root, *argv):
+    return cli_run(root, *argv)
+
+
+def ledger(root):
+    return jury.load(root, GSLUG, "spec")
+
+
+def verdict_count(root):
+    return len(list((root / ".nio/memory/project").glob("V-*")))
+
+
+def run_count(root):
+    return len(list((root / ".nio/runs").glob("R-*")))
+
+
+def three(root, run, **kw):
+    for name in ("testability", "logic", "adversary"):
+        out(root, run, "spec", name, kw.get(name, "none"))
+
+
+def refuted_batch():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic")
+    out(root, run, "spec", "adversary")
+    return root, run
+
+
+def rejected_state():
+    root, run = refuted_batch()
+    step(root, run)
+    (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    lines = step(root, run)
+    assert "outcome: rejected" in lines, lines
+    jury.dispose(root, GSLUG, "spec", "J-1", "spec-fix", "agent", "EB-1 says per order")
+    sp = root / f".nio/specs/{GSLUG}/spec.md"
+    sp.write_text(sp.read_text().replace("create exactly one refund", "create exactly one refund per order"))
+    return root, run
+
+
+def test_ac1_step_writes_the_refuter_batch():
+    root, run = refuted_batch()
+    lines = step(root, run)
+    f = ledger(root)["findings"][0]
+    assert f["id"] == "J-1" and f["validation"] == "pending", f
+    batch = root / f".nio/runs/{run}/jury/packs/refuter.md"
+    assert batch.exists() and "### J-1" in batch.read_text(), lines
+    assert "packs/refuter.md" in next_of(lines) and "spec-refuter.md" in next_of(lines), lines
+    assert not any(l.startswith("outcome:") for l in lines), lines
+    print("ok")
+
+
+def test_grill_deferred_blocker_falls_through_to_check():
+    root = gate_spec()
+    sp = root / f".nio/specs/{GSLUG}/spec.md"
+    sp.write_text(sp.read_text().replace("create exactly one refund. [human]", "create exactly one refund. [deferred: DF-1]", 1) + "\n## Deferred\n- **DF-1** (from EB-1; contradiction) EB-1 and EB-2 disagree.\n")
+    run = run_of(step(root))
+    for n in ("testability", "logic", "adversary"):
+        out(root, run, "spec", n)
+    lines = step(root, run)
+    assert not next_of(lines).startswith("escalate"), lines
+    assert "outcome: rejected" in lines or "outcome: human" in lines, lines
+    print("ok")
+
+
+def test_ac2_rerun_writes_fix_check_packs():
+    root, run = rejected_state()
+    before = verdict_count(root)
+    lines = step(root, run)
+    new = run_of(lines)
+    assert "outcome: rerun" in lines and new != run, lines
+    packs = root / f".nio/runs/{new}/jury/packs"
+    wanted = jury.changed(root, GSLUG, "spec")[1]
+    assert wanted == ["testability"] and sorted(p.name for p in packs.iterdir() if p.name != "step.json") == ["testability.md"], wanted
+    text = (packs / "testability.md").read_text()
+    head = "\n".join(jury.fixcheck(root, GSLUG, "spec", "testability"))
+    assert text.startswith(head), text
+    assert text.rstrip().splitlines()[-1].find(f"{new}/jury/spec-testability.md") >= 0, text
+    assert verdict_count(root) == before, "rerun records no verdict"
+    print("ok")
+
+
+def test_ac3_step_prints_no_finding_body():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic", UNGROUNDED)
+    out(root, run, "spec", "adversary")
+    lines = step(root, run)
+    for l in lines:
+        assert not l.startswith(("- quote:", "- situation", "- fix:", "## Refuter batch")), l
+    assert any(l.startswith("dropped J-") for l in lines), lines
+    assert lines[-1].startswith("next: "), lines
+    print("ok")
+
+
+def test_ac4_missing_and_invalid_lenses_rerun():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability")
+    out(root, run, "spec", "logic")
+    p = root / f".nio/runs/{run}/jury/spec-logic.md"
+    p.write_text(re.sub(r"## Reasoning\n.*?\n(?=\n?## Findings)", "", p.read_text(), flags=re.S))
+    lines = step(root, run)
+    assert any(l.startswith("INVALID spec-logic.md") for l in lines), lines
+    nexts = [l for l in lines if l.startswith("next: ")]
+    for name in ("logic", "adversary"):
+        assert any(f"re-run {name}" in l and f"packs/{name}.md" in l for l in nexts), nexts
+    assert not any(l.startswith(("outcome:", "recorded")) for l in lines), lines
+    assert ledger(root)["recorded"] == [], ledger(root)
+    print("ok")
+
+
+def test_ac5_repeated_step_changes_nothing():
+    root = gate_spec()
+    first = step(root)
+    run = run_of(first)
+    packs = root / f".nio/runs/{run}/jury/packs"
+    snap = lambda: {p.name: p.read_bytes() for p in packs.iterdir()}
+    before, runs = snap(), run_count(root)
+    for again in (step(root, run), step(root)):
+        assert run_of(again) == run and next_of(again) == next_of(first), again
+    assert snap() == before and run_count(root) == runs
+    root, run = rejected_state()
+    second = step(root, run)
+    led, runs, vs = ledger(root), run_count(root), verdict_count(root)
+    again = step(root, run)
+    assert run_of(again) == run_of(second), again
+    now = ledger(root)
+    assert (now["recorded"], now["round"]) == (led["recorded"], led["round"])
+    assert run_count(root) == runs and verdict_count(root) == vs
+    print("ok")
+
+
+def test_ac12_first_review_packs():
+    root = gate_spec()
+    cfg = root / ".nio/config.json"
+    c = json.loads(cfg.read_text())
+    c["agents"] = {"hosts": ["claude"]}
+    cfg.write_text(json.dumps(c))
+    lines = step(root, "", ["scope:asked", "consistency:D-1"])
+    run = run_of(lines)
+    for name in ("testability", "logic", "adversary", "scope", "consistency"):
+        assert any(l.startswith(f"run {name}:") and f"packs/{name}.md" in l and f"spec-{name}.md" in l for l in lines), (name, lines)
+        text = (root / f".nio/runs/{run}/jury/packs/{name}.md").read_text()
+        assert f".nio/specs/{GSLUG}/spec.md" in text and "0 errors" in text and "## Findings" in text, name
+        assert "## Your output" in text and f"spec-{name}.md" in text.split("## Your output")[-1], name
+        assert ("intake.md" in text) == (name == "scope") and ("# Memory for" in text) == (name == "consistency"), name
+    assert list((root / f".nio/runs/{run}/packs").glob("*")), "memory pack saved under the run"
+    assert f"nio jury next {GSLUG} spec --run {run}" in next_of(lines), lines
+    agent = root / ".claude/agents/nio-logic.md"
+    assert agent.exists()
+    print("ok")
+
+
+def test_ac13_needs_more_is_rerun():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability")
+    out(root, run, "spec", "adversary")
+    out(root, run, "spec", "logic", context="needs-more")
+    lines = step(root, run)
+    assert any(l.startswith("next: ") and "re-run logic" in l for l in lines), lines
+    assert not any(l.startswith("outcome:") for l in lines) and ledger(root)["recorded"] == [], lines
+    print("ok")
+
+
+def test_ac14_outcome_next_lines():
+    root, run = refuted_batch()  # (a)
+    step(root, run)
+    (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    lines = step(root, run)
+    assert "outcome: rejected" in lines and "nio jury dispose" in next_of(lines), lines
+    root, run = rejected_state()  # (b) the human's list
+    new = run_of(step(root, run))
+    out(root, new, "spec", "testability", verdicts="- J-1: not fixed - still there")
+    lines = step(root, new)
+    assert "outcome: human" in lines and "show the human" in next_of(lines), lines
+    assert not any("re-run" in l for l in lines if l.startswith("next: ")), lines
+    root = gate_spec()  # (c)
+    run = run_of(step(root))
+    three(root, run)
+    lines = step(root, run)
+    assert "outcome: approved" in lines and f"nio flow next {GSLUG}" in next_of(lines), lines
+    print("ok")
+
+
+def test_ac16_unplanned_lens_file_stops_the_step():
+    root = gate_spec()
+    run = run_of(step(root))
+    three(root, run)
+    out(root, run, "spec", "security")
+    code, so, err = cli(root, "jury", "next", GSLUG, "spec", "--run", run)
+    assert code == 1 and "spec-security.md" in err and "testability, logic, adversary" in err, (code, err)
+    assert not (root / f".nio/specs/{GSLUG}/jury/spec.json").exists()
+    print("ok")
+
+
+def test_misuse_separate_calls_beside_the_step():
+    root, run = refuted_batch()
+    step(root, run)
+    jury.collect(root, GSLUG, "spec", run)
+    jury.check(root, GSLUG, "spec", record=True)
+    lines = step(root, run)
+    assert not any(l.startswith("outcome:") for l in lines), lines
+    assert "spec-refuter.md" in next_of(lines), lines
+    root, run = rejected_state()
+    jury.check(root, GSLUG, "spec", record=True)
+    n = verdict_count(root)
+    step(root, run)
+    assert verdict_count(root) == n
+    print("ok")
+
+
+def test_ac11_scenario_a_in_at_most_15_calls():
+    """Scenario A of RF-2 (a major from testability and one from logic, a rerun with fix checks, approval).
+    Before, 31 orchestrator calls: plan, pack, run, agents sync, 3 templates, 3 check --gate, 3 packs written, 3 jurors,
+    collect, refuter pack, refuter, collect, check, 2 disposes, changed, run, 2 fixcheck, 2 packs written, 2 jurors,
+    collect, check, collect-final, check-final.
+    Now 15: plan (1), pack (1), step (1), 4 jurors (4), step (1), refuter (1), step (1), one dispose (1),
+    step (1), 2 fix-check jurors (2), step (1)."""
+    root = gate_spec()
+    ADD = ["consistency:D-1 current"]
+    jury.plan(root, GSLUG, "spec", ADD)
+    calls = 2  # nio jury plan, nio pack (the skill's step 1)
+    second = FINDING.replace("EB-1", "AC-1").replace("create exactly one refund", "one refund exists")
+    first_round = {"testability": FINDING, "logic": second}
+    run, first_run, lines = "", None, None
+    for _ in range(10):
+        lines = step(root, run, ADD); calls += 1
+        run = next((l[5:] for l in lines if l.startswith("run: ")), run)
+        first_run = first_run or run
+        nxt = next_of(lines)
+        if nxt.startswith("tell the human"):
+            break
+        if nxt.startswith("run each juror"):
+            for n in (l[len("run "):].split(":")[0] for l in lines if l.startswith("run ") and not l.startswith("run: ")):
+                if run == first_run:
+                    out(root, run, "spec", n, first_round.get(n, "none"))
+                else:
+                    out(root, run, "spec", n, verdicts=verdicts(**{"J_1" if n == "logic" else "J_2": "fixed"}))
+                calls += 1
+        elif "nio-refuter" in nxt:
+            (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1) + CONFIRM.format(n=2)); calls += 1
+        elif nxt.startswith("dispose"):
+            jury.dispose(root, GSLUG, "spec", "J-1,J-2", "spec-fix", "agent", "wording"); calls += 1
+            sp = root / f".nio/specs/{GSLUG}/spec.md"
+            sp.write_text(sp.read_text().replace("create exactly one refund", "create exactly one refund per order").replace("then one refund exists", "then exactly one refund exists"))
+        else:
+            raise AssertionError(nxt)
+    assert "outcome: approved" in lines, lines
+    assert calls <= 15, calls
+    print("ok")
+
+
+def test_nfr1_skill_names_the_step():
+    text = (Path(__file__).parent.parent / "skills/jury/SKILL.md").read_text()
+    steps = text.split("## Steps")[1].split("\n## ")[0]
+    assert "nio jury next" in steps and "J-a,J-b" in steps, "names the step and several IDs"
+    assert "save each one's answer verbatim" not in steps
+    kept = [b for b in steps.split("\n\n") if "--blocker" not in b and "--human" not in b]
+    rest = "\n\n".join(kept)
+    for gone in ("nio run", "nio agents sync", "nio jury template", "nio jury collect", "nio jury check",
+                 "nio jury changed", "nio jury fixcheck", "nio check spec <slug> --gate"):
+        assert gone not in rest, gone
+    print("ok")
+
+
+def test_skill_sends_state_through_the_step():
+    text = (Path(__file__).parent.parent / "skills/jury/SKILL.md").read_text()
+    rest = "\n".join(l for l in text.splitlines() if "--human" not in l)
+    for gone in ("nio jury check", "nio check spec <slug> --gate"):
+        assert gone not in rest, gone
+    print("ok")
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged])
+    selfcheck.main([test_skill_sends_state_through_the_step, test_escalate_copies_are_unmistakable, test_grill_deferred_blocker_falls_through_to_check, test_add_reason_with_parens_invents_no_lens, test_over_cap_step_waits_for_the_human, test_ac1_step_writes_the_refuter_batch, test_ac2_rerun_writes_fix_check_packs, test_ac3_step_prints_no_finding_body, test_ac4_missing_and_invalid_lenses_rerun, test_ac5_repeated_step_changes_nothing, test_ac12_first_review_packs, test_ac13_needs_more_is_rerun, test_ac14_outcome_next_lines, test_ac16_unplanned_lens_file_stops_the_step, test_misuse_separate_calls_beside_the_step, test_ac11_scenario_a_in_at_most_15_calls, test_nfr1_skill_names_the_step, test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_consistency_pack_memory_is_for_a_juror, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged])

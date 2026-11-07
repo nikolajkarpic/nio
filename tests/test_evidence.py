@@ -1194,8 +1194,8 @@ def test_it_can_open_any_project_file_and_can_t():
     for name in ("conformance", "correctness", "risk-rollback", "security", "adversary", "consistency"):
         meta, body = records.parse(shipped / f"{name}.md")
         assert "## At implementation" in body, f"{name} has no ## At implementation section"
-        assert meta["tools"] == ["read"], f"{name}: tools are {meta['tools']}, not read-only"
-        assert 'tools: "Read, Grep, Glob"' in agents.render_claude(name, meta, "\n".join(body), "sonnet", "medium"), name
+        assert meta["tools"] == ["read", "write"], f"{name}: tools are {meta['tools']}"
+        assert 'tools: "Read, Grep, Glob, Write"' in agents.render_claude(name, meta, "\n".join(body), "sonnet", "medium"), name
         assert "shell_tool = false" in agents.render_codex(name, meta, "\n".join(body), "gpt", "medium"), name
     # the pack tells the lens it may open any project file, and building it writes nothing the human would see
     root = pack_repo({})
@@ -3441,6 +3441,25 @@ def test_pytest_entry_matches_file_and_name():
     results = start(root)
     assert result_of(results, "tests/test_a.py", "test_one") == "failed", results["tests"]
     assert result_of(results, "tests/test_b.py", "test_one") != "failed", results["tests"]
+    print("ok")
+
+
+def test_ac12_step_at_the_implementation_gate():
+    from nio import jury, records
+    root, _ = gate_repo()
+    run = records.new_run(root)
+    packs = root / f".nio/runs/{run}/jury/packs"
+    first = jury.step(root, "s", "implementation-E-1", run)
+    assert first[-1].startswith(f"next: nio jury evidence s E-1 --run {run}"), first
+    assert not packs.exists() or not list(packs.glob("*.md")), "no pack before evidence"
+    evidence().collect(root, "s", "E-1", run)
+    jury.step(root, "s", "implementation-E-1", run)
+    for lens in ("conformance", "correctness"):
+        text = (packs / f"{lens}.md").read_text()
+        want = evidence().pack(root, "s", "implementation-E-1", lens, run).replace(
+            "You have no way to write files or run commands.", "You may write only your output file, named at the end; you can't run commands.")
+        assert text.startswith(want), lens
+        assert text.rstrip().splitlines()[-1].find(f"implementation-E-1-{lens}.md") >= 0, text[-300:]
     print("ok")
 
 

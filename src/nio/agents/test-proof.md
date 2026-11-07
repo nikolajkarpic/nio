@@ -3,7 +3,7 @@ name: test-proof
 description: "Juror lens for whether planned tests prove anything. Use at the plan gate (always): for each test in tests.md, names the smallest realistic bug that breaks its AC and the assert that would catch it, and flags tests that would pass anyway."
 tier: max
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -39,6 +39,8 @@ For each `TC-n` in `tests.md`:
 - Before saying a test is missing, search the repo for it, and name where you searched.
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. In your reasoning,
 give each test its bug and the `Assert:` line that catches it. Each finding cites the TC and the AC it is about,
