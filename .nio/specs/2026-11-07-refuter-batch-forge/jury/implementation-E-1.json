@@ -1,0 +1,421 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-07-refuter-batch-forge",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-kdbp/implementation-E-1-adversary.md": "5df8f458d1a47a6b1ac4d5c94076c16f255bb3847bac9793be7fed666ca03b76",
+    "R-261107-kdbp/implementation-E-1-conformance.md": "88f38a4eb6e1747c4363bd325066c7ed34a0b97b7b2c4839822462278e2f6c2a",
+    "R-261107-kdbp/implementation-E-1-consistency.md": "0306103d72cf7a733ea83ae27abb0c563475c3dc78eaf3b14820a48399b4ccf0",
+    "R-261107-kdbp/implementation-E-1-correctness.md": "7630b74ee9190340d06aa945f4307b51d284ee355b893633903e76bf5fdca8d0",
+    "R-261107-kdbp/implementation-E-1-refuter.md": "fe4d1d25cdb1b04b2ecf07f0a0f528e5ecb4d021b7973085ea7d94d561cc5862"
+  },
+  "jurors": {
+    "implementation-E-1-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c8c6cc6aacb964f4e2a44376d07a315c98f02685",
+      "judged": 1
+    },
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c8c6cc6aacb964f4e2a44376d07a315c98f02685",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c8c6cc6aacb964f4e2a44376d07a315c98f02685",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c8c6cc6aacb964f4e2a44376d07a315c98f02685",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A failed git diff force-removes the worktree with no patch saved",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then it returns a non-empty error and main's `a.txt` is unchanged",
+        "path.write_bytes(diff)"
+      ],
+      "fix": "on a diff failure, have the caller keep the worktree, and report the worktree path rather than a patch path. An alternative is to return a distinct cause that the caller doesn't treat as \"doesn't apply\".",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "the claim commit `since` is gone (AC-2's `\"0\"*40`), or git fails for another reason. `land` returns `(\"\", {}, \"fatal: ...\")` before `path.write_bytes(diff)` runs, so no patch file exists. The caller at implement.py:753 sees `err`, runs `git worktree remove --force` on the tree and prints \"its changes are in \" followed by an empty path. The worker's edits are deleted with nothing to recover them from. Main's `a.txt` is untouched, as AC-2 asks, but the task's work is lost without notice.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "a wave task reaches green and `git diff --cached --binary` fails in its worktree. `land` returns patch `\"\"` with an error. The caller (implement.py:754-759) then runs `git worktree remove --force` on the tree and writes \"its changes are in \" with an empty path. The task's edits existed only in that worktree, so they are lost. D-261106-uom5 says a blocked task's changes go to `T-n.patch`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "src/nio/implement.py:369-371 returns `(\"\", {}, err)` when `git diff --cached --binary` exits non-zero, before `path.write_bytes(diff)` at :373, so no `T-n.patch` exists. The caller at :752-759 treats any `err` the same: it runs `git worktree remove --force` on the tree (which holds the task's only copy of the edits, staged but uncommitted) and prints \"its changes are in \" with the empty `patch`. Nothing else in the code or spec keeps the tree or names it on this path, so the work is lost.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-3",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py (land's diff-failure return and its caller in green)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "land still ignores errors from git add and the name-only diff",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`land` returns an empty error and main's `a.txt` matches the tree's"
+      ],
+      "fix": "run both git calls with `full=True` and return git's error when either exits non-zero, as the `--binary` diff now does",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`git add -A` fails in the worktree (a leftover `.git/index.lock`, or an unreadable file). Its error is discarded. The cached diff then compares the stale index with `since`, which can be empty, and exits 0. Then `names` is empty, so no apply runs and `land` returns an empty error. The task commits and its worktree is removed, but main's `a.txt` was never changed. A failing `--name-only` diff ends the same way, because `records.git` without `full` returns `[]`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py (land)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "A byte-identical refuter answer to a new batch is never read",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "answered: a later change to the file has no batch until the next one prints"
+      ],
+      "fix": "when a batch is printed, drop the run's refuter sha from `collected` (or delete or rename the old refuter file), so the next answer is always read",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "the refuter once answered a batch holding only J-1 with `### J-1 / result: confirmed / reason: R`. An escalation juror re-raises J-1, so J-1 is pending again and is re-asked (AC-6). The refuter then writes exactly the same bytes. The sha matches `led[\"collected\"]`, so the file is skipped and nothing says so. J-1 stays pending, and every `nio jury next` prints the same batch again with no hint about why.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "J-1 was confirmed from a file holding `### J-1 / result: confirmed / reason: yes`. AC-6 then sends J-1 back to pending and into a new batch. If the refuter answers with the same text, the sha matches the collected one, so nothing is applied. J-1 stays pending and every step prints the same batch again.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py (collect, refuter branch)",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "A forged refuter file is still accepted while a batch is outstanding",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "then the collect is refused and J-1 is not refuted"
+      ],
+      "fix": "before applying a refuter file, check that it was written after the latest refuter pack (an mtime or nonce in the pack, echoed by the refuter), or have the refuter write to a path no lens juror's pack names",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "a step collects `spec-testability-2`, which re-raises J-1. J-1 becomes pending and the printed batch sets `asked[run] = [J-1]`. A juror from the same run is still writing, for example a needs-more retry or the slower `spec-testability-3`. It overwrites `spec-refuter.md` with `### J-1 / result: refuted` before the real refuter answers. The next collect finds `asked` holding J-1 and accepts the forgery, so J-1 is refuted. The fix closes only the window when no batch is outstanding.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py (collect, refuter branch)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "AC-8's test doesn't check that the returned error is git's own",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then it returns git's error and the main tree is unchanged",
+        "assert out[2], out"
+      ],
+      "fix": "also assert that the error carries git's own text, for example `\"a.txt\" in out[2]` or `\"patch\" in out[2]`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "`land` falls back to \"git apply failed\" when stderr is empty. The test asserts only that the error is non-empty, so a regression that dropped git's stderr and always returned the fallback string would still pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_waves.py",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The batch check passes on the stale pack from the first batch",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-1",
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "return set(re.findall(r\"^### (J-\\d+)\", batch.read_text(), re.M)) if batch.exists() else set()"
+      ],
+      "fix": "delete or read the pack's mtime/content before the step under test, or assert on the step's `next: run nio-refuter` line",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "in confirmed_then_escalated, the first step already wrote packs/refuter.md listing J-1 and J-2. The confirming step prints no batch and leaves that file in place. So `assert \"J-1\" in batch_ids(root, run)` holds even if the step after escalation prints no new batch. Only the `pending` assert really checks AC-6's \"the printed batch lists J-1\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "AC-4 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-4",
+      "gap": "missing",
+      "where": "src/nio/jury.py, tests/test_jury.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-4: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-4",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "AC-5 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-5",
+      "gap": "missing",
+      "where": "src/nio/jury.py, tests/test_jury.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-5: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-5",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "c8c6cc6aacb964f4e2a44376d07a315c98f02685"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_jury.py",
+        "test_forged_refuter_after_escalation_is_refused"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_waves.py",
+        "test_land_returns_error_when_diff_fails"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_jury.py",
+        "test_refuter_answering_its_batch_applies_both"
+      ]
+    ],
+    "AC-4": [],
+    "AC-5": [],
+    "AC-6": [
+      [
+        "tests/test_jury.py",
+        "test_reraised_finding_goes_back_to_pending"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_waves.py",
+        "test_land_applies_edit_with_empty_error"
+      ]
+    ],
+    "AC-8": [
+      [
+        "tests/test_waves.py",
+        "test_land_returns_git_error_when_patch_does_not_apply"
+      ]
+    ]
+  },
+  "asked": {}
+}

@@ -25,3 +25,38 @@ retired: []                      # task IDs removed from this file; never reused
 - Tier: cheap: check the exit code `git diff` already returns, as `shelve` does
 - Effort: low
 - Mode: split: the failed-diff test fails before the fix
+
+#### Fixes
+
+### T-3 Fix: A failed git diff force-removes the worktree with no patch saved
+- From: J-1 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`
+- Serves: AC-2
+- Test: new: AC-2
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-4 Fix: AC-4 has no passing evidence
+- From: J-7 (implementation-E-1, round 1)
+- Files: `src/nio/jury.py`, `tests/test_jury.py`
+- Serves: AC-4
+- Test: new: AC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-5 Fix: AC-5 has no passing evidence
+- From: J-8 (implementation-E-1, round 1)
+- Files: `src/nio/jury.py`, `tests/test_jury.py`
+- Serves: AC-5
+- Test: new: AC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
