@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-1",
   "subject": "2026-11-07-lite-path",
-  "round": 1,
+  "round": 2,
   "tier": "low",
   "expect": [
     "conformance",
@@ -12,7 +12,8 @@
     "R-261107-hurq/implementation-E-1-conformance.md": "bd59e321a67fae9a387fb265225be32f4b06f99e715bb052b87d8e43a2caa003",
     "R-261107-hurq/implementation-E-1-consistency.md": "7c43a19f891c2e40305d142b4ba53d31e17c1446b36c5735a62e4d0e11e61666",
     "R-261107-hurq/implementation-E-1-correctness.md": "e226735d57cea7fd263c495d869f94f9a461e299af574bb858f74ae779660cd4",
-    "R-261107-hurq/implementation-E-1-refuter.md": "b8248f766a70535d36751b67353f64b523f56f63fef998b9f093cd721bf67362"
+    "R-261107-hurq/implementation-E-1-refuter.md": "b8248f766a70535d36751b67353f64b523f56f63fef998b9f093cd721bf67362",
+    "R-261107-i7g4/implementation-E-1-correctness.md": "600837a098d425fd471044e53b1c3bb930dea86235dc3f6ef2ea443150e54dbe"
   },
   "jurors": {
     "implementation-E-1-conformance": {
@@ -44,9 +45,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "4b0128e6355bac5f27fc5a9502400ca7139be11f",
-      "judged": 1
+      "round": 2,
+      "version": "6871033135aa6735e4f4f80034e04a7212b332d9",
+      "judged": 2
     }
   },
   "findings": [
@@ -146,17 +147,18 @@
       ],
       "validation": "confirmed",
       "reason": "src/nio/flow.py:974 now reads `at(stage) < at(here[\"stage\"]) and (rec is None or at(stage) < at(rec) and at(rec) >= at(here[\"stage\"]))`. When history lags the files (rec < here) and stage < rec, the old test returned \"is past ... nothing to do\", but the new one falls through to `guard` and a possible second pass line, against the comment \"A stage before both is already passed (FR-17)\". No test in tests/ asserts \"is past\", and nothing in the spec (FR-2, FR-15) or the T-1 commit message justifies the extra condition.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-15",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/flow.py (done)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-4",
@@ -233,15 +235,20 @@
       "right": "code"
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "4b0128e6355bac5f27fc5a9502400ca7139be11f"
+    "1": "4b0128e6355bac5f27fc5a9502400ca7139be11f",
+    "2": "6871033135aa6735e4f4f80034e04a7212b332d9"
   },
   "matched": {
     "AC-1": [

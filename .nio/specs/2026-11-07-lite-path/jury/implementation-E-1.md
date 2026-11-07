@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-1
 subject: 2026-11-07-lite-path
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-1 jury: 2026-11-07-lite-path
 
@@ -12,7 +12,7 @@ outcome: rejected
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | J-1 | major | gap | AC-4 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-2 | major | gap | AC-5 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-3 | major | inconsistency | FR-2, FR-15 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-3 | major | inconsistency | FR-2, FR-15 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-4 | minor | gap | FR-3 | correctness | grounded | open |  | new, 0 |
 | J-5 | minor | inconsistency | FR-15 | consistency | grounded | open |  | new, 0 |
 
@@ -53,4 +53,4 @@ outcome: rejected
 | --- | --- | --- | --- | --- | --- | --- |
 | implementation-E-1-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-1-consistency | consistency | juror / claude-code / haiku | sufficient | yes | 2 | 1 |
-| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
