@@ -12,11 +12,11 @@ outcome: rejected
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | J-1 | major | gap | CT-3, FR-7 | conformance | refuted | refuted |  | new, 0 |
 | J-2 | major | gap | CT-3 | conformance, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | minor | risk | AC-4, AC-5, AC-6 | conformance | grounded | open |  | new, 0 |
-| J-4 | minor | inconsistency | CT-7 | consistency, correctness | grounded | open |  | new, 0 |
-| J-5 | minor | inconsistency | CT-7, FR-2 | consistency | grounded | open |  | new, 0 |
-| J-6 | minor | inconsistency | FR-4, decision table "red outcome" (row "none") | consistency | grounded | open |  | new, 0 |
-| J-7 | minor | risk | CT-7, CT-3 | correctness | grounded | open |  | new, 0 |
+| J-3 | minor | risk | AC-4, AC-5, AC-6 | conformance | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-4 | minor | inconsistency | CT-7 | consistency, correctness | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-5 | minor | inconsistency | CT-7, FR-2 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-6 | minor | inconsistency | FR-4, decision table "red outcome" (row "none") | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
+| J-7 | minor | risk | CT-7, CT-3 | correctness | grounded | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 Red does not print the tail of its output (FR-7, CT-3)
 - quote: "On acceptance red prints, after `frozen:`, `output:` and "the last 20 lines of its output" (FR-7), each indented two spaces."
@@ -36,6 +36,7 @@ outcome: rejected
 - quote: "Per-test results are unknown: the suite's runner can't be read per test; the exit code and output are in `suite`."
 - situation (conformance): the suite pass is reused from T-4's review, and the misuse tests were not run. The bodies of the AC-4, AC-5 and AC-6 tests do exercise the criteria: the history line and command, the "no tests ran" refusal, and the check that no other suite command ran. A pass of the tests themselves is still unconfirmed.
 - fix: run the suite fresh at this gate, or run the TCs that cover these tests.
+- disposition: accepted-risk by human: Delegated: the suite passed at this commit (reused from T-4's review, which ran it); per-test reading lands in E-4
 
 ### J-4 The self-check runner entry has no match key the contract names
 - quote: "`RUNNERS["self-check"]` is `{"match": r"(?!)", "error": [], "none": ["ran 0 tests"]}`"
@@ -43,23 +44,27 @@ outcome: rejected
 - situation (consistency): CT-7 gives the entry a `match` key that matches nothing. The diff omits it and relies on `r.get("match", r"(?!)")` in `runner`. Behaviour is the same, but the code and the contract disagree on the shape that `wrong_reason` and later readers rely on.
 - situation (correctness): CT-7 anchors the line with `$`. The code matches `r"^ran \d+ tests?, \d+ failed"` with no `$`. A line such as `ran 1 tests, 0 failed ...` is therefore read as self-check. This is only a looseness, but code and spec differ.
 - fix: either add `"match": r"(?!)"` to the entry, or change CT-7 to say the key is absent. The code comment already records the choice.
+- disposition: accepted-risk by human: Delegated: same behaviour (runner() defaults the missing match key to one that never matches); the code comment records it
 
 ### J-5 The self-check detection regex has no end anchor
 - quote: "a line matching `^ran \d+ tests?, \d+ failed$` (re.M)"
 - quote: "`re.search(r"^ran \d+ tests?, \d+ failed", output, re.M)`"
 - situation (consistency): CT-7 wants a line that ends after `failed`. The code also accepts a line such as `ran 1 tests, 0 failed (see log)`, so a non-self-check output with that line is read as `self-check`. Red then applies the self-check rules to it, and FR-2 is not the only source of such a line.
 - fix: add `$` to the code regex, or drop the `$` from CT-7. The code is the simpler fix and matches CT-7 as written.
+- disposition: accepted-risk by human: Delegated: minor; T-8 also anchors the ran line ($) and reads only the last ran line, as CT-7 and FR-4 say
 
 ### J-6 Red's "no tests ran" check matches the line anywhere, not where FR-4 says
 - quote: "IF a red command's output ends its run with `ran 0 tests`"
 - quote: "`none = any(m in out for m in RUNNERS.get(name, {}).get("none", []))`"
 - situation (consistency): FR-4 refuses red only when the run ends with `ran 0 tests`. The code refuses it when that text appears anywhere in the output. A failing test that prints an earlier `ran 0 tests` line, then ends with `ran 1 tests, 0 failed`, would be refused as "no tests ran" when a test did run and fail. I did not see such output in the pack, so this is inferred.
 - fix: check only the last `ran` line of the output for the self-check runner, or amend FR-4 and the table to say "contains". Keep the other runners as they are, as the existing convention.
+- disposition: accepted-risk by human: Delegated: minor; T-8 also anchors the ran line ($) and reads only the last ran line, as CT-7 and FR-4 say
 
 ### J-7 An import or syntax crash in the test file is accepted as a valid red
 - quote: "`"self-check": {"error": [], "none": ["ran 0 tests"]},`"
 - situation (correctness): A scoped red command crashes at import, for example a missing module or a syntax error. The script prints a Traceback and no `ran N tests` line. `runner(command, out)` returns None, because the command's own words don't match and the output has no summary line. `wrong_reason(None, ...)` returns "", so red is accepted (`code != 0`). The red failure is for the wrong reason, which red is meant to refuse. Because `error` is empty, self-check has no way to flag it even when it is recognised.
 - fix: Either refuse red when the code is non-zero and there is a Traceback but no `ran` line, or accept this as the FR-9 unknown-runner behaviour and say so in the spec.
+- disposition: accepted-risk by human: Delegated: a spec non-goal (a crash before the ran line reads as today); follow-up filed as #91
 
 ## Jurors
 
