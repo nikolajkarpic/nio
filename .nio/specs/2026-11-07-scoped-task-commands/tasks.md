@@ -78,7 +78,7 @@ retired: [T-2]
 
 ### T-9 Fix: The worker card's no-re-run rule covers only the code phase
 - From: J-1 (implementation-E-3, round 1)
-- Files: `src/nio/agents/worker.md`
+- Files: `src/nio/agents/worker.md`, `tests/test_agents.py`
 - Serves: AC-7, CT-5, FR-6
 - Test: TC-7
 - Depends on: none
