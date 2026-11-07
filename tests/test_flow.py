@@ -1510,6 +1510,27 @@ def test_lite_escalation_placement():
     print("ok")
 
 
+def test_lite_escalated_to_full_runs_full_stages():
+    """UB-1 (AC-5): a lite effort whose spec.md becomes the full fixture reports no lite-route skip and no route-change stop."""
+    root = repo()
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    flow.start(root, S, by=BY)
+    spec = lambda name: re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+    (folder / "spec.md").write_text(spec("spec-bugfix.md"))
+    nxt(root)  # the lite route is seen
+    (folder / "spec.md").write_text(spec("spec.md"))
+    out = nxt(root)
+    assert "(lite route)" not in out and "route changed" not in out, out
+    n = len(lines_of(root))
+    assert flow.park(root, S, "x", by=BY)[0] == 0 and len(lines_of(root)) > n
+    print("ok")
+
+
 def test_uj2_idle_visible():
     """TC-69: an idle effort shows when it was last active, below the newer one."""
     root = effort("planning")
