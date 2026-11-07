@@ -41,11 +41,11 @@ retired: [T-2]
 
 #### Fixes
 
-### T-8 Fix: Tests named for AC-7 to AC-10 do not exist
+### T-8 Fix: review misses a crashed self-check file beside a failing one
 - From: J-2 (implementation-E-2, round 1)
-- Files: `tests/test_agents.py`, `tests/test_evidence.py`, `tests/test_implement.py`
+- Files: `src/nio/implement.py`, `tests/test_implement.py`
 - Serves: CT-3, J-2
-- Test: TC-4
+- Test: TC-12
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
