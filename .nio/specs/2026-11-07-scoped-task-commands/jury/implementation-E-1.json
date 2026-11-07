@@ -1,0 +1,119 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-07-scoped-task-commands",
+  "round": 1,
+  "tier": "low",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-de7l/implementation-E-1-conformance.md": "06e8039aae9343dcb24a5999cd9f5d00cf83139ed0cd333f88ffc7a2bbb6923c",
+    "R-261107-de7l/implementation-E-1-consistency.md": "f3f6633c4ae03721976ec48a29377bac989e6eed1e305f6e8b0eb94bf4f4054f",
+    "R-261107-de7l/implementation-E-1-correctness.md": "3a4399e83e24c3155be6560bdf4da8a5be9e6d4f1ae204e6d4718f1f1013dfcc"
+  },
+  "jurors": {
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "46dac9bc38d56dc0c4fe739a58fc4d7dd6615a55",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "46dac9bc38d56dc0c4fe739a58fc4d7dd6615a55",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "46dac9bc38d56dc0c4fe739a58fc4d7dd6615a55",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Journey for AC-9/AC-10 fails because the named tests do not exist",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "no test named test_ac9_evidence_reads_self_check_lines"
+      ],
+      "fix": "either keep the AC-4 to AC-10 tests and the journey out of this epic's gate, or add the tests.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "The epic's test list names `test_ac4` to `test_ac10` in `test_implement.py`, `test_agents.py` and `test_evidence.py`. The diff adds none of them. The journey command that runs two of them exits 1 with \"ran 0 tests, 0 failed\". If the gate counts that journey, it stays red until those tests land. If E-1 covers only AC-1 to AC-3, the journey belongs to a later epic.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the journey names tests a later epic (E-4) adds; evidence runs every auto scenario at every epic gate",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_evidence.py",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "46dac9bc38d56dc0c4fe739a58fc4d7dd6615a55"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_selfcheck.py",
+        "test_ac1_one_name_runs_one_test"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_selfcheck.py",
+        "test_ac2_no_names_runs_all"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_selfcheck.py",
+        "test_ac3_fail_goes_on"
+      ]
+    ]
+  }
+}
