@@ -50,3 +50,27 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Tier: cheap: skip argv words starting with "-" in a small script, one test
 - Effort: low
 - Mode: single: one tiny change and its one test
+
+#### Fixes
+
+### T-5 Fix: A failed `git diff` in `shelve` writes an empty patch, then the work is restored away
+- From: J-1 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`
+- Serves: CT-5, J-1
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-6 Fix: Implementation rerun with no lens to re-run opens a run instead of showing the human
+- From: J-6 (implementation-E-1, round 1)
+- Files: `src/nio/jury.py`
+- Serves: FR-5, CT-6, J-6
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
