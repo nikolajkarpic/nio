@@ -1569,5 +1569,78 @@ def test_ac10_escalation_file_counts_as_its_lens():
     assert len([l for l in lines if "spec-logic-2.md" in l and "logic-2" in l]) == 1, lines
 
 
+def three_open():
+    root = setup()
+    one = lambda n, cite, quote, kind: f"""### F{n} Finding {n}
+- cites: {cite}
+- kind: {kind}
+- severity: major
+- evidence: observed
+- quote: "{quote}"
+- situation: situation number {n} differs from the others
+- fix: fix number {n}
+"""
+    lens(root, "R-1", "logic", one(1, "FR-1", "A refund is allowed while the order is paid or shipped", "gap")
+         + one(2, "FR-2", "they must be returned first", "ambiguity") + one(3, "AC-1", "then it is refunded", "untestable"))
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text("".join(CONFIRM.format(n=n) for n in (1, 2, 3)))
+    jury.collect(root, "refunds", "spec", "R-1")
+    assert [f["status"] for f in jury.load(root, "refunds", "spec")["findings"]] == ["open"] * 3
+    return root
+
+
+def cli_run(root, *args):
+    import contextlib, io, os, sys
+    from nio import cli
+    here, argv = os.getcwd(), sys.argv
+    out, err, code = io.StringIO(), io.StringIO(), 0
+    try:
+        os.chdir(root)
+        sys.argv = ["nio", *args]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                cli.main()
+            except SystemExit as e:
+                code = e.code if isinstance(e.code, int) else 1
+                err.write(str(e.code) if isinstance(e.code, str) else "")
+        return code, out.getvalue(), err.getvalue()
+    finally:
+        os.chdir(here)
+        sys.argv = argv
+
+
+def dispose_args(ids, *notes, disp="spec-fix", by="agent"):
+    return ["jury", "dispose", "refunds", "spec", ids, disp, "--by", by] + [x for n in notes for x in ("--note", n)]
+
+
+def test_ac6_dispose_three_in_one_call():
+    root = three_open()
+    code, out, err = cli_run(root, *dispose_args("J-1,J-2,J-3", "fixed"))
+    assert code == 0, err
+    assert out.splitlines() == [f"J-{n}: spec-fix by agent" for n in (1, 2, 3)], out
+    for f in jury.load(root, "refunds", "spec")["findings"]:
+        assert (f["status"], f["disposition"], f["by"], f["note"]) == ("disposed", "spec-fix", "agent", "fixed"), f
+
+
+def test_ac7_refused_dispose_changes_nothing():
+    root = three_open()
+    path = jury.folder(root, "refunds") / "spec.json"
+    before = path.read_bytes()
+    for args, wants in [(dispose_args("J-1,J-9", "n"), ["J-9"]),
+                        (dispose_args("J-1,J-2", "n", disp="accepted-risk"), ["J-1", "J-2", "the human's call"]),
+                        (dispose_args("J-1,J-1", "n"), ["distinct"]),
+                        (dispose_args("J-1,J-2,J-3", "a", "b"), ["2 notes for 3 findings"])]:
+        code, out, err = cli_run(root, *args)
+        assert code == 1 and all(w in err for w in wants), (args, code, err)
+        assert path.read_bytes() == before, args
+
+
+def test_ac15_notes_per_finding_in_order():
+    root = three_open()
+    code, out, err = cli_run(root, *dispose_args("J-1,J-2,J-3", "one", "two", "three"))
+    assert code == 0, err
+    assert [f["note"] for f in jury.load(root, "refunds", "spec")["findings"]] == ["one", "two", "three"]
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged])
+    selfcheck.main([test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged])
