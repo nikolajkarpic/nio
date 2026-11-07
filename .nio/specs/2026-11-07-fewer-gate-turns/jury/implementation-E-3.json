@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-3",
   "subject": "2026-11-07-fewer-gate-turns",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,10 @@
     "R-261107-emsy/implementation-E-3-conformance.md": "18038d7bb13d59c7c1b012a36697d2fd24a78ed6d6299fa1392dec77c9624f50",
     "R-261107-emsy/implementation-E-3-consistency.md": "f8feecbbdae69a6cc329ef31067d4d5b0e478f2a3673b69f6314885fed048e70",
     "R-261107-emsy/implementation-E-3-correctness.md": "885c6ba17ef138d3cdd29e4fee799ee435c02134ed58c66f20887dd012177ae0",
-    "R-261107-emsy/implementation-E-3-refuter.md": "eb6183d9057b09bca5640aef18634f9a1bf696603d217182b1c2061d37f323fb"
+    "R-261107-emsy/implementation-E-3-refuter.md": "eb6183d9057b09bca5640aef18634f9a1bf696603d217182b1c2061d37f323fb",
+    "R-261107-acj4/implementation-E-3-adversary.md": "95e733ffffc1373ac00d09fbb4f0bffe4ad613076fe220c7f4195b418887a687",
+    "R-261107-acj4/implementation-E-3-consistency.md": "1cc64c9680452a0aa6a58c3e9893780765ee29122c8cdf67fc19a07d37db58f1",
+    "R-261107-acj4/implementation-E-3-correctness.md": "cea21825af686e26061b2766622a1e99145dcf98a940dfdc727cd197c6779da4"
   },
   "jurors": {
     "implementation-E-3-adversary": {
@@ -24,9 +27,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "63acae3d2223dc8c62b58aa7b18fd7507243fdd8",
-      "judged": 1
+      "round": 2,
+      "version": "7270423e81270f17c93189fd4453744313afda31",
+      "judged": 2
     },
     "implementation-E-3-conformance": {
       "attempts": 2,
@@ -46,9 +49,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "63acae3d2223dc8c62b58aa7b18fd7507243fdd8",
-      "judged": 1
+      "round": 2,
+      "version": "7270423e81270f17c93189fd4453744313afda31",
+      "judged": 2
     },
     "implementation-E-3-correctness": {
       "attempts": 1,
@@ -57,9 +60,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "63acae3d2223dc8c62b58aa7b18fd7507243fdd8",
-      "judged": 1
+      "round": 2,
+      "version": "7270423e81270f17c93189fd4453744313afda31",
+      "judged": 2
     }
   },
   "findings": [
@@ -87,17 +90,18 @@
       ],
       "validation": "confirmed",
       "reason": "`plan` (jury.py ~311-336) returns ok True when over the cap and only prints the \"human chooses\" line and choices. `step` (1393-1410) returns early only when `not ok`, and `names` then go straight to `_begin`/`packs`. Nothing in `step` checks the cap or waits for `--pick`.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-6",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/jury.py step",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -123,17 +127,18 @@
       ],
       "validation": "confirmed",
       "reason": "`step` line 1399 parses the display line `lens (why)` with the regex `([a-z][a-z-]*) \\(`. A reason such as \"D-1 changed (see spec)\" also matches `changed (`. `missing` in `plan` is computed from the real lens dict, so the false name passes the card check and `packs` writes `packs/changed.md` plus a `run changed:` line.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-7",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/jury.py step",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -270,17 +275,18 @@
       ],
       "validation": "confirmed",
       "reason": "`_pack_text` (jury.py 1330) calls `memory.build(root, asked)` with the defaults `worker=True` and `diff=None`. pack.py line 80-81 then appends the WORKER \"How to use this\" block. The implementation-gate pack in evidence.py 622 has the \"you can't run commands\" sentence; the spec-gate pack has no such text.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-8",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/jury.py, `_pack_text`, consistency branch",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-7",
@@ -344,17 +350,18 @@
       ],
       "validation": "confirmed",
       "reason": "jury.py 672-677 creates a contradiction Deferred finding as blocker, confirmed and open, with source lens `deferred`. No juror carries that lens, so the escalation loop's `< 3` count in `step` (1432-1438) is 0 and it returns \"escalate deferred\" on every call, before `check` at 1439. `changed()` already skips `deferred` and `cli` (445), which shows the case is known but not handled in `step`.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-9",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/jury.py:step (escalation loop)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-9",
@@ -430,15 +437,20 @@
       "right": "spec"
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "63acae3d2223dc8c62b58aa7b18fd7507243fdd8"
+    "1": "63acae3d2223dc8c62b58aa7b18fd7507243fdd8",
+    "2": "7270423e81270f17c93189fd4453744313afda31"
   },
   "matched": {
     "AC-1": [

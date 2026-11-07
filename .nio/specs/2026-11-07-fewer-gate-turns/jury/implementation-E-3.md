@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-3
 subject: 2026-11-07-fewer-gate-turns
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-3 jury: 2026-11-07-fewer-gate-turns
 
@@ -10,14 +10,14 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | CT-1 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | risk | CT-1 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | CT-1 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | risk | CT-1 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | risk | CT-1 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | CT-2 | adversary | grounded | open |  | new, 0 |
 | J-5 | minor | gap | CT-2 | adversary | grounded | open |  | new, 0 |
-| J-6 | major | inconsistency | CT-2, D-261024-zbne | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-6 | major | inconsistency | CT-2, D-261024-zbne | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-7 | minor | inconsistency | CT-1 | consistency | grounded | open |  | new, 0 |
-| J-8 | major | contradiction | CT-1, AC-14 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-8 | major | contradiction | CT-1, AC-14 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-9 | minor | inconsistency | AC-2 | correctness | grounded | open |  | new, 0 |
 | J-10 | minor | contradiction | AC-2 | conformance | grounded | open |  | new, 0 |
 
@@ -86,7 +86,7 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-3-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-3-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-3-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 2 | 1 |
-| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-3-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
