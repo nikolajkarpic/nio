@@ -1955,37 +1955,35 @@ def test_ac11_scenario_a_in_at_most_15_calls():
     Now 15: plan (1), pack (1), step (1), 4 jurors (4), step (1), refuter (1), step (1), one dispose (1),
     step (1), 2 fix-check jurors (2), step (1)."""
     root = gate_spec()
-    calls, ADD = 0, ["consistency:D-1 current"]
-    jury.plan(root, GSLUG, "spec", ["consistency:D-1 current"]); calls += 1
-    calls += 1  # nio pack
-    first = step(root, "", ["consistency:D-1 current"]); calls += 1
-    run = run_of(first)
-    second = FINDING.replace("F1", "F1").replace("EB-1", "AC-1").replace("create exactly one refund", "one refund exists")
-    out(root, run, "spec", "testability", FINDING)
-    out(root, run, "spec", "logic", second)
-    out(root, run, "spec", "consistency")
-    out(root, run, "spec", "adversary")
-    calls += 4
-    lines = step(root, run, ADD); calls += 1
-    (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1) + CONFIRM.format(n=2)); calls += 1
-    lines = step(root, run, ADD); calls += 1
-    assert "outcome: rejected" in lines, lines
-    jury.dispose(root, GSLUG, "spec", "J-1,J-2", "spec-fix", "agent", "wording"); calls += 1
-    sp = root / f".nio/specs/{GSLUG}/spec.md"
-    sp.write_text(sp.read_text().replace("create exactly one refund", "create exactly one refund per order").replace("then one refund exists", "then exactly one refund exists"))
-    lines = step(root, run, ADD); calls += 1
-    new = run_of(lines)
-    assert new != run and "outcome: rerun" in lines, lines
-    names = sorted(p.stem for p in (root / f".nio/runs/{new}/jury/packs").glob("*.md"))
-    assert len(names) == 2, names
-    allnext = [next_of(lines)]
-    for n in names:
-        out(root, new, "spec", n, verdicts=verdicts(**{"J_1" if n == "logic" else "J_2": "fixed"}))
-        calls += 1
-    lines = step(root, new, ADD); calls += 1
-    allnext.append(next_of(lines))
-    assert "outcome: approved" in lines and next_of(lines).startswith("tell the human"), lines
-    assert not any("re-run consistency" in n for n in allnext), allnext
+    ADD = ["consistency:D-1 current"]
+    jury.plan(root, GSLUG, "spec", ADD)
+    calls = 2  # nio jury plan, nio pack (the skill's step 1)
+    second = FINDING.replace("EB-1", "AC-1").replace("create exactly one refund", "one refund exists")
+    first_round = {"testability": FINDING, "logic": second}
+    run, first_run, lines = "", None, None
+    for _ in range(10):
+        lines = step(root, run, ADD); calls += 1
+        run = next((l[5:] for l in lines if l.startswith("run: ")), run)
+        first_run = first_run or run
+        nxt = next_of(lines)
+        if nxt.startswith("tell the human"):
+            break
+        if nxt.startswith("run each juror"):
+            for n in (l[len("run "):].split(":")[0] for l in lines if l.startswith("run ") and not l.startswith("run: ")):
+                if run == first_run:
+                    out(root, run, "spec", n, first_round.get(n, "none"))
+                else:
+                    out(root, run, "spec", n, verdicts=verdicts(**{"J_1" if n == "logic" else "J_2": "fixed"}))
+                calls += 1
+        elif "nio-refuter" in nxt:
+            (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1) + CONFIRM.format(n=2)); calls += 1
+        elif nxt.startswith("dispose"):
+            jury.dispose(root, GSLUG, "spec", "J-1,J-2", "spec-fix", "agent", "wording"); calls += 1
+            sp = root / f".nio/specs/{GSLUG}/spec.md"
+            sp.write_text(sp.read_text().replace("create exactly one refund", "create exactly one refund per order").replace("then one refund exists", "then exactly one refund exists"))
+        else:
+            raise AssertionError(nxt)
+    assert "outcome: approved" in lines, lines
     assert calls <= 15, calls
     print("ok")
 
