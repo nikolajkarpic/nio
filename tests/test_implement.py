@@ -581,8 +581,8 @@ def test_ac46_wrong_branch():
 
 
 def nio(root, *args):
-    r = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", *args], cwd=root, capture_output=True, text=True)
-    return r.returncode, r.stdout + r.stderr
+    code, out, err = test_flow.run_main(root, *args)
+    return code, out + err
 
 
 def test_ac40_legacy_list_without_mode():
@@ -1500,6 +1500,79 @@ def test_memory_records_are_the_humans():
     assert code == 0 and "done: T-1" in out, out
     assert rel not in git(root, "show", "--name-only", "--format=", "HEAD").split()
     assert git(root, "status", "--porcelain", "--", rel).startswith("??")
+    print("ok")
+
+
+def test_closing_review_records_its_suite():
+    """TC-20: only the review of the task that closes its epic carries the suite command and exit code it ran."""
+    root = impl(tasks=TWO)
+    for tid in ("T-1", "T-2"):
+        assert flow(root, "claim", S)[0] == 0
+        write_test(root)
+        code_with(root)
+        code, out = flow(root, "green", S, tid, "--run", RUN)
+        assert code == 0 and "review: passed" in out, out
+    reviews = [x for x in lines(root) if x["kind"] == "review"]
+    assert len(reviews) == 2 and "suite" not in reviews[0]["evidence"], reviews
+    assert reviews[1]["evidence"].get("suite") == {"command": SUITE, "code": 0}, reviews[1]
+    print("ok")
+
+REPO_SUITE = json.loads((Path(__file__).parent.parent / ".nio/config.json").read_text())["tests"]["suite"]
+
+
+def suite_dir(files):
+    folder = Path(tempfile.mkdtemp())
+    (folder / "tests").mkdir()
+    for name, body in files.items():
+        (folder / "tests" / name).write_text(body)
+    return folder
+
+
+def run_suite(folder):
+    t = time.time()
+    p = subprocess.run(["sh", "-c", REPO_SUITE], cwd=folder, capture_output=True, text=True)
+    return p.returncode, p.stdout + p.stderr, time.time() - t
+
+
+def test_parallel_suite_fails_on_any_file():
+    files = {"test_a.py": "import os, signal\nos.kill(os.getpid(), signal.SIGKILL)\n",
+             "test_b.py": 'assert 1 == 2, "B FAILED"\n',
+             "test_c.py": 'raise SystemExit("D FAILED")\n', "test_z.py": 'print("Z RAN")\n'}
+    for n in "defghi":
+        files[f"test_{n}.py"] = f'import time; time.sleep(1); print("{n.upper()} RAN")\n'
+    code, out, _ = run_suite(suite_dir(files))
+    assert code != 0, out
+    for want in ("B FAILED", "D FAILED", "D RAN", "E RAN", "F RAN", "G RAN", "H RAN", "I RAN", "Z RAN"):
+        assert want in out, (want, out)
+    print("ok")
+
+
+def test_parallel_suite_takes_about_its_slowest_file():
+    folder = suite_dir({f"test_{i}.py": 'import time; time.sleep(4); print("ok")\n' for i in range(1, 9)})
+    t = time.time()
+    subprocess.run(["uv", "run", "python", "tests/test_1.py"], cwd=folder, capture_output=True, check=True)
+    one = time.time() - t
+    code, out, took = run_suite(folder)
+    assert code == 0, out
+    assert took <= 1.5 * one, (took, one)
+    print("ok")
+
+
+def test_parallel_suite_reads_as_unknown_runner():
+    folder = suite_dir({"test_ok.py": 'print("ok")\n', "test_bad.py": 'assert False, "BAD"\n'})
+    assert implement.runner(REPO_SUITE) is None
+    assert implement.runner('for f in tests/test_*.py; do uv run python "$f" || exit 1; done') is None
+    got = implement.suite(folder, {"tests": {"suite": REPO_SUITE}})
+    assert got["code"] != 0 and got["runner"] is None and got["failing"] is None, got
+    assert got["broken"] is False and "BAD" in got["output"], got
+    print("ok")
+
+
+def test_parallel_suite_fails_when_only_the_last_file_fails():
+    files = {f"test_{i}.py": 'print("ok")\n' for i in range(1, 8)}
+    files["test_z.py"] = 'assert False, "LAST"\n'
+    code, out, _ = run_suite(suite_dir(files))
+    assert code != 0 and "LAST" in out, (code, out)
     print("ok")
 
 

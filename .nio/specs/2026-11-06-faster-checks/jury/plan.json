@@ -1,0 +1,401 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-06-faster-checks",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "architecture-fit",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261106-ovwe/plan-architecture-fit.md": "843db363f5795bb9740d8905c6c6f676419d88f9969bcc88386d5d78b59ddbac",
+    "R-261106-ovwe/plan-test-proof.md": "0f50300fd449abed32e8e51f77fcc92daf6ba4ba1afe8cbdde40ca8b559478fa",
+    "R-261106-ovwe/plan-refuter.md": "c9b98c3e0b998c4f60e58e3d65434ee714e792c2de92d0aebcd4128855fde03e",
+    "R-261106-qx2s/plan-architecture-fit.md": "b9626eda750907f8be076f3160f2638540fa493bc35f22d4416f049816b01720",
+    "R-261106-qx2s/plan-test-proof.md": "88557f70855b3b76e49c80fef5f066f36648a93cffe5f442ad7d261be77da1ae"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a37bfdb9285509eb0cbcde38126ece6989564576",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a37bfdb9285509eb0cbcde38126ece6989564576",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "CT-5's \"commit subject is T-n\" condition never fails, so TC-10 and TC-18 expect behaviour CT-5 doesn't have",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the commit's subject is `T-n: <title>`",
+        "and a variant where a commit `fix up` (no `T-n:` subject) follows `T-2: Two`",
+        "The commits named `T-n: ...` for a task of the epic, newest first.",
+        "commit, base = commits[0], parent_of(root, commits[-1])"
+      ],
+      "fix": "drop the subject condition from CT-5 and say the commit is `commits_of(...)[0]`, a task commit by construction. Remove TC-10's `fix up` variant, or have CT-5 compare against HEAD if a later non-task commit should stop reuse. Make TC-18's `T-3` a task of E-1 so the test really covers \"another commit\".",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`collect` always picks its commit from `evidence.commits_of`, which keeps only `T-n:` commits of the epic's tasks. So the commit `reused_suite` gets always has a `T-n:` subject. In TC-10's `fix up` variant, evidence still checks out `T-2: Two`, the history there still ends with T-2's passing review, and CT-5 reuses it. TC-10 asserts \"no `reused` key\". TC-18 has the same problem when `T-3: Three` isn't a task of E-1: `commits_of` skips it and CT-5 reuses T-2's review. CT-5's guard against \"another commit\" really comes from `commits_of`, not from the subject check.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`collect` takes `commit = commits_of(...)[0]`, which skips non-`T-n` subjects. With a `fix up` commit on top, evidence still runs at the `T-2: Two` commit, whose subject and history meet every CT-5 condition. A faithful CT-5 implementation therefore reuses, and TC-10 fails. To make it pass, a builder would add an undeclared HEAD check. TC-18 has the same trap: unless `T-3: Three` is added to tasks.md as a done E-1 task, `commits_of` ignores it, T-2's review is reused, and the test fails for fixture reasons rather than catching the \"older review\" bug it names.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`commits_of` (evidence.py:138-152) keeps only `T-n:` commits of the epic's tasks, and `collect` takes `commits[0]`. The subject condition in CT-5 therefore always holds. In TC-10's `fix up` variant evidence still picks `T-2: Two` and CT-5 reuses its review, so the \"no `reused` key\" assertion contradicts CT-5. TC-18's `T-3: Three` is not a task in tasks.md, so `commits_of` skips it and T-2's review is reused.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-5: the commit is commits_of(...)[0], a task commit by construction; dropped TC-10's fix-up variant; TC-18's T-3 is a task of E-1",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "US-3 is built before the CT-4 field it relies on",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "US-3",
+        "US-5",
+        "CT-4",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "### US-3 Jury evidence reuses suite results",
+        "- Delivers: CT-4",
+        "`suite.command` equal to `tests.suite` and `suite.code` 0",
+        "run evidence at a commit whose epic-close review ran the suite on a clean tree"
+      ],
+      "fix": "move CT-4 and TC-20 into US-3 (or put US-5 before US-3). Leave US-5 with TC-16 and QS-style proof of the fix-check round.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "CT-5, delivered by US-3, reuses a suite only when the review line holds `suite.command` and `suite.code`. Today `implement.review` writes no `suite` key; CT-4 adds it, and CT-4 comes later in US-5. When US-3 is done, its own independent test can't be shown in a real flow: no review has a `suite` key yet, so nothing is ever reused. Only TC-9's hand-written history line passes. US-5 then delivers only CT-4, while its own requirement FR-13 is delivered by CT-5 in US-3.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "US-3 delivers CT-5, which reads `suite.command` and `suite.code` from the review line. `implement.review` writes no `suite` key today, and CT-4, which adds it, is in US-5, later in the build order. US-3 also lists TC-9 as covering CT-4 (tests.md) although it does not deliver CT-4. Only TC-9's hand-written history makes the US-3 tests pass.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "Build order: US-5 delivers CT-4 (TC-20) before US-3 delivers CT-5 (TC-16 moved to US-3)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "Running test_flow's CLI calls in-process can import fastembed, breaking test_nfr2_offline's check",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-2",
+        "NFR-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "assert \"fastembed\" not in sys.modules",
+        "`tests/test_flow.py:cli` and `tests/test_implement.py:nio` (existing) call it instead of `subprocess.run`",
+        "with the CLI in-process, its 145 loads were the largest remaining cost of test_implement.py (RF-11)"
+      ],
+      "fix": "in CT-1, either keep `sys.modules` clean (snapshot and restore which `fastembed` modules are loaded, in the `finally`), or change `test_nfr2_offline` to check in a fresh subprocess that the commands don't import fastembed. Add a TC for it.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The plan says the CLI loads the embedding model on many commands. Once `cli` calls `main()` in the test process, any earlier test_flow test whose CLI command embeds leaves `fastembed` in the shared `sys.modules`. `test_flow.py` runs every `test_*` in one process (`for name, test in list(globals().items())`), so `test_nfr2_offline` can then fail depending on test order. Until now that check only held because every `cli` call ran in its own process. TC-4 reads only the test's own source, so it would not catch this.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "`index.embed` imports fastembed lazily (index.py:48), and only `query`, `index` and `pack` reach it (query.py, cli.py:343). The `cli` helper in test_flow.py only runs `nio flow ...`, and flow commands never call `embed`. `test_nfr2_offline` runs in the test_flow process, and the `nio(...)` helper CT-1 doesn't convert stays a subprocess. So going in-process cannot put fastembed into that process's `sys.modules`.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "CT-1 leaves out test_flow.py's own `nio` subprocess helper",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-1",
+        "FR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "def nio(root, *args):",
+        "`tests/test_flow.py:cli` and `tests/test_implement.py:nio` (existing) call it instead of `subprocess.run`"
+      ],
+      "fix": "list `tests/test_flow.py:nio` among CT-1's callers; it can become `return run_main(root, *args)`. Or say why it stays a subprocess (FR-2).",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`tests/test_flow.py` has a second CLI helper, `nio` at line 1517. It runs `subprocess.run([sys.executable, \"-c\", \"from nio.cli import main; main()\", *args], ...)` and already returns `(code, stdout, stderr)`, the exact shape of `run_main`. CT-1 doesn't mention it, so it keeps starting a process for each call while the two helpers it lists change.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1 says why tests/test_flow.py:nio stays a subprocess (keeps fastembed out of test_flow's process)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "TC-10's `fix up` variant demands what CT-5 doesn't do, since evidence never looks past the last T-n commit",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-10",
+        "TC-18",
+        "AC-10",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and a variant where a commit `fix up` (no `T-n:` subject) follows `T-2: Two`",
+        "when all of these hold: the commit's subject is `T-n: <title>`",
+        "The commits named `T-n: ...` for a task of the epic, newest first."
+      ],
+      "fix": "drop the `fix up` variant, or state in CT-5 and FR-8 that a non-task commit after the epic's last one blocks reuse. In TC-18's setup, say that T-3 is a task of E-1 in tasks.md with a `task_done` line and no review.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`collect` takes `commit = commits_of(...)[0]`, which skips non-`T-n` subjects. With a `fix up` commit on top, evidence still runs at the `T-2: Two` commit, whose subject and history meet every CT-5 condition. A faithful CT-5 implementation therefore reuses, and TC-10 fails. To make it pass, a builder would add an undeclared HEAD check. TC-18 has the same trap: unless `T-3: Three` is added to tasks.md as a done E-1 task, `commits_of` ignores it, T-2's review is reused, and the test fails for fixture reasons rather than catching the \"older review\" bug it names.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "TC-6 can't see whether a signal-killed file stops xargs, because all its files start in one batch",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-6",
+        "TC-17",
+        "AC-6",
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Setup: `suite_dir` with `test_a.py` printing `A RAN`; `test_b.py` `assert 1 == 2, \"B FAILED\"`; `test_c.py` killing itself with `os.kill(os.getpid(), signal.SIGKILL)`; `test_d.py` `raise SystemExit(\"D FAILED\")`; `test_z.py` printing `Z RAN`.",
+        "`|| exit 1` turns a file killed by a signal into exit 1, so `xargs` goes on with the other files (research RF-12)."
+      ],
+      "fix": "give TC-6 more than eight files, with the killed and failing files first in sort order and a passing file ninth or later. Assert that the later file's marker is in the output.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "with `xargs -P8` and only 5 files (8 in TC-17), every file is launched before any fails. If `|| exit 1` is dropped, or a file's exit maps to 255, xargs stops launching new files, but no file is left to launch. `Z RAN` still appears, and the exit is still non-zero. The FR-3 \"each file to its end even when another failed\" bug passes both tests.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-6 has 5 files and `xargs -P8` starts all of them at once, so no file is left to launch after the killed or failing one. `Z RAN` appears and the exit is non-zero even if `|| exit 1` is dropped. The FR-3/AC-6 clause \"after running every other file\" is not tested.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-6: ten files, the killed and failing ones first, a tenth that starts only once a slot frees",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "TC-5 is a wall-clock test inside the parallel suite, which the plan itself says would fail under load",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "TC-5",
+        "AC-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Assert: the suite exits 0, and its wall-clock is at most 1.5 times the single file's.",
+        "a timing test inside the suite would fail under load [agent]"
+      ],
+      "fix": "widen the margin, for example sleeps of 5 s and a bound of `<= single + 3 s`. Or gate TC-5 behind an env var and leave the ratio to QS-1, as NFR-1 already is.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-5 lives in tests/test_implement.py, which the new suite runs alongside seven other files. TC-5 then starts eight concurrent `uv run` processes while those run. The 1.5x bound (about 3 s against about 2 s plus uv startup) can trip from contention alone, so every epic-close review and every evidence run can fail without any real regression.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-5 is in tests/test_implement.py, which the new suite runs, and it asserts a 1.5x wall-clock bound on eight concurrent `uv run` processes. The plan's own decision says \"a timing test inside the suite would fail under load\". Under contention from the other files it can fail with no regression.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-5: 4 s sleeps, so queueing shows as 8 s or more against a 1.5x bound",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "TC-3's flow.lock assertion can never fail",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-3",
+        "AC-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then with `flow.next_step` replaced by a function that sets `os.environ[\"NIO_LEAK\"] = \"1\"`, calls `os.chdir(\"/\")` and raises `RuntimeError(\"boom\")`",
+        "extra = [\"--by\", BY] if by and args and args[0] in (\"start\", \"done\", \"park\", \"abandon\", \"seen\") else []"
+      ],
+      "fix": "make the raising call a writing command that takes the lock and fails inside it, for example `run_main(root, \"flow\", \"park\", S, \"x\", \"--by\", BY)` with `flow.record` raising. Then assert that no `flow.lock` remains and that a second `park` succeeds.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "all three calls are `flow next` without `--by`, so no lock is taken, and the raising call is a stub that never locks. \"no `flow.lock` file exists\" holds no matter what `run_main` does, so the AC-3 clause \"no flow lock it took is left behind\" is not tested.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-3: the failing call is a park that takes the lock and fails inside it; asserts no lock and a second park succeeds",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "TC-20's \"doesn't close its epic\" half has no such task in its setup",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-20",
+        "AC-9",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Setup: `impl()` with one epic of one task in direct mode",
+        "a review of a task that doesn't close its epic has no `suite` key"
+      ],
+      "fix": "use an epic of two tasks and assert that the first task's review line has no `suite` key.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "with one task, every review closes the epic, so the second assertion has nothing to check. A `review` that always writes `suite: {\"command\": ..., \"code\": null}` breaks CT-4's \"the key is absent otherwise\" and passes.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-20: two tasks; the first review has no suite key",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "5f44f51627c647e20782a35e97e6cd113cb44a35",
+    "2": "a37bfdb9285509eb0cbcde38126ece6989564576"
+  }
+}

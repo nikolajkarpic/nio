@@ -82,9 +82,9 @@ def blocks(lines):
     for line in lines:
         if line.startswith("### "):
             out.append((line[4:].strip(), {}))
-        elif out and (m := re.match(r"^- ([a-z-]+):\s*(.*)$", line.strip())):
+        elif out and (m := re.match(r"^- ([A-Za-z-]+):\s*(.*)$", line.strip())):
             # a guidance comment after two spaces, as in the template; a value's own "#22" stays
-            out[-1][1].setdefault(m[1], []).append(re.sub(r"\s{2,}#\s.*$", "", m[2]).strip())
+            out[-1][1].setdefault(m[1].lower(), []).append(re.sub(r"\s{2,}#\s.*$", "", m[2]).strip())
     return out
 
 
@@ -139,7 +139,9 @@ def parse_lens(path, gate, slug):
         if one["evidence"] == "inferred" and one["severity"] == "blocker":
             one["severity"] = "major"  # an inferred finding can't block on its own
         findings.append(one)
-    if not findings and secs.get("Findings", "").strip().lower() != "none" and not errs:
+    if findings and re.match(r"none\W*$", (secs.get("Findings", "").strip().splitlines() or [""])[0].strip(), re.I):
+        errs.append("`## Findings` holds none and findings")
+    if not findings and secs.get("Findings", "").strip().rstrip(".!").lower() != "none" and not errs:
         errs.append("`## Findings` must hold findings or the single line `none`")
     if len(findings) > MAX_FINDINGS:
         errs.append(f"{len(findings)} findings; a lens returns at most {MAX_FINDINGS}")
