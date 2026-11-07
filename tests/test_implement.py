@@ -311,15 +311,15 @@ def commit_all(root, message, date=None):
                    capture_output=True, env=env)
 
 
-def impl(modes=None, cfg=None, tasks=None, commit=True, date=None, alone=False):
+def impl(modes=None, cfg=None, tasks=None, commit=True, date=None, alone=False, route="full"):
     """A repo at implementing: the refunds effort, TC-1 naming `tests/test_refund.py:test_refund` before the plan is
     approved, `tasks` (else the refunds list with `modes`) approved with its commit (`commit=False`: committed as `wip`;
-    `date`: the commit's date), `tests.suite` set (merged with `cfg`; a None value removes the key), one passing test
+    `date`: the commit's date; `route`: the spec's route), `tests.suite` set (merged with `cfg`; a None value removes the key), one passing test
     so the baseline runs clean, `__pycache__/` ignored as a project would, and a `start` line."""
     tasks = tasks or with_modes(modes=modes)
     if alone:  # T-1 closes its epic, so its review runs the full suite
         tasks = tasks.replace("### T-2", "## E-9 The rest (US-2)\n\n### T-2", 1)
-    root = test_flow.effort("plan_jury")
+    root = test_flow.effort("plan_jury", route=route)
     folder = root / ".nio/specs" / S
     tp = folder / "tests.md"
     tp.write_text(tp.read_text().replace("tests/test_refunds.py:test_full_refund", "tests/test_refund.py:test_refund"))
@@ -1901,6 +1901,18 @@ def test_ac14_review_strips_nio_perf_misuse():
     finally:
         del os.environ["NIO_PERF"]
     assert not state(root)["attempts"].get("T-1"), state(root)["attempts"]
+    print("ok")
+
+
+def test_lite_red_refuses_passing_test():
+    """TC-4 (AC-4): on a lite effort, red refuses a test that already passes and T-1 stays claimed."""
+    root = impl(route="lite")  # a swapped-in lite spec after the approvals would rewind the effort to drafting
+    assert flow(root, "claim", S)[0] == 0
+    (root / TEST).write_text("import unittest\n\n\nclass T(unittest.TestCase):\n"
+                             "    def test_refund(self):\n        self.assertTrue(True)\n")
+    code, out = flow(root, "red", S, "T-1", "--run", RUN)
+    assert code != 0 and "passes before the code exists" in out, out
+    assert st(root) == "claimed" and lines(root)[-1]["kind"] != "red", lines(root)[-1]
     print("ok")
 
 
