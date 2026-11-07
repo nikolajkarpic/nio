@@ -16,3 +16,38 @@ Files: `src/nio/implement.py`, `tests/test_implement.py`
 - Tier: strong: one heuristic branch in wrong_reason with clear test cases
 - Effort: low
 - Mode: single: one small function and its tests, one worker proves red then green
+
+#### Fixes
+
+### T-2 Fix: AC-1 has no passing evidence
+- From: J-2 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `tests/test_implement.py`
+- Serves: AC-1
+- Test: new: AC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-3 Fix: AC-2 has no passing evidence
+- From: J-3 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `tests/test_implement.py`
+- Serves: AC-2
+- Test: new: AC-2
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-4 Fix: AC-3 has no passing evidence
+- From: J-4 (implementation-E-1, round 1)
+- Files: `src/nio/implement.py`, `tests/test_implement.py`
+- Serves: AC-3
+- Test: new: AC-3
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
