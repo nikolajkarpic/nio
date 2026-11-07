@@ -2548,6 +2548,7 @@ def test_lite_skill_texts():
     # CT-7: a bug fix's tasks stage starts at the spec gate, with no spec jury.
     desc = re.search(r"^description: .*$", skill, re.M).group(0)
     assert "nio check spec <slug> --gate" in desc and "no spec jury" in desc, "skill description"
+    assert "full flow" in desc, "skill description: full flow offer"
     inp = re.search(r"^- \*\*Input:\*\*.*?(?=^- \*\*Outputs)", skill, re.S | re.M).group(0)
     assert "nio check spec <slug> --gate" in inp and "no spec jury" in inp, "skill input"
     assert "(no `nio`)" in skill and "lite or bug-fix spec, or no" not in skill, "skill fallback"
