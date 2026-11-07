@@ -11,6 +11,7 @@ from pathlib import Path
 from test_jury import PSLUG, plan_repo
 
 from nio import agents, jury, plan
+import selfcheck
 
 E2E = os.environ.get("NIO_E2E") == "1"
 TOOLS = {"read": "Read Grep Glob"}
@@ -203,6 +204,4 @@ def test_ac50_it_raises_a_finding_naming_the_existing():
 
 
 if __name__ == "__main__":
-    for name, test in list(globals().items()):
-        if re.match(r"test_ac\d+", name):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if re.match(r"test_ac\d+", n) and callable(f)])

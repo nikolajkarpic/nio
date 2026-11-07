@@ -8,6 +8,7 @@ import tempfile
 import time
 from pathlib import Path
 
+import selfcheck
 from test_tasks import git
 
 
@@ -3391,11 +3392,61 @@ def test_covered_glob_star_stays_in_one_path_segment():
     print("ok")
 
 
+SELF_CHECK_TESTS_MD = MISUSE.replace("## Misuse tests\n", "## Tests\n").split("###")[0] + "".join(
+    f"### TC-{i} x (AC-1; unit) [agent]\n- File: `{f}` (new)\n- Covers: CT-1\n- Setup: x\n- Action: y\n- Assert: z\n\n"
+    for i, f in enumerate(["tests/test_a.py:test_one", "tests/test_a.py:test_two", "tests/test_b.py:test_one"], 2))
+
+
+def self_check_gate(a_body):
+    def script(body):
+        return f"import selfcheck\n{body}\nif __name__ == '__main__':\n    selfcheck.main([f for n, f in list(globals().items()) if n.startswith('test_')])\n"
+    root, _ = gate_repo(suite="python3 tests/test_a.py; a=$?; python3 tests/test_b.py && exit $a", files={
+        "tests/selfcheck.py": (Path(__file__).parent / "selfcheck.py").read_text(),
+        "tests/test_a.py": script(a_body),
+        "tests/test_b.py": script("def test_one():\n    pass\n")})
+    (root / ".nio/specs/s/tests.md").write_text(SELF_CHECK_TESTS_MD)
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Tests")
+    return start(root)
+
+
+def result_of(results, file, name):
+    return next(t["result"] for t in results["tests"] if t["file"] == file and t["name"].endswith(name))
+
+
+def test_ac9_evidence_reads_self_check_lines():
+    results = self_check_gate("def test_one():\n    raise AssertionError('x')\n\n\ndef test_two():\n    pass\n")
+    assert result_of(results, "tests/test_a.py", "test_one") == "failed", results["tests"]
+    assert result_of(results, "tests/test_a.py", "test_two") == "passed", results["tests"]
+    assert result_of(results, "tests/test_b.py", "test_one") == "passed", results["tests"]
+    print("ok")
+
+
+def test_ac10_crashed_file_is_failed():
+    results = self_check_gate("raise RuntimeError('boom')\n\n\ndef test_one():\n    pass\n\n\ndef test_two():\n    pass\n")
+    assert result_of(results, "tests/test_a.py", "test_one") == "failed", results["tests"]
+    assert result_of(results, "tests/test_a.py", "test_two") == "failed", results["tests"]
+    assert result_of(results, "tests/test_b.py", "test_one") == "passed", results["tests"]
+    print("ok")
+
+
+def test_pytest_entry_matches_file_and_name():
+    body = "def test_one():\n    assert 1 + 1 == 2\n"
+    root, _ = gate_repo(suite="python3 pytest", files={
+        "pytest": "import sys\nif sys.argv[1:]:\n    sys.exit(0)\nprint('FAILED tests/test_a.py::test_one - x')\nprint('1 failed')\nsys.exit(1)\n",
+        "tests/test_a.py": body, "tests/test_b.py": body})
+    (root / ".nio/specs/s/tests.md").write_text(SELF_CHECK_TESTS_MD)
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: Tests")
+    results = start(root)
+    assert result_of(results, "tests/test_a.py", "test_one") == "failed", results["tests"]
+    assert result_of(results, "tests/test_b.py", "test_one") != "failed", results["tests"]
+    print("ok")
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:
         demo(sys.argv[sys.argv.index("--demo") + 1])
         sys.exit()
-    for name, test in list(globals().items()):
-        if name.startswith("test_") and callable(test):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

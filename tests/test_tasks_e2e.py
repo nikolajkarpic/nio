@@ -11,6 +11,7 @@ from test_lenses import e2e
 from test_tasks import TASKS
 
 from nio import agents, tasks
+import selfcheck
 
 TOOLS = "Read Grep Glob Edit Write Bash"
 US2_SPEC = """
@@ -123,6 +124,4 @@ def test_ac25_every_task_has_a_tier_with_a_reason_and():
 
 
 if __name__ == "__main__":
-    for name, test in list(globals().items()):
-        if name.startswith("test_ac"):
-            test()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_ac") and callable(f)])

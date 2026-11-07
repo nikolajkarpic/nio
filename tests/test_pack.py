@@ -7,6 +7,7 @@ from test_index import VERDICT, flag
 from test_records import GOOD_BODY, commit, fill, repo
 
 from nio import index, pack, records
+import selfcheck
 
 VERBOSE = "-v" in sys.argv
 RULE = """## Decision
@@ -201,6 +202,4 @@ def test_worker_pack_leaves_out_the_closing_instructions():
 
 
 if __name__ == "__main__":
-    for name, fn in list(globals().items()):
-        if name.startswith("test_"):
-            fn()
+    selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

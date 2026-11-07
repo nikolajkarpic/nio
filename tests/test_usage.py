@@ -9,6 +9,7 @@ from pathlib import Path
 from test_records import repo
 
 from nio import usage
+import selfcheck
 
 SLUG = "2026-10-30-demo"
 T0 = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
@@ -136,9 +137,4 @@ def test_install_replaces_and_keeps():
 
 
 if __name__ == "__main__":
-    test_event_never_holds_a_prompt_or_a_command()
-    test_a_bad_payload_never_raises()
-    test_link_reads_the_run()
-    test_report()
-    test_install_replaces_and_keeps()
-    print("ok")
+    selfcheck.main([test_event_never_holds_a_prompt_or_a_command, test_a_bad_payload_never_raises, test_link_reads_the_run, test_report, test_install_replaces_and_keeps])
