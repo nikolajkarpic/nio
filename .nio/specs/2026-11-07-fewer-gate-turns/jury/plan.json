@@ -1,7 +1,7 @@
 {
   "gate": "plan",
   "subject": "2026-11-07-fewer-gate-turns",
-  "round": 5,
+  "round": 6,
   "tier": "medium",
   "expect": [
     "architecture-fit",
@@ -18,30 +18,32 @@
     "R-261107-56pm/plan-refuter.md": "eb63905987fd43158b788b09c7eb27bf092280e4ba523fb9c83f6c66f5070bd3",
     "R-261107-56pm/plan-test-proof-2.md": "44138a002d9432f578da58b6c2e6c4e0a29160b2c2fb1a7a5a6f59f702f742e7",
     "R-261107-56pm/plan-test-proof-3.md": "d65947254e8cd1b4a9ce792e1d7a9bd413d578d27e27462182841386db11a391",
-    "R-261107-awxy/plan-test-proof.md": "aa743bb68070c3edaec4d1c7df02d2c982c98fe041ba4daf4a2ba7a653a1ed46"
+    "R-261107-awxy/plan-test-proof.md": "aa743bb68070c3edaec4d1c7df02d2c982c98fe041ba4daf4a2ba7a653a1ed46",
+    "R-261107-vs2v/plan-architecture-fit.md": "dd1fe75a73d2014c64ee6ef702b9c6f2412d85cf71a76736e43e9d91e65c426c",
+    "R-261107-vs2v/plan-test-proof.md": "9b9c957e7c3c0599689c501fcb3df4a703ebd70c235cb2ed2a44c0cf9c8ac6d5"
   },
   "jurors": {
     "plan-architecture-fit": {
       "attempts": 1,
       "lens": "architecture-fit",
-      "by": "juror / claude-code / claude-opus-5-5",
+      "by": "juror / claude-code / opus",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "5dd7835b8e73b29eb604a3e6528e7d7eadce9243",
-      "judged": 3
+      "round": 6,
+      "version": "11ee9cf845cbadf723bfcca0ed2467c8e4c82107",
+      "judged": 6
     },
     "plan-test-proof": {
       "attempts": 1,
       "lens": "test-proof",
-      "by": "juror / claude-code / claude-opus-5-5",
+      "by": "juror / claude-code / opus-5.5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 5,
-      "version": "e473644366e46f8b289fa138d413b0ca0bacf150",
-      "judged": 5
+      "round": 6,
+      "version": "11ee9cf845cbadf723bfcca0ed2467c8e4c82107",
+      "judged": 6
     },
     "plan-test-proof-2": {
       "attempts": 1,
@@ -487,6 +489,10 @@
     [
       5,
       "approved"
+    ],
+    [
+      6,
+      "approved"
     ]
   ],
   "versions": {
@@ -494,6 +500,7 @@
     "2": "8afe64bae8e22fed2d75aa72f34dab0dfc86bce2",
     "3": "5dd7835b8e73b29eb604a3e6528e7d7eadce9243",
     "4": "c836dc4af111ae5b171cdced0ee1f0ff227dd701",
-    "5": "e473644366e46f8b289fa138d413b0ca0bacf150"
+    "5": "e473644366e46f8b289fa138d413b0ca0bacf150",
+    "6": "11ee9cf845cbadf723bfcca0ed2467c8e4c82107"
   }
 }
