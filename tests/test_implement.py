@@ -1690,6 +1690,21 @@ def test_ac4_red_takes_a_scoped_command():
     print("ok")
 
 
+def test_ac8_red_prints_its_tail():
+    root = claimed()
+    body = "\n".join(f"line {i}" for i in range(1, 31)) + f"\nFAIL {TEST}::test_new\nran 1 tests, 1 failed"
+    script(root, body, 1)
+    code, out = flow(root, "red", S, "T-1", "--run", SCOPED)
+    assert code == 0, out
+    assert "output:" in out, out
+    tail = out.split("output:", 1)[1].splitlines()[1:]
+    want = [f"  line {i}" for i in range(13, 31)] + [f"  FAIL {TEST}::test_new", "  ran 1 tests, 1 failed"]
+    assert tail == want, tail
+    skill = (Path(__file__).resolve().parent.parent / "skills/implement/SKILL.md").read_text().splitlines()
+    assert any("output:" in l and "code-phase worker" in l for l in skill)
+    print("ok")
+
+
 def test_ac5_red_refuses_zero_tests():
     for exit_code in (1, 0):
         root = claimed()

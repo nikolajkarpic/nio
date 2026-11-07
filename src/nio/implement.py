@@ -548,7 +548,8 @@ def red(root, slug, tid, command, by):
         frozen = {p: digest(tree, p) for p in paths}
         line = entry("red", tid, command=command, output=flow.sha(out.encode()), runner=name or "unknown", frozen=frozen)
         flow.write(root, slug, [line], state, w, "implementing")
-    return 0, [f"red: {tid} accepted", "frozen:"] + [f"  {p}" for p in frozen]
+    return 0, [f"red: {tid} accepted", "frozen:"] + [f"  {p}" for p in frozen] + \
+        ["output:"] + [f"  {l}" for l in out.splitlines()[-20:]]
 
 
 def closes(root, slug, task, lines):
