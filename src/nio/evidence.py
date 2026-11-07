@@ -422,16 +422,24 @@ def collect(root, slug, epic, run):
     # ponytail: a test is failed when a failing-test line of the runner's summary names it. On a failed suite any other is
     # run alone, since `-x`, a class setup error or a cut output hide it. A suite that crashed ran none, and a runner
     # without a reader gives "unknown" (exit code and output stay in `suite`)
-    name = implement.runner(t.get("suite") or "")
+    name = implement.runner(t.get("suite") or "", suite["output"])
+    sc = name == "self-check"
+    oks = re.findall(r"^ok (\S+)::(\S+)", suite["output"], re.M) if sc else []
     fail, _ = implement.SUMMARY.get(name, (None, None))
     failing = re.findall(fail, suite["output"], re.M) if fail else []
     crashed = bool(implement.wrong_reason(name, 0 if code_ok else 1, suite["output"])) or "\ntimed out after" in suite["output"] \
-        or (fail is not None and suite["result"] != "passed" and not failing and not re.search(implement.SUMMARY[name][1], suite["output"], re.M))
+        or (not sc and fail is not None and suite["result"] != "passed" and not failing and not re.search(implement.SUMMARY[name][1], suite["output"], re.M))
     defs = {}
     tests = []
     for file, tname in rest:
         short = tname.split(".")[-1]
         line = defs.setdefault(file, asserts_in(root, commit, file)).get(short, (0,))[0]
+        on = lambda x: "::" in x and file in x.split("::")[0] and x.split("::")[-1] == short
+        if sc and line:
+            result = ("failed" if any(on(x) for x in failing) else "passed" if any(on(f"{f}::{n}") for f, n in oks)
+                      else "didn't run" if code_ok else "failed")
+            tests.append({"name": tname, "file": file, "line": line, "result": result})
+            continue
         result = (("unknown" if code_ok else "failed") if not fail else "didn't run" if crashed or not line
                   else "failed" if any(re.search(rf"\b{re.escape(short)}\b", x) for x in failing)
                   else "passed" if code_ok else "alone")
