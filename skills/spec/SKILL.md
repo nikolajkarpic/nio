@@ -81,7 +81,7 @@ Stop after step 7. Don't answer the open points yourself and don't start the gri
 
 A bug-fix spec (route `lite`) escalates when the fix turns out bigger. Check these triggers (FR-8) once the spec is
 drafted, and again if the work later shows one:
-- files in more than one folder;
+- non-test files in more than one folder;
 - a new dependency;
 - a change to an interface used outside the bug's folder;
 - a change to stored data.

@@ -2545,6 +2545,12 @@ def test_lite_skill_texts():
     assert step1 and "nio check spec" in step1.group(0) and "--gate" in step1.group(0), "skill step 1"
     assert step3 and any("unchanged-behaviour" in ln and "Mode: direct" in ln
                          for ln in step3.group(0).splitlines()), "skill step 3"
+    # FR-8: the escalation trigger counts non-test files only.
+    spec_t = (root / "skills/spec/SKILL.md").read_text()
+    impl_t = (root / "skills/implement/SKILL.md").read_text()
+    assert "non-test files in more than one folder" in spec_t, "spec trigger"
+    assert "non-test files in more than one folder" in skill, "tasks description"
+    assert "non-test files sit in a second folder" in impl_t, "implement step 4"
     # CT-7: a bug fix's tasks stage starts at the spec gate, with no spec jury.
     desc = re.search(r"^description: .*$", skill, re.M).group(0)
     assert "nio check spec <slug> --gate" in desc and "no spec jury" in desc, "skill description"
