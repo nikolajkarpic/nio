@@ -1,7 +1,7 @@
 {
   "gate": "tasks",
   "subject": "2026-11-07-lite-path",
-  "round": 2,
+  "round": 3,
   "tier": "low",
   "expect": [
     "executability"
@@ -9,19 +9,20 @@
   "collected": {
     "R-261107-lcrp/tasks-executability.md": "5ab2e70f9d017d1289f980394acce34bcf60174c9aafe907e5fd0dd973d3449c",
     "R-261107-lcrp/tasks-refuter.md": "6f16a5f21eb1f9d49bb76539ef1a1686c5ea8b7abcda12342cc821d8c77b3146",
-    "R-261107-3ryr/tasks-executability.md": "56c918fb7e4f225fcf2e938b8e2d52b5b44c3fd25c2e5e5da78b2c5a8e1520fc"
+    "R-261107-3ryr/tasks-executability.md": "56c918fb7e4f225fcf2e938b8e2d52b5b44c3fd25c2e5e5da78b2c5a8e1520fc",
+    "R-261107-afa6/tasks-executability.md": "3cba2de1d0b6dd7f3bcf63d8688f0825b37552182b61314383abddcc44ef2055"
   },
   "jurors": {
     "tasks-executability": {
       "attempts": 1,
       "lens": "executability",
-      "by": "juror / claude-code / haiku-5.5",
-      "context": "sufficient",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "limited",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "6519ce77424055bf895ab32acc5fcc5078c08104",
-      "judged": 2
+      "round": 3,
+      "version": "2c9105f87b20da92d92a7d9e0ef3e412f00ff433",
+      "judged": 3
     }
   },
   "findings": [
@@ -146,14 +147,22 @@
     [
       2,
       "approved"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "680ccc33eb385e3dcb498cb3c1d23a7710729bf9",
-    "2": "6519ce77424055bf895ab32acc5fcc5078c08104"
+    "2": "6519ce77424055bf895ab32acc5fcc5078c08104",
+    "3": "2c9105f87b20da92d92a7d9e0ef3e412f00ff433"
   },
   "fixes": {
     "1": [],
-    "2": []
+    "2": [],
+    "3": [
+      "T-15"
+    ]
   }
 }

@@ -10,8 +10,8 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-4 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | AC-5 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | AC-4 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-2 | major | gap | AC-5 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-3 | major | inconsistency | FR-2, FR-15 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-4 | minor | gap | FR-3 | correctness | grounded | open |  | new, 0 |
 | J-5 | minor | inconsistency | FR-15 | consistency | grounded | open |  | new, 0 |
@@ -20,13 +20,13 @@ outcome: rejected
 - situation (cli): T-3 names src/nio/implement.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-13
+- disposition: accepted-risk by human: Delegated: implement.py and jury.py are reused unchanged on purpose (CT-10, CT-11 'runs unchanged'); the drafter listed them in Files: only because nio check tasks requires every delivered contract's file. Fix tasks T-13 and T-14 are pointless and retired.
 
 ### J-2 T-4: src/nio/jury.py isn't in the epic's diff
 - situation (cli): T-4 names src/nio/jury.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-14
+- disposition: accepted-risk by human: Delegated: implement.py and jury.py are reused unchanged on purpose (CT-10, CT-11 'runs unchanged'); the drafter listed them in Files: only because nio check tasks requires every delivered contract's file. Fix tasks T-13 and T-14 are pointless and retired.
 
 ### J-3 Re-running an earlier stage's done is no longer treated as passed when history lags the files
 - quote: "if at(stage) < at(here["stage"]) and (rec is None or at(stage) < at(rec) and at(rec) >= at(here["stage"])):"
