@@ -5,7 +5,7 @@ description: Take a settled NIO spec, or its plan, to a verdict. Independent len
 
 # @nio:jury
 
-Takes a spec that passes `nio check spec <slug> --gate` to a verdict: approved, rejected (fix and re-run) or the
+Takes a spec that passes the spec gate (the step checks it) to a verdict: approved, rejected (fix and re-run) or the
 human's call. The lenses are independent agents that judge the spec in a fresh context. You pick them, build their
 packs, save what they return, and drive `nio jury`, which grounds, merges, validates and composes. You never judge the
 spec yourself. The steps below are the spec gate's; the plan gate runs the same steps with the differences in
@@ -126,7 +126,7 @@ Run the steps above with `plan` in place of `spec` (`nio jury plan <slug> plan`,
   FRs contradict, an AC can't be met as written), never fill the gap in the plan. Propose it to the human as rooted in
   the spec, with a draft change request (`@nio:remember`, `against` the spec). Only once they confirm, dispose it:
   `nio jury dispose <slug> plan J-n spec-change --by human --note "<why>" --change C-<id>`. A second spec-rooted finding
-  joins the same open change request. The plan jury is then paused (`nio jury check <slug> plan` prints
+  joins the same open change request. The plan jury is then paused (`nio jury next <slug> plan` prints
   `state: waiting-on-spec`) until the spec jury re-approves the changed spec, or the human rejects the change request,
   which hands the finding back to them.
 - **With the human.** While the step prints `state: with-human`, it refuses a new round: show
@@ -161,15 +161,15 @@ Other outcomes:
 - **rejected:** the epic goes back to the implement stage. Its fix tasks are appended under `#### Fixes`; run
   `nio flow next <slug>` and show the human its `next:` line.
 - **waiting on a change request:** the epic waits. Show the human each change request and wait for their ruling on
-  each one before you check again.
+  each one before you call the step again.
 - **a noted major:** a major the jury raised after the first review is a note, not a blocker. Show it to the human, who
   decides whether it goes to a fix. Never fix it yourself.
 
 ## When to stop
 
 Stop when the outcome is `approved` and the human has been told, or when the outcome is `human` and the decision is
-theirs. Every ruling is recorded by `--record`, once per round. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the plan after the spec gate, the tasks after the plan gate, the implement stage after the tasks gate.
+theirs. The step records every ruling, once per round. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the plan after the spec gate, the tasks after the plan gate, the implement stage after the tasks gate.
 
 Only the human can close a gate the jury hasn't approved, for example when re-review rounds keep finding new edge
-cases: `nio jury check <slug> spec --record --human "<their reason>"` records outcome `human` with that reason. Offer it as an option saying what it costs (the record shows the gate closed by the human, not approved by the jury).
+cases (the one use of `nio jury check`): `nio jury check <slug> spec --record --human "<their reason>"` records outcome `human` with that reason. Offer it as an option saying what it costs (the record shows the gate closed by the human, not approved by the jury).
 Never use it on your own judgement, and accept the open findings as risk (`--by human`) first.
