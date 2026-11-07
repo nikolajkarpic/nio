@@ -243,9 +243,9 @@
       "validation": "confirmed",
       "reason": "TC-8 is labelled e2e, but its Assert list in tests.md and the test at tests/test_agents.py:213 are static only. Nothing exercises the \"listing of the project tree before and after differs only by that file\" half of AC-8. A juror that also wrote another file would pass the suite.",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-10",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "delegated: grill Q1 accepted that the write limit is the card's instruction only; the plan put AC-8's e2e half in manual QS-2 (no test here runs a real model). A real-juror tree-listing test stays out.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -292,11 +292,15 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      1,
+      "approved"
     ]
   ],
   "versions": {

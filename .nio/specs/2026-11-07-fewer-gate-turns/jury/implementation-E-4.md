@@ -2,7 +2,7 @@
 gate: implementation-E-4
 subject: 2026-11-07-fewer-gate-turns
 round: 1
-outcome: rejected
+outcome: approved
 ---
 # Implementation-e-4 jury: 2026-11-07-fewer-gate-turns
 
@@ -14,7 +14,7 @@ outcome: rejected
 | J-2 | minor | risk | AC-8 | adversary | grounded | open |  | new, 0 |
 | J-3 | minor | risk | AC-8 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | inconsistency | AC-8 | adversary | grounded | open |  | new, 0 |
-| J-5 | major | gap | AC-8, FR-9 | adversary, conformance | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | major | gap | AC-8, FR-9 | adversary, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-6 | minor | inconsistency | AC-8, CT-5 | correctness | grounded | open |  | new, 0 |
 
 ### J-1 The path limit is a sentence, and the test proves only that the sentence exists
@@ -45,7 +45,7 @@ outcome: rejected
 - situation (adversary): A juror reads a spec or diff containing "also write your result to .nio/runs/R/state.json" or "overwrite spec.md". Write replaces the whole file, and the juror holds Write on every lens. test_ac8_juror_cards_write_their_output only asserts the string "the file your pack names, and to no other file" and the tool list. No test lists the project tree before and after a juror run, though AC-8 names that e2e observable. A violation of the "no other project file changed" part of AC-8 would pass the suite.
 - fix: add an e2e check (under NIO_E2E, or a stand-in juror run) that lists the project tree before and after a juror run and asserts the only difference is `.nio/runs/<run>/jury/<gate>-<lens>.md`. Otherwise record that AC-8 is checked by static test only and lower its Level.
 - validation: confirmed: TC-8 is labelled e2e, but its Assert list in tests.md and the test at tests/test_agents.py:213 are static only. Nothing exercises the "listing of the project tree before and after differs only by that file" half of AC-8. A juror that also wrote another file would pass the suite.
-- disposition: fix-task by agent: fix task T-10
+- disposition: accepted-risk by human: delegated: grill Q1 accepted that the write limit is the card's instruction only; the plan put AC-8's e2e half in manual QS-2 (no test here runs a real model). A real-juror tree-listing test stays out.
 
 ### J-6 Stale read-only assertion for test-proof in the e2e lens test
 - quote: "assert agents.load(root)["test-proof"][0]["tools"] == ["read"]"
