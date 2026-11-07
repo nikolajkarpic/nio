@@ -971,7 +971,7 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         raise ValueError(f"{slug} is at {here['stage']}, not {stage}")
     # FR-47: the files may be past stages history hasn't recorded yet; `done` records those from where history stands.
     # A stage before both is already passed (FR-17).
-    if at(stage) < at(here["stage"]) and (rec is None or at(stage) < at(rec) and at(rec) >= at(here["stage"])):
+    if at(stage) < at(here["stage"]) and (rec is None or at(stage) < at(rec)):
         return 0, [f"{slug} is past {stage}; nothing to do"]
     if stage == "done":
         return 0, [f"{slug} is done; nothing to do"]
