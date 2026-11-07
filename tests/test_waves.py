@@ -495,6 +495,30 @@ def test_ac5b_shelve_keeps_bytes():
     print("ok")
 
 
+def test_shelve_refuses_when_diff_fails():
+    root, base = byte_repo({"win.txt": b"a\r\nb\r\n"})
+    for n, b in FILES.items():
+        (root / n).write_bytes(b)
+    real = records.git
+
+    def fake(r, *args, **kw):
+        if args[:1] == ("diff",):
+            return 128, b"", "fatal: boom"
+        return real(r, *args, **kw)
+    records.git = fake
+    try:
+        implement.shelve(root, "s", "R-1", "T-1")
+        raise AssertionError("shelve must raise")
+    except ValueError as e:
+        assert "boom" in str(e), e
+    finally:
+        records.git = real
+    for n, b in FILES.items():
+        assert (root / n).read_bytes() == b, n
+    assert not (root / ".nio/runs/R-1/T-1.patch").exists()
+    print("ok")
+
+
 def test_ac6b_lf_patch_unchanged():
     root, base = byte_repo({"a.txt": b"x\n"})
     tree = byte_tree(root, base)
