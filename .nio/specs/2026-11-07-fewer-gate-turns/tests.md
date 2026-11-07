@@ -40,7 +40,7 @@ Helpers used below:
 - Covers: CT-1
 - Setup: `gate_spec()`; `run = run_of(step(root))`; `out` for testability (`none`) and for logic with its `## Reasoning` section removed; no adversary output.
 - Action: `lines = step(root, run)`.
-- Assert: a line `INVALID spec-logic.md: ...`; `next` lines name `re-run logic` and `re-run adversary`, each with `packs/<lens>.md`; no `recorded` line; the ledger's `recorded` list is empty.
+- Assert: a line `INVALID spec-logic.md: ...`; `next` lines name `re-run logic` and `re-run adversary`, each with `packs/<lens>.md`; no `outcome:` and no `recorded` line; the ledger's `recorded` list is empty.
 
 ### TC-5 A repeated step changes nothing (AC-5; integration) [agent]
 - File: `tests/test_jury.py:test_ac5_repeated_step_changes_nothing` (new)
@@ -89,7 +89,7 @@ Helpers used below:
 - Covers: CT-1, CT-2, CT-3, CT-6
 - Setup: `gate_spec()`; a counter `calls` that each orchestrator action below adds one to; an action is a step call, a juror output written by the test as a juror would (a juror launch), a dispose call, or the `nio pack` call the consistency trigger needs; edits to `spec.md` are not counted.
 - Action: drive scenario A of research RF-2 the way the skill's `## Steps` say, in their order: `nio jury plan` (1); `nio pack` (1); `step(root, "", ["consistency:D-1 current"])` (1); three juror outputs, testability and logic each with one major finding grounded in EB-1 or AC-1, consistency `none` (3); `step` (1); the refuter output confirming both (1); `step` → `rejected` (1); one dispose call for both IDs (1); edit EB-1 and AC-1 (0); `step` → new run with two fix-check packs (1); two juror outputs with `fixed` verdicts (2); `step` (1).
-- Assert: the last step prints `outcome: approved` and `next: tell the human`; `calls <= 15` (it is 14); the test's docstring lists the 31 calls of RF-2 for the same scenario and the 14 here, call by call.
+- Assert: the last step prints `outcome: approved` and `next: tell the human`, and no step after the fix-check run's packs names `re-run consistency`; `calls <= 15` (it is 14); the test's docstring lists the 31 calls of RF-2 for the same scenario and the 14 here, call by call.
 
 ### TC-12 First-review packs hold today's content plus the output path (AC-12; integration) [agent]
 - File: `tests/test_jury.py:test_ac12_first_review_packs` (new)
@@ -103,14 +103,14 @@ Helpers used below:
 - Covers: CT-1
 - Setup: `gate_spec()`, `run`; outputs testability and adversary `none`, logic `none` with `context: needs-more`.
 - Action: `lines = step(root, run)`.
-- Assert: a `next:` line names `re-run logic`; the ledger's `recorded` is empty.
+- Assert: a `next:` line names `re-run logic`; no `outcome:` line; the ledger's `recorded` is empty.
 
 ### TC-14 Rejected, human and approved each give their next line (AC-14; integration) [agent]
 - File: `tests/test_jury.py:test_ac14_outcome_next_lines` (new)
 - Covers: CT-1
 - Setup: three fixtures from `gate_spec()`: (a) TC-2's rejected state; (b) a first review whose only finding is a major the refuter confirms, disposed, fixed, then a fix check whose verdict is `not fixed` after the first review (the human's list); (c) three lenses with `none`.
 - Action: `step` on each.
-- Assert: (a) `outcome: rejected` and the next line contains `nio jury dispose`; (b) `outcome: human` and the next line contains `show the human`; (c) `outcome: approved` and the next line contains `nio flow next refund-double-charge`.
+- Assert: (a) `outcome: rejected` and the next line contains `nio jury dispose`; (b) `outcome: human` and the next line contains `show the human`, and no line names `re-run` for a lens the fix-check run has no pack for; (c) `outcome: approved` and the next line contains `nio flow next refund-double-charge`.
 
 ### TC-15 Per-ID notes land in order (AC-15; integration) [agent]
 - File: `tests/test_jury.py:test_ac15_notes_per_finding_in_order` (new)
