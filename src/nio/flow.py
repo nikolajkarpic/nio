@@ -135,6 +135,8 @@ def record(root, slug, entries, state, who, run, at=None):
     elif np.exists():
         np.unlink()  # a temp state no line names
     entries = list(entries)
+    if not lines and entries and (route := header_route(root, slug)):  # the route the effort starts on (AC-2)
+        entries[0] = {**entries[0], "evidence": {**(entries[0].get("evidence") or {}), "route": route}}
     if tail["cut"]:
         cut = tail["cut"]
         last = lines[-1]["to"] if lines else None
@@ -263,12 +265,36 @@ def verdict(root, slug, gate, rnd, outcome):
     return found
 
 
-def skips(root, slug):
-    """Stages skipped on the record: NOT_BUILT plus the spec's route's own (CT-1)."""
+def header_route(root, slug):
+    """The route spec.md's header names, or None when it names none or can't be read."""
     try:
-        route = records.parse(root / ".nio/specs" / slug / "spec.md")[0].get("route")
+        return records.parse(root / ".nio/specs" / slug / "spec.md")[0].get("route")
     except (OSError, ValueError):
-        route = None
+        return None
+
+
+def ran_full(root, slug):
+    """The effort ran on the full route: its first history line recorded `full`, or its spec jury has a round. With
+    neither, the header decides (an effort from before routes were recorded)."""
+    from nio import jury
+    try:
+        with open(root / ".nio/specs" / slug / "history.jsonl", encoding="utf-8") as f:
+            if (json.loads(f.readline()).get("evidence") or {}).get("route") == "full":
+                return True
+    except (OSError, ValueError, AttributeError):
+        pass
+    try:
+        return bool(jury.load(root, slug, "spec")["round"])
+    except (OSError, ValueError, KeyError):
+        return False
+
+
+def skips(root, slug):
+    """Stages skipped on the record: NOT_BUILT plus the spec's route's own (CT-1); none of lite's once the effort ran
+    full."""
+    route = header_route(root, slug)
+    if route == "lite" and ran_full(root, slug):
+        route = "full"
     return NOT_BUILT | ROUTE_SKIPS.get(route, set())
 
 
@@ -331,8 +357,9 @@ def guard(root, slug, stage, evidence=True):
 
 
 def kind(root, slug):
-    """`legacy`, `unsupported: <route>` or `effort` (CT-4, FR-29, FR-50): an undated folder is legacy; a dated one is
-    unsupported only when its spec.md names a route other than `full` or `lite`."""
+    """`legacy`, `unsupported: <route>`, `route changed: ...` or `effort` (CT-4, FR-29, FR-50): an undated folder is
+    legacy; a dated one is unsupported when its spec.md names a route other than `full` or `lite`, and route changed
+    when the header says lite on an effort that ran full."""
     if not DATED.match(slug):
         return "legacy"
     path = root / ".nio/specs" / slug / "spec.md"
@@ -343,6 +370,8 @@ def kind(root, slug):
             route = None
         if route and route not in ("full", "lite"):
             return f"unsupported: {route}"
+        if route == "lite" and ran_full(root, slug):  # read only when the header says lite: kind runs per folder
+            return "route changed: recorded full, spec.md says lite"
     return "effort"
 
 
@@ -791,6 +820,8 @@ def next_step(root, slug=None, by=None):
     k = kind(root, slug)
     if k == "legacy":
         return 0, [f"legacy: {slug} has no flow layout; nothing to do"]
+    if k.startswith("route changed:"):
+        return 0, [k, "a full effort can't go lite: restore `route: full` in spec.md's header"]
     if k != "effort":
         return 0, [f"{k}: nio flow drives full and lite specs only"]
 
