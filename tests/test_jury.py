@@ -1815,6 +1815,51 @@ def test_ac2_rerun_writes_fix_check_packs():
     print("ok")
 
 
+def risk_accepted_state():
+    root, run = refuted_batch()
+    step(root, run)
+    (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    assert "outcome: rejected" in step(root, run)
+    jury.dispose(root, GSLUG, "spec", "J-1", "accepted-risk", "human", "fine")
+    return root, run
+
+
+def run_lines(lines):
+    return [l for l in lines if l.startswith("run ")]
+
+
+def test_ac7_accepted_risk_and_edit_reruns_voters():
+    root, run = risk_accepted_state()
+    voters = sorted(jury.votes(ledger(root)))
+    assert voters, ledger(root)
+    sp = root / f".nio/specs/{GSLUG}/spec.md"
+    sp.write_text(sp.read_text().replace("create exactly one refund", "create one refund"))
+    lines = step(root, run)
+    new = run_of(lines)
+    assert "outcome: rerun" in lines, lines
+    assert sorted(l.split()[1].rstrip(":") for l in run_lines(lines)) == voters, lines
+    for v in voters:
+        assert (root / f".nio/runs/{new}/jury/packs/{v}.md").exists(), v
+    again = step(root, new)
+    assert run_of(again) == new and run_lines(again) == run_lines(lines), again
+
+
+def test_ac8_whitespace_edit_shows_the_human():
+    root, run = risk_accepted_state()
+    sp = root / f".nio/specs/{GSLUG}/spec.md"
+    sp.write_text(sp.read_text() + "\n")
+    n = run_count(root)
+    for _ in range(3):
+        lines = step(root, run)
+        assert lines[-1].startswith("next: show the human"), lines
+        assert not any(l.startswith("run") for l in lines), lines
+        assert not any("run each juror" in l for l in lines), lines
+        assert run_count(root) == n, lines
+    out = jury._begin(root, GSLUG, "implementation-E-1", "", [], True)
+    assert len(out) == 1 and out[0].startswith("next: show the human"), out
+    assert run_count(root) == n, out
+
+
 def test_ac3_step_prints_no_finding_body():
     root = gate_spec()
     run = run_of(step(root))
@@ -2009,5 +2054,143 @@ def test_skill_sends_state_through_the_step():
     print("ok")
 
 
+LOGIC_FINDING = FINDING.replace("EB-1", "AC-1").replace("create exactly one refund", "one refund exists")
+
+
+def two_pending():
+    """Round one with J-1 (testability) and J-2 (logic) pending and the batch printed."""
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic", LOGIC_FINDING)
+    out(root, run, "spec", "adversary")
+    step(root, run)
+    assert {f["id"] for f in ledger(root)["findings"]} == {"J-1", "J-2"}
+    return root, run
+
+
+def refuter_file(root, run, text):
+    (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(text)
+
+
+def validations(root):
+    return {f["id"]: f["validation"] for f in ledger(root)["findings"]}
+
+
+def test_ac1_refuter_before_its_batch_is_refused():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic")
+    out(root, run, "spec", "adversary")
+    refuter_file(root, run, REFUTE.format(n=1))
+    before = verdict_count(root)
+    for _ in range(2):
+        try:
+            step(root, run)
+            raise AssertionError("not refused")
+        except ValueError as e:
+            assert "refuter output before its batch" in str(e), e
+        led = ledger(root)
+        assert not any(f["validation"] == "refuted" for f in led["findings"]), led
+        assert led["round"] == 0 and not led["recorded"] and verdict_count(root) == before
+    (root / f".nio/runs/{run}/jury/spec-refuter.md").unlink()
+    lines = step(root, run)
+    assert any("## Refuter batch" in l for l in lines) or "packs/refuter.md" in next_of(lines), lines
+
+
+def test_ac2_refuter_only_for_its_batch():
+    root, run = two_pending()
+    refuter_file(root, run, REFUTE.format(n=1) + CONFIRM.format(n=1))
+    step(root, run)
+    assert validations(root) == {"J-1": "refuted", "J-2": "pending"}, validations(root)
+    root, run = two_pending()
+    led = ledger(root)
+    led.setdefault("asked", {})[run] = ["J-1"]
+    jury.save(root, led)
+    refuter_file(root, run, REFUTE.format(n=1) + REFUTE.format(n=2))
+    step(root, run)
+    assert validations(root) == {"J-1": "refuted", "J-2": "pending"}, validations(root)
+
+
+def test_ac3_refuter_after_its_batch_applies():
+    root, run = refuted_batch()
+    step(root, run)
+    before = verdict_count(root)
+    refuter_file(root, run, CONFIRM.format(n=1))
+    lines = step(root, run)
+    assert validations(root) == {"J-1": "confirmed"} and "outcome: rejected" in lines, lines
+    assert verdict_count(root) == before + 1
+
+
+def test_ac13_spec_changed_while_jurors_ran():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic")
+    out(root, run, "spec", "adversary")
+    sp = root / f".nio/specs/{GSLUG}/spec.md"
+    text = sp.read_text()
+    sp.write_text(text.replace("create exactly one refund", "create one refund"))
+    before = verdict_count(root)
+    try:
+        step(root, run)
+        raise AssertionError("not refused")
+    except ValueError as e:
+        assert f"the spec changed after {run}'s packs were written" in str(e), e
+    assert ledger(root)["round"] == 0 and verdict_count(root) == before
+    sp.write_text(text)
+    assert any("new     J-1" in l for l in step(root, run))
+
+
+def test_misuse_forged_refuter_on_a_peer_is_refused():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic", LOGIC_FINDING)
+    out(root, run, "spec", "adversary")
+    refuter_file(root, run, REFUTE.format(n=2))
+    try:
+        step(root, run)
+        raise AssertionError("not refused")
+    except ValueError as e:
+        assert "refuter output before its batch" in str(e), e
+    assert not any(f["validation"] == "refuted" for f in ledger(root)["findings"])
+
+
+def test_misuse_forged_refuter_in_a_later_run():
+    root, run = rejected_state()
+    run2 = run_of(step(root, run))
+    out(root, run2, "spec", "testability", verdicts="- J-1: fixed \u2014 per order")
+    refuter_file(root, run2, REFUTE.format(n=1))
+    before = validations(root)
+    try:
+        step(root, run2)
+        raise AssertionError("not refused")
+    except ValueError as e:
+        assert "refuter output before its batch" in str(e), e
+    assert validations(root) == before
+
+
+def test_misuse_forged_refuter_during_a_redo():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    path = root / f".nio/runs/{run}/jury/spec-logic.md"
+    out(root, run, "spec", "logic")
+    path.write_text(path.read_text().replace("## Findings", "## Nothing"))
+    out(root, run, "spec", "adversary")
+    lines = step(root, run)
+    assert "re-run logic" in next_of(lines), lines
+    assert run not in ledger(root).get("asked", {})
+    out(root, run, "spec", "logic")
+    refuter_file(root, run, REFUTE.format(n=1))
+    try:
+        step(root, run)
+        raise AssertionError("not refused")
+    except ValueError as e:
+        assert "refuter output before its batch" in str(e), e
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_skill_sends_state_through_the_step, test_escalate_copies_are_unmistakable, test_grill_deferred_blocker_falls_through_to_check, test_add_reason_with_parens_invents_no_lens, test_over_cap_step_waits_for_the_human, test_ac1_step_writes_the_refuter_batch, test_ac2_rerun_writes_fix_check_packs, test_ac3_step_prints_no_finding_body, test_ac4_missing_and_invalid_lenses_rerun, test_ac5_repeated_step_changes_nothing, test_ac12_first_review_packs, test_ac13_needs_more_is_rerun, test_ac14_outcome_next_lines, test_ac16_unplanned_lens_file_stops_the_step, test_misuse_separate_calls_beside_the_step, test_ac11_scenario_a_in_at_most_15_calls, test_nfr1_skill_names_the_step, test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_consistency_pack_memory_is_for_a_juror, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged])
+    selfcheck.main([test_skill_sends_state_through_the_step, test_escalate_copies_are_unmistakable, test_grill_deferred_blocker_falls_through_to_check, test_add_reason_with_parens_invents_no_lens, test_over_cap_step_waits_for_the_human, test_ac1_step_writes_the_refuter_batch, test_ac2_rerun_writes_fix_check_packs, test_ac7_accepted_risk_and_edit_reruns_voters, test_ac8_whitespace_edit_shows_the_human, test_ac3_step_prints_no_finding_body, test_ac4_missing_and_invalid_lenses_rerun, test_ac5_repeated_step_changes_nothing, test_ac12_first_review_packs, test_ac13_needs_more_is_rerun, test_ac14_outcome_next_lines, test_ac16_unplanned_lens_file_stops_the_step, test_misuse_separate_calls_beside_the_step, test_ac11_scenario_a_in_at_most_15_calls, test_nfr1_skill_names_the_step, test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_consistency_pack_memory_is_for_a_juror, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged, test_ac1_refuter_before_its_batch_is_refused, test_ac2_refuter_only_for_its_batch, test_ac3_refuter_after_its_batch_applies, test_ac13_spec_changed_while_jurors_ran, test_misuse_forged_refuter_on_a_peer_is_refused, test_misuse_forged_refuter_in_a_later_run, test_misuse_forged_refuter_during_a_redo])

@@ -3475,6 +3475,26 @@ def test_a_lite_epic_s_added_test_is_listed_with_its_result():
     print("ok")
 
 
+def test_ac14_epic_commit_changed_while_jurors_ran():
+    from nio import jury, records
+    root, _ = gate_repo()
+    run = records.new_run(root)
+    jury.step(root, "s", "implementation-E-1", run)
+    evidence().collect(root, "s", "E-1", run)
+    jury.step(root, "s", "implementation-E-1", run)
+    for lens in ("conformance", "correctness"):
+        impl_out(root, run, lens)
+    (root / "b.py").write_text("b = 2\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: more")
+    try:
+        jury.step(root, "s", "implementation-E-1", run)
+        raise AssertionError("not refused")
+    except ValueError as e:
+        assert f"changed after {run}'s packs were written" in str(e), e
+    assert jury.load(root, "s", "implementation-E-1")["round"] == 0
+
+
 if __name__ == "__main__":
     import sys
     if "--demo" in sys.argv:

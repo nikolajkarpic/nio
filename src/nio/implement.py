@@ -366,9 +366,9 @@ def land(root, slug, tid, tree, since):
     git's error or "", the main tree untouched on an error). The effort's state and history are never applied."""
     keep = [f".nio/specs/{slug}/state.json", f".nio/specs/{slug}/history.jsonl"]
     records.git(tree, "add", "-A")
-    diff = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, full=True)[1]
+    diff = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, raw=True)[1]
     path = tree.parent / f"{tid}.patch"
-    path.write_text(diff)
+    path.write_bytes(diff)
     names = [p for p in records.git(tree, "-c", "core.quotepath=off", "diff", "--cached", "--name-only", "--no-renames", since) if p not in keep]
     saved = {p: (root / p).read_bytes() if (root / p).is_file() else None for p in names}
     code, _, err = records.git(root, "apply", "--binary", *[f"--exclude={p}" for p in keep], str(path), full=True) \
@@ -448,14 +448,16 @@ def shelve(root, slug, run, tid, tree=None):
         if tree else (lambda p: bool(outside(slug, [p])))  # its effort-folder edits too
     rows = [(c, p) for c, p in porcelain(root) if keep(p)]
     paths = [p for _, p in rows]
-    diff = ""
+    diff = b""
     if paths:
         if new := [p for c, p in rows if c == "??"]:
             records.git(root, "add", "-N", "--", *new)  # so `git diff` shows untracked files too
-        diff = records.git(root, "diff", "HEAD", "--binary", "--", *paths, full=True)[1]
+        code, diff, err = records.git(root, "diff", "HEAD", "--binary", "--", *paths, raw=True)
+        if code:
+            raise ValueError(f"can't shelve {tid}: git diff failed: {err.strip()}")  # nothing written or restored
     path = main / ".nio/runs" / run / f"{tid}.patch"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(diff)  # written before anything is restored: the work is never only in the tree
+    path.write_bytes(diff)  # written before anything is restored: the work is never only in the tree
     for p in paths:
         if records.git(root, "cat-file", "-e", f"HEAD:{p}", full=True)[0] == 0:
             records.git(root, "checkout", "-q", "HEAD", "--", p)

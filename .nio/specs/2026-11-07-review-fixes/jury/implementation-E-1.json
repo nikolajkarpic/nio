@@ -1,0 +1,482 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-07-review-fixes",
+  "round": 2,
+  "tier": "high",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "risk-rollback"
+  ],
+  "collected": {
+    "R-261107-r4c5/implementation-E-1-adversary.md": "ea913ffeac44e0ea88b3ef2402a8f7d2acf91c47b19c295fc93c19d182c210e7",
+    "R-261107-r4c5/implementation-E-1-conformance.md": "c76de716394fd14ee4cfcfc37596ab9dcef7926165ed189f0bf356d87c5f522f",
+    "R-261107-r4c5/implementation-E-1-consistency.md": "be154eae2bad8894d37adac7fc3a918c3d1e1d0712caf44aa2bfb630313b7ce5",
+    "R-261107-r4c5/implementation-E-1-correctness.md": "fc2a8435453584f0205d61fd0b54d351a6c00c73154df7b6f6148e8aa16ee241",
+    "R-261107-r4c5/implementation-E-1-risk-rollback.md": "f3653e3d5eb627cb17dc852035ec43d32f5dd24493a316aa7868c767fc3b9cb0",
+    "R-261107-r4c5/implementation-E-1-refuter.md": "3d51ba84f0575c723cbebc6a30a287cfc4cf7d5233303139c75f080dd4510302",
+    "R-261107-pz5f/implementation-E-1-adversary.md": "13b36389e452f4534ef5c9c0000d1b3d2defc87f3fe864efaec9bed4215e8e2e",
+    "R-261107-pz5f/implementation-E-1-consistency.md": "f4cc58459a2c10a2a8d3c779bdda42170b2c1c345932d7d9bb9f42a486fdc86e",
+    "R-261107-pz5f/implementation-E-1-risk-rollback.md": "94f7f97a724ba5aa3f3fbeb508ea26d4fdbdc7460a723f99f5e1172f3b694203"
+  },
+  "jurors": {
+    "implementation-E-1-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "292b596a13044bc05f4c5e333b6f78f31e33cf6b",
+      "judged": 2
+    },
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "74218bcd1968a57d128beb9e580a485024322926",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "292b596a13044bc05f4c5e333b6f78f31e33cf6b",
+      "judged": 2
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "74218bcd1968a57d128beb9e580a485024322926",
+      "judged": 1
+    },
+    "implementation-E-1-risk-rollback": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "292b596a13044bc05f4c5e333b6f78f31e33cf6b",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A failed `git diff` in `shelve` writes an empty patch, then the work is restored away",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "written with `write_bytes` before anything is applied or restored (as today)"
+      ],
+      "fix": "take `code, diff, err = records.git(..., raw=True)` and, if `code != 0`, raise or return before writing the patch or restoring anything. Add a test where `git diff` fails and the tree stays untouched.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`shelve` calls `records.git(root, \"diff\", \"HEAD\", \"--binary\", \"--\", *paths, raw=True)[1]` and never looks at the exit code, which `raw` returns as element 0. If `git diff` fails (index lock held by a concurrent git process, a failed `add -N`, a corrupt object), stdout is `b\"\"`. `path.write_bytes(b\"\")` then \"succeeds\". The loop below it runs `git checkout -q HEAD -- p` on every kept path. The task's work is gone and the only record is an empty patch, so the comment \"the work is never only in the tree\" no longer holds. `land` has the same swallowed code. There the empty patch happens to make `git apply` fail, but the cause is lost.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`git diff HEAD` exits non-zero, for example on an unreadable path or a pathspec error after `add -N`. `[1]` throws away the exit code. An empty or partial `T-n.patch` is written, and then every path is checked out to HEAD or unlinked. The task's uncommitted work then exists neither in the tree nor in the patch, and can't be recovered. `land` is protected because `git apply` fails on a bad patch and `restore` runs; `shelve` has no such guard. No test covers a failing diff in `shelve`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`shelve` in `src/nio/implement.py` (line 454) takes `records.git(..., raw=True)[1]` and drops the exit code that `raw` returns. Line 457 then writes the possibly empty patch, and the loop at lines 458-463 checks out or unlinks every path. Nothing in CT-5 or the code guards against a failed `git diff`.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-5",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py (shelve, land)",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Every edit after any rejected round re-runs all voting lenses, with no bound on spend",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "applies at the spec, plan and tasks gates (`gate in GATES`) once any round was recorded `rejected`"
+      ],
+      "fix": "key the rule on the last recorded round, or on the last outcome being `rejected` with every finding disposed. Say which in CT-7.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "the new condition is `any(o == \"rejected\" for _, o in led[\"recorded\"])`, so one old rejection counts forever. Every later edit that changes an ID or section, even a one-word rewording, makes `step` start a model run of every lens that ever voted. This holds when the last outcome is `human` or `rerun`, and when the findings are all disposed. Repeated small edits cost juror calls and the human's attention each time. FR-10's own scenario is narrower: a rejected round whose only finding was accepted as risk.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py (changed)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "The moved-artefact guard is bypassed by the actor it is meant to stop",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "when `step.json` is absent (a run driven by hand with `nio jury collect`)"
+      ],
+      "fix": "record the version in the ledger when the packs are written, not in a file the juror can reach. Treat a missing or versionless `step.json` in a `step`-driven run as refused.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "AC-13's threat is a lens juror that edits the spec it judges. That juror has file write access to the run folder. It can delete `jury/packs/step.json`, which returns without any check, or rewrite its `version`, and then collect the outputs. `moved()` also does `json.loads(sj.read_text())[\"version\"]` with no guard, so a `step.json` from an older run raises a bare `KeyError` instead of the clean refusal. `_reusable` does the same.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py (moved)",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "Patch byte-exactness is only shown with default git config",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "each main-tree file equals the worktree's bytes"
+      ],
+      "fix": "add a test with `core.autocrlf` and an `eol` attribute set. Either pin the behaviour in the contract or fail loudly when the landed bytes differ.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`test_ac4b_land_keeps_bytes` and `test_misuse_crlf_edit_lands` use a fresh repo with default config. With `core.autocrlf=true` or a `.gitattributes` `text eol=` rule, `git add -A` and `git diff --cached` emit normalised (LF) content for a CRLF working file. Applying that patch to a CRLF main-tree file can fail on context, or write different bytes. The AC passes in tests but may not hold for a CRLF user, who is the very case it names.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_waves.py, src/nio/implement.py (land)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "`land` and `shelve` decode file names as text, so a non-UTF-8 name crashes after the patch is half done",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "without it, exactly as today."
+      ],
+      "fix": "read the name lists with `-z` through `raw`, or decode with `errors=\"surrogateescape\"`. Add a test with such a name.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "only the patch is read as bytes. The `--name-only` and `porcelain` calls still use `text=True`, which decodes strictly as UTF-8. A latin-1 file name (Linux allows it; the tests cover latin-1 file contents, not names) raises `UnicodeDecodeError` out of `land` or `shelve`. For `land`, that happens after `add -A` and the patch write, before the apply. For `shelve`, it happens before the patch is saved. The task then neither lands nor is cleanly shelved, and the error is a traceback.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/records.py (git), src/nio/implement.py",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Implementation rerun with no lens to re-run opens a run instead of showing the human",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-5",
+        "CT-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a gate's outcome is `rerun` and no lens is named to re-run THEN THE SYSTEM SHALL name no juror",
+        "no `run:` line, no run folder, no pack or `step.json`"
+      ],
+      "fix": "drop the `gate in GATES` restriction from the guard in `_begin` (so the empty-lens case always returns the show-the-human line before any run is created), or state in CT-6 why the implementation gate is exempt.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "at the implementation gate, a round whose outcome is `rerun` but where `changed(...)` names no lens reaches `_begin` with an empty `lenses` and `run` \"\". The guard `not lenses and (gate in GATES or (run and evidence.path(root, run).exists()))` is false, so `_begin` creates a run folder, writes `step.json` with `\"lenses\": []`, and prints `run: R-...` followed by `next: nio jury evidence ...`. The spec requires a `next:` line that says to show the human, with no run line and no run folder.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "At the implementation gate `GATES` has only spec, plan and tasks (`src/nio/jury.py` line 14). With empty `lenses` and `run` \"\", the guard at line 1401 is false. `_begin` then reaches `records.new_run` and writes `step.json` with `\"lenses\": []` (lines 1403-1410). CT-6 says an empty `lenses` gives only the show-the-human line, with no run folder or `step.json`. CT-7 exempts the implementation gate only from the re-run-every-lens rule, not from CT-6.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-6",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/jury.py:_begin (line 1401)",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "shelve still restores the tree when git diff failed",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "diff = records.git(root, \"diff\", \"HEAD\", \"--binary\", \"--\", *paths, raw=True)[1]",
+        "path.write_bytes(diff)",
+        "`raw` (implies `full`) keeps stdout as bytes, so a patch of it loses nothing (CT-4)."
+      ],
+      "fix": "take the exit code from `raw=True` and raise before any checkout or unlink when it is non-zero (the patch stays on disk). Add a test that fakes a failing `diff` and asserts the files are untouched.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`git diff HEAD` exits non-zero, for example on an unreadable path or a pathspec error after `add -N`. `[1]` throws away the exit code. An empty or partial `T-n.patch` is written, and then every path is checked out to HEAD or unlinked. The task's uncommitted work then exists neither in the tree nor in the patch, and can't be recovered. `land` is protected because `git apply` fails on a bad patch and `restore` runs; `shelve` has no such guard. No test covers a failing diff in `shelve`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py:shelve",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "\"restore it\" at the implementation gate invites undoing a commit",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-3",
+        "AC-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "restore it, or start a new run (nio jury next without --run)"
+      ],
+      "fix": "at the implementation gate, word the message so it says to start a new run, and don't say \"restore\". Add an assertion in test_ac14 that a step without `--run` then begins a fresh run.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "at implementation-E-1 the thing that \"changed\" is a newly landed task commit. An agent told to \"restore it\" may `git reset` the epic's new commit to make the run collectable again, which throws away landed work. AC-14 checks only the refusal. No test shows that the \"start a new run\" path recovers at the implementation gate.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:moved",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "74218bcd1968a57d128beb9e580a485024322926",
+    "2": "292b596a13044bc05f4c5e333b6f78f31e33cf6b"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_jury.py",
+        "test_ac1_refuter_before_its_batch_is_refused"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_jury.py",
+        "test_ac2_refuter_only_for_its_batch"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_jury.py",
+        "test_ac3_refuter_after_its_batch_applies"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_waves.py",
+        "test_ac4b_land_keeps_bytes"
+      ]
+    ],
+    "AC-5": [
+      [
+        "tests/test_waves.py",
+        "test_ac5b_shelve_keeps_bytes"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_waves.py",
+        "test_ac6b_lf_patch_unchanged"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_jury.py",
+        "test_ac7_accepted_risk_and_edit_reruns_voters"
+      ]
+    ],
+    "AC-8": [
+      [
+        "tests/test_jury.py",
+        "test_ac8_whitespace_edit_shows_the_human"
+      ]
+    ],
+    "AC-9": [
+      [
+        "tests/test_jury.py",
+        "test_ac2_rerun_writes_fix_check_packs"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_selfcheck.py",
+        "test_ac10_flags_are_not_test_names"
+      ]
+    ],
+    "AC-13": [
+      [
+        "tests/test_jury.py",
+        "test_ac13_spec_changed_while_jurors_ran"
+      ]
+    ],
+    "AC-14": [
+      [
+        "tests/test_evidence.py",
+        "test_ac14_epic_commit_changed_while_jurors_ran"
+      ]
+    ]
+  },
+  "asked": {
+    "R-261107-r4c5": [
+      "J-1",
+      "J-6",
+      "J-7"
+    ]
+  }
+}
