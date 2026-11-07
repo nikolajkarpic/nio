@@ -1194,8 +1194,8 @@ def test_it_can_open_any_project_file_and_can_t():
     for name in ("conformance", "correctness", "risk-rollback", "security", "adversary", "consistency"):
         meta, body = records.parse(shipped / f"{name}.md")
         assert "## At implementation" in body, f"{name} has no ## At implementation section"
-        assert meta["tools"] == ["read"], f"{name}: tools are {meta['tools']}, not read-only"
-        assert 'tools: "Read, Grep, Glob"' in agents.render_claude(name, meta, "\n".join(body), "sonnet", "medium"), name
+        assert meta["tools"] == ["read", "write"], f"{name}: tools are {meta['tools']}"
+        assert 'tools: "Read, Grep, Glob, Write"' in agents.render_claude(name, meta, "\n".join(body), "sonnet", "medium"), name
         assert "shell_tool = false" in agents.render_codex(name, meta, "\n".join(body), "gpt", "medium"), name
     # the pack tells the lens it may open any project file, and building it writes nothing the human would see
     root = pack_repo({})

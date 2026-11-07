@@ -3,7 +3,7 @@ name: security
 description: "Juror lens for security and privacy. Use at the spec gate when the spec touches auth, permissions or personal data, and at the plan gate when its risk flags include auth or pii: finds actions with no stated permission, data exposed to the wrong party, and secrets or PII handled without a rule."
 tier: strong
 effort: med
-tools: [read]
+tools: [read, write]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -48,6 +48,8 @@ The context pack from the jury skill, and nothing else:
 - Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding: which of the two is wrong; unset means the spec is right), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering: yes` (set when the finding is about a deleted, skipped or weakened test).
 
 ## Output format
+
+Write your whole output to the file your pack names, and to no other file; never edit the files you judge.
 
 The lens output format the jury skill gives you: your reasoning first, then at most 5 findings. Each cites the
 requirement, AC or table row it is about, quotes the artefact word for word, and shows the concrete situation that
