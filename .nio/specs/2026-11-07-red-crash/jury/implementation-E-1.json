@@ -112,9 +112,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-2",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: false negative of the evidence step on a lite spec: with no tests.md it lists no tests (results.json tests: []), so every AC reads 'no passing evidence'. The new test passes in the reused suite (exit 0 at the T-1 commit). Filed as a lite-path bug, fixed in this PR by a second lite effort.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -147,9 +147,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-3",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: false negative of the evidence step on a lite spec: with no tests.md it lists no tests (results.json tests: []), so every AC reads 'no passing evidence'. The new test passes in the reused suite (exit 0 at the T-1 commit). Filed as a lite-path bug, fixed in this PR by a second lite effort.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -182,9 +182,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-4",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: false negative of the evidence step on a lite spec: with no tests.md it lists no tests (results.json tests: []), so every AC reads 'no passing evidence'. The new test passes in the reused suite (exit 0 at the T-1 commit). Filed as a lite-path bug, fixed in this PR by a second lite effort.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -228,11 +228,15 @@
       "right": "code"
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      1,
+      "closed"
     ]
   ],
   "versions": {
@@ -242,5 +246,10 @@
     "AC-1": [],
     "AC-2": [],
     "AC-3": []
-  }
+  },
+  "closed": [
+    1,
+    "bdae94dd071ea63672d140292e4afff9b0d5c906",
+    "Delegated: J-2..J-4 are the lite evidence false negative (accepted as risk); J-1 and J-5 are minor notes"
+  ]
 }
