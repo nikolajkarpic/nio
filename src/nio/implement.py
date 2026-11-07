@@ -366,7 +366,9 @@ def land(root, slug, tid, tree, since):
     git's error or "", the main tree untouched on an error). The effort's state and history are never applied."""
     keep = [f".nio/specs/{slug}/state.json", f".nio/specs/{slug}/history.jsonl"]
     records.git(tree, "add", "-A")
-    diff = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, raw=True)[1]
+    code, diff, err = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, raw=True, full=True)
+    if code:
+        return "", {}, err.strip() or "git diff failed"
     path = tree.parent / f"{tid}.patch"
     path.write_bytes(diff)
     names = [p for p in records.git(tree, "-c", "core.quotepath=off", "diff", "--cached", "--name-only", "--no-renames", since) if p not in keep]

@@ -2,8 +2,13 @@
   "abandon": null,
   "attempts": {},
   "auto": false,
-  "claims": {},
+  "claims": {
+    "task": "T-1",
+    "wave": [
+      "T-1"
+    ]
+  },
   "pause": null,
-  "run": "",
+  "run": "R-261107-g2fh",
   "waiting": null
 }

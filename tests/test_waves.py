@@ -539,6 +539,46 @@ def test_misuse_crlf_edit_lands():
     print("ok")
 
 
+def test_land_returns_error_when_diff_fails():
+    root, base = byte_repo({"a.txt": b"x\n"})
+    tree = byte_tree(root, base)
+    (tree / "a.txt").write_bytes(b"y\n")
+    real = records.git
+
+    def fake(r, *args, **kw):
+        if args[:1] == ("diff",) and "--binary" in args:
+            return 128, b"", "fatal: boom"
+        return real(r, *args, **kw)
+    records.git = fake
+    try:
+        out = implement.land(root, "s", "T-1", tree, base)
+    finally:
+        records.git = real
+    assert out[2] and "boom" in out[2], out
+    assert (root / "a.txt").read_bytes() == b"x\n"
+    print("ok")
+
+
+def test_land_applies_edit_with_empty_error():
+    root, base = byte_repo({"a.txt": b"x\n"})
+    tree = byte_tree(root, base)
+    (tree / "a.txt").write_bytes(b"y\n")
+    out = implement.land(root, "s", "T-1", tree, base)
+    assert out[2] == "" and (root / "a.txt").read_bytes() == b"y\n", out
+    print("ok")
+
+
+def test_land_returns_git_error_when_patch_does_not_apply():
+    root, base = byte_repo({"a.txt": b"x\n"})
+    tree = byte_tree(root, base)
+    (tree / "a.txt").write_bytes(b"y\n")
+    (root / "a.txt").write_bytes(b"z\n")
+    out = implement.land(root, "s", "T-1", tree, base)
+    assert out[2], out
+    assert (root / "a.txt").read_bytes() == b"z\n"
+    print("ok")
+
+
 if __name__ == "__main__":
     if "--demo" in sys.argv:
         tempfile.tempdir = tempfile.mkdtemp(prefix="nio-demo-", dir=Path(tempfile.tempdir).parent)
