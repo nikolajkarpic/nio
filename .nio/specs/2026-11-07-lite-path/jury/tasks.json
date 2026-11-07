@@ -1,0 +1,159 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-07-lite-path",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261107-lcrp/tasks-executability.md": "5ab2e70f9d017d1289f980394acce34bcf60174c9aafe907e5fd0dd973d3449c",
+    "R-261107-lcrp/tasks-refuter.md": "6f16a5f21eb1f9d49bb76539ef1a1686c5ea8b7abcda12342cc821d8c77b3146",
+    "R-261107-3ryr/tasks-executability.md": "56c918fb7e4f225fcf2e938b8e2d52b5b44c3fd25c2e5e5da78b2c5a8e1520fc"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / haiku-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "6519ce77424055bf895ab32acc5fcc5078c08104",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-9 and T-10 cannot show they are done",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "T-9",
+        "T-10",
+        "T-12",
+        "TC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Mode: direct: skill text, checked later by T-12's test",
+        "- Test: TC-16",
+        "- Mode: single: text edit and its substring test are one small change"
+      ],
+      "fix": "give T-9 and T-10 their own substring check over their file, or mode them single like T-2.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "the worker of T-10 adds the blocked-handoff offer to skills/implement/SKILL.md and reports done. TC-16 is only written by T-12, which depends on T-9 and T-10, so nothing runs when T-10 closes. If the implement skill lacks \"Escalating a bug fix\", the miss shows up only at T-12, after T-10 is closed, and no task owns the fix. Other text-edit tasks (T-2, T-6, T-8, T-11) are moded single so their own substring test runs in the same task.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-9 and T-10 are `Mode: direct` with `Test: TC-16`, but tests.md says TC-16 is written in T-12 (`test_lite_skill_texts`), which depends on both, so nothing runs when they close. T-12's `Files` is only `tests/test_flow.py`, so a miss in `skills/implement/SKILL.md` or `skills/tasks/SKILL.md` found there falls outside any task's files, while T-2, T-6, T-8 and T-11 are `single` and check their own text.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-9 and T-10 are single, each adding its own file's TC-16 check; T-12 keeps the grill and drafter card",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "One test function is marked new by five tasks",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "T-2",
+        "T-6",
+        "T-8",
+        "T-11",
+        "T-12",
+        "TC-2",
+        "TC-8",
+        "TC-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- File: `tests/test_flow.py:test_lite_skill_texts` (new)",
+        "- Test: TC-11, TC-12"
+      ],
+      "fix": "name T-2 as the creator and mark the other tasks as adding a check to the existing function.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-2 (TC-2), T-6 (TC-8), T-8 (TC-12), T-11 (TC-13 to TC-15) and T-12 (TC-16) each name tests/test_flow.py:test_lite_skill_texts, and each TC entry says \"(new)\". T-6 and T-8 depend only on T-1, so nothing orders them after T-2. A worker of T-8 who runs first creates the function, and T-2's worker then creates it again or overwrites it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-2 creates test_lite_skill_texts; T-6, T-8, T-9, T-10, T-11, T-12 add to it, ordered after T-2",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "Existing lite-route assertions change and no task says so",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-2",
+        "T-1",
+        "TC-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`kind(root, slug)` returns `effort` for `route: full` and `route: lite`",
+        "- Files: `src/nio/flow.py`, `src/nio/tasks.py`, `tests/test_flow.py`"
+      ],
+      "fix": "name the two existing assertions in T-1 as to be updated to the new behaviour.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "in tests/test_flow.py, two existing assertions expect a lite spec to be unsupported: flow.kind returns \"unsupported: lite\" (around line 170), and next_step prints \"unsupported: lite: nio flow drives full-route specs only\" (around line 608). After T-1, CT-2 makes both wrong. No task names these assertions, so a worker of T-1 either leaves the suite red or edits them without being asked. This is inferred from the code, not quoted from the pack.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-1's title names the existing lite-unsupported assertions it moves to an epic spec",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "680ccc33eb385e3dcb498cb3c1d23a7710729bf9",
+    "2": "6519ce77424055bf895ab32acc5fcc5078c08104"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  }
+}
