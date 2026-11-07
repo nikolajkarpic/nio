@@ -105,17 +105,6 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 
 #### Fixes
 
-### T-10 Fix: No test proves the e2e half of AC-8 (output file only, no other file changed)
-- From: J-5 (implementation-E-4, round 1)
-- Files: `tests/test_agents.py`
-- Serves: AC-8, FR-9
-- Test: TC-8
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
 ## E-5 The jury skill uses the shorter path (US-5)
 
 ### T-5 Rewrite the jury skill around `nio jury next`
