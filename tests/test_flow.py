@@ -1420,6 +1420,56 @@ def test_lite_route_stages():
     print("ok")
 
 
+def test_lite_epic_gate():
+    """TC-5: the implementation jury reviews a lite fix: implementing waits for the epic's gate, then passes."""
+    from nio import evidence, tasks
+    root = repo()
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    (folder / "spec.md").write_text(re.sub(
+        r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M))
+    flow.start(root, S, by=BY)
+    for stage in ("drafting", "grilling"):
+        flow.done(root, stage, S, by=BY)
+    tasks.new(root, S)
+    (folder / "tasks.md").write_text(
+        (FIXTURES / "tasks/tasks.md").read_text().replace("slug: checkout-refunds", f"slug: {S}"))
+    flow.done(root, "tasking", S, by=BY)
+    approve(root, S, "tasks")
+    flow.done(root, "tasks_jury", S, by=BY)
+    history(root, S, *[task_line("task_done", t) for t in ("T-1", "T-2", "T-3")])
+    (root / "fix.py").write_text("x = 1\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-1: fix")
+    gate = "implementation-E-1"
+    plan, ok = jury.plan(root, S, gate)
+    assert ok and "conformance" in plan[1] and "correctness" in plan[1], plan
+    code, out = flow.done(root, "implementing", S, by=BY)
+    assert code == 1 and "E-1 has no epic line" in "\n".join(out) and "is not done" not in "\n".join(out), out
+    assert not any(x["to"] == "done" for x in lines_of(root)), lines_of(root)
+    run = f"R-{gate}"
+    for lens in ("conformance", "correctness", "consistency"):
+        path = root / ".nio/runs" / run / "jury" / f"{gate}-{lens}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"---\nlens: {lens}\ngate: {gate}\nsubject: {S}\nby: \"juror / claude-code / opus\"\n"
+                        "context: sufficient\n---\n## Reasoning\nChecked the diff.\n\n## Findings\nnone\n"
+                        + "\n## Matches\nAC-1 -> `tests/test_fix.py:1`\nAC-2 -> `tests/test_fix.py:1`\n" * (lens == "conformance"))
+    evidence.save(root, run, {**evidence.load(root, run), "slug": S, "epic": "E-1",
+                              "tests": [{"name": "test_fix", "file": "tests/test_fix.py", "line": 1, "result": "passed"}],
+                              "commit": evidence.commits_of(root, S, "E-1")[0]})
+    jury.collect(root, S, gate, run)
+    assert jury.check(root, S, gate, record=True)[0] == "approved"
+    code, out = flow.done(root, gate, S, by=BY)
+    assert code == 0, out
+    last = lines_of(root)[-1]
+    assert (last["kind"], last["from"], last["to"]) == ("pass", "implementing", "done"), last
+    print("ok")
+
+
 def test_uj2_idle_visible():
     """TC-69: an idle effort shows when it was last active, below the newer one."""
     root = effort("planning")
