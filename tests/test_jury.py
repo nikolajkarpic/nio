@@ -1855,6 +1855,9 @@ def test_ac8_whitespace_edit_shows_the_human():
         assert not any(l.startswith("run") for l in lines), lines
         assert not any("run each juror" in l for l in lines), lines
         assert run_count(root) == n, lines
+    out = jury._begin(root, GSLUG, "implementation-E-1", "", [], True)
+    assert len(out) == 1 and out[0].startswith("next: show the human"), out
+    assert run_count(root) == n, out
 
 
 def test_ac3_step_prints_no_finding_body():
