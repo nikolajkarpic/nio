@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-3
 subject: 2026-11-07-scoped-task-commands
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-3 jury: 2026-11-07-scoped-task-commands
 
@@ -10,7 +10,7 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | inconsistency | AC-7, CT-5, FR-6 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | inconsistency | AC-7, CT-5, FR-6 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-2 | minor | inconsistency | CT-3, CT-7, FR-4 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-3 | minor | inconsistency | CT-7 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
 | J-4 | minor | ambiguity | CT-6, AC-8, FR-7 | consistency | grounded | disposed | accepted-risk (human) | new, 0 |
@@ -55,5 +55,5 @@ outcome: rejected
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
 | implementation-E-3-conformance | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | implementation-E-3-correctness | correctness | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
