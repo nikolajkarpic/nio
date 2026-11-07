@@ -451,7 +451,9 @@ def shelve(root, slug, run, tid, tree=None):
     if paths:
         if new := [p for c, p in rows if c == "??"]:
             records.git(root, "add", "-N", "--", *new)  # so `git diff` shows untracked files too
-        diff = records.git(root, "diff", "HEAD", "--binary", "--", *paths, raw=True)[1]
+        code, diff, err = records.git(root, "diff", "HEAD", "--binary", "--", *paths, raw=True)
+        if code:
+            raise ValueError(f"can't shelve {tid}: git diff failed: {err.strip()}")  # nothing written or restored
     path = main / ".nio/runs" / run / f"{tid}.patch"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(diff)  # written before anything is restored: the work is never only in the tree
