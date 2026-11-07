@@ -148,9 +148,9 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-3",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: AC-2's test delegates to the existing test_ac46 (which asserts), and AC-4 is proved by the existing test_the_packs_hold_a_hint_naming_it_and_a, which a lite epic's evidence can't list (only tests the epic adds, grill Q2). Both behaviours already pass; a test-only fix task can't pass red.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -183,20 +183,24 @@
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-4",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: AC-2's test delegates to the existing test_ac46 (which asserts), and AC-4 is proved by the existing test_the_packs_hold_a_hint_naming_it_and_a, which a lite epic's evidence can't list (only tests the epic adds, grill Q2). Both behaviours already pass; a test-only fix task can't pass red.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      1,
+      "closed"
     ]
   ],
   "versions": {
@@ -222,5 +226,10 @@
       ]
     ],
     "AC-4": []
-  }
+  },
+  "closed": [
+    1,
+    "cad82efa8c99d26360564e7550a445e0e933ff88",
+    "Delegated: J-3, J-4 accepted as risk (existing tests prove them); J-1, J-2 minor notes"
+  ]
 }
