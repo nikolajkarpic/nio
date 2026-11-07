@@ -5,7 +5,7 @@ from pathlib import Path
 
 from test_jury import PLAN_FINDING, PSLUG, approve_plan, approve_spec, change, plan_lens, plan_repo
 
-from nio import jury, records, tasks
+from nio import jury, records, spec, tasks
 import selfcheck
 
 SLUG = PSLUG
@@ -98,8 +98,9 @@ def test_ac59_it_refuses_given_a_bug_fix_spec_whose_sp():
     except ValueError as e:
         assert str(e).startswith("the plan must be approved first"), e
     assert not tasks.path(root, SLUG).exists()
-    lite = repo(route="lite", write=False)
-    approve_spec(lite, "R-S1")
+    lite = repo(write=False)
+    bug = Path(__file__).parent / "fixtures/spec/spec-bugfix.md"
+    spec.path(lite, SLUG).write_text(re.sub(r"^slug: .*$", f"slug: {SLUG}", bug.read_text(), count=1, flags=re.M))
     assert tasks.new(lite, SLUG).exists()
     print("ok")
 
