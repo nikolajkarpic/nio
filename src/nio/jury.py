@@ -1332,7 +1332,7 @@ def _pack_text(root, slug, gate, run, lens, fix):
         if lens == "consistency":
             m = re.search(r"^## Summary\n(.*?)(?=^## |\Z)", artefact(root, slug, "spec"), re.M | re.S)
             asked = " ".join(m[1].split()) if m else slug
-            text, ids = memory.build(root, asked)
+            text, ids = memory.build(root, asked, worker=False)
             memory.save(root, run, f"{lens}-memory", text)
             query.log(root, "pack", f"{lens}-memory", ids, text)
             body += "\n" + text + "\n"
