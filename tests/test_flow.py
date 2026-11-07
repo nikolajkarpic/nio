@@ -2519,6 +2519,12 @@ def test_lite_skill_texts():
     assert step1 and "nio check spec" in step1.group(0) and "--gate" in step1.group(0), "skill step 1"
     assert step3 and any("unchanged-behaviour" in ln and "Mode: direct" in ln
                          for ln in step3.group(0).splitlines()), "skill step 3"
+    # CT-7: a bug fix's tasks stage starts at the spec gate, with no spec jury.
+    desc = re.search(r"^description: .*$", skill, re.M).group(0)
+    assert "nio check spec <slug> --gate" in desc and "no spec jury" in desc, "skill description"
+    inp = re.search(r"^- \*\*Input:\*\*.*?(?=^- \*\*Outputs)", skill, re.S | re.M).group(0)
+    assert "nio check spec <slug> --gate" in inp and "no spec jury" in inp, "skill input"
+    assert "(no `nio`)" in skill and "lite or bug-fix spec, or no" not in skill, "skill fallback"
 
 
 if __name__ == "__main__":
