@@ -1,7 +1,7 @@
 ---
 gate: plan
 subject: 2026-11-07-fewer-gate-turns
-round: 2
+round: 5
 outcome: approved
 ---
 # Plan jury: 2026-11-07-fewer-gate-turns
@@ -19,6 +19,7 @@ outcome: approved
 | J-7 | major | gap | TC-11, TC-18, AC-11, NFR-1, CT-6 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 0 |
 | J-8 | minor | gap | TC-2, AC-2, CT-2 | test-proof | grounded | fixed | plan-fix (agent) | absent, 0 |
 | J-9 | minor | ambiguity | TC-3, AC-3, AC-16, CT-1 | test-proof | grounded | fixed | plan-fix (agent) | absent, 0 |
+| J-10 | blocker | contradiction | CT-1, TC-11, FR-4 | test-proof | confirmed | fixed | plan-fix (agent) | absent, 1 |
 
 ### J-1 No contract renders the agents, and the skill loses its `nio agents sync`
 - quote: "plan the gate, render the agents and write each planned lens's pack to `.nio/runs/<run>/jury/packs/<lens>.md`"
@@ -98,9 +99,23 @@ outcome: approved
 - fix: Put the ungrounded finding inside one of the planned lenses' outputs, for example logic's in place of `none`, instead of adding a file.
 - disposition: plan-fix by agent: TC-3 puts the ungrounded finding in logic's output
 
+### J-10 The new re-run check makes every fix-check run ask again for lenses that have nothing to re-check
+- quote: "a planned lens with no `<gate>-<lens>.md` in the run, or whose juror the ledger holds as invalid or `needs-more` in this round with fewer than 2 attempts → per lens `next: re-run <lens>"
+- quote: "`rerun` → CT-2 in a new run, as case 2, with the fix-check packs of the lenses `changed()` names (FR-4)"
+- quote: "`step` → new run with two fix-check packs (1); two juror outputs with `fixed` verdicts (2); `step` (1)."
+- quote: "the last step prints `outcome: approved` and `next: tell the human`"
+- situation (test-proof): In TC-11 the re-review run holds packs and outputs only for testability and logic. The planned consistency lens has no `spec-consistency.md` in that run, so the new first branch prints `next: re-run consistency` and never calls `check`. `outcome: approved` can't be reached, and any re-review that skips a lens repeats this every time. The same happens in TC-14(b) for the lenses its fix check leaves out.
+- situation (test-proof): In TC-11 the re-review run holds packs and outputs only for testability and logic. The planned consistency lens has no `spec-consistency.md` in that run, so the first branch prints `next: re-run consistency` and never calls `check`. `outcome: approved` can't be reached, and any re-review that skips a lens repeats this every time. The same happens in TC-14(b) for the lenses its fix check leaves out.
+- situation (test-proof): A re-review run holds packs only for the lenses `changed()` names, which are the lenses with a fixed finding (jury.py line 446). Every other planned lens has no `<gate>-<lens>.md` in that run, so CT-1's first branch prints `next: re-run <lens>` and `step` never reaches the check. In TC-11 that is the third planned lens (consistency, per the situation given in J-10), so the expected `outcome: approved` can't be reached. TC-14(b) hits the same thing for the lenses its fix check leaves out, and every re-review that skips a lens repeats the loop.
+- fix: In the missing-output check, count only the lenses this run was given packs for (`packs/step.json` "lenses"), or a lens with no valid juror in the ledger at all, as `compose` does with `led["expect"]`. Leave out lenses an earlier round judged and `changed()` didn't name.
+- validation: confirmed: The quoted first branch of CT-1 counts every planned lens with no `<gate>-<lens>.md` in this run as missing. A re-review run holds packs and outputs only for the lenses `changed()` names (jury.py:437-457, which returns just those with a fix to check), so any other planned lens, such as consistency in TC-11, would print `next: re-run <lens>`. `step` would then never reach `check`, and TC-11's `outcome: approved` could not be reached. The code's own missing check, `[lens for lens in led["expect"] if lens not in lenses]` at jury.py:964, is scoped to the ledger's `expect`, not to every planned lens, and nothing in the quoted text narrows the branch the same way. The finding is judged against the earlier text, as you asked. I did not re-read the edited contracts.md. This is the same finding as the two escalation re-raises, with no other duplicate.
+- disposition: plan-fix by agent: CT-1: only lenses this run has a pack for (step.json lenses) count as missing; TC-11 asserts no re-run consistency after the fix-check packs
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| plan-architecture-fit | architecture-fit | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
-| plan-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 2 | 2 |
+| plan-architecture-fit | architecture-fit | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 3 |
+| plan-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 5 |
+| plan-test-proof-2 | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 4 |
+| plan-test-proof-3 | test-proof | juror / claude-code / claude-opus-5-5 | limited | yes | 1 | 4 |

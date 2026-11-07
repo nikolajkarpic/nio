@@ -1,7 +1,7 @@
 {
   "gate": "plan",
   "subject": "2026-11-07-fewer-gate-turns",
-  "round": 2,
+  "round": 5,
   "tier": "medium",
   "expect": [
     "architecture-fit",
@@ -12,7 +12,13 @@
     "R-261107-2j7y/plan-test-proof.md": "171c334448d7a2d3adfb9e9868c06d8f86904903bd7b311154582a401c469acb",
     "R-261107-2j7y/plan-refuter.md": "c4a05b4e8302e7d66116dca2c34e1f4c8593662e088bdbb5515bc15b834128d3",
     "R-261107-tdkf/plan-architecture-fit.md": "b8358cfce89a9cdf1b926546d03d06d4e965c9110b60e78f33187600bd7c58f0",
-    "R-261107-tdkf/plan-test-proof.md": "5e6cdf002c8051cc0054854b499dd3f5f364249ac7beeb90c41cc8a05ea4e06b"
+    "R-261107-tdkf/plan-test-proof.md": "5e6cdf002c8051cc0054854b499dd3f5f364249ac7beeb90c41cc8a05ea4e06b",
+    "R-261107-56pm/plan-architecture-fit.md": "eb014bd22ef0b3c2f82ba367898c82762177e70c39907e2f399e8003c4f4e859",
+    "R-261107-56pm/plan-test-proof.md": "f45781e2c400cfc75e81698f7dc60289af497ab1126e4ebdea117402abbbd15c",
+    "R-261107-56pm/plan-refuter.md": "eb63905987fd43158b788b09c7eb27bf092280e4ba523fb9c83f6c66f5070bd3",
+    "R-261107-56pm/plan-test-proof-2.md": "44138a002d9432f578da58b6c2e6c4e0a29160b2c2fb1a7a5a6f59f702f742e7",
+    "R-261107-56pm/plan-test-proof-3.md": "d65947254e8cd1b4a9ce792e1d7a9bd413d578d27e27462182841386db11a391",
+    "R-261107-awxy/plan-test-proof.md": "aa743bb68070c3edaec4d1c7df02d2c982c98fe041ba4daf4a2ba7a653a1ed46"
   },
   "jurors": {
     "plan-architecture-fit": {
@@ -22,20 +28,42 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "8afe64bae8e22fed2d75aa72f34dab0dfc86bce2",
-      "judged": 2
+      "round": 3,
+      "version": "5dd7835b8e73b29eb604a3e6528e7d7eadce9243",
+      "judged": 3
     },
     "plan-test-proof": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "test-proof",
       "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "8afe64bae8e22fed2d75aa72f34dab0dfc86bce2",
-      "judged": 2
+      "round": 5,
+      "version": "e473644366e46f8b289fa138d413b0ca0bacf150",
+      "judged": 5
+    },
+    "plan-test-proof-2": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "c836dc4af111ae5b171cdced0ee1f0ff227dd701",
+      "judged": 4
+    },
+    "plan-test-proof-3": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "c836dc4af111ae5b171cdced0ee1f0ff227dd701",
+      "judged": 4
     }
   },
   "findings": [
@@ -387,6 +415,59 @@
       "first_round": 1,
       "last_round": 1,
       "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "The new re-run check makes every fix-check run ask again for lenses that have nothing to re-check",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "CT-1",
+        "TC-11",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a planned lens with no `<gate>-<lens>.md` in the run, or whose juror the ledger holds as invalid or `needs-more` in this round with fewer than 2 attempts → per lens `next: re-run <lens>",
+        "`rerun` → CT-2 in a new run, as case 2, with the fix-check packs of the lenses `changed()` names (FR-4)",
+        "`step` → new run with two fix-check packs (1); two juror outputs with `fixed` verdicts (2); `step` (1).",
+        "the last step prints `outcome: approved` and `next: tell the human`"
+      ],
+      "fix": "In the missing-output check, count only the lenses this run was given packs for (`packs/step.json` \"lenses\"), or a lens with no valid juror in the ledger at all, as `compose` does with `led[\"expect\"]`. Leave out lenses an earlier round judged and `changed()` didn't name.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "In TC-11 the re-review run holds packs and outputs only for testability and logic. The planned consistency lens has no `spec-consistency.md` in that run, so the new first branch prints `next: re-run consistency` and never calls `check`. `outcome: approved` can't be reached, and any re-review that skips a lens repeats this every time. The same happens in TC-14(b) for the lenses its fix check leaves out.",
+          "severity": "blocker",
+          "round": 3
+        },
+        {
+          "juror": "plan-test-proof-2",
+          "lens": "test-proof",
+          "situation": "In TC-11 the re-review run holds packs and outputs only for testability and logic. The planned consistency lens has no `spec-consistency.md` in that run, so the first branch prints `next: re-run consistency` and never calls `check`. `outcome: approved` can't be reached, and any re-review that skips a lens repeats this every time. The same happens in TC-14(b) for the lenses its fix check leaves out.",
+          "severity": "blocker",
+          "round": 4
+        },
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "A re-review run holds packs only for the lenses `changed()` names, which are the lenses with a fixed finding (jury.py line 446). Every other planned lens has no `<gate>-<lens>.md` in that run, so CT-1's first branch prints `next: re-run <lens>` and `step` never reaches the check. In TC-11 that is the third planned lens (consistency, per the situation given in J-10), so the expected `outcome: approved` can't be reached. TC-14(b) hits the same thing for the lenses its fix check leaves out, and every re-review that skips a lens repeats the loop.",
+          "severity": "blocker",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The quoted first branch of CT-1 counts every planned lens with no `<gate>-<lens>.md` in this run as missing. A re-review run holds packs and outputs only for the lenses `changed()` names (jury.py:437-457, which returns just those with a fix to check), so any other planned lens, such as consistency in TC-11, would print `next: re-run <lens>`. `step` would then never reach `check`, and TC-11's `outcome: approved` could not be reached. The code's own missing check, `[lens for lens in led[\"expect\"] if lens not in lenses]` at jury.py:964, is scoped to the ledger's `expect`, not to every planned lens, and nothing in the quoted text narrows the branch the same way. The finding is judged against the earlier text, as you asked. I did not re-read the edited contracts.md. This is the same finding as the two escalation re-raises, with no other duplicate.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1: only lenses this run has a pack for (step.json lenses) count as missing; TC-11 asserts no re-run consistency after the fix-check packs",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 3,
+      "last_round": 4,
+      "fixed_in": 5
     }
   ],
   "outcome": "approved",
@@ -398,10 +479,21 @@
     [
       2,
       "approved"
+    ],
+    [
+      4,
+      "rejected"
+    ],
+    [
+      5,
+      "approved"
     ]
   ],
   "versions": {
     "1": "76eaaa288469404a1359aec1def695c1342aaa8d",
-    "2": "8afe64bae8e22fed2d75aa72f34dab0dfc86bce2"
+    "2": "8afe64bae8e22fed2d75aa72f34dab0dfc86bce2",
+    "3": "5dd7835b8e73b29eb604a3e6528e7d7eadce9243",
+    "4": "c836dc4af111ae5b171cdced0ee1f0ff227dd701",
+    "5": "e473644366e46f8b289fa138d413b0ca0bacf150"
   }
 }
