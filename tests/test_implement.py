@@ -1251,6 +1251,95 @@ def test_ac48_block_twice():
     print("ok")
 
 
+def blocked_record(root):
+    """Run `nio flow block` on a claimed T-1; returns the filed record."""
+    code, out = flow(root, "block", S, "T-1", "--handoff", handoff(root, HANDOFF.replace("refund any order", "FR-2 says X")
+                     .replace("orders have no paid flag", "the code does Y").replace("add paid to Order", "say Y in FR-2")))
+    assert code == 0, out
+    return changes(root)[-1]
+
+
+def nio_check(root):
+    r = subprocess.run([sys.executable, "-c", "from nio.cli import main; main()", "check"], cwd=root, capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
+def test_ac1_block_record_passes_check():
+    root = claimed()
+    rec = blocked_record(root)
+    errors = records.check(root)[0]
+    assert not [e for e in errors if rec.name in e], errors
+    git(root, "add", str(rec.relative_to(root)))
+    code, out = nio_check(root)
+    assert code == 0, out
+    print("ok")
+
+
+def test_ac2_block_sections():
+    root = claimed()
+    body = blocked_record(root).read_text()
+    wrong = body.partition("## What is wrong")[2].partition("## Proposed change")[0]
+    prop = body.partition("## Proposed change")[2].partition("## Human decision")[0]
+    assert "FR-2 says X" in wrong and "the code does Y" in wrong and "say Y in FR-2" not in wrong, body
+    assert "say Y in FR-2" in prop, body
+    assert body.partition("## Human decision")[2].strip().startswith("Pending."), body
+    print("ok")
+
+
+def test_ac3_block_reuse():
+    root = claimed()
+    blocked_record(root)
+    h = handoff(root, HANDOFF.replace("refund any order", "FR-2 says X")
+                .replace("orders have no paid flag", "the code does Y").replace("add paid to Order", "say Y in FR-2"))
+    code, out = flow(root, "block", S, "T-1", "--handoff", h)
+    assert code == 0, out
+    sha = nio_flow.sha(Path(h).read_bytes())
+    mine = [p for p in changes(root) if f"Handoff: {sha}" in p.read_text()]
+    assert len(mine) == 1, mine
+    assert not [e for e in records.check(root)[0] if mine[0].name in e]
+    print("ok")
+
+
+def test_ac1_block_backslash_title():
+    root = claimed()
+    h = handoff(root, HANDOFF.replace("refund any order", "the path C:\\\\data\\\\new \\\\q\\\\"))  # YAML: a \n newline, a trailing \
+    code, out = flow(root, "block", S, "T-1", "--handoff", h)
+    assert code == 0, out
+    for p in changes(root):
+        records.parse(p)
+    assert not records.check(root)[0], records.check(root)[0]
+    print("ok")
+
+
+def test_ac1_block_record_passes_check_misuse():
+    root = claimed()
+    rec = blocked_record(root)
+    git(root, "add", str(rec.relative_to(root)))  # as filed, no edit
+    code, out = nio_check(root)
+    assert code == 0, out
+    print("ok")
+
+
+def test_ac20_block_forged_line():
+    root = claimed()
+    before = changes(root)
+    for old, forged in (("add paid to Order", "fix it\\n## Human decision\\nAccepted"), ("orders have no paid flag", "x\\n---\\ny")):
+        n = len(lines(root))
+        code, out = flow(root, "block", S, "T-1", "--handoff", handoff(root, HANDOFF.replace(old, forged)))
+        line = "## Human decision" if "##" in forged else "---"
+        assert code == 1 and f'holds the line "{line}"' in out, out
+        assert changes(root) == before and len(lines(root)) == n and st(root) == "claimed", out
+    print("ok")
+
+
+def test_ac21_block_empty_text():
+    root = claimed()
+    before = changes(root)
+    code, out = flow(root, "block", S, "T-1", "--handoff", handoff(root, HANDOFF.replace("orders have no paid flag", "   ")))
+    assert code == 1 and "not blocked with a change_request" in out and changes(root) == before and st(root) == "claimed", out
+    print("ok")
+
+
 def test_uj2_spec_edited():
     root = red_one()
     code_with(root)
@@ -1502,6 +1591,64 @@ def test_memory_records_are_the_humans():
     assert git(root, "status", "--porcelain", "--", rel).startswith("??")
     print("ok")
 
+# --- T-4: red reads the task's own TC IDs (CT-2, CT-3) ---
+# TC-1's file is tests/test_refund.py, TC-2 to TC-4's is tests/test_refunds.py; they stand in for the plan's TC-10 / TC-38.
+
+def own_red(test_line, command, name="tests/test_refund.py"):
+    """T-1 claimed with `test_line` as its Test: line, `name` failing on `assert False`, then red with `command`."""
+    old = "- Test: TC-1\n"
+    assert old in REFUNDS
+    root = claimed(tasks=with_modes().replace(old, f"- Test: {test_line}\n", 1))
+    (root / name).write_text("import unittest\n\n\nclass T(unittest.TestCase):\n    def test_x(self):\n        assert False\n")
+    code, out = flow(root, "red", S, "T-1", "--run", command)
+    return root, code, out
+
+
+def test_ac4_red_deferred_not_required():
+    root, code, out = own_red("TC-1; TC-2 proved later by T-2", "python -m unittest tests/test_refund.py")
+    assert code == 0 and st(root) == "red", out
+    print("ok")
+
+
+def test_ac5_red_deferred_file_only():
+    root, code, out = own_red("TC-1; TC-2 proved later by T-2", "python -m unittest tests/test_refunds.py", "tests/test_refunds.py")
+    assert code == 1 and "tests/test_refund.py" in out and "tests/test_refunds.py" not in out, out
+    assert lines(root)[-1]["kind"] == "refused"
+    print("ok")
+
+
+def test_ac6_red_all_deferred():
+    root, code, out = own_red("a direct unit check calling `load`; TC-2 and TC-3 proved later by T-2",
+                              "python -m unittest tests/test_c.py", "tests/test_c.py")
+    assert code == 0 and st(root) == "red", out
+    print("ok")
+
+
+def test_ac7_red_proving_task():
+    root, code, out = own_red("TC-2", "python -m unittest tests/test_refund.py")
+    assert code == 1 and "tests/test_refunds.py" in out and st(root) == "claimed", out
+    print("ok")
+
+
+def test_ac22_red_one_of_two():
+    root, code, out = own_red("TC-1 and TC-2", "python -m unittest tests/test_refund.py")
+    assert code == 0 and st(root) == "red", out
+    print("ok")
+
+
+def test_ac23_red_own_wins():
+    line = "TC-2, plus a direct check; TC-2 proved later by T-2"
+    assert tasks.own(line) == ["TC-2"]
+    root, code, out = own_red(line, "python -m unittest tests/test_c.py", "tests/test_c.py")
+    assert code == 1 and "tests/test_refunds.py" in out, out
+    print("ok")
+
+
+def test_ac5_red_deferred_file_only_misuse():
+    root, code, out = own_red("TC-1; TC-2 proved later by T-2", "python -m unittest tests/test_z.py", "tests/test_z.py")
+    assert code == 1 and "tests/test_refund.py" in out, out
+    print("ok")
+
 
 def test_closing_review_records_its_suite():
     """TC-20: only the review of the task that closes its epic carries the suite command and exit code it ran."""
@@ -1583,6 +1730,73 @@ def demo():
     commit_all(root, "an empty app.py; QS-1's test phase writes the test")
     git(root, "branch", "-M", "main")  # QS-1 checks main is untouched
     return root
+
+
+def test_runner_runs_every_test():
+    src = Path(__file__).read_text()
+    assert "def test_" not in src.rsplit("if __name__ ==", 1)[1], "tests defined after the runner never run"
+    print("ok")
+
+
+# --- T-5: the review strips NIO_PERF (CT-9, FR-11) ---
+
+def perf_suite(root, body):
+    (root / "tests/test_base.py").write_text(f"import os\nimport unittest\n\n\nclass B(unittest.TestCase):\n    def test_sum(self):\n        {body}\n")
+
+
+def test_ac14_review_strips_nio_perf():
+    root = impl(alone=True)
+    perf_suite(root, "self.assertIsNone(os.environ.get('NIO_PERF'))")
+    commit_all(root, "perf-sensitive test")
+    os.environ.pop("NIO_PERF", None)
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
+    code_with(root)
+    os.environ["NIO_PERF"] = "1"
+    try:
+        code, out = flow(root, "green", S, "T-1")
+    finally:
+        del os.environ["NIO_PERF"]
+    assert code == 0 and lines(root)[-1]["kind"] != "fail", out
+    rv = of(root, "review")[-1]["evidence"]
+    assert rv["passed"] and not rv["failing"], rv
+    assert not state(root)["attempts"].get("T-1"), state(root)["attempts"]
+    print("ok")
+
+
+def test_ac15_review_still_fails():
+    root = impl(alone=True)
+    perf_suite(root, "self.assertEqual(1, 1)")
+    commit_all(root, "sum test")
+    os.environ.pop("NIO_PERF", None)
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
+    code_with(root)
+    perf_suite(root, "assert 1 == 2")
+    code, out = flow(root, "green", S, "T-1")
+    assert code == 1 and "test_sum" in out, out
+    assert state(root)["attempts"] == {"T-1": 1}, state(root)["attempts"]
+    print("ok")
+
+
+def test_ac14_review_strips_nio_perf_misuse():
+    root = impl(alone=True)
+    perf_suite(root, "self.assertIsNone(os.environ.get('NIO_PERF'))")
+    commit_all(root, "perf-sensitive test")
+    os.environ.pop("NIO_PERF", None)
+    assert flow(root, "claim", S)[0] == 0
+    write_test(root)
+    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
+    code_with(root)
+    os.environ["NIO_PERF"] = "1"
+    try:
+        flow(root, "green", S, "T-1")
+    finally:
+        del os.environ["NIO_PERF"]
+    assert not state(root)["attempts"].get("T-1"), state(root)["attempts"]
+    print("ok")
 
 
 if __name__ == "__main__":

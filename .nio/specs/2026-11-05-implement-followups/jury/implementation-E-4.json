@@ -1,0 +1,542 @@
+{
+  "gate": "implementation-E-4",
+  "subject": "2026-11-05-implement-followups",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-xdao/implementation-E-4-adversary.md": "c43561e5f6730e3c9eef885ddea516d61b6448dc09a38fc3f7f7bf244c5b18ac",
+    "R-261106-xdao/implementation-E-4-conformance.md": "122d71cb109691dab41da1779ca3c4d6cbe9bb8657feaa0a727c3b18d461dd84",
+    "R-261106-xdao/implementation-E-4-consistency.md": "04f0e72aebaeb3066c690d773b41d3c71c9f83629d1a28f9ec1834e35e4be5b8",
+    "R-261106-xdao/implementation-E-4-correctness.md": "69ea63ce25ca293e1d3367c71567783d79a570af27a62f89288a0760bf9494ca",
+    "R-261106-xdao/implementation-E-4-refuter.md": "a5adf951d11c50bd683522bf16ecfddff074dfb286477d801b4a284d62d7f1a9",
+    "R-261106-mgyg/implementation-E-4-conformance.md": "0468d14fc01dd674dfdcf8922d2839fbc17e4b6d75b23a064871179ad4e6a255"
+  },
+  "jurors": {
+    "implementation-E-4-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "9586bfe3b97f428596e4261a34a2a9d9e6038616",
+      "judged": 1
+    },
+    "implementation-E-4-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a907d7507da97623dd2c0d44308af91a1ab8b160",
+      "judged": 2
+    },
+    "implementation-E-4-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "9586bfe3b97f428596e4261a34a2a9d9e6038616",
+      "judged": 1
+    },
+    "implementation-E-4-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "9586bfe3b97f428596e4261a34a2a9d9e6038616",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A fix task edited after it was first shown is never shown again",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the IDs of tasks under `#### Fixes` in the current `tasks.md` that are not in `led[\"fixes\"]` of the last collected round"
+      ],
+      "fix": "record a hash of each fix task's block next to its ID, and report a fix task as added when its ID is new or its hash differs.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "Round 2 records T-30 in `led[\"fixes\"][\"2\"]`. Someone then rewrites T-30 so its Files point at an unrelated path or its Serves changes. `fixes_added` compares IDs only, so it returns `[]`. The fix-check pack shows no fix text, `changed` prints no `added under Fixes` line, approval holds, and no lens re-runs. The rewritten task goes in with no review.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-6, FR-7 and FR-8 (spec.md:137-139) cover tasks \"added under #### Fixes\", not later edits to a fix task. FR-8 deliberately exempts the Fixes section from approval (`planned()` strips it, jury.py:183). Reviewing edits to an existing fix task is a new requirement, not a gap in this spec.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py fixes_added / fix_ids / collect",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "A duplicate task ID under Fixes can mark a planned task as a fix",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IDs of the tasks under `#### Fixes` in tasks.md now."
+      ],
+      "fix": "have `fix_ids` return `[]` or raise when `dupes` is non-empty. Check that the approval path rejects duplicates before it applies the fix exemption.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`tasks.md` holds planned `### T-4` and a second `### T-4` under `#### Fixes`. `tasks.parse` keeps the last block per ID and only lists the repeat in `dupes`. `fix_ids` reads `tasks[...][\"fix\"]` and ignores `dupes`. T-4 then counts as a fix. That hides it from the changed IDs and the re-run list that CT-4 says are \"computed as today\". If approval or `changed` use the same parse, the exemption for fixes becomes a way to slip a rewritten planned task past withdrawal.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Approval and `changed` read the artefact through `planned()` (jury.py:183-191). That function strips `#### Fixes` sections by regex and never calls `fix_ids`. An edited planned T-4 therefore still shows up as changed and still withdraws approval, whatever `fix_ids` returns. Also, `tasks.check` rejects a repeated ID outright (tasks.py:187, \"is defined N times\"), so the duplicate cannot pass the tasks check.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/jury.py fix_ids, src/nio/tasks.py parse",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "`changed` leaves T-30 out of the changed IDs, but AC-9 says to list it there",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "AC-9",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then T-30 is among the changed IDs it reports."
+      ],
+      "fix": "amend AC-9 to say \"in an `added under Fixes` line\", with `right: spec`.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`nio jury changed` prints `changed: T-4` and puts T-30 on a fifth line, `added under Fixes: T-30`. The test asserts `\"T-30\" not in lines[0]`, which is the opposite of AC-9's observable, \"the output lists T-30 next to T-4\". Anyone who checks AC-9 as written, or a script that reads the `changed:` line, will not find T-30. AC-24 and CT-6 want no lens re-run for it, so the spec itself is inconsistent.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/cli.py jury changed; AC-9 versus CT-6",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-4",
+      "title": "The misuse test for fixcheck duplicates the happy path and attacks nothing",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert \"### T-30 Fix the finding\" in \"\\n\".join(jury.fixcheck(root, slug, \"tasks\", \"executability\"))"
+      ],
+      "fix": "make it cover a duplicate fix ID, an edited fix body, and a missing `fixes` key, and assert the expected output for each.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`test_ac8_fixcheck_shows_fixes_misuse` repeats the setup and a weaker form of the positive assertion. It covers no hostile case: a malformed `tasks.md`, a missing `tasks.md`, a duplicate ID, or a ledger without `fixes`. The runner can't run it on its own, so a regression in the cases above would not be caught.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py test_ac8_fixcheck_shows_fixes_misuse",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "AC-9 and AC-24 say T-30 is in the changed list, but the code and its test keep it out",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-9",
+        "AC-24",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then T-30 is among the changed IDs it reports",
+        "the `changed:` line keeps only judged IDs, so no lens re-runs for a fix task"
+      ],
+      "fix": "Reword AC-9 and AC-24 to say T-30 appears on the `added under Fixes:` line and not in `changed:`. If the ACs are right, put the fix IDs into `changed:`.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "A fix task T-30 is added. AC-9 and AC-24 expect `nio jury changed` to report it among the changed IDs, next to T-4. The code prints it only on `added under Fixes: T-30`. `test_ac9_changed_lists_fixes` asserts `\"T-30\" not in lines[0]`, and `test_ac24_fixes_only_no_rerun` asserts `ids == []`. The code and tests follow CT-6, so the two ACs as written are not met.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/cli.py `jury changed` output, tests/test_jury.py:1431 and :1462",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-6",
+      "title": "AC-25 covers editing or removing a planned task, but only editing is tested",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when a planned task outside `#### Fixes` is edited or removed, then the approval is withdrawn as it is today"
+      ],
+      "fix": "Add a test that deletes a planned task's block from an approved `tasks.md` and asserts `tasks.approved` returns false.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "`test_ac25_edit_withdraws_approval` only changes a title. No test removes a planned task from an approved gate. A change that stopped removal from withdrawing approval would pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_tasks.py:496",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "AC-11 requires output equal to the current code's output, but the test only checks absence and line count",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then their output is the same as before this change"
+      ],
+      "fix": "Assert the exact `changed` lines and compare the pack with a known baseline, or the pack minus the new section.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "`test_ac11_no_fixes_unchanged` checks that the heading is absent from the pack and that `changed` prints 4 lines. It never compares the pack or the lines to a baseline. Altered pack content or `changed` line text would pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py:1471",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "AC-9 calls T-30 a changed ID, but the code and CT-6 keep it out of the changed line",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-9",
+        "CT-6",
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "T-30 is among the changed IDs it reports",
+        "the `changed:` line keeps only judged IDs, so no lens re-runs for a fix task.",
+        "assert lines[0].startswith(\"changed:\") and \"T-4\" in lines[0] and \"T-30\" not in lines[0], lines"
+      ],
+      "fix": "reword AC-9 so T-30 is listed under `added under Fixes` in the output, as CT-6 intends. Alternatively, put T-30 in the `changed:` line and keep it out of the re-run list, then update the test.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "on the AC-9 fixture, `nio jury changed` prints `changed: T-4`, then `added under Fixes: T-30` on its own line. T-30 is not among the IDs of the `changed:` line, and the test asserts that exclusion. A reader who follows AC-9's wording expects T-30 in `changed:` and finds the test checking the opposite. The test passes, so the AC and the implementation describe different outputs.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "A fix task T-30 is added. AC-9 and AC-24 expect `nio jury changed` to report it among the changed IDs, next to T-4. The code prints it only on `added under Fixes: T-30`. `test_ac9_changed_lists_fixes` asserts `\"T-30\" not in lines[0]`, and `test_ac24_fixes_only_no_rerun` asserts `ids == []`. The code and tests follow CT-6, so the two ACs as written are not met.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-9 says T-30 is \"among the changed IDs\". CT-6 and the test keep it out of the `changed:` line and print it on `added under Fixes:`. The ACs and the implementation describe different outputs. This is the same problem as J-5.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated human (orchestrator): the code follows the approved contract CT-6 (fix IDs on their own 'added under Fixes:' line, so no lens re-runs); AC-9/AC-24 wording is loose against it, as the tasks jury already found. Rewording the ACs would reopen the spec gate for wording only; tracked on #80. T-17 becomes a re-run of TC-9.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/cli.py:main (the `added under Fixes:` print); tests/test_jury.py:test_ac9_changed_lists_fixes",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-9",
+      "title": "fix_ids reads the `#### Fixes` heading differently from the approval path",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-4",
+        "FR-8",
+        "AC-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "so approval and `changed` are untouched",
+        "return [i for i, t in tasks.parse(\"\\n\".join(records.parse(p)[1]))[\"tasks\"].items() if t[\"fix\"]] if p.exists() else []"
+      ],
+      "fix": "give `planned()` and `fix_ids` one heading matcher, for example `^\\s*#### Fixes\\s*$` as `tasks.py:424` already uses, and add a test with a trailing-space heading.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "the heading is written as `#### Fixes ` with a trailing space, or is indented. `tasks.parse` matches it with `line.strip()`, so fix_ids lists the task under it and fixes_added reports it as added. `planned()` in jury.py removes Fixes sections only with `^#### Fixes$`, which does not match that line, so the task stays in the judged text. Appending a fix task under such a heading would then change the approved text and withdraw the approval, which FR-8 says a fix task must not do. I inferred this from the two definitions and did not run it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py:fix_ids; src/nio/jury.py:planned (outside the diff)",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "AC-9 says changed lists T-30 next to T-4, but the code prints it on a separate line",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-9",
+        "CT-6",
+        "AC-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Observable: the output lists T-30 next to T-4.",
+        "assert lines[4:] == [\"added under Fixes: T-30\"], lines"
+      ],
+      "fix": "reword AC-9 to match CT-6, saying \"lists T-30 on the `added under Fixes:` line, not among the changed IDs\". Otherwise put T-30 in `changed:` while keeping `re-run:` empty.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "AC-9 says T-30 is among the changed IDs, next to T-4. The code and test put T-30 only on a fifth `added under Fixes:` line and assert it is absent from the `changed:` line. CT-6 chose this on purpose so that no lens re-runs, but AC-9 and AC-24 (\"it lists T-30\") were never reworded. A reader of AC-9 would call the shipped output wrong.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/cli.py (jury changed output) against AC-9 in the spec",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-11",
+      "title": "The AC-8 misuse test asserts only a subset of the main test",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert \"### T-30 Fix the finding\" in \"\\n\".join(jury.fixcheck(root, slug, \"tasks\", \"executability\"))"
+      ],
+      "fix": "make the misuse case one the code could get wrong. For example, with T-30 already recorded by a collected round, assert the pack has no `## Tasks added under Fixes` section. Or drop the test.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "`test_ac8_fixcheck_shows_fixes_misuse` builds the same fixture as `test_ac8_fixcheck_shows_fixes` and checks one substring that the main test already checks. It tries no input the main test doesn't, such as the fix task already being in the last round's recorded fixes, or a missing `led[\"fixes\"]` key. It passes for any code that shows T-30, so it adds no evidence of correct handling.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_jury.py:test_ac8_fixcheck_shows_fixes_misuse",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "9586bfe3b97f428596e4261a34a2a9d9e6038616",
+    "2": "a907d7507da97623dd2c0d44308af91a1ab8b160"
+  },
+  "matched": {
+    "AC-8": [
+      [
+        "tests/test_jury.py",
+        "test_ac8_fixcheck_shows_fixes"
+      ]
+    ],
+    "AC-9": [
+      [
+        "tests/test_jury.py",
+        "test_ac9_changed_lists_fixes"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_tasks.py",
+        "test_ac10_fix_keeps_approval"
+      ]
+    ],
+    "AC-11": [
+      [
+        "tests/test_jury.py",
+        "test_ac11_no_fixes_unchanged"
+      ]
+    ],
+    "AC-24": [
+      [
+        "tests/test_jury.py",
+        "test_ac24_fixes_only_no_rerun"
+      ]
+    ],
+    "AC-25": [
+      [
+        "tests/test_tasks.py",
+        "test_ac25_edit_withdraws_approval"
+      ]
+    ]
+  }
+}

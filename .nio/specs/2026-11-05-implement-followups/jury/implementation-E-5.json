@@ -1,0 +1,381 @@
+{
+  "gate": "implementation-E-5",
+  "subject": "2026-11-05-implement-followups",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-32fd/implementation-E-5-adversary.md": "fe68cfd1aeeb1c8a19500c593c20e406ad2519acb42ce89b43dff761e5310f4c",
+    "R-261106-32fd/implementation-E-5-conformance.md": "ae4f64e6f1593b1aa33077dade389ec8c53d6da37d23fcf25331cbaf50c46dca",
+    "R-261106-32fd/implementation-E-5-consistency.md": "2558b7f1e1d2f7aabd3af8d33f780c51d57657a5520d87b22cff7497b11a87ad",
+    "R-261106-32fd/implementation-E-5-correctness.md": "8472e6c0d792f218e6465eac9d2f7af879616a967486d421f14561294ccf0e8b",
+    "R-261106-32fd/implementation-E-5-refuter.md": "831e655c77ad80b764643fdbc87d27b8769ec4ce93dca7ca6574c16d36411924",
+    "R-261106-7xrm/implementation-E-5-consistency.md": "63cbcae52c85948a4de3a190064e0a6d40add85df9184f391feb0bd89f4190de"
+  },
+  "jurors": {
+    "implementation-E-5-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c4301e67505f69083d7f2e08b73fe6134585b046",
+      "judged": 1
+    },
+    "implementation-E-5-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c4301e67505f69083d7f2e08b73fe6134585b046",
+      "judged": 1
+    },
+    "implementation-E-5-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "777136331879a11deef937418d895ffc58a6d877",
+      "judged": 2
+    },
+    "implementation-E-5-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c4301e67505f69083d7f2e08b73fe6134585b046",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Plain `nio check tasks` now accepts unrated tasks, so only the optional flag stops them",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-7",
+        "AC-27"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "if \"Tier\" in f and f[\"Tier\"] != \"to be rated\":"
+      ],
+      "fix": "make `tasks.check` itself report any Tier or Mode containing `to be rated`, behind the existing gate or approval path. Keep `--rated-from` only for the diff check.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the diff exempts a Tier value of `to be rated` from validation in `tasks.check`. The drafter card writes `strong: to be rated`, and the `TIER` regex already accepts that as tier `strong` with reason \"to be rated\". So `nio check tasks <slug>` and `--approved` (which gates the implement stage) pass a `tasks.md` the evaluator never touched. The only detector is the substring test in `rated_from`, and it runs only when the skill's step 3 passes `--rated-from`. If the evaluator step is skipped or fails, or a human runs `nio check tasks --approved`, unrated tasks reach implement with no error and no warning.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-9, AC-26/27 and CT-7 define the rejection of unrated tasks only for `nio check tasks --rated-from`; CT-11 and AC-28 make the tasks skill pass that flag after the evaluator. No requirement says plain `nio check tasks` or `--approved` must reject `to be rated`, so asking for that goes beyond this spec.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py check (Tier/Mode branches), src/nio/cli.py --approved",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Evaluator-left default `Effort: med` is undetectable, and the dead exact-match exemption is a silent-pass path",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-27",
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "elif rating(b) and \"to be rated\" in b:"
+      ],
+      "fix": "require that each task's Tier and Mode line differ from the copy, or that no placeholder text remains. Say plainly that Effort can't be proven rated.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the drafter card leaves `Effort:` as `med`, a valid value. If the evaluator skips a task's Effort, the old and new lines are equal, the line contains no `to be rated`, and AC-27 passes with that task silently unrated. The same applies if the evaluator rewrites only some tasks' Tier lines: a task whose line is unchanged but still `strong: to be rated` is caught only by the substring match, not by \"was rated\".",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-correctness",
+          "lens": "correctness",
+          "situation": "A task is left unrated and the skill's step 4 `nio check tasks <slug>` runs without `--rated-from`. It now accepts `to be rated` for both Tier and Mode, so only the `--rated-from` run catches an unrated task. No AC or test covers this relaxation of the plain check.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py rated_from",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "A stale or missing copy is accepted or crashes",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-11",
+        "AC-28"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "open(copy).read().splitlines()"
+      ],
+      "fix": "turn the open failure into a `ValueError` or an `ERROR` line. State that the copy must sit under `.nio/runs/<run>/`.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "`rated_from` trusts the path it is given. If the agent copies `tasks.md` after the evaluator ran, or copies it twice, the diff is empty and the check passes whatever the evaluator changed. A nonexistent copy raises `FileNotFoundError`, which `cli.py` doesn't catch (it catches only `ValueError`), so the output is a traceback instead of an `ERROR` line. AC-28's test only checks the word order in the skill text.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py rated_from, src/nio/cli.py",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The tasks skill starts its run with a form the CLI refuses",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "AC-28"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Start a run with `nio run <slug>`",
+        "give the stage or task too: nio run <slug> <stage|T-n>"
+      ],
+      "fix": "change the step to \"Start a run with `nio run`\" (bare, as CT-11 and the other skills say), or, if the slug is wanted, `nio run <slug> tasking`.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "the tasks agent follows step 3 as written and runs `nio run <slug>`. `cli.py` exits with \"error: give the stage or task too\", so no `.nio/runs/<run>/` exists and the `tasks.before.md` copy has nowhere to go. Even with a second argument, `tasks` is not a stage (`flow.py` STAGES names `tasking`). CT-11 says the step \"starts a run with `nio run`\", with no slug, and plan, spec and jury all use bare `nio run`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "skills/tasks/SKILL.md step 3 says \"Start a run with `nio run <slug>`\", but cli.py lines 186-188 exit with \"give the stage or task too\" when a slug has no target. CT-11 says step 3 \"starts a run with `nio run`\" (bare), so the skill text contradicts the CLI and the contract.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-18",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "skills/tasks/SKILL.md step 3 (line 50); src/nio/cli.py:184-188",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "Nothing forces the evaluator to rate Mode, so a skipped Mode passes both checks",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "D-261029-rkpb",
+        "AC-27",
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Leave `Tier:` and `Effort:` as `strong: to be rated` and `med`",
+        "- Mode: split: <why>",
+        "`if \"Mode\" in f and f[\"Mode\"] != \"to be rated\":`"
+      ],
+      "fix": "have the drafter write `- Mode: to be rated` (and the template to match), and have `rated_from` (or `check`) fail a Mode line still equal to the drafter's copy. A test should cover a Mode left unrated.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "the drafter card names only Tier and Effort for the sentinel, so the drafter leaves `- Mode: split: <why>` from the template. If the evaluator skips that line, `nio check tasks` passes it (`split` is a valid mode and `<why>` is a non-empty reason), and `rated_from` passes it too, because it looks only for the text \"to be rated\". The run then ends with a task whose Mode was never rated, though the skill says the evaluator sets it and D-261029-rkpb says the task is worked in the rated mode.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-9 and AC-27 require only that non-rating lines stay unchanged and that no line still reads `to be rated`. Nothing requires the evaluator's Mode edit to be detectable, and CT-7 says nothing about a drafter `Mode: to be rated` sentinel. The finding asks for a requirement the spec doesn't have.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/agents/tasks-drafter.md line 35; src/nio/templates/tasks.md line 34; src/nio/tasks.py:223-228 and 302-313",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "The rating guard compares a sentinel the drafter never writes, and the tests use that form",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-27",
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`if \"Tier\" in f and f[\"Tier\"] != \"to be rated\":`",
+        "`field(\"T-1\", \"Tier\", \"to be rated\")`"
+      ],
+      "fix": "compare the reason part, for example `TIER.match(f[\"Tier\"])[2] != \"to be rated\"`, and use `strong: to be rated` in the `rated_run` fixture.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "the drafter writes `- Tier: strong: to be rated`. The guard compares the whole value to the bare text \"to be rated\", so it never skips the line. `check` then reads `strong` with reason `to be rated` as a finished rating. Only `rated_from`'s substring test catches it. The `rated_run` fixture in `test_tasks.py` uses the bare form, which the drafter never writes, so no test covers the real placeholder.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py:217; tests/test_tasks.py:161",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "A missing or unreadable copy crashes the check with a traceback",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "rel, new, old = p.relative_to(root), p.read_text().splitlines(), open(copy).read().splitlines()"
+      ],
+      "fix": "raise ValueError for a missing copy, or return an error line, so the existing `error:` path or the `ERROR` output handles it.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-correctness",
+          "lens": "correctness",
+          "situation": "`nio check tasks <slug> --rated-from <path>` is run with a path that does not exist, for example when the skill failed to make the copy. `open(copy)` raises FileNotFoundError. The CLI only catches ValueError, so the human sees a traceback and not an `ERROR` line with `N errors`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py:rated_from",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "c4301e67505f69083d7f2e08b73fe6134585b046",
+    "2": "777136331879a11deef937418d895ffc58a6d877"
+  },
+  "matched": {
+    "AC-12": [
+      [
+        "tests/test_agents.py",
+        "test_ac12_evaluator_edits_in_place"
+      ]
+    ],
+    "AC-26": [
+      [
+        "tests/test_tasks.py",
+        "test_ac26_rated_from_stray_edit"
+      ]
+    ],
+    "AC-27": [
+      [
+        "tests/test_tasks.py",
+        "test_ac27_rated_from_ok"
+      ]
+    ],
+    "AC-28": [
+      [
+        "tests/test_tasks.py",
+        "test_ac28_skill_runs_rated_from"
+      ]
+    ]
+  }
+}

@@ -12,7 +12,7 @@ from nio import records
 ORDER = ["cheap", "strong", "max", "frontier"]  # ascending; a host with no model for a tier uses the nearest lower one
 TIERS = set(ORDER)
 EFFORT = {"low": "low", "med": "medium", "high": "high"}
-TOOLS = {"read": ["Read", "Grep", "Glob"], "edit": ["Edit", "Write"], "shell": ["Bash"], "web": ["WebSearch", "WebFetch"]}
+TOOLS = {"read": ["Read", "Grep", "Glob"], "edit": ["Edit", "Write"], "patch": ["Edit"], "shell": ["Bash"], "web": ["WebSearch", "WebFetch"]}
 FIELDS = {"name", "description", "tier", "effort", "tools", "hosts"}
 SECTIONS = ["Job", "Inputs", "Output format", "Stop when"]
 # Claude aliases resolve to the newest model; Codex names change too often to guess

@@ -1,0 +1,262 @@
+{
+  "gate": "implementation-E-2",
+  "subject": "2026-11-05-implement-followups",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261106-vios/implementation-E-2-adversary.md": "17a62b9d1f640558a987930dc769fb93058ce7ba9a8b61700c835d99049b9f69",
+    "R-261106-vios/implementation-E-2-conformance.md": "9d5302479c34bb65851aaf720d3a9e8b40afa3a0822e70fb96a68d7b2567fca0",
+    "R-261106-vios/implementation-E-2-consistency.md": "73a9a65df61991de47074b8bac1023850e462b14307d1e84cbbdd0ed54211861",
+    "R-261106-vios/implementation-E-2-correctness.md": "397675d90a0c280541f691041f1215ec507ee76842807f0c7bf865a121ef5f1f",
+    "R-261106-vios/implementation-E-2-refuter.md": "e0cc530c30799ded4de6967f278f732591232d1adb66007d4f92e3627ff3bd19"
+  },
+  "jurors": {
+    "implementation-E-2-adversary": {
+      "attempts": 2,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c4d5a3350a7bfa34cb3261e9043e8273afd2acbe",
+      "judged": 1
+    },
+    "implementation-E-2-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c4d5a3350a7bfa34cb3261e9043e8273afd2acbe",
+      "judged": 1
+    },
+    "implementation-E-2-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c4d5a3350a7bfa34cb3261e9043e8273afd2acbe",
+      "judged": 1
+    },
+    "implementation-E-2-correctness": {
+      "attempts": 2,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c4d5a3350a7bfa34cb3261e9043e8273afd2acbe",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A deferral phrase can switch off red's file check for a task's own tests",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "AC-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "without those that appear only in a `;`-separated part holding \"proved later\"",
+        "a task with no own TC ID has no file to name"
+      ],
+      "fix": "split on `;` only when it is present and treat a part as deferred only if the phrase names a later task in that same part. Have `own` or `check tasks` reject a \"proved later\" part that is not preceded by an own part. Add a test with a line that has no `;`.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-adversary",
+          "lens": "adversary",
+          "situation": "a task's `Test:` line reads `TC-1 and TC-2 proved later by T-2`, with no `;`. `own` puts all of the line's IDs in `later`, and none appear in a part without the phrase. It returns `[]`, so `test_files` is empty and red is accepted for any failing command, for example `python -m unittest tests/test_unrelated.py`. The same happens for `TC-1 proved later by T-2 and TC-2`, where the real own TC-2 is dropped with TC-1. The test run says nothing, and the task reaches red without running any of its own tests.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The spec defines a deferral as the part of the `Test:` line that says \"proved later\" (Glossary \"Deferred TC ID\" and the Test line definition). It does not require a `;` before that part. For `TC-1 and TC-2 proved later by T-2`, `own` returns `[]`, and that is the outcome AC-6 requires, because a task with no own TC ID has no file to name. The second line, `TC-1 proved later by T-2 and TC-2`, breaks the shape that the decision at spec line 199 requires: \"TC-n proved later by T-m\" in its own `;` part. TC-2 sits in the deferral part, so treating it as deferred follows the spec's rule. The fix asks for a new rejection check on malformed lines. No FR or AC in the spec requires one.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py:own",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "\"Proved later by T-n\" is never checked against T-n",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-3",
+        "AC-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the files of `task[\"own\"]`'s TC entries; `red` refuses when the list is non-empty and the command names none of them"
+      ],
+      "fix": "have `nio check tasks` verify that each deferred TC ID is an own ID of a task named in the same part, and error otherwise.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-adversary",
+          "lens": "adversary",
+          "situation": "a task says `TC-1; TC-1 proved later by T-99`, where T-99 does not exist or its own `Test:` line never cites TC-1. `own` keeps TC-1 only because it appears in the first part. If the author writes `a direct check; TC-1 proved later by T-99`, TC-1 is proved by nobody. Red never requires its file, and no later task's red requires it either. The test silently never gets a red proof.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/tasks.py (check tasks)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "The NIO_PERF journey fails on a timing assertion and does not test the env strip it names",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "runs the command with the caller's environment minus `NIO_PERF`"
+      ],
+      "fix": "export `NIO_PERF=1` for both commands, or run `test_ac14` alone. Give the speed assertion a margin or a retry, so a failure means a real regression.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-adversary",
+          "lens": "adversary",
+          "situation": "the journey `NIO_PERF=1 uv run python tests/test_implement.py && uv run python tests/test_flow.py && echo ok` failed with `AssertionError: (2.2085428120008146, ...)` from `assert code == 0 and len(out.splitlines()) == 20 and took < 2.0`. The `NIO_PERF=1` prefix reaches only the first command in the `&&` chain. So the journey gives no evidence that `run` strips `NIO_PERF` from the child it launches, and it fails whenever the machine is busy. The research file records that another session running tests made evidence take 65 minutes instead of 10. A flaky red here invites someone to loosen the 2.0 s bound, or to skip the journey.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py:1372 (test_nfr3_status_speed) and the NIO_PERF journey command",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "Speed-up research document is outside E-2's tasks",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Estimates assume a 5-epic, about 14-task effort like implement-followups."
+      ],
+      "fix": "commit the research on its own, outside the E-2 gate, or add a task that names it.",
+      "sources": [
+        {
+          "juror": "implementation-E-2-correctness",
+          "lens": "correctness",
+          "situation": "the E-2 diff adds `.nio/research/2026-11-06-speedup.md`, a 99-line cost analysis. T-3 and T-4 serve only AC-4 to AC-7, AC-22 and AC-23, and neither lists this file. It is unrequested by the epic's tasks, and nothing checks its figures.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "unrequested",
+      "where": ".nio/research/2026-11-06-speedup.md",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "c4d5a3350a7bfa34cb3261e9043e8273afd2acbe"
+  },
+  "matched": {
+    "AC-4": [
+      [
+        "tests/test_implement.py",
+        "test_ac4_red_deferred_not_required"
+      ]
+    ],
+    "AC-5": [
+      [
+        "tests/test_implement.py",
+        "test_ac5_red_deferred_file_only"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_implement.py",
+        "test_ac6_red_all_deferred"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_implement.py",
+        "test_ac7_red_proving_task"
+      ]
+    ],
+    "AC-22": [
+      [
+        "tests/test_implement.py",
+        "test_ac22_red_one_of_two"
+      ]
+    ],
+    "AC-23": [
+      [
+        "tests/test_implement.py",
+        "test_ac23_red_own_wins"
+      ]
+    ]
+  }
+}

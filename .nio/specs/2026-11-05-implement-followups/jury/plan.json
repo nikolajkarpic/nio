@@ -1,0 +1,389 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-05-implement-followups",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "architecture-fit",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261105-umm2/plan-architecture-fit.md": "205ee1c3f9c68b1a4a5ff27c6dab0f57bd3fd02a3d65f627209a1a0589fd0178",
+    "R-261105-umm2/plan-test-proof.md": "34765e9cdf39f3e2095d466c6335d6f7d9b74b8a322346ef44a1e3ed171e14c2",
+    "R-261105-umm2/plan-refuter.md": "69b595ec810f15b8840288960e2a9db7d01afd73505c9145fd26eac9b555a0a5",
+    "R-261105-gewy/plan-architecture-fit.md": "14cbd584480ad4465b4103e61b8e7429f51cb68abc76ece0949139f0729a54b2",
+    "R-261105-gewy/plan-test-proof.md": "7617892a204458cf94b939ce0eb100e52b1294d015958f773c2c429926ff4e6a"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "9712eae6dd64af35bc7ef0c9d3a085e3f868e4bb",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "9712eae6dd64af35bc7ef0c9d3a085e3f868e4bb",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "`fixes_added` compares against a judged version that never holds a fix task",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "CT-5",
+        "CT-6",
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "at the tasks gate, the IDs of tasks under `#### Fixes` in the current `tasks.md` that the judged version doesn't hold; `[]` at every other gate.",
+        "A file as its gate judges it: tasks.md without its `#### Fixes` sections, any other file as it is.",
+        "text = lambda p: planned(p.name, p.read_text()) if gate == \"tasks\" else p.read_text()",
+        "Given a tasks gate where nothing was added under `#### Fixes` since the last round, when `nio jury fixcheck` and `nio jury changed` run, then their output is the same as before this change."
+      ],
+      "fix": "Have CT-4 say where the fix tasks present at the judged round come from. One option is for `collect` to record the fix task IDs it saw in the ledger next to the version, and have `fixes_added` subtract those. Add a TC where a fix task predates the last round and must not be listed.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "In the existing code, `collect` stores `blob(root, text, write)` with `text = artefact(root, slug, gate)`. At the tasks gate, `artefact` passes `tasks.md` through `planned()`, which removes every `#### Fixes` section. So the judged version (`led[\"versions\"]`, which `diff` reads back) never contains a fix task. CT-4 defines added fix tasks as those \"the judged version doesn't hold\", which means every fix task in `tasks.md`, including ones added before the last round. Once one fix task exists from an earlier round, AC-11's \"nothing was added since the last round\" case changes both the pack and the `changed` output. TC-11 doesn't catch this because its setup (\"as TC-8 without T-30\") has no fix tasks at all.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`artefact()` runs `tasks.md` through `planned()` at the tasks gate (jury.py:187-191), and `collect` stores that text as the judged version, so the judged version never holds a fix task. CT-4's \"that the judged version doesn't hold\" therefore lists every fix task in `tasks.md`, including ones added in earlier rounds, which contradicts AC-11. TC-11's setup has no fix task, so it can't catch this.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-4: collect records the Fixes IDs present at each round (led fixes); fixes_added subtracts the last round's; TC-11 now has a fix task that predates the round and must not be listed.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "The added fix task is kept out of `changed`'s list, though the ACs put it there",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "AC-9",
+        "AC-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "prints, after its four lines, `added under Fixes: <T-n, ...>` when `fixes_added` is non-empty; nothing more otherwise.",
+        "Observable: T-30 is in the changed list; the lenses-to-re-run list is empty.",
+        "Assert: changed IDs `[]`, lenses to re-run `[]`, `fixes_added` `[\"T-30\"]`."
+      ],
+      "fix": "Either state in CT-6 that the `added under Fixes:` line is the changed list FR-7 means, and reword TC-20's assertion to match, or add T-30 to the `changed:` line without adding any lens to re-run.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "Today the CLI prints `changed: <ids>` from `jury.changed`. AC-9 says T-30 is \"among the changed IDs it reports\", and AC-24 says T-30 \"is in the changed list\". The plan instead keeps `changed:` free of T-30 and prints it on a separate fifth line. TC-20 then asserts the changed IDs are `[]`, which reads as the opposite of AC-24's observable.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-6 states the 'added under Fixes:' line is FR-7's list; TC-20's assert reworded to match.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "CT-11 copies `tasks.md` to a run folder the tasks skill never creates",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-11",
+        "FR-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "step 3 copies `tasks.md` to the run folder before the evaluator",
+        "3. **Rate.** Run the `nio-evaluator` subagent on `tasks.md`. It sets every `Tier:` (with a reason) and `Effort:`."
+      ],
+      "fix": "Name the path in CT-11, for example `.nio/runs/<run>/tasks.before.md` after `nio run <slug>`, or a scratch path outside `.nio/specs/<slug>/`, and have step 3 say the same.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`skills/tasks/SKILL.md` never starts a run (`nio run`) or names a run folder, so \"the run folder\" points at nothing in the skill. The agent following step 3 has to guess where the copy goes. A copy under `.nio/specs/<slug>/` would land among the effort's own files.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-11: step 3 runs nio run and copies to .nio/runs/<run>/tasks.before.md.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "`--rated-from`'s relation to the existing `nio check tasks` run and output is unstated",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Returns: exit 0 when every differing line pair is a `- Tier:`, `- Effort:` or `- Mode:` line and none reads `to be rated`.",
+        "print(\"\\n\".join([f\"ERROR {e}\" for e in errors] + notes + [f\"{len(errors)} errors\"]))"
+      ],
+      "fix": "State in CT-7 that `--rated-from` adds `rated_from`'s errors to `tasks.check`'s, printed through the existing `ERROR …`/`N errors` output, or that it replaces the normal check. Make TC-22/TC-23 assert that choice.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The existing `nio check tasks` branch in `cli.main` always runs `tasks.check` and prints `ERROR …` lines, the estimate and an `N errors` total. CT-7 says it is like `tasks.check`, but its exit-0 rule depends only on the rating diff. Its error format (`<path>:<line>: not a rating line: …`) also has no `ERROR` prefix. The plan doesn't say whether `--rated-from` skips the normal checks or adds to them. It also doesn't say whether its errors go through the same `ERROR`/count output that skills already read.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-7: --rated-from adds its errors to tasks.check's, printed as ERROR lines with the N errors total; TC-22 asserts it.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "TC-6 passes on today's code: its fixture never gives TC-6 and TC-7 a file",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-6",
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a test file `tests/test_c.py` failing on `assert False`.",
+        "if named and not any(f in command for f in named):"
+      ],
+      "fix": "In TC-6's setup, give the fixture tests.md TC-6 and TC-7 entries whose `File:` lines name files other than `tests/test_c.py` (for example `tests/test_e.py`), so today's code refuses and only the own-ID change passes.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`test_files` keeps only IDs that have an entry in tests.md (`if t in tcs`). TC-6's setup defines no `### TC-6` or `### TC-7` entries with `File:` lines. With no entries, `named` is empty today, red runs the command and accepts it. TC-6 passes before any work, and it still passes if `own` is never wired into `test_files`. AC-6 matches the T-2 defect that motivated US-2, so the bug this story fixes gets through.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`test_files` keeps only TC IDs that have an entry in tests.md (implement.py:349, `if t in tcs`). TC-6's setup defines no TC-6 or TC-7 entries, so `named` is empty and `red` (implement.py:441) runs the command and accepts it. TC-6 passes on today's code and never exercises `own`.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-6: tests.md defines TC-6 and TC-7 with File tests/test_e.py, so today's code refuses.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "TC-13 and TC-30 can pass without stripping NIO_PERF",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-13",
+        "TC-30",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`NIO_PERF=1` in the test process's environment; T-1 at green.",
+        "if not reasons and epic_closes:",
+        "The first claim's start of the stage (CT-5, FR-16, FR-20, FR-35, FR-36, FR-46): onto `nio/<slug>`, then the"
+      ],
+      "fix": "State that T-1 is the only task of its epic, so the review runs the suite. Write the baseline line from a run without `NIO_PERF`, or with a `failing` list that excludes the test. Add a control assert: with today's `run`, that is with the env passed through, the review fails.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`review` runs the suite only when the task closes its epic, and the setup doesn't say T-1 does. The baseline is taken at the first claim by the same `run`. If that happens in the test process with `NIO_PERF=1` set, the NIO_PERF-sensitive test is already failing at baseline. The review then counts it as `still`, not new, and passes. Either way \"the review passes; T-1's attempt count is unchanged\" holds on today's code, where `run` doesn't strip `NIO_PERF`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The baseline comes from the same `run` (implement.py:15-27, which passes the environment through) via `suite`. With `NIO_PERF=1` in the test process, the NIO_PERF-sensitive test is already failing at baseline. `review` (implement.py:493-494) then counts it as `still`, not new, so TC-13 and TC-30 pass without the fix. The setup also doesn't say T-1 closes its epic, and `review` runs the suite only when it does (implement.py:483).",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-13: T-1 is its epic's only task; claimed with NIO_PERF unset so the baseline passes, then NIO_PERF=1 before green.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "TC-14's failing test exists at baseline, so the review counts it as old and passes",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "TC-14",
+        "AC-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Setup: as TC-13, with the suite's test failing on `assert 1 == 2` whatever the environment.",
+        "Given a task whose change breaks a test's assertion"
+      ],
+      "fix": "Take the baseline with the test passing. Then, as T-1's change after the claim, edit the test or the code so it fails on `assert 1 == 2`, with T-1 closing its epic.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "AC-15 is about a failure the task's change introduces. The setup has a test that fails in every environment from the start. The baseline therefore records it as failing, and `review` puts it in `still`, not in `new failures`. A correct implementation would let this review pass, so the assert \"the review fails naming the failing test, and uses one attempt\" fails for a reason unrelated to the AC. A bug such as `run` dropping the whole environment instead of only `NIO_PERF` would not be the thing this test checks.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-14's test fails on `assert 1 == 2` in every environment, so the baseline records it as failing. `review` classes it as `still` (implement.py:494), not under \"new failures\" (implement.py:495-496), so a correct implementation passes the review. That contradicts the assert \"the review fails naming the failing test\" and AC-15's \"a failure the task's change introduces\".",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-14: the test passes at baseline and T-1's change makes it fail; T-1 closes its epic.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "TC-4 (AC-4) passes on today's code",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-4",
+        "AC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Setup: a fixture effort whose T-1 `Test:` line is `TC-10; TC-38 proved later by T-11`",
+        "if named and not any(f in command for f in named):"
+      ],
+      "fix": "Keep TC-4 as a regression guard, but say so in its title, and make sure TC-5 and a fixed TC-6 are the tests that prove FR-3.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "Today `named` is `[tests/test_a.py, tests/test_b.py]`, and any one match passes the check. A command naming `tests/test_a.py` is already accepted, so TC-4 can't fail if CT-2 or CT-3 are never built. TC-18 has the same property. TC-5 and TC-6 (once F1 is fixed) carry the actual change.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-4 and TC-18 titled as regression guards; TC-5 and TC-6 prove FR-3.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "TC-15's \"20 output lines checked\" can't be observed through status_speed's contract",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "TC-15",
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the first returns with 20 output lines checked",
+        "Shape: `status_speed(clock=time.perf_counter)`"
+      ],
+      "fix": "Either have `status_speed` return the output it checked and assert it has 20 lines, or add a case where status yields fewer lines (or a non-zero code) with `NIO_PERF` unset and assert it raises.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "CT-10 gives `status_speed` no return value. \"Returns with 20 output lines checked\" can therefore only mean \"didn't raise\". One bug would get through: an early return when `NIO_PERF` is unset that skips the `code == 0 and len(out.splitlines()) == 20` check. FR-15 requires that check without `NIO_PERF`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-10: status_speed returns the output; TC-15 asserts 20 lines and adds a 19-line case that raises.",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "83b3c142523a68dad18ae1f7f30f52958c415024",
+    "2": "9712eae6dd64af35bc7ef0c9d3a085e3f868e4bb"
+  }
+}
