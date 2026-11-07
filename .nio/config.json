@@ -14,5 +14,8 @@
   },
   "tests": {
     "suite": "printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'"
+  },
+  "jury": {
+    "run_timeout": 1800
   }
 }

@@ -414,6 +414,22 @@ def diff(root, slug, gate):
     return led, before, after, ids, secs, neighbours
 
 
+def fix_ids(root, slug):
+    """IDs of the tasks under `#### Fixes` in tasks.md now."""
+    from nio import tasks
+    p = tasks.path(root, slug)
+    return [i for i, t in tasks.parse("\n".join(records.parse(p)[1]))["tasks"].items() if t["fix"]] if p.exists() else []
+
+
+def fixes_added(root, slug, gate):
+    """Fix tasks added since the last collected round (CT-4); they never re-run a lens. `[]` outside the tasks gate."""
+    if gate != "tasks":
+        return []
+    led = load(root, slug, gate)
+    seen = led.get("fixes", {}).get(str(led["round"]), [])
+    return [i for i in fix_ids(root, slug) if i not in seen]
+
+
 def awaits_fix_verdict(f):
     return f["status"] == "disposed" and f["disposition"] == "fix-task"
 
@@ -485,6 +501,11 @@ def fixcheck(root, slug, gate, lens, blocker=None):
         out += [f"### Section {s}: text outside its items", "Before:", before[1].get(s, "(new)"), "After:", after[1].get(s, "(removed)"), ""]
     out += ["## Neighbours: items that cite a changed item or that it cites (current text)", "",
             *([after[0][i] for i in neighbours] or ["None."])]
+    if added := fixes_added(root, slug, gate):
+        from nio import tasks
+        out += ["", "## Tasks added under Fixes (current text)", ""]
+        for t in added:
+            out += [*tasks.show(root, slug, t), ""]
     return out
 
 
@@ -591,6 +612,8 @@ def collect(root, slug, gate, run, expect=(), tier=None):
         led["round"] += 1
         # the artefact this round judges, kept in git's object store so a later round can tell what changed (FR-23)
         led.setdefault("versions", {})[str(led["round"])] = judged(write=True)
+        if gate == "tasks":
+            led.setdefault("fixes", {})[str(led["round"])] = fix_ids(root, slug)
         if fixes(led) and not led["list"].get("final"):  # the round that starts the one final fix check (#52 FR-24)
             led["list"]["final"] = led["round"]
         out += merge(led, new, gate, slug, ground, human)

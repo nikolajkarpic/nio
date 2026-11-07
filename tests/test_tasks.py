@@ -475,6 +475,91 @@ def test_cli():
     print("ok")
 
 
+def test_own():
+    assert tasks.own("TC-10; TC-38 proved later by T-11") == ["TC-10"]
+    assert tasks.own("a direct unit check calling `load`; TC-6 and TC-7 proved later by T-8") == []
+    assert tasks.own("TC-38, plus a direct check; TC-38 proved later by T-11") == ["TC-38"]
+    print("ok")
+
+
+def test_ac10_fix_keeps_approval():
+    # TC-10: a fix task appended under #### Fixes keeps an approved tasks gate approved (CT-4, FR-8)
+    root = repo()
+    approve_tasks(root)
+    approve_commit(root)
+    tasks.path(root, SLUG).write_text(fix(tid="T-30")(tasks.path(root, SLUG).read_text()))
+    ok, why = tasks.approved(root, SLUG)
+    assert ok, why
+    print("ok")
+
+
+def test_ac25_edit_withdraws_approval():
+    # TC-21: changing one word of a planned task's title withdraws the approval (CT-4, FR-8)
+    root = repo()
+    approve_tasks(root)
+    approve_commit(root)
+    text = tasks.path(root, SLUG).read_text()
+    assert "### T-1 Refund a paid order in full" in text
+    tasks.path(root, SLUG).write_text(text.replace("### T-1 Refund a paid order in full", "### T-1 Refund a paid order in part", 1))
+    ok, why = tasks.approved(root, SLUG)
+    assert not ok and why.startswith("the tasks must be approved first"), why
+    print("ok")
+
+
+def rated_run(edit_after, edit_before=lambda t: t):
+    """Run `nio check tasks --rated-from` on a rated tasks.md; `before` holds `to be rated`."""
+    root = repo(chain(field("T-1", "Tier", "to be rated"), field("T-1", "Mode", "to be rated"), edit_before))
+    copy = root / "before.md"
+    copy.write_text(tasks.path(root, SLUG).read_text())
+    tasks.path(root, SLUG).write_text(edit_after(copy.read_text()))
+    return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "check", "tasks", SLUG,
+                           "--rated-from", str(copy)], cwd=root, capture_output=True, text=True)
+
+
+RATE = chain(field("T-1", "Tier", "strong: money moves"), field("T-1", "Mode", "split: two workers"))
+
+
+def test_ac26_rated_from_stray_edit():
+    out = rated_run(chain(RATE, field("T-2", "Files", "`other.py`")))
+    assert out.returncode == 1, out
+    assert "ERROR" in out.stdout and "- Files: `other.py`" in out.stdout, out.stdout
+    assert out.stdout.strip().splitlines()[-1].endswith("1 errors"), out.stdout
+    print("ok")
+
+
+def test_ac27_rated_from_ok():
+    out = rated_run(RATE)
+    assert out.returncode == 0, out
+    out = rated_run(field("T-1", "Effort", "high"))
+    assert out.returncode == 1 and "not rated" in out.stdout, out
+    print("ok")
+
+
+def test_ac26_rated_from_stray_edit_misuse():
+    out = rated_run(chain(RATE, lambda t: t.replace("## E-1 Customer refunds a paid order (US-1)\n", "", 1)))
+    assert out.returncode == 1, out
+    print("ok")
+
+
+def test_ac28_skill_runs_rated_from():
+    skill = (Path(__file__).parent.parent / "skills/tasks/SKILL.md").read_text()
+    step3 = skill.split("3. **Rate.**", 1)[1].split("4. **Verify", 1)[0]
+    copy_at = step3.find("copy")
+    evaluator_at = step3.find("nio-evaluator")
+    rated_at = step3.find("--rated-from")
+    assert copy_at >= 0 and evaluator_at >= 0 and rated_at >= 0, step3
+    assert copy_at < evaluator_at < rated_at, step3
+    print("ok")
+
+
+def test_ac28_skill_starts_run_with_bare_nio_run():
+    skill = (Path(__file__).parent.parent / "skills/tasks/SKILL.md").read_text()
+    step3 = skill.split("3. **Rate.**", 1)[1].split("4. **Verify", 1)[0]
+    assert "`nio run`" in step3, step3
+    assert "nio run <slug>" not in step3, step3
+    print("ok")
+
+
 if __name__ == "__main__":
     for name, test in list(globals().items()):
         if name.startswith("test_"):

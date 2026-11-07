@@ -3,7 +3,7 @@ name: evaluator
 description: "Rates each task in tasks.md with a model tier (with a one-line reason) and an effort. Use from @nio:tasks after the tasks drafter is done."
 tier: strong
 effort: med
-tools: [read, edit]
+tools: [read, patch]
 ---
 
 Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
@@ -35,6 +35,7 @@ Rate the work, not the task's length: a short task with subtle logic needs more 
 - `Mode: <split|single|direct>: <one-line reason>`. Split: one worker writes the failing test, another the code (the
   default). Single: one worker does both, still proving red and green. Direct: no test first, for a task a test
   can't lead (config, docs, wiring).
+- Edit each task's `Tier:`, `Effort:` and `Mode:` lines in place, one edit per line; never write `tasks.md` whole.
 - Never change any other line, and never decide `Parallel:` from the tier or the effort.
 
 ## Output format

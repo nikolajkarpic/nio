@@ -16,7 +16,7 @@ def run(root, command, limit):
     """(code, output, cause) of a shell command in `root` (CT-1, FR-44): stdin closed, stderr merged into stdout, its own
     process group so the limit kills every child. `cause` is "", "time limit" or "program not found" (exit 127)."""
     p = subprocess.Popen(command, shell=True, cwd=root, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT, start_new_session=True)
+                         env={k: v for k, v in os.environ.items() if k != "NIO_PERF"}, stderr=subprocess.STDOUT, start_new_session=True)
     try:
         out, _ = p.communicate(timeout=limit)
         code, cause = p.returncode, "program not found" if p.returncode == 127 else ""
@@ -107,7 +107,7 @@ def tasks_of(root, slug):
             word = tasks.TIER.match(f.get("Mode", "")).group(1) if f.get("Mode") else ""
             out.append({"id": tid, "title": t["title"], "epic": e["id"], "fix": t["fix"], "deps": tasks.ids(f.get("Depends on", "")),
                         "files": tasks.files(f.get("Files", "")), "serves": tasks.ids(f.get("Serves", "")),
-                        "tests": tasks.ids(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
+                        "tests": tasks.ids(f.get("Test", "")), "own": tasks.own(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
                         "effort": f.get("Effort", ""), "parallel": f.get("Parallel") == "yes", "mode": forced or (word if word in MODES else "split")})
     return out
 
@@ -425,7 +425,7 @@ def digest(root, path):
 def test_files(root, slug, task):
     """The test files the task's TC-n entries name in their `File:` lines (FR-43)."""
     tcs = defs(root / ".nio/specs" / slug / "tests.md")
-    found = [f.split(":")[0] for t in task["tests"] if t in tcs for f in re.findall(r"`([^`]+)`", plan.field(tcs[t], "File"))]
+    found = [f.split(":")[0] for t in task["own"] if t in tcs for f in re.findall(r"`([^`]+)`", plan.field(tcs[t], "File"))]
     return list(dict.fromkeys(found))
 
 
@@ -798,6 +798,10 @@ def block(root, slug, tid, handoff, by):
     cr = meta.get("change_request")
     if meta.get("status") != "blocked" or not isinstance(cr, dict) or not all(str(cr.get(k) or "").strip() for k, _ in PARTS):
         raise bad
+    for k, _ in PARTS:
+        for ln in str(cr[k]).splitlines():
+            if ln.startswith("## ") or ln.strip() == "---":
+                raise ValueError(f'the handoff\'s {k} holds the line "{ln}"')
     hsh = flow.sha(data)
     with flow.lock(root, slug):
         state, lines = flow.load(root, slug)
@@ -813,11 +817,12 @@ def block(root, slug, tid, handoff, by):
         if found is None:
             areas = records.areas(root)
             found = records.new(root, "change", "project" if "project" in areas else areas[0],
-                                f"Spec problem in {tid}: {str(cr['spec_says']).strip()}", by=by.strip())
+                                f"Spec problem in {tid}: " + " ".join(str(cr["spec_says"]).split()).replace("\\", "\\\\"), by=by.strip())  # one line, backslashes escaped like quotes
             head = found.read_text().partition("\n---\n")[0]
             head = re.sub(r'^against: .*$', f'against: ".nio/specs/{slug}/spec.md"', head, flags=re.M)
-            body = "".join(f"## {name}\n{str(cr[k]).strip()}\n" for k, name in PARTS)
-            kept = f"{head}\n---\n{body}## Human decision\nPending.\n\nHandoff: {hsh}\n"
+            body = (f"## What is wrong\nThe spec says: {str(cr['spec_says']).strip()}\n\nThe code shows: {str(cr['code_shows']).strip()}\n"
+                    f"## Proposed change\n{str(cr['smallest_change']).strip()}\n\nHandoff: {hsh}\n")
+            kept = f"{head}\n---\n{body}## Human decision\nPending.\n"
         found.write_text(kept)  # a reused record, untracked, was cleaned with the task's files
         cid = records.parse(found)[0]["id"]
         if not mine:  # the line and the state it leaves go in one write, so a blocked line means waiting is set too

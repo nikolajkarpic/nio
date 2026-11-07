@@ -99,6 +99,14 @@ def ids(value):
     return ID.findall(value)
 
 
+def own(test_line):
+    """TC IDs of a Test: line, minus those only in a `;` part saying "proved later"."""
+    parts = test_line.split(";")
+    later = {i for p in parts if "proved later" in p for i in ids(p) if i.startswith("TC-")}
+    keep = {i for p in parts if "proved later" not in p for i in ids(p)}
+    return [i for i in dict.fromkeys(ids(test_line)) if i.startswith("TC-") and (i in keep or i not in later)]
+
+
 def reach(tasks):
     """{task: every task it depends on, directly or through others}."""
     deps = {t: set(ids(tasks[t]["fields"].get("Depends on", ""))) & tasks.keys() for t in tasks}
@@ -206,13 +214,13 @@ def check(root, slug, gate=False, base="HEAD"):
             errs.append(f"{t}: `Depends on:` lists task IDs or says `none`")
         if "Parallel" in f and f["Parallel"] not in ("yes", "no"):
             errs.append(f"{t}: `Parallel:` must be yes or no, not `{f['Parallel']}`")
-        if "Tier" in f:
+        if "Tier" in f and f["Tier"] != "to be rated":
             m = TIER.match(f["Tier"])
             if m[1] not in TIERS:
                 errs.append(f"{t}: `{m[1]}` is not cheap, strong, max or frontier")
             elif not (m[2] or "").strip():
                 errs.append(f"{t}: `Tier: {m[1]}` needs a reason, as `Tier: {m[1]}: <why>`")
-        if "Mode" in f:
+        if "Mode" in f and f["Mode"] != "to be rated":
             m = TIER.match(f["Mode"])
             if m[1] not in MODES:
                 errs.append(f"{t}: `{m[1]}` is not split, single or direct")
@@ -290,13 +298,29 @@ def check_fixes(root, slug, parsed, retired, base="HEAD"):
     return errs
 
 
+def rated_from(root, slug, copy):
+    """Errors when tasks.md differs from `copy` outside Tier/Effort/Mode lines, or a rating still reads `to be rated`."""
+    p = path(root, slug)
+    rel, new, old = p.relative_to(root), p.read_text().splitlines(), open(copy).read().splitlines()
+    rating = lambda l: re.match(r"- (Tier|Effort|Mode):", l)
+    if len(new) != len(old):
+        return [f'{rel}:1: not a rating line: "line count {len(old)} became {len(new)}"']
+    errors = []
+    for n, (a, b) in enumerate(zip(old, new), 1):
+        if a != b and not (rating(a) and rating(b)):
+            errors.append(f'{rel}:{n}: not a rating line: "{b}"')
+        elif rating(b) and "to be rated" in b:
+            errors.append(f"{rel}:{n}: not rated")
+    return errors
+
+
 def estimate(parsed):
     """One row per epic: task count, tier and effort counts, and the parallel tasks; no token or money figure (#42
     FR-14). Parallel comes only from `Parallel:` (FR-47)."""
     out = []
     for e in parsed["epics"]:
         ts = [parsed["tasks"][t]["fields"] for t in e["tasks"]]
-        tier = lambda f: TIER.match(f.get("Tier", "")).group(1) if f.get("Tier") else ""
+        tier = lambda f: TIER.match(f.get("Tier", "")).group(1) if TIER.match(f.get("Tier", "")) else ""
         par = [t for t in e["tasks"] if parsed["tasks"][t]["fields"].get("Parallel") == "yes"]
         out.append(f"{e['id']}: {len(ts)} tasks; tier " + ", ".join(f"{x} {sum(tier(f) == x for f in ts)}" for x in TIERS)
                    + "; effort " + ", ".join(f"{x} {sum(f.get('Effort') == x for f in ts)}" for x in EFFORTS)
