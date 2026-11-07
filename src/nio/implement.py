@@ -49,7 +49,7 @@ def runner(command, output=""):
     """The known runner a command's own words name, else `self-check` when the output has its `ran N tests` line,
     else None: `npm test` or `bash run.sh` read as unknown (CT-2, CT-7)."""
     found = next((n for n, r in RUNNERS.items() if re.search(r.get("match", r"(?!)"), command)), None)
-    return found or ("self-check" if re.search(r"^ran \d+ tests?, \d+ failed", output, re.M) else None)
+    return found or ("self-check" if re.search(r"^ran \d+ tests?, \d+ failed$", output, re.M) else None)
 
 
 def wrong_reason(name, code, output):
@@ -534,7 +534,9 @@ def red(root, slug, tid, command, by):
             code, out, cause = run(tree_of(root, lines, tid), command, limit(root))
             name = runner(command, out)
             # a cause first: a killed run's partial output proves nothing either way; "none ran" before the exit code (CT-7)
-            none = any(m in out for m in RUNNERS.get(name, {}).get("none", []))
+            last = re.findall(r"^ran (\d+) tests?", out, re.M)  # FR-4: the run's last `ran N tests` line decides
+            none = (last[-1] == "0" if last else False) if name == "self-check" else \
+                any(m in out for m in RUNNERS.get(name, {}).get("none", []))
             why = cause or ("no tests ran" if none else "the test passes before the code exists" if code == 0
                             else wrong_reason(name, code, out))
         if why:
@@ -584,6 +586,10 @@ def review(root, slug, task, lines):
             reasons.append(f"the suite is broken: {r['cause'] or wrong_reason(r['runner'], r['code'], r['output'])}")
         elif r["runner"] == "self-check" and r["code"] and not r["failing"]:
             reasons.append(f"new failure: the suite exits {r['code']} and names no failing test")
+        # ponytail: counts tracebacks against FAIL lines; a test that prints a traceback of its own can mask a crash
+        elif r["runner"] == "self-check" and r["code"] and \
+                r["output"].count("Traceback (most recent call last)") > len(r["failing"]):
+            reasons.append(f"new failure: the suite exits {r['code']} and a file crashed before its result lines")
         elif r["runner"] is None or r["failing"] is None:
             if r["code"] != 0:
                 reasons.append(f"new failure: the suite exits {r['code']} and its runner is unknown")
