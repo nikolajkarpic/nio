@@ -1,0 +1,311 @@
+{
+  "gate": "implementation-E-4",
+  "subject": "2026-11-07-scoped-task-commands",
+  "round": 1,
+  "tier": "low",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-lfky/implementation-E-4-conformance.md": "b1ff97b72a2199a9b47803064a76397ad7b0c7b678c9add7182c8217b632fad0",
+    "R-261107-lfky/implementation-E-4-consistency.md": "1399c67427c87e8bd034e749e217c920fdc581ea5280bd08e5cafa3e3388d848",
+    "R-261107-lfky/implementation-E-4-correctness.md": "b99cd3e71e8738b0324d0be9d8fe686bd559936159e6b82f21990372ad1df9e2",
+    "R-261107-lfky/implementation-E-4-refuter.md": "d86b2182af7cc75fb2a63ef9c9b9bd635c364f42ffa462e4c3d75b3ea9f4d08a"
+  },
+  "jurors": {
+    "implementation-E-4-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "0dd6e04959c95e6f80384a58b64822b56a84f6d4",
+      "judged": 1
+    },
+    "implementation-E-4-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "0dd6e04959c95e6f80384a58b64822b56a84f6d4",
+      "judged": 1
+    },
+    "implementation-E-4-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "0dd6e04959c95e6f80384a58b64822b56a84f6d4",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Per-test result for AC-9 and AC-10 is unknown in the results file",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-9",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Per-test results are unknown: the suite's runner can't be read per test; the exit code and output are in `suite`."
+      ],
+      "fix": "none needed for the gate if the journey run counts as proof. Otherwise, make the suite runner readable per test, which T-7 now makes possible for self-check suites.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "the `tests` array shows `unknown` for both tests. Their pass is shown only by the `journeys` entry, which ran them directly, and by a reused suite exit 0.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_evidence.py",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "A pytest-style failing entry matches every test of that name in any file",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "matches a test only when both its file and its name match (pytest entries have the same form)",
+        "else \"failed\" if any(re.search(rf\"\\b{re.escape(short)}\\b\", x) for x in failing)"
+      ],
+      "fix": "in the general path, when the entry has `::`, match it with the same `on()` test as the self-check branch (file and name). Keep the name-only match for other entries, as CT-4 says. Add a pytest-style test, or state in CT-4 that the file-and-name rule applies only to self-check.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "a suite whose runner is pytest, with `tests/test_a.py::test_one` failing and `tests/test_b.py::test_one` passing. `failing` holds `tests/test_a.py::test_one`. The general path's regex matches the word `test_one` in that entry, so `tests/test_b.py` `test_one` is recorded `failed`. CT-4 says a `<file>::<name>` entry must match on both file and name, and it says pytest entries have this form.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "a pytest suite fails `FAILED tests/test_a.py::test_one`. A spec test `tests/test_b.py::test_one` is then marked `failed` by the `\\b{short}\\b` search over `failing`, or it is run alone. Only the self-check branch got the file-and-name `on()` match.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-4 says a `<file>::<name>` entry, pytest included, matches on both file and name. Only the self-check branch applies `on()` (evidence.py:437-439). The general branch (evidence.py:444) uses `\\b{short}\\b` over `failing`, so `tests/test_a.py::test_one` also marks `tests/test_b.py` `test_one` as `failed`.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-10",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/evidence.py, collect, the general-path `result` expression (diff line 36)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "`crashed` is set by a self-check file's `ran 0 tests` line",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-4 (Rules)",
+        "FR-1",
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`crashed` is not set by one file's `ran 0 tests` line in a self-check suite: results are read per test.",
+        "crashed = bool(implement.wrong_reason(name, 0 if code_ok else 1, suite[\"output\"])) or"
+      ],
+      "fix": "in the `crashed` expression, leave out the `wrong_reason` term when `sc` is True, as the `not sc` guard already does for the other term.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "one self-check file runs no test because its name filter matched nothing (FR-1), so it prints `ran 0 tests, 0 failed`. `wrong_reason` returns \"no tests ran\", so `crashed` is True for the whole suite. The self-check branch never reads `crashed`, so today's results are the same. The flag still breaks the written rule, and it would mislead the general path if that path ever handled a self-check run.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/evidence.py, collect, the `crashed =` assignment (diff line 21)",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-4",
+      "title": "Reused epic-close suite runs give `unknown` per test, not the per-test results of FR-8",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "AC-9",
+        "D-261106-grjt"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN jury evidence reads a suite run whose output has self-check lines",
+        "reused: the review of T-7 ran this suite at 0dd6e049 and it exited 0"
+      ],
+      "fix": "either keep the self-check lines of a passing review run with the reuse record, or state in FR-8 or D-261106-grjt that reused runs give `unknown` per test.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "the epic's configured suite is a self-check suite. Its epic-close review run passed, so evidence reuses that run, and the reused output is the one-line note above. Neither the runner nor the self-check branch can read it, so each test is `unknown`. The per-test results that US-3 asks for do not appear on this common path, and the spec neither says so nor handles it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py, collect, `suite = reused_suite(...)` (diff context line 420)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "Pytest failing entries still match by name only",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A failing-test entry of the form `<file>::<name>` matches a test only when both its file and its name match (pytest entries have the same form)"
+      ],
+      "fix": "apply `on()` to the generic branch for any `failing` entry that contains `::`, and keep the name-only match for entries without it. Add a pytest-form test with the same name in two files.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "a pytest suite fails `FAILED tests/test_a.py::test_one`. A spec test `tests/test_b.py::test_one` is then marked `failed` by the `\\b{short}\\b` search over `failing`, or it is run alone. Only the self-check branch got the file-and-name `on()` match.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:collect (generic result branch, around line 443)",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Self-check file match breaks when the runner's cwd differs from the repo root",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "path = os.path.relpath(tests[0].__code__.co_filename) if tests else \"\""
+      ],
+      "fix": "compare path suffixes (`file.endswith(path)` or the reverse) on whole segments, not a substring.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "the `ok` and `FAIL` lines carry a path relative to the suite's cwd, but `on()` tests `file in <path>` with the spec's repo-relative `file`. If the suite does `cd tests && python test_a.py`, the printed path is `test_a.py`, and `tests/test_a.py` is not contained in it. Every test then reads `failed` when the suite exits non-zero, or `didn't run` when it exits 0. In the opposite direction, the substring test also lets `test_a.py` match `tests/sub/test_a.py`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/evidence.py:collect (`on` lambda)",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "0dd6e04959c95e6f80384a58b64822b56a84f6d4"
+  },
+  "matched": {
+    "AC-9": [
+      [
+        "tests/test_evidence.py",
+        "test_ac9_evidence_reads_self_check_lines"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_evidence.py",
+        "test_ac10_crashed_file_is_failed"
+      ]
+    ]
+  }
+}

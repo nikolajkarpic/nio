@@ -99,3 +99,15 @@ retired: [T-2]
 - Effort: low
 - Mode: split: a testable behavior change
 
+#### Fixes
+
+### T-10 Fix: A pytest-style failing entry matches every test of that name in any file
+- From: J-2 (implementation-E-4, round 1)
+- Files: `src/nio/evidence.py`
+- Serves: CT-4, FR-8, J-2
+- Test: TC-9
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
