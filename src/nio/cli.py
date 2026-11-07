@@ -93,6 +93,10 @@ def main():
     jf = jsub.add_parser("fixcheck", help="print one lens's fix-check pack for a re-review or the final fix check")
     jf.add_argument("--lens", required=True)
     jf.add_argument("--blocker", metavar="J-N", help="the pack for an escalation juror, who judges only this new blocker")
+    jn = jsub.add_parser("next", help="run one gate step: collect, check and write the next packs; prints the next action")
+    jn.add_argument("--run", default="")
+    jn.add_argument("--add", action="append", default=[], help="lens:reason; repeatable")
+    jn.add_argument("--pick", help="lens,lens")
     jc = jsub.add_parser("collect", help="merge the run's lens outputs (and the refuter's, if present) into .nio/specs/<slug>/jury/<gate>")
     jc.add_argument("--run", required=True)
     jc.add_argument("--expect", action="append", default=[], help="a lens that must report; repeatable")
@@ -116,7 +120,7 @@ def main():
     jk = jsub.add_parser("check", help="compose the gate outcome; exit 0 approved, 1 rejected, 2 rerun or pending, 3 human")
     jk.add_argument("--record", action="store_true", help="write the verdict record to memory (once per round and outcome)")
     jk.add_argument("--human", default="", metavar="REASON", help="the human closes the gate themselves: outcome human, with their reason")
-    for s in (jp, jg, jf, jc, jk, jl, jpk):  # dispose takes them first, before the finding
+    for s in (jp, jg, jf, jc, jk, jl, jpk, jn):  # dispose takes them first, before the finding
         s.add_argument("slug")
         s.add_argument("gate", type=jury.gate_arg, metavar="GATE")
     f = sub.add_parser("flow", help="where an effort is, what to do next, and moving it on only when its guards pass")
@@ -283,7 +287,7 @@ def main():
     elif a.cmd == "jury":
         try:
             if getattr(a, "gate", "").startswith("implementation"):  # a ruling needn't wait for the fix tasks; a round does
-                jury.epic_gate(root, a.slug, a.gate, finished=a.jury_cmd in ("plan", "collect"))
+                jury.epic_gate(root, a.slug, a.gate, finished=a.jury_cmd in ("plan", "collect", "next"))
             if a.jury_cmd == "evidence":
                 print("\n".join(evidence.collect(root, a.slug, a.epic, a.run)))
             elif a.jury_cmd == "answers":
@@ -306,6 +310,8 @@ def main():
                 print("\n".join(str(f.relative_to(root)) for f in jury.sources(root, a.slug, a.gate)))
             elif a.jury_cmd == "fixcheck":
                 print("\n".join(jury.fixcheck(root, a.slug, a.gate, a.lens, a.blocker)))
+            elif a.jury_cmd == "next":
+                print("\n".join(jury.step(root, a.slug, a.gate, a.run, a.add, a.pick)))
             elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
             elif a.jury_cmd == "dispose":

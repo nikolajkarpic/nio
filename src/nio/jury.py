@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import subprocess
+from pathlib import Path
 
 from nio import agents, evidence, records, spec
 
@@ -274,7 +275,7 @@ def plan(root, slug, gate, extra=(), pick=None):
         errors, notes = spec.check(root, slug, gate=True)
         if errors:
             return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
-    meta, _ = records.parse(spec.path(root, slug))
+    meta, _ = records.parse(spec.path(root, slug)) if spec.path(root, slug).exists() else ({}, "")
     risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
     lenses = {lens: "core" for lens in (["conformance", "correctness"] if impl else CORE[gate])}
     table = IMPL_LENSES if impl else PLAN_LENSES if gate == "plan" else {k: v for k, v in spec.LENSES.items() if "(plan gate)" not in k}
@@ -685,8 +686,7 @@ def merge(led, paths, gate, slug, text, human=""):
     packs, verdicts = {}, collections.defaultdict(list)
     for path in paths:
         meta, findings, errs = parse_lens(path, gate, slug)
-        named = re.sub(r"-\d+$", "", path.stem[len(gate) + 1:])
-        lens = re.sub(r"-\d+$", "", named)  # the file name gives the lens; `-2` marks an escalation juror
+        lens = re.sub(r"-\d+$", "", path.stem[len(gate) + 1:])  # the file name gives the lens; `-2` marks an escalation juror
         if meta.get("lens") and meta["lens"] != lens:
             out.append(f"lens    {path.name}: front matter says {meta['lens']}; filed under {lens}")
         # after the first review a lens answers a fix verdict per finding in its pack; an escalation juror
@@ -1301,3 +1301,149 @@ def render(led):
     out += [f"| {n} | {j['lens']} | {j['by']} | {j['context']} | {'yes' if j['valid'] else 'no: ' + '; '.join(j['errors'])} | {j['attempts']} | {j['round']} |"
             for n, j in sorted(led["jurors"].items())]
     return "\n".join(out) + "\n"
+
+
+def _out_line(gate, lens, run):
+    return ("## Your output\n\nWrite your whole output, front matter first, to "
+            f".nio/runs/{run}/jury/{gate}-{lens}.md and to no other file. Set lens: {lens}, gate: {gate}, "
+            f'subject: {{slug}}, by: "juror / <your host> / <your model>".\n')
+
+
+def _pack_text(root, slug, gate, run, lens, fix):
+    """What the skill gives a lens today, then the lens output format and where its output goes (CT-2)."""
+    from importlib import resources
+    from nio import plan as plans, pack as memory, query, tasks
+    if gate not in GATES:
+        body = evidence.pack(root, slug, gate, lens, run)
+    elif fix:
+        body = "\n".join(fixcheck(root, slug, gate, lens)) + "\n"
+    else:
+        errors, notes = {"spec": spec, "plan": plans, "tasks": tasks}[gate].check(root, slug, True, "HEAD")
+        body = "\n".join([f"# Pack: {lens}, {gate} gate of {slug}", "", "Files to read (quotes may come only from these):",
+                          *[str(p.relative_to(root)) for p in sources(root, slug, gate)], "", f"## nio check {gate} {slug}", "",
+                          *[f"ERROR {e}" for e in errors], *notes, f"{len(errors)} errors", ""])
+        if lens == "scope":
+            body += "\n".join(["## Intake and the human's answers", f".nio/specs/{slug}/intake.md", "", *answers(root, slug), ""])
+        if lens == "consistency":
+            m = re.search(r"^## Summary\n(.*?)(?=^## |\Z)", artefact(root, slug, "spec"), re.M | re.S)
+            asked = " ".join(m[1].split()) if m else slug
+            text, ids = memory.build(root, asked)
+            memory.save(root, run, f"{lens}-memory", text)
+            query.log(root, "pack", f"{lens}-memory", ids, text)
+            body += "\n" + text + "\n"
+    tail = resources.files("nio").joinpath("templates/lens-output.md").read_text()
+    return body.rstrip("\n") + "\n\n" + tail.rstrip("\n") + "\n\n" + _out_line(gate, lens, run).replace("{slug}", slug)
+
+
+def packs(root, slug, gate, run, lenses, fix=False):
+    """Write `packs/<lens>.md` per lens (never over an existing one) and `packs/step.json`; the `run <lens>:` lines (CT-2)."""
+    root = Path(root)
+    folder = root / ".nio/runs" / run / "jury/packs"
+    folder.mkdir(parents=True, exist_ok=True)
+    led = load(root, slug, gate)
+    sj = folder / "step.json"
+    if not sj.exists() or not json.loads(sj.read_text())["lenses"]:  # a run started before its evidence has no lenses yet
+        sj.write_text(json.dumps({"gate": gate, "round": led["round"], "version": version_now(root, slug, gate),
+                                                      "lenses": list(lenses)}))
+    lines = []
+    for lens in lenses:
+        p = folder / f"{lens}.md"
+        if not p.exists():
+            p.write_text(_pack_text(root, slug, gate, run, lens, fix))
+        lines.append(f"run {lens}: card nio-{lens}, pack {p.relative_to(root)}, output .nio/runs/{run}/jury/{gate}-{lens}.md")
+    return lines
+
+
+def refuter_pack(root, slug, gate, run, batch):
+    root = Path(root)
+    p = root / ".nio/runs" / run / "jury/packs/refuter.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    text = ["# Pack: refuter, " + f"{gate} gate of {slug}", "", *batch, "## Files to read (quotes may come only from these)",
+            *[str(f.relative_to(root)) for f in sources(root, slug, gate)], "", f"Ledger: .nio/specs/{slug}/jury/{gate}.md", ""]
+    if gate == "spec":
+        text += ["## The human's grill answers", *answers(root, slug), ""]
+    p.write_text("\n".join(text) + "\n" + _out_line(gate, "refuter", run).replace("{slug}", slug).split("Set lens:")[0].rstrip() + "\n")
+    return p
+
+
+def _begin(root, slug, gate, run, lenses, fix):
+    """CT-1 case 2: the run's packs and the lines that start its jurors."""
+    if gate not in GATES and not evidence.path(root, run).exists():
+        sj = root / ".nio/runs" / run / "jury/packs/step.json"
+        sj.parent.mkdir(parents=True, exist_ok=True)
+        led = load(root, slug, gate)
+        sj.write_text(json.dumps({"gate": gate, "round": led["round"], "version": version_now(root, slug, gate), "lenses": []}))
+        return [f"run: {run}", f"next: nio jury evidence {slug} {gate.removeprefix('implementation-')} --run {run}, "
+                f"then nio jury next {slug} {gate} --run {run}"]
+    lines = packs(root, slug, gate, run, lenses, fix)
+    return [f"run: {run}", *lines, f"next: run each juror above in parallel, then nio jury next {slug} {gate} --run {run}"]
+
+
+def _reusable(root, slug, gate):
+    led, now = load(root, slug, gate), version_now(root, slug, gate)
+    for p in sorted((root / ".nio/runs").glob("R-*/jury/packs/step.json")):
+        s = json.loads(p.read_text())
+        if (s["gate"], s["round"], s["version"]) == (gate, led["round"], now) and not list(p.parent.parent.glob(f"{gate}-*.md")):
+            return p.parts[-4]
+
+
+def step(root, slug, gate, run="", add=(), pick=None):
+    """One gate step (CT-1): collect, check and write the next packs; every line it returns ends in `next: <action>`."""
+    root = Path(root)
+    lines, ok = plan(root, slug, gate, add, pick)
+    if not ok:
+        return lines + [f"next: {lines[-1]}"]
+    if run and not (root / ".nio/runs" / run).is_dir():
+        raise ValueError(f"no run {run} under .nio/runs/")
+    led = load(root, slug, gate)
+    names = re.findall(r"([a-z][a-z-]*) \(", next(x for x in lines if x.startswith("lenses: ")))
+    names = [x for x in names if x not in led.get("dropped", [])]
+    tier = lines[0].split()[1]
+    again = f"nio jury next {slug} {gate} --run {{}}"
+    outputs = list((root / ".nio/runs" / run / "jury").glob(f"{gate}-*.md")) if run else []
+    if not outputs:
+        errors = agents.sync(root)[1]
+        if errors:
+            raise ValueError("; ".join(errors))
+        run = run or _reusable(root, slug, gate) or records.new_run(root)
+        fix = bool(led["round"])
+        return _begin(root, slug, gate, run, changed(root, slug, gate)[1] if fix else names, fix)
+    for p in outputs:
+        lens = re.sub(r"-\d+$", "", p.stem[len(gate) + 1:])
+        if lens != "refuter" and lens not in names:
+            raise ValueError(f"{p.name}: {lens} is not planned for {gate} (planned: {', '.join(names)}); rename or remove it")
+    got = collect(root, slug, gate, run, names, tier)
+    cut = next((i for i, x in enumerate(got) if x.startswith("## Refuter batch")), len(got))
+    end = next((i for i, x in enumerate(got) if i > cut and x.startswith("listed for the human")), len(got))
+    batch = got[cut:end]
+    lines = [x for x in got[:cut] + got[end:] if x]
+    led = load(root, slug, gate)
+    sj = root / ".nio/runs" / run / "jury/packs/step.json"
+    packed = json.loads(sj.read_text())["lenses"] if sj.exists() else []
+    redo = [l for l in packed if not (root / f".nio/runs/{run}/jury/{gate}-{l}.md").exists()]
+    redo += [j["lens"] for k, j in led["jurors"].items() if k == f"{gate}-{j['lens']}" and j["round"] == led["round"]
+             and (not j["valid"] or j["context"] == "needs-more") and j["attempts"] < 2 and j["lens"] not in redo]
+    if redo:
+        return lines + [f"next: re-run {l} on .nio/runs/{run}/jury/packs/{l}.md, adding the INVALID lines above to it "
+                        f"(output .nio/runs/{run}/jury/{gate}-{l}.md), then {again.format(run)}" for l in redo]
+    if batch:
+        refuter_pack(root, slug, gate, run, batch)
+        return lines + [f"next: run nio-refuter on .nio/runs/{run}/jury/packs/refuter.md (output .nio/runs/{run}/jury/{gate}-refuter.md), then {again.format(run)}"]
+    for f in led["findings"]:
+        for l in dict.fromkeys(s["lens"] for s in f["sources"]):
+            if f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" and \
+                    sum(j["lens"] == l and j["round"] == led["round"] for j in led["jurors"].values()) < 3:
+                return lines + [f"next: escalate {l}: run 2 more jurors on copies of its pack whose ## Your output line names "
+                                f"{gate}-{l}-2.md and {gate}-{l}-3.md (in the first review the copies are of packs/{l}.md; after it, of "
+                                f"nio jury fixcheck {slug} {gate} --lens {l} --blocker {f['id']} plus the lens output format), then {again.format(run)}"]
+    outcome, cl = check(root, slug, gate, record=True)
+    lines += cl
+    impl = gate not in GATES
+    if outcome == "rerun":
+        fresh = _reusable(root, slug, gate) or records.new_run(root)
+        return lines + _begin(root, slug, gate, fresh, changed(root, slug, gate)[1], True)
+    return lines + [{
+        "rejected": f"next: nio flow next {slug}" if impl else f"next: dispose of each open finding in one nio jury dispose {slug} {gate} J-a,J-b <disposition> --by <by> --note <note> call per disposition, fix the artefact, then {again.format(run)}",
+        "human": "next: show the human the listed findings and wait for their ruling",
+        "approved": f'next: nio flow done {gate} {slug} --by "<role> / <host> / <model>"' if impl else f"next: tell the human the outcome, then nio flow next {slug}",
+    }.get(outcome, f"next: {again.format(run)}")]
