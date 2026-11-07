@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-3",
   "subject": "2026-11-07-lite-path",
-  "round": 1,
+  "round": 2,
   "tier": "low",
   "expect": [
     "conformance",
@@ -12,7 +12,10 @@
     "R-261107-227t/implementation-E-3-conformance.md": "2af4ac2335b0475f454aa0a9b65bcd3e1280bbe55cf08538daac29fc73fcf668",
     "R-261107-227t/implementation-E-3-consistency.md": "8b385ef510da2378ef54e19836dec418f2ad502696e010baa0ceda81a9250e37",
     "R-261107-227t/implementation-E-3-correctness.md": "2540469fa012973daccd2664a8e76a94db9bd37efc6016cf6d16fd3a66936f38",
-    "R-261107-227t/implementation-E-3-refuter.md": "b2f54da0b1b12d13968a2337325ca70f77e945aeabff7de6d33bbc48d6506af2"
+    "R-261107-227t/implementation-E-3-refuter.md": "b2f54da0b1b12d13968a2337325ca70f77e945aeabff7de6d33bbc48d6506af2",
+    "R-261107-hx44/implementation-E-3-conformance.md": "722bf4e99cbdedf4a1fcdbaf42a603bf010aa1b461fc07cf1888fe50c02d75cb",
+    "R-261107-hx44/implementation-E-3-consistency.md": "b63cb30417366417a07d137a329e00d7ffe56d9850f4db4d4072141576aa5611",
+    "R-261107-hx44/implementation-E-3-correctness.md": "e125e58f6212f3d20326af6b5ca6016b06aa222eb096dfca4b502ae80333d71d"
   },
   "jurors": {
     "implementation-E-3-conformance": {
@@ -22,20 +25,20 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "e527566f9274b71f03dbe2ee1e51d4238cedf468",
-      "judged": 1
+      "round": 2,
+      "version": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2",
+      "judged": 2
     },
     "implementation-E-3-consistency": {
       "attempts": 1,
       "lens": "consistency",
-      "by": "juror / claude-code / claude-haiku-5-5",
+      "by": "juror / claude-code / haiku",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "e527566f9274b71f03dbe2ee1e51d4238cedf468",
-      "judged": 1
+      "round": 2,
+      "version": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2",
+      "judged": 2
     },
     "implementation-E-3-correctness": {
       "attempts": 1,
@@ -44,9 +47,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "e527566f9274b71f03dbe2ee1e51d4238cedf468",
-      "judged": 1
+      "round": 2,
+      "version": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2",
+      "judged": 2
     }
   },
   "findings": [
@@ -89,17 +92,18 @@
       ],
       "validation": "confirmed",
       "reason": "src/nio/tasks.py:276 prints `...; consider a full spec`, not CT-4's `: offer the full flow (@nio:spec, \"Escalating a bug fix\")`, and tests/test_tasks.py:580 (`test_lite_escalate_note`) asserts only the prefix up to the folder list, so the missing offer passes unnoticed. Nothing else in the spec settles the wording; AC-9 requires the offer of the full flow.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-19",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/tasks.py, tests/test_tasks.py",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -165,17 +169,18 @@
       ],
       "validation": "confirmed",
       "reason": "FR-8 and AC-9 say \"non-test files\", and tasks.py excludes test paths from the count. skills/spec/SKILL.md:84 says \"files in more than one folder;\" and skills/tasks/SKILL.md:3 says \"files in more than one folder\" with no qualifier, and nothing nearby settles it. An agent following the skill would escalate on `src/a/x.py` plus `tests/test_x.py`, where the CLI gives no note.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-20",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "skills/spec/SKILL.md (Escalating a bug fix), skills/tasks/SKILL.md (description)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-4",
@@ -289,15 +294,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "e527566f9274b71f03dbe2ee1e51d4238cedf468"
+    "1": "e527566f9274b71f03dbe2ee1e51d4238cedf468",
+    "2": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2"
   },
   "matched": {
     "AC-9": [
