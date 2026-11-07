@@ -1,0 +1,227 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-05-parallel-waves",
+  "round": 2,
+  "tier": "high",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261106-3ix7/tasks-executability.md": "3d1de2542239df34eedd6be4df7b82daeb74dd6957850cc3ecf39043d570fcfb",
+    "R-261106-3ix7/tasks-refuter.md": "4c4ab09bbc76b91ea67adc3be0bd201c9c3d0613a13cecb6192018bd1d99462c",
+    "R-261106-my46/tasks-executability.md": "ae583b3e64a5d6e4a2c9542b466c8d1cefbdaa628594c261947602feb2684dd6"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "df97c98a89962f5e49adca262ebb1706b3fd7aa1",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "release() has no owning task",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "FR-9",
+        "T-1",
+        "T-4",
+        "T-5",
+        "TC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`commit`, `attempt` and `block` call it where they write `\"claims\": {}` today, so a sibling's claim survives (FR-9)"
+      ],
+      "fix": "name `release(claims, tid)` in one task's Serves and Test (for example T-1 with a unit assert on the claims shape), so its owner is explicit before T-4 and T-5 call it.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-1's Serves are AC-1, AC-2, AC-17, AC-16, and no task's Serves names `release`. T-4 (commit) and T-5 (attempt, block) both call it. If the T-4 worker keeps the old `\"claims\": {}` write, TC-7 lands T-2 first, which clears T-1's claim, so the later land of T-1 is refused as not claimed. If the worker writes `release` in T-4 but T-1's claim test does not cover it, nothing proves the wave's claim shape after a commit.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Serves lists ACs, not functions. `release` is the CT-1 rule behind FR-9, and its first caller is `commit` in T-4. TC-7 is in T-4's Test and lands T-2 before T-1, so it fails if `\"claims\": {}` is kept. TC-8, also in T-4, covers the apply-block release. T-5's callers (`attempt`, `block`) are covered by TC-4/TC-12 in T-5.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "TC-16 leaves the baseline line open",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "TC-16",
+        "AC-16",
+        "FR-17",
+        "T-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a first claim's `baseline` line may not be written either"
+      ],
+      "fix": "state the order in CT-2: all worktrees are created, and only then is the baseline line written. Change TC-16 to assert that no line at all is added, baseline included.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "FR-17 says \"record nothing\", and TC-16 asserts the history line count is unchanged. The parenthetical says the baseline line \"may not be written\". A T-1 worker who writes the baseline before the worktree step fails the strict assertion. A worker who writes it only after succeeds meets it. The task text does not say which, so two workers can build different orders and both claim they are done.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tests.md TC-16 asserts \"the history's line count is unchanged\". That count includes a `baseline` line, so a worker who writes the baseline before the worktrees fails the test, and the order is forced by the assertion. The parenthetical only restates this, so there is no real room for two valid builds.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "T-4 is max-tier work rated med effort, too large for one pack",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "T-4",
+        "AC-7",
+        "AC-8",
+        "AC-10",
+        "AC-13",
+        "AC-14",
+        "AC-15",
+        "CT-4",
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "applies patches onto the shared main tree, ordering and review scoping, a wrong step damages the human's tree"
+      ],
+      "fix": "split T-4 into one task for the land path and dirty check (AC-7, AC-8, AC-13) and one for review scope and suite gating (AC-10, AC-14, AC-15), or raise its effort to high.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "one worker is asked to write the `land` snapshot, `git add -A` and the cached diff, the apply, the dirty-tree refusal (FR-14), the review scoping (CT-5), the epic-suite gating (FR-16), the worktree removal and the apply-block path, and to pass six TCs (TC-7, TC-8, TC-10, TC-13, TC-14, TC-15). Rated med, the worker may stop after the happy path and leave the dirty-tree or apply-block cases unbuilt, while the tier says a wrong step damages the human's tree.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The finding's risk is a worker stopping after the happy path. Every case it lists has its own TC in T-4's Test (TC-8 apply block, TC-13/TC-14 dirty tree and scoping, TC-10 suite gating, TC-15), and T-4 is not done until they pass. Nothing in the artefact sets a rule on tier versus effort or a size cap that T-4 breaks, so this is a preference about effort rating rather than a defect.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "T-4 contract includes a review-failure restore that only T-5 proves",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-4",
+        "T-5",
+        "CT-4",
+        "TC-9",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "puts each path back to its bytes before the apply"
+      ],
+      "fix": "add TC-9 to T-4's Test, or move the review-failure restore into T-5 and state in CT-4 that land is not complete until T-5 lands.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "CT-4 says that when the review fails, `restore(root, saved)` puts the paths back. T-4's Test is \"TC-7, TC-8, TC-10, TC-13, TC-14, TC-15\", with no review-failure case; that is TC-9 in T-5, whose text says \"restoring the main tree after a failed review or commit must not lose the human's uncommitted edits\". If the T-4 worker leaves restore to T-5 and T-4 closes, a failed review leaves the patch applied to the human's tree. The next green is then refused by the dirty-tree check, and the human must revert by hand.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tasks.md gives the review-failure and commit-failure restore to T-5, in its title and in Serves AC-9 with TC-9. T-4's title and Serves cover landing and review scoping only. T-5 depends on T-4, so the gap exists only between two tasks of the same unshipped spec, and ownership is stated.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "test registration and the --demo mode are in no task's Files",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "T-1",
+        "tests.md",
+        "quickstart.md"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "run by `tests.suite` like the others"
+      ],
+      "fix": "name the suite registry file in T-1's Files, or confirm in the plan that the suite discovers the file, and give `--demo` to T-1.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "tests.md says the new `tests/test_waves.py` runs under `tests.suite`, and quickstart.md needs a `--demo` mode in the same file. If the suite needs a registry edit, that file is named by no task, so a worker following \"Files\" never touches it, and TC-1 to TC-19 never run in the suite.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "tests.suite already runs every tests/test_*.py (.nio/config.json); T-1's title now gives it the waves() fixture and --demo",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "be8e02446acdb67407d5b0b8dc19effa8bf9b279",
+    "2": "df97c98a89962f5e49adca262ebb1706b3fd7aa1"
+  }
+}

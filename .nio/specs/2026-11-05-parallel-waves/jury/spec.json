@@ -1,0 +1,620 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-05-parallel-waves",
+  "round": 3,
+  "tier": "high",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261105-bpl6/spec-consistency.md": "56744bef4e9f628bba094a11a0c077d0dc73592692b522166d74d25d5a0b9c00",
+    "R-261105-bpl6/spec-logic.md": "8ce81adb8bc650f9b7744991ed55a68e7ecd4011b5aec1e70fd66dd64e17c97d",
+    "R-261105-bpl6/spec-scope.md": "8fbeddaa933ca5568a64720719776f5fd014310b9538312b7b9b9283ebb9d2a2",
+    "R-261105-bpl6/spec-testability.md": "a970406a6728887c025bad198ed2a6c1dad7de78127bf8da3de12f4f73cbb8c2",
+    "R-261105-bpl6/spec-refuter.md": "28846b6d61fe497e5796f4f2b8d5b9732abcc1ac50a379db158bc9a6502e40e2",
+    "R-261106-mcqv/spec-consistency.md": "0a9e04a3cb10ec118906181465830a497e6c85e4a10513957c0641610cd09a3d",
+    "R-261106-mcqv/spec-logic.md": "3370d2634da05a5d574ad9f888cee7e566c440c02bd2532e2d63af98ba8cb167",
+    "R-261106-mcqv/spec-scope.md": "adc3230b82d6852dac668706dda31df9dec0a0897856557ed3b41faab8bac8d3",
+    "R-261106-mcqv/spec-testability.md": "e601743ce8bd5ee11645a3b2994f1fb62815d4afcbafd6200fa6a4cb6c10b195",
+    "R-261106-x3zm/spec-consistency.md": "10558e29530df59c6c0a7c3b28f3aaa83f0c022a2258dd9337faf23e2280a84a",
+    "R-261106-x3zm/spec-scope.md": "6659328214bfc23c81f48b897a08873a98b7ddf7bb3bd6caeab5076fab023f6e"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "086e31598873c625a6e9bfa033b1e26c1983fb7d",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "baf6506e13f0a9890dfef68d5a0968abbb5b954e",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 2,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "086e31598873c625a6e9bfa033b1e26c1983fb7d",
+      "judged": 3
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "baf6506e13f0a9890dfef68d5a0968abbb5b954e",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Worktree left behind after a failed review conflicts with the test-invariant decision",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "FR-13",
+        "AC-9",
+        "C-261030-aemp (memory record)"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "leave the work in the task's worktree for the next attempt",
+        "WHEN a wave task is committed or blocked THE SYSTEM SHALL remove its worktree"
+      ],
+      "fix": "add a rule to FR-8 and FR-13 on worktree removal after a failed review and after a timeout, or write a change request against C-261030-aemp first.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a wave task's green is applied and its review fails. FR-8 keeps the worktree, so the run ends with an extra entry in `git worktree list`. C-261030-aemp says `git worktree list` must be unchanged after a normal run, and `tests/test_evidence.py:snapshot` compares it over the whole tree. A timed-out run is not covered by any FR here, so the worktree survives there too. The spec should either say the snapshot invariant excludes flow worktrees, or state that worktrees are removed on a failed review and on a timeout.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "C-261030-aemp (change record) is about the jury's own `tests/test_evidence.py:snapshot` and its collect run. It doesn't constrain flow worktrees. FR-13 removes a wave task's worktree at commit or block, so the worktree FR-8 keeps after a failed review is only transient until the task commits or is blocked.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "A wave can contain a task rated direct or single, which the spec does not cover",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "FR-12",
+        "D-261029-rkpb",
+        "C-261029-4cev (memory records)"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "AND the epic's next ready task is `Parallel: yes`",
+        "dispatch one worker per wave task, concurrently, each in its task's worktree"
+      ],
+      "fix": "add a condition to FR-1 and to the decision table on the task's Mode (for example \"AND its Mode is split\"), or say what a wave does with a direct or single task.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a Parallel: yes task is rated direct by the evaluator, which D-261029-rkpb says is worked in the mode it was rated. FR-1 claims it into a wave, and FR-12 sends it to a worker in a worktree. The spec does not say whether a direct task is excluded from a wave, or how it is run.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-consistency: FR-1 now says wave tasks are worked in their rated mode, but FR-12 is unchanged and still says every wave task gets a worker in its own worktree, and the decision table still has no Mode condition. A direct task in a wave still conflicts with FR-12.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "human",
+      "note": "FR-12: each wave task is worked in its rated mode, every worker in its task's worktree (fix, under the human's standing grant)",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-3",
+      "title": "Decisions cite retired IDs",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "retired line (IDs OP-1 to OP-5)",
+        "Decisions section"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "retired: [OP-1, OP-2, OP-3, OP-4, OP-5]",
+        "grill call on OP-2"
+      ],
+      "fix": "point the Decisions lines at the surviving FR or AC IDs, or write the grill call's text in full without an ID.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the Decisions line says \"grill call on OP-2\", but the retired line removes OP-2 from the spec. A reader cannot follow the call to anything in the spec, and it breaks the \"IDs are permanent\" rule that the template states.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Decisions name the grill calls, not retired OP IDs",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "A blocked task counts as finished for FR-9, but AC-8 says the effort waits for the human",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHILE any task of the last wave is neither done nor blocked THE SYSTEM SHALL not claim a new wave.",
+        "`state.json` shows that task blocked and the effort waiting for the human"
+      ],
+      "fix": "state in FR-9 and the table whether a blocked task holds the next claim until the human resolves it.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "Wave {T-1, T-2}. T-1's diff doesn't apply, so it is blocked. T-2 lands and is done. FR-9 and UJ-1 step 4 say every task is now done or blocked, so the next claim opens a new wave. AC-8 and A-1 say the effort is waiting for the human to resolve T-1. The spec doesn't say which wins. A new wave could therefore start on top of a blocked sibling that its tasks depend on, or the effort could stall forever with no rule saying so.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 and UJ-1 step 4 treat a blocked task as finished for opening the next wave. AC-8 and intake decision 1 say the effort waits for the human after a block. Nothing says whether a blocked task holds the next claim.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-9, UJ-1 and the table: a blocked task holds the next claim until the human unblocks it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "The apply and review window is not covered by the lock, and FR-14 would refuse the second green",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "FR-14",
+        "FR-6",
+        "AC-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "run a wave's guard commands (red, green, the epic suite) one at a time under the effort lock",
+        "IF the main tree has uncommitted changes outside the effort folder when a wave task's green arrives THEN THE SYSTEM SHALL refuse the green"
+      ],
+      "fix": "put the whole green, apply, review and commit sequence under the lock, and make FR-14 ignore the system's own in-flight apply.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "T-1's green passes. Its diff is applied to the main tree and its review runs, so the tree is dirty until the commit. Meanwhile T-2's green arrives. FR-11 only serialises guard commands, not apply, review and commit. If T-2's green arrives in that window, either the apply races with T-1's, or FR-14 refuses T-2 because T-1's own uncommitted apply looks like human changes. AC-7 expects both to land. FR-14 also says \"record nothing\" while green already passed in the worktree, with no retry rule.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-11 locks only guard commands. Apply, review and commit are separate steps; the earlier flow history shows green, review and task_done as separate events. T-1's apply therefore leaves the main tree dirty, and FR-14 would refuse T-2's green in that window. FR-14 and FR-6 together give no rule for it.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-11: each green with apply, review and commit runs whole under the lock",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "The epic-closing task can run its epic suite while siblings are still in flight",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-10",
+        "FR-6",
+        "FR-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the epic suite sees every sibling's commit",
+        "a HEAD that contains every earlier-landed sibling's commit"
+      ],
+      "fix": "either keep the epic-closing task out of a wave, or hold the epic suite until every wave sibling is done or blocked.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The epic-closing task and a sibling are in one wave. The closer's green arrives first, so the sibling has not landed. The epic suite runs at a HEAD without that sibling's work, and the epic closes. The sibling then lands, and no suite has ever run against the combined result. AC-10's title says \"every sibling\", but its Observable only says \"earlier-landed\".",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-10 cites FR-6, but FR-6 says nothing about an epic suite. If the closing task's green arrives while a sibling is still in progress or blocked, the \"every sibling's commit\" claim is undefined. The Observable only covers \"earlier-landed\" siblings, so a sibling that has not landed yet is untested. The suite could run and pass with a sibling missing.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-10 promises \"every sibling's commit\" but its Observable says only \"earlier-landed\", and FR-9 and FR-6 don't hold the closer's epic suite until the wave siblings land. A closer whose green arrives first runs the suite without the sibling's work.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-16 and AC-10: the last task of the epic to land runs the suite",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "FR-13 and FR-8 leave the worktree's fate unclear when a review fails and the task then becomes blocked",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "FR-13",
+        "AC-9",
+        "AC-12"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "leave the work in the task's worktree for the next attempt",
+        "WHEN a wave task is committed or blocked THE SYSTEM SHALL remove its worktree, keeping a blocked task's patch in its run folder."
+      ],
+      "fix": "say that a block after repeated review failure also keeps the patch, and name the task's state while it waits for the next attempt.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A review fails, so the worktree is kept. After the attempt limit the task is blocked, and FR-13 removes the worktree and keeps a patch. The spec never says whether that patch holds the failed-review work. FR-7 only says the patch is kept when the diff doesn't apply. It's also unclear whether the failed-review state still counts as \"in progress\" for FR-9 in the meantime.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-8: back to red as today; third attempt blocks and keeps the patch",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "Concurrent dispatch is only checked as skill wording",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-11",
+        "FR-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "start one worker per claimed wave task at the same time",
+        "Level: unit."
+      ],
+      "fix": "state an observable of the runs themselves, for example both tasks show a started line before either shows a finished line, and each worker's recorded working directory is its task's worktree. Put it at integration or e2e level.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-11's Observable only checks that the skill's steps contain this sentence. A skill that tells the orchestrator to run the workers one after another, or that dispatches nothing, can keep the same wording and the test passes. FR-12's \"concurrently\" can break while AC-11 stays green. No AC covers whether two workers overlap in time or whether each worker receives its own worktree path as its working directory.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-12 is a requirement on what the implement skill tells the orchestrator (\"have the implement skill dispatch\"), so checking the skill's steps at unit level covers it. The AC-11 Observable also requires each worker to be given its task's worktree as its working directory, and results to be reported by task ID. Whether the workers actually overlap is a runtime property of the host, which this spec doesn't claim.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "The Misuse cases have no AC, and the wave has no failure cases",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "UJ-1",
+        "FR-7",
+        "FR-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Misuse: a worker edits a file outside its task's list, or two `Parallel: yes` tasks touch the same file anyway."
+      ],
+      "fix": "add an AC for each case, with a stated outcome (blocked, retried, or refused) and its observable. Alternatively, say in Non-goals that they are out of scope.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a worker edits a file outside its task's list. Nothing says whether green passes, is refused, or is applied. Other cases are also missing: a worker that crashes or times out mid-wave (FR-9 then never sees \"done or blocked\"), a red or green that fails in a wave, and a worktree that cannot be created at claim. AC-8 covers only an unapplicable diff. A test cannot be written for these today.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "UJ-1 names the Misuse cases (a worker edits a file outside its list, two `Parallel: yes` tasks touch the same file), and no AC or FR covers them. A worker that crashes or times out mid-wave also leaves FR-9 waiting on a task that is neither done nor blocked. AC-8 covers only an unappliable diff, and Non-goals doesn't exclude these cases.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-15, AC-16, FR-17 and a non-goal on crashed workers",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "The \"try again\" result is not testable as written",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-6",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the second call exits with the effort-busy message and runs no command",
+        "answering a concurrent caller with \"try again\""
+      ],
+      "fix": "state the exit code and the exact message, and say the second call returns at once without waiting.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-11 says \"try again\" and AC-6 says \"the effort-busy message\". Neither gives the exit code or the text, and no wait or retry limit is given. A test cannot decide whether a wrong message or a zero exit code is a failure. The test also has no way to hold the first guard open.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-6 and FR-11 give exit 1, the exact message and no waiting",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "The epic-closing task's suite is not covered by the requirement it cites",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-10",
+        "FR-6",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the epic suite sees every sibling's commit",
+        "a HEAD that contains every earlier-landed sibling's commit"
+      ],
+      "fix": "say whether the closing task has to wait for all siblings, or is blocked. Give the epic suite its own FR and cite it from AC-10.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-10 cites FR-6, but FR-6 says nothing about an epic suite. If the closing task's green arrives while a sibling is still in progress or blocked, the \"every sibling's commit\" claim is undefined. The Observable only covers \"earlier-landed\" siblings, so a sibling that has not landed yet is untested. The suite could run and pass with a sibling missing.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-6",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "Which tasks form the wave is not pinned down",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-1",
+        "FR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then two tasks are claimed as one wave",
+        "at most `budgets.parallel` of them"
+      ],
+      "fix": "state the selection order (the next ready task plus the following ones in plan order). Name those IDs in the Observable. Add an AC or a rule for an invalid `budgets.parallel`.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "three tasks are ready and the limit is 2. The Observable \"names exactly two task IDs\" passes for any two. A claim that skips the epic's next ready task, or picks by the wrong order, still passes. Nothing says what happens when `budgets.parallel` is 0 or not a number, or how FR-14's \"uncommitted changes\" treat untracked files.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-1 selection order, FR-15 and AC-17 for a bad budgets.parallel",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "Dirty-tree refusal (FR-14) is a scope extension the human never confirmed",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-14",
+        "AC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF the main tree has uncommitted changes outside the effort folder when a wave task's green arrives THEN THE SYSTEM SHALL refuse the green before applying anything and record nothing. [agent]",
+        "Green refuses on a dirty main tree before applying, so the restore never touches the human's changes: grill call on OP-3 ([agent], 2026-11-05)."
+      ],
+      "fix": "mark FR-14 [default] so the human confirms it, or cut it and AC-13.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake's four decisions and its closing \"smallest change\" line never mention a dirty main tree. The only provenance here is [agent], a grill call made by the agent. Take FR-14 out and every want the human did state (waves, one worktree per worker, single writer, lean) is still met, so the human loses nothing they asked for. As written it is a new refusal path present in the spec without the human's confirmation. The spec's risk: [data-deletion] front matter may justify it, but that is the human's call to make.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-scope: FR-14 and AC-13 still carry [agent] with no [default] mark, so the human has not confirmed the dirty-tree refusal. The reason given, \"the human's standing autonomy grant\", is not in the pack and \"Settled by the human\" is \"None\". The asked fix was to mark FR-14 [default] or cut FR-14 and AC-13, and neither was done.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "human",
+      "note": "The human's standing grant is now quoted in intake.md; FR-14 and AC-13 rest on it as [human]",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-14",
+      "title": "Worktree removal (FR-13) is cleanup nobody asked for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "AC-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN a wave task is committed or blocked THE SYSTEM SHALL remove its worktree, keeping a blocked task's patch in its run folder. [agent]"
+      ],
+      "fix": "mark FR-13 [default] for the human to confirm, or drop it and note that worktree cleanup is manual.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "if FR-13 is not built, committed worktrees stay under .nio/runs and show up in git worktree list. The human asked for one worktree per worker, not for their removal, so nothing they wanted is lost. It is an agent-chosen step with no intake line behind it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "spec-scope: FR-13 and AC-12 still carry [agent] with no [default] mark, and the worktree-removal step is still not confirmed by the human. The same ungrounded autonomy-grant reason is given. The asked fix was to mark FR-13 [default] or drop it and note that cleanup is manual, and neither was done.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "human",
+      "note": "The human's standing grant is now quoted in intake.md; FR-13 and AC-12 rest on it as [human]",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "122113688c8ffd8c2af518e08a9d0e1b9edcf0d9",
+    "2": "baf6506e13f0a9890dfef68d5a0968abbb5b954e",
+    "3": "086e31598873c625a6e9bfa033b1e26c1983fb7d"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-2",
+      "J-13",
+      "J-14"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}
