@@ -50,7 +50,9 @@ def git(root, *args, full=False):
 
 
 def repo_root():
-    return Path(git(".", "rev-parse", "--show-toplevel")[0])
+    top = Path(git(".", "rev-parse", "--show-toplevel")[0])
+    # a wave task's worktree is `<root>/.nio/runs/<run>/worktree`: nio there works on the project's one state (CT-6)
+    return top.parents[3] if top.name == "worktree" and top.parents[1].name == "runs" and top.parents[2].name == ".nio" else top
 
 
 def home():
