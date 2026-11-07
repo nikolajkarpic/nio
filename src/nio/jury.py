@@ -685,7 +685,10 @@ def merge(led, paths, gate, slug, text, human=""):
     packs, verdicts = {}, collections.defaultdict(list)
     for path in paths:
         meta, findings, errs = parse_lens(path, gate, slug)
-        lens = meta.get("lens", path.stem.split("-", 1)[1])
+        named = re.sub(r"-\d+$", "", path.stem[len(gate) + 1:])
+        lens = re.sub(r"-\d+$", "", named)  # the file name gives the lens; `-2` marks an escalation juror
+        if meta.get("lens") and meta["lens"] != lens:
+            out.append(f"lens    {path.name}: front matter says {meta['lens']}; filed under {lens}")
         # after the first review a lens answers a fix verdict per finding in its pack; an escalation juror
         # (`<gate>-<lens>-2`) judges only the new blocker, and a lens asking for more context is re-run anyway
         if review and not errs and not re.search(r"-\d+$", path.stem) and meta.get("context") != "needs-more":

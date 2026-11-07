@@ -1,5 +1,5 @@
 ---
-lens: logic                        # your card's name
+lens: <your card's name>                      # your card's name
 gate: spec                         # spec | plan | tasks, from the pack
 subject: checkout-refunds          # the slug, from the pack
 by: "juror / claude-code / sonnet" # role / host / model
