@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-5
 subject: 2026-11-07-fewer-gate-turns
-round: 1
-outcome: rejected
+round: 2
+outcome: human
 ---
 # Implementation-e-5 jury: 2026-11-07-fewer-gate-turns
 
@@ -10,14 +10,14 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-6 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | risk | CT-6 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-2 | major | gap | AC-11 | adversary | merged | merged |  | new, 0 |
 | J-3 | minor | risk | CT-6 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | AC-11 | conformance | grounded | open |  | new, 0 |
-| J-5 | major | inconsistency | CT-6, FR-11 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | major | inconsistency | CT-6, FR-11 | consistency | confirmed | open |  | unchanged, 1 |
 | J-6 | minor | inconsistency | CT-6, FR-11 | consistency | grounded | open |  | new, 0 |
 | J-7 | minor | inconsistency | CT-6, FR-11 | consistency | grounded | open |  | new, 0 |
-| J-8 | major | untestable | AC-11 | adversary, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-8 | major | untestable | AC-11 | adversary, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-9 | minor | gap | NFR-1, CT-6 | correctness | grounded | open |  | new, 0 |
 | J-10 | minor | inconsistency | CT-6 | correctness | grounded | open |  | new, 0 |
 
@@ -49,8 +49,7 @@ outcome: rejected
 - quote: "The plan jury is then paused (`nio jury check <slug> plan` prints"
 - situation (consistency): the diff rewrites the same plan-gate section to say "While the step prints `state: with-human`, it refuses a new round", so the skill now reads status from the step. The sentence a few lines earlier still sends the orchestrator to `nio jury check <slug> plan` to see `state: waiting-on-spec`, a call CT-6 says the skill drops. An orchestrator following the skill runs the removed command for one state and the step for another.
 - fix: name the step for this state too, e.g. "`nio jury next <slug> plan` prints `state: waiting-on-spec`".
-- validation: confirmed: SKILL.md lines 127-128 still send the orchestrator to `nio jury check <slug> plan` for `state: waiting-on-spec`. Line 130 now reads status from the step ("While the step prints `state: with-human`"). Nothing in the file settles which command gives the status for the paused state.
-- disposition: fix-task by agent: fix task T-11
+- validation: confirmed: implementation-E-5-consistency: the skill text now says `nio jury next <slug> plan` prints `state: waiting-on-spec` (`skills/jury/SKILL.md`, the plan-gate paragraph). The CLI does not do that. `plan()` (`src/nio/jury.py:258`) prints no state line, and `next` only raises the paused message when new packs arrive (`jury.py:608-609`). The `state:` line comes from `nio jury check <slug> plan` (`jury.py:1121`). The fix ask's example is what the code does not do, so the sentence needs to name `nio jury check <slug> plan`, or the CLI must print the line from `next`.
 
 ### J-6 The skill's intro still names `nio check spec <slug> --gate` as a call to run
 - quote: "Takes a spec that passes `nio check spec <slug> --gate` to a verdict"
@@ -84,7 +83,7 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-5-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-5-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-5-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-5-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-5-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-5-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-5-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
