@@ -1437,7 +1437,7 @@ def step(root, slug, gate, run="", add=(), pick=None):
         refuter_pack(root, slug, gate, run, batch)
         return lines + [f"next: run nio-refuter on .nio/runs/{run}/jury/packs/refuter.md (output .nio/runs/{run}/jury/{gate}-refuter.md), then {again.format(run)}"]
     for f in led["findings"]:
-        for l in dict.fromkeys(s["lens"] for s in f["sources"]):
+        for l in dict.fromkeys(s["lens"] for s in f["sources"] if s["lens"] in names):
             if f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" and \
                     sum(j["lens"] == l and j["round"] == led["round"] for j in led["jurors"].values()) < 3:
                 return lines + [f"next: escalate {l}: run 2 more jurors on copies of its pack whose ## Your output line names "
