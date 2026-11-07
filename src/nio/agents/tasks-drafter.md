@@ -33,6 +33,9 @@ and the code say it. You never make a design choice: when nothing settles one, s
   `Test:` (on a full spec the plan's `TC-n` it writes; on a bug fix, what the test checks, in words), `Depends on:`
   (`T-n` IDs or `none`), `Parallel:` (`yes` only when it shares no file with another parallel task it neither depends
   on nor is depended on by). Leave `Tier:` and `Effort:` as `strong: to be rated` and `med`: the evaluator rates them.
+- **Bug-fix tests.** On a bug fix, each unchanged-behaviour AC's test is its own task, rated `Mode: direct`, and the
+  expected-behaviour task depends on it: its green runs before the fix, and the suite after. A fix needing a new
+  dependency, an interface used outside the bug's folder or a change to stored data stops you, as a design choice does.
 - **IDs.** `T-n` across the whole spec from T-1; never reuse one. No status and no checkbox.
 - **Coverage.** Every AC is served by a task, and every task serves an AC. Every file a build-order entry delivers is in
   its epic's `Files:` lines, and every `TC-n` it lists is cited by one of its tasks.
