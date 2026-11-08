@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-11-08-explainer",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,8 @@
     "R-261108-v366/implementation-E-2-conformance.md": "71f842ef01cbf98c6bba75b1846d7f4767c22fd4ac7b8fdc9f92f88cc2749e11",
     "R-261108-v366/implementation-E-2-consistency.md": "15f58589ce3ef19d1a71c48838f8dd5513ac0f083e7533413d4e9db94781710d",
     "R-261108-v366/implementation-E-2-correctness.md": "1f6840248c474d3e6665ef800e0feb8f4a7a8d3946286ae78439574facb09a8f",
-    "R-261108-v366/implementation-E-2-refuter.md": "35c7db7bcb6e2db042e93c2091c3e67ea42395fc5d48d0653a12ec009ba931df"
+    "R-261108-v366/implementation-E-2-refuter.md": "35c7db7bcb6e2db042e93c2091c3e67ea42395fc5d48d0653a12ec009ba931df",
+    "R-261108-zlx4/implementation-E-2-adversary.md": "f2a24395ddef1ed1bfd34ef54c6ef61c0eb368243168f9c09299c040eb05d5a5"
   },
   "jurors": {
     "implementation-E-2-adversary": {
@@ -24,9 +25,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "936f17cb1a2ea512e45f54967fbddc41db4970e9",
-      "judged": 1
+      "round": 2,
+      "version": "1c0d724242371eed03a579465e0fc108b16c73f6",
+      "judged": 2
     },
     "implementation-E-2-conformance": {
       "attempts": 1,
@@ -88,17 +89,18 @@
       ],
       "validation": "confirmed",
       "reason": "explain.py line 112 tests `c not in labels` on a plain joined string, so \"CT-1\" matches inside \"CT-10\"; nothing else in the file matches whole IDs.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-22",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/explain.py:check (component map labels)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -125,17 +127,18 @@
       ],
       "validation": "confirmed",
       "reason": "line 101 compares the unresolved `p` with the plan path, so a `..` or symlink spelling gives `plan_mode` False (a leading `./` is normalised by Path, but `..` and symlinks are not), although CT-4 says \"a path resolving to\" the explainer.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-23",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/explain.py:check (plan_mode)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -433,15 +436,20 @@
       "last_round": 1
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "936f17cb1a2ea512e45f54967fbddc41db4970e9"
+    "1": "936f17cb1a2ea512e45f54967fbddc41db4970e9",
+    "2": "1c0d724242371eed03a579465e0fc108b16c73f6"
   },
   "matched": {
     "AC-5": [],
