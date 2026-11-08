@@ -21,23 +21,28 @@ the plan; changing it takes a change request.
   Tests go in the existing `tests/test_flow.py`, `test_jury.py`, `test_spec.py` and `test_agents.py`.
 
 ## Stored data (stop list 3)
-- `.nio/specs/<slug>/driver.lock`: the driver claim (FR-29, FR-38). Git-ignored by adding `driver.lock` to the lines
-  `flow.lock` already writes into the effort's `.gitignore`. JSON `{by, host, at}`, created with `O_EXCL` so of
+- `.nio/specs/<slug>/driver.lock`: the driver claim (FR-29, FR-38). Git-ignored by adding `driver.lock*` to the lines
+  `flow.lock` already writes into the effort's `.gitignore`. JSON `{token, by, host, at}`; the token is made on the first `nio flow drive` and passed back on each refresh and release, so two sessions with the same `--by` are told apart. It is created with `O_EXCL` so of
   two drivers exactly one gets it, taken over the way `flow.lock` is (rename, re-check, create) once `at` is over 30
   minutes old. There is no process test: every `nio` call is a short-lived process, so the claim has none to name
-  (the human's call, 2026-11-08; change request C-261108-mplt against FR-38 and AC-38). A refresh rewrites `at` and writes no history line (RF-7). Rejected:
+  (the human's call, 2026-11-08; change request C-261108-mplt against FR-38 and AC-38). A refresh writes a temp file and `os.replace`s it after re-reading that the claim still holds the caller's token; it rewrites `at` and writes no history line (RF-7). Rejected:
   `state.json`'s `claims`, since each write there needs a history line.
 - `.nio/specs/<slug>/state.json`: no new key. `auto` already exists (RF-11).
 - `.nio/specs/<slug>/history.jsonl`: three new line kinds, written by `flow.record` like every other (RF-8):
-  - `grant`: auto switched on; `from`/`to` the stage, `who` the human, and `evidence.ran_in: {host, model}` read from
-    the environment of the call, `unknown` for what it can't detect (the human's call, 2026-11-08) (FR-3, FR-30, AC-42);
+  - `grant`: auto switched on; `from`/`to` the stage, and `who` `{role: human, host, model}` with host and model read
+    from the environment of the call, `unknown` for what it can't detect (the human's call, 2026-11-08) (FR-3, FR-30, AC-42);
   - `switch_off`: auto switched off by the human (FR-32);
   - `raise`: on resuming a cap or stuck suspension, `evidence: {gate, rounds: 2, cap: 2}` (FR-40).
   A pull request that can't be opened writes the existing `pause` kind with `waiting.why` starting `pull request:`
   (FR-24) (agent call).
 - The jury ledger `jury/<gate>.json`: `by` may be `auto`, and a finding may be disposed `held` (only `--by auto`), its
   note naming the `[human]` line, the cut or the risk change (FR-10, FR-11) (agent call: the fixer's only way to say
-  "this one is the human's" without touching the file). No other field.
+  "this one is the human's" without touching the file). A `held` finding reads as the human's in every mode, auto or
+  not. A re-disposed finding keeps the disposition before it in a `was` field, so the report still lists the run's fix.
+- Git refs: each round's judged version is kept reachable at `refs/nio/<slug>/<gate>/<round>`, so a fixer edit the
+  human rejects can be restored (`nio flow manual` prints the command) and the round check never loses its baseline.
+- Git branch: the grant switches to (or creates) `nio/<slug>`, carrying the effort folder's uncommitted files and
+  refusing on other uncommitted changes, so every auto approval commit lands on the effort branch, never the base.
 - No new config key: `budgets.juries` and `budgets.subagents` already exist (flow-state FR-40, RF-12).
 
 ## Interfaces used outside this feature (stop list 4)
@@ -46,9 +51,12 @@ the plan; changing it takes a change request.
 - `nio flow manual <slug> --by human`: switches auto off with a `switch_off` line; refused for any other `--by`
   (FR-32, D-261108-txqj). A fix under way finishes; the next jury round waits, since `done` and the stop list read
   `auto: false`.
-- `nio flow drive <slug> --by "<role> / <host> / <model>"`: takes or refreshes the driver claim and prints
-  `driving: <slug>`; refused, naming the running driver, when a claim under 30 minutes old names another (FR-29, FR-38).
-  `--release` drops it when the driver stops. Writes no history.
+- `nio flow drive <slug> --by "<role> / <host> / <model>" [--token <token>]`: takes the driver claim (printing
+  `driving: <slug>` and its `token:`) or, with the token, refreshes it; refused, naming the running driver, when a
+  claim under 30 minutes old holds another token (FR-29, FR-38). `--release --token <token>` drops it when the driver
+  stops. Writes no history.
+- Under auto with no risky flag, a gate whose guard passes reads as `working` with its `done` command, not as waiting
+  for the human's approval, so the driver goes on (FR-5).
 - `nio flow pr <slug> --by "<...>"`: at `done` under auto, builds the run report, pushes `nio/<slug>` and opens the
   pull request with `gh pr create`, never merging (FR-20 to FR-23). When one is open already it prints its URL and
   does nothing (FR-41). On failure it records the `pause` above and prints the report (FR-24). `gh` is an external
