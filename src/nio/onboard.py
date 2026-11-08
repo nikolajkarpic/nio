@@ -68,9 +68,13 @@ def progress(root="."):
     if not f.exists():
         return {"state": "not started", "reason": "", "empty": False, "apps": {}, "confirmed": [], "seen": []}
     try:
-        return json.loads(f.read_text())
-    except ValueError:
-        raise ValueError(".nio/project/onboarding.json is not valid JSON: fix or restore it") from None
+        st = json.loads(f.read_text())
+        if not (isinstance(st, dict) and isinstance(st["state"], str) and isinstance(st["reason"], str)
+                and isinstance(st["empty"], bool) and isinstance(st["confirmed"], list) and isinstance(st["seen"], list)):
+            raise ValueError
+        return st
+    except (ValueError, KeyError):
+        raise ValueError(".nio/project/onboarding.json is not valid: fix or restore it") from None
 
 
 def act(action, reason="", doc="", empty=False, root="."):
@@ -90,7 +94,7 @@ def act(action, reason="", doc="", empty=False, root="."):
             raise ValueError("skip needs a reason: nio onboard skip <reason>")
         if st["state"] == "done":
             return "ignored: onboarding is done"
-        st.update(state="skipped", reason=reason.strip())
+        st.update(state="skipped", reason=" ".join(reason.split()))
         save()
         return "skipped"
     if action == "pause":

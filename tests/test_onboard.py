@@ -192,6 +192,21 @@ def status(root):
                           cwd=root, capture_output=True, text=True)
 
 
+def test_torn_progress_file_status():
+    root = repo({})
+    assert nio(root, "start").returncode == 0
+    f = root / ".nio/project/onboarding.json"
+    for bad in (f.read_bytes()[:10], b"[]", b'{"state": "paused"}'):
+        f.write_bytes(bad)
+        for r in (status(root), nio(root, "start"), nio(root, "confirm", "product")):
+            out = r.stdout + r.stderr
+            assert "Traceback" not in out and ".nio/project/onboarding.json" in out, (bad, out)
+    f.unlink()
+    assert nio(root, "skip", "a\nonboarding: done").returncode == 0
+    assert sum(l.startswith("onboarding:") for l in status(root).stdout.splitlines()) == 1
+    assert not list(f.parent.glob("*.tmp"))
+
+
 def test_skip_lets_spec_start():
     root = repo({})
     assert nio(root, "skip", "prototype").returncode == 0
@@ -245,5 +260,5 @@ if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs,
-                    test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file,
+                    test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
                     test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes])
