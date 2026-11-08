@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-explainer
-retired: [T-24]                      # task IDs removed from this file; never reused
+retired: [T-24, T-28]                      # task IDs removed from this file; never reused
 ---
 # Tasks: explainer
 
@@ -177,17 +177,6 @@ retired: [T-24]                      # task IDs removed from this file; never re
 - Files: `src/nio/explain.py`
 - Serves: CT-5, J-4
 - Test: TC-4
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-28 Fix: AC-33 has no passing evidence
-- From: J-9 (implementation-E-3, round 1)
-- Files: `src/nio/explain.py`, `tests/test_explain.py`
-- Serves: AC-33
-- Test: TC-10
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding

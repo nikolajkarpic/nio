@@ -18,7 +18,7 @@ outcome: rejected
 | J-6 | minor | gap | CT-5 | correctness | grounded | open |  | new, 0 |
 | J-7 | minor | gap | CT-5, CT-10 | correctness | grounded | open |  | new, 0 |
 | J-8 | minor | contradiction | CT-5 | correctness | grounded | open |  | new, 0 |
-| J-9 | blocker | gap | AC-33 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-9 | blocker | gap | AC-33 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-10 | minor | inconsistency | CT-5, CT-6, FR-14 | consistency | grounded | open |  | new, 0 |
 | J-11 | minor | inconsistency | CT-1, CT-5 | consistency | grounded | open |  | new, 0 |
 | J-12 | minor | inconsistency | CT-5, FR-26 | consistency | grounded | open |  | new, 0 |
@@ -77,7 +77,7 @@ outcome: rejected
 - situation (cli): no passing test proves AC-33: no test didn't run
 - fix: add or fix a test that proves AC-33
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-28
+- disposition: accepted-risk by human: Tooling gap, not code: the conformance juror matched AC-33 to tests/test_explain.py:362 but test_ac33_safe_delete's def is at 367, so evidence found no test. Same decision as J-10 of E-2 (retire the fix task). Orchestrator under the human's standing approval of 2026-11-08.
 
 ### J-10 Image names do not follow the CT-6 naming rule
 - quote: "named by CT-6's rule without the 40-character cut"
