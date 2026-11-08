@@ -5,6 +5,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from nio import spec
+
 MERMAID = "@mermaid-js/mermaid-cli@11.4.2"
 TIMEOUT = 120
 ARROW = re.compile(r"-->>|->>|-\.->|==>|-->|---|->")
@@ -75,3 +77,16 @@ def render(block, out):
     if r.returncode != 0 and "Parse error" in both:
         return "broken: " + next(l for l in both.splitlines() if "Parse error" in l).strip()
     return "unreachable"
+
+
+def check(root, target, gate=False, base="HEAD"):
+    """(errors, notes) for an explainer: a slug (plan mode) or a .md path. Only the missing-file error so far."""
+    if target.endswith(".md"):
+        p = Path(target) if Path(target).is_absolute() else root / target
+    else:
+        if not spec.path(root, target).exists():
+            raise ValueError(f"no effort {target} under .nio/specs/")
+        p = spec.path(root, target).parent / "explainer.md"
+    if not p.exists():
+        return [f"explainer missing: {p.relative_to(root)}"], []
+    return [], []
