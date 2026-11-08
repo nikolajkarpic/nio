@@ -97,4 +97,11 @@ def check(root, target, gate=False, base="HEAD"):
         p = spec.path(root, target).parent / "explainer.md"
     if not p.exists():
         return [f"explainer missing: {p.relative_to(root)}"], []
-    return [], []
+    errors = []
+    for s in sections(p.read_text()):
+        # ponytail: "no node"/"unreachable" are no error here; T-4 adds the skipped note
+        if s["fence"] == "mermaid" and s["block"]:
+            with tempfile.TemporaryDirectory() as d:
+                if render(s["block"], Path(d) / "o.svg").startswith("broken"):
+                    errors.append(f"broken diagram: {s['title']}")
+    return errors, []
