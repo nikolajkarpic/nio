@@ -1,0 +1,235 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-08-full-auto-run",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261108-z3y6/tasks-executability.md": "b1171d92628329c27fa67d46f8a19ee8d3914cdd3887a2aed882cf215fe06271",
+    "R-261108-lgic/tasks-executability.md": "9a6e0ce633d8538b46bd334e76af8238e877a9e0e391cbe0e2164ca5ca2078ae"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "63c35f35934060fc37924296cb76fa43c8214532",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-11's test asserts an outcome that T-13 builds",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "T-11",
+        "T-13",
+        "TC-15",
+        "CT-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-15, TC-36, TC-37, TC-52, TC-57\" (tasks.md, T-11)",
+        "outcome `human` naming `FR-1`; ledger round unchanged; no fix-check pack written.\" (tests.md, TC-15)",
+        "a CT-13 hit while `current` differs from the judged version → `human` with CT-13's lines;\" (contracts.md, CT-12)"
+      ],
+      "fix": "move TC-15, TC-36, TC-37 and TC-57's outcome assertions to T-13's `Test:` (or split the composition into T-13 and list TC-15 there), and keep only the `cuts` return-value assertions in T-11.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "the worker for T-11 adds `cuts` and runs TC-15. `cuts` returns `[\"[human] line changed: FR-1\"]`, but the composer has no round-check rule until T-13. `nio jury check S spec --record` then gives `rerun`, not `human`, so the test fails. T-13's title includes \"a round-check hit hand over\", yet T-13's `Test:` (TC-12, TC-14, TC-34, TC-39) omits TC-15. Nothing marks TC-15 as passing only after T-13.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "T-23's test needs flow.manual from T-22, which T-23 doesn't depend on",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-23",
+        "T-22",
+        "TC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Depends on: T-1\" (tasks.md, T-23)",
+        "- Setup: TC-17's spec; then `flow.manual(root, S, \"human\")`.\" (tests.md, TC-18)"
+      ],
+      "fix": "change T-23 to `Depends on: T-1, T-22`, and drop `Parallel: yes` (T-23 then runs after T-22, so it is no longer parallel to it).",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-23 is `Parallel: yes` in E-7, next to T-22, and only needs T-1. A worker who starts T-23 when T-1 is done gets `AttributeError: module has no attribute manual` in the setup, because `flow.manual` is created in T-22. The test can't go green until T-22 lands, and nothing in T-23 says so.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "T-2 and T-3 point at a test that doesn't check what they change",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "T-2",
+        "T-3",
+        "TC-17",
+        "TC-47"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-17\" (tasks.md, T-2, and again T-3)",
+        "- Assert: exit 0.\" (tests.md, TC-17, whose action is \"`nio check spec <S> --gate`.\")",
+        "every skill and card holds the flow-state line with `Never pass \\`--by human\\``.\" (tests.md, TC-47)"
+      ],
+      "fix": "give T-2 a CLI test (for example, `nio flow --help` lists `manual`, `drive` and `pr`, as quickstart's prerequisites say), and give T-3 TC-47's sentence check. State that T-2 stubs the missing functions, or move the subcommand dispatch into the task that creates each function.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a worker for T-2 wires `fs --auto`, `fsub manual|drive|pr` and the dispatch table, then runs TC-17. The spec-gate test passes whether or not the CLI flags exist, so the worker can't tell it is done. Likewise a worker for T-3 adds the sentence to 17 cards and skills, runs TC-17, and it passes while the sentence may be missing from some files. TC-47 is the check that proves it, but it sits under T-16 and not T-3. T-2 also dispatches to `flow.drive`, `flow.manual` and `flow.pr`, which are created in T-6, T-22 and T-27; the task names no stub for them.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "T-6 and T-8 assert on a skill that T-10 writes later",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-6",
+        "T-8",
+        "T-10",
+        "TC-44",
+        "TC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-9, TC-38, TC-43, TC-44, TC-51\" (tasks.md, T-6)",
+        "`skills/auto/SKILL.md` holds `every 10 minutes`.\" (tests.md, TC-44)",
+        "`skills/auto/SKILL.md` step 4 holds `waiting_for_human`, `suspended` and `Talking to the human`.\" (tests.md, TC-5)"
+      ],
+      "fix": "move the skill-text assertions of TC-44 and TC-5 to T-10's `Test:` (or to T-21 for TC-27, which already sits after T-10), and leave T-6 and T-8 to check behaviour only.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "the chain is T-6, T-7, T-8, T-9, T-10. A worker for T-6 writes the claim, then runs TC-44, which reads `skills/auto/SKILL.md`. That file doesn't exist yet (its task, T-10, comes after T-6), so the test fails on a missing file. T-8 has the same problem with TC-5's step-4 check.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "T-16 names nio-fixer without depending on the card's task",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "T-16",
+        "T-15",
+        "CT-21",
+        "TC-50"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Depends on: T-14\" (tasks.md, T-16)",
+        "a `rejected` outcome goes to `nio-fixer` (CT-17) on the unresolved IDs\" (contracts.md, CT-21)"
+      ],
+      "fix": "add T-15 to T-16's `Depends on:` (T-15 is `Parallel: yes`, so this only costs ordering).",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-16 writes the jury skill's `## Under auto` section, which names `nio-fixer`. T-15 creates `src/nio/agents/fixer.md`, and T-16 doesn't depend on it, so the section can ship before the card exists. TC-50 only checks that the text contains `nio-fixer`, so it passes either way and nothing catches the gap.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "f57e31c77d3164bee30c99b904069018c7235117",
+    "2": "63c35f35934060fc37924296cb76fa43c8214532"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  }
+}
