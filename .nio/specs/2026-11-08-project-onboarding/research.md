@@ -11,3 +11,12 @@
 - **RF-7** `nio status` must finish under 2 seconds on 20 efforts with 50 history lines each; sha256 of 5,000 files of 10 KB took 56 ms warm, so hashing recorded sources fits. Source: tests/test_flow.py:1679: "assert took < 2.0, f\"status took {took:.2f}s, over the limit of 2 seconds\""
 - **RF-8** Spec-kit users asked for a brownfield bootstrap because init makes generic templates and nothing extracts the existing code's architecture. Source: https://github.com/github/spec-kit/issues/1436: "There's no automated way to extract architectural DNA from existing code."
 - **RF-9** Kiro generates three steering files once (product.md, tech.md, structure.md) under `.kiro/steering/`. Source: https://kiro.dev/docs/steering/: "`product.md` covers purpose, target users, and business goals"
+
+## Plan (2026-11-08)
+
+- **RF-10** The worker pack is built from `pack.build` with `worker=False` and must keep exactly five `## ` parts; memory sits in the first. Source: src/nio/implement.py:182: "The task's worker pack (CT-6, FR-4): exactly five `## ` parts, in order: its memory pack"
+- **RF-11** Lens packs at the spec and plan gates are written by `jury._pack_text`; the scope lens already gets extra parts there. Source: src/nio/jury.py:1355: "if lens == \"scope\":"
+- **RF-12** `nio status` prints only `query.status`, the index freshness lines. Source: src/nio/cli.py:351: "print(\"\\n\".join(query.status(root)))"
+- **RF-13** `spec.new` is the one place a spec folder is created; only tests/test_spec.py calls it with a full route. Source: src/nio/spec.py:46: "def new(root, name, route=\"full\", epic=\"\", today=None):"
+- **RF-14** An effort's close prints `merge: nio/<slug>` from `flow.epic_done` when the last epic's gate closes. Source: src/nio/flow.py:1097: "out = [f\"closed {gate}: {reason}\"] + [f\"merge: {implement.branch(slug)}\"] * last"
+- **RF-15** e2e checks run a card on a real model with `claude -p` and print `skipped` without `NIO_E2E`. Source: tests/test_lenses.py:54: "if not E2E:"

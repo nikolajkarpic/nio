@@ -393,3 +393,118 @@ Keep one spec rather than split it into an epic: the human asked to finish and i
 
 ## Call · J-6, J-9 · 2026-11-08
 The spec jury's fix check left two findings for the human, fix or accept as risk; the standing grant takes fix. NFR-2 now names `nio status` as the command its own `NIO_PERF=1` check times; FR-25 says the pack hashes only the recorded source files with no model or code search, the reason D-261024-bygj gives. Wording only: five no's. [agent]
+
+Session 3 (2026-11-08): plan stage, delegated to the agent (orchestrator / claude-code / claude-opus-5-5, delegated by human) under the same grant.
+
+## Asked · Q23 · architecture note · 2026-11-08
+Question: The plan needs a new module, new stored data and changes to shared commands; the architecture stage isn't built. Approve the architecture note that settles only those?
+Context: The plan stops on its stop list (a new module, new stored data, interfaces used elsewhere). The implement-stage effort met the same stop and had the human approve a note that adds no design of its own (its grill Q27). The note here: `onboard.py`, two skill folders, per-doc templates; `.nio/project/` docs with inline source records, `onboarding.json`, `.nio/backup/`, `apps:` in spec front matter; `nio onboard` subcommands, a reader option on `nio pack`, the spec-start refusal, stale lines in `nio status`.
+Options: 1. Approve the note (recommended): the plan builds on it and the plan jury checks the plan against it. 2. Change the spec so these needs go away: it goes back through the spec jury, and onboarding can't keep progress or sources without stored data. 3. Wait for the architecture stage to be built: this effort stops.
+Refs: architecture.md · plan skill "When the plan stops for architecture" · 2026-10-29-implement-stage grill Q27
+
+## Q23 · architecture note · 2026-11-08
+Question: The plan needs a new module, new stored data and changes to shared commands; the architecture stage isn't built. Approve the architecture note that settles only those?
+Options:
+1. Approve the note (recommended)
+2. Change the spec
+3. Wait for the architecture stage
+Answer: 1. Approve the note: the plan builds on it and the plan jury checks the plan against it. [agent]
+Patched: architecture.md approved; plan.md architecture: approved
+
+Session 4 (2026-11-08): the plan jury's first round (R-261108-da5h), delegated under the same grant. Fixes that change behaviour, each asked and answered with the recommended option.
+
+## Asked · Q24 · J-3, J-15 · 2026-11-08
+Question: Which specs must name their apps, and what does a spec that names none get?
+Context: Only the full template carries `apps:`, yet the check also asks it of epic specs; lite specs never name apps, and specs written before this feature have no `apps` key at all.
+Options: 1. All three templates carry `apps: []`; the check applies on every route to a spec that has the key; a spec without the key (older than this feature) is left as it is; a spec naming no app, or without the key, gets every app's docs (recommended): no old spec breaks, no reader is starved. 2. Check only full specs: epic and lite get nothing per app. 3. Require `apps:` everywhere, old specs included: every in-flight spec fails its check until edited.
+Refs: J-3, J-15 · CT-6, CT-9 · FR-28
+
+## Q24 · J-3, J-15 · 2026-11-08
+Question: Which specs must name their apps, and what does a spec that names none get?
+Options:
+1. All templates carry it; older specs exempt; none named means every app (recommended)
+2. Full specs only
+3. Required everywhere
+Answer: 1. All three templates carry `apps: []`; the check applies on every route to a spec that has the key; a spec without the key is left as it is; a spec naming no app, or without the key, gets every app's docs. [agent]
+Patched: CT-6, CT-9
+
+## Asked · Q25 · J-6 · 2026-11-08
+Question: How does reconcile tell a new file from one onboarding already looked at?
+Context: A secrets file or a README that yielded no fact is never recorded as a source, so reconcile would call it new on every run and never say "nothing to reconcile".
+Options: 1. Onboarding keeps the scan's non-secret paths as `seen` when it finishes; `nio onboard changed` lists changed, deleted and new (unseen) files; reconcile ends with `nio onboard reconciled`, which updates `seen` (recommended). 2. Every file the scan lists must be recorded somewhere in a doc: docs fill with sources that hold no fact. 3. Reconcile only changed and deleted sources, never new files: a new deploy doc is never read.
+Refs: J-6 · CT-11, CT-14 · FR-21, FR-22, AC-25
+
+## Q25 · J-6 · 2026-11-08
+Question: How does reconcile tell a new file from one onboarding already looked at?
+Options:
+1. Keep a seen list, updated by reconcile (recommended)
+2. Record every scanned file in a doc
+3. Never look at new files
+Answer: 1. Onboarding keeps the scan's non-secret paths as `seen` when it finishes; `nio onboard changed` lists changed, deleted and new files; reconcile ends with `nio onboard reconciled`, which updates `seen`. [agent]
+Patched: CT-3, CT-4, CT-11, CT-14, architecture.md (C-261108-unxo); added TC-54
+
+## Asked · Q26 · J-7, J-8 · 2026-11-08
+Question: What do the onboard commands do in the cells the state table calls "ignore", and who writes an empty repo's blank tech docs?
+Context: The contract made ignore cells both exit 0 and exit 1, and nothing wrote stack, architecture and infra for an empty repo.
+Options: 1. Ignore cells exit 0, print "ignored" and change nothing; only start and skip on a done onboarding exit 1; `start --empty` writes the three blank docs from their templates (recommended). 2. Every non-transition exits 1: scripts that pause twice fail. 3. Leave the blank docs to the skill: a command-free path can miss them.
+Refs: J-7, J-8 · CT-4 · state table Onboarding, FR-12
+
+## Q26 · J-7, J-8 · 2026-11-08
+Question: What do the onboard commands do in the cells the state table calls "ignore", and who writes an empty repo's blank tech docs?
+Options:
+1. Ignore exits 0; start --empty writes the blank docs (recommended)
+2. Every non-transition exits 1
+3. The skill writes the blank docs
+Answer: 1. Ignore cells exit 0, print "ignored" and change nothing; only start and skip on a done onboarding exit 1; `start --empty` writes the three blank docs from their templates. [agent]
+Patched: CT-4; added TC-56
+
+## Asked · Q27 · J-11, J-13 · 2026-11-08
+Question: Before patching a repo doc, or resuming a doc that already exists, what protects what's there?
+Context: Agent files are backed up before a change, but repo-doc patches were not, and an untracked doc has no git copy; a resumed doc would be rewritten from the template.
+Options: 1. Every patch to a repo file runs `nio onboard backup` first, in onboard and reconcile; a doc that already exists is resumed from its own text, not the template (recommended). 2. Patch only tracked files: untracked docs can never be fixed. 3. Rely on git: an untracked file's original is lost.
+Refs: J-11, J-13 · CT-13, CT-14 · FR-8
+
+## Q27 · J-11, J-13 · 2026-11-08
+Question: Before patching a repo doc, or resuming a doc that already exists, what protects what's there?
+Options:
+1. Back up before every patch; resume from the doc's text (recommended)
+2. Patch only tracked files
+3. Rely on git
+Answer: 1. Every patch to a repo file runs `nio onboard backup` first, in onboard and reconcile; a doc that already exists is resumed from its own text, not the template. [agent]
+Patched: CT-13, CT-14, TC-9
+
+## Asked · Q28 · J-12 · 2026-11-08
+Question: What happens when the onboarding progress file is torn or not valid JSON?
+Context: Read as "not started", it would restart onboarding and rewrite confirmed docs; the flow's own state file is written through a temp file and a rename.
+Options: 1. Write it through a temp file and rename; a file that isn't valid JSON stops every command that reads it, naming the file (recommended). 2. Read it as not started: confirmed work is redone over. 3. Delete and restart: the confirmations are lost.
+Refs: J-12 · CT-3, CT-4, CT-5
+
+## Q28 · J-12 · 2026-11-08
+Question: What happens when the onboarding progress file is torn or not valid JSON?
+Options:
+1. Atomic write; a bad file stops the commands (recommended)
+2. Read as not started
+3. Delete and restart
+Answer: 1. Write it through a temp file and rename; a file that isn't valid JSON stops every command that reads it, naming the file. [agent]
+Patched: CT-3, CT-4; added TC-53
+
+## Asked · Q29 · J-1 · 2026-11-08
+Question: May the scope and architecture-fit lenses quote the project docs in their packs?
+Context: The jury drops a finding whose quote comes from a file not listed for that gate, so docs put in a pack could never back a finding.
+Options: 1. List the docs each of those two lenses gets among the files its quotes may come from (recommended): a broken principle can be raised; other lenses are unchanged. 2. Keep them out: the docs are context only and any finding citing them is dropped. 3. List them for every lens: lenses that never get the docs could quote them.
+Refs: J-1 · CT-18, CT-22 · FR-17
+
+## Q29 · J-1 · 2026-11-08
+Question: May the scope and architecture-fit lenses quote the project docs in their packs?
+Options:
+1. Yes, for those two lenses (recommended)
+2. No, context only
+3. For every lens
+Answer: 1. List the docs each of those two lenses gets among the files its quotes may come from; other lenses are unchanged. [agent]
+Patched: CT-18; added CT-22, TC-55
+
+## Call · J-9 · 2026-11-08
+The secrets pass lists every matching git-ignored file, dependency folders included, because FR-24 says "git-ignored or not"; bounding it would change the spec. Accepted as risk under the grant (it lists paths only and is never read). [agent]
+
+## Call · J-4, J-5, J-10, J-14, J-16, J-17, J-18, J-19, J-20, J-21, J-22, J-23, J-25 · 2026-11-08
+Test and build-order fixes with no change to behaviour: build order now US-1, US-4, US-5, US-2, US-3, US-6, US-7 (TC-30 in US-5, TC-42 in US-2, CT-11 in US-6); TC-6 and TC-31 assert literal headings and reader rows from the spec; TC-3 uses `.nio/` files that match a category; TC-5, TC-41 and TC-42 assert the source records with the scan's hash; TC-31 drives `jury._pack_text` and `implement.worker_pack`; TC-44 asserts the close line; personas get a defined check; TC-52 covers the backup's keep-first rule; architecture.md's wording follows C-261108-unxo. Five no's. [agent]

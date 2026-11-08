@@ -1,0 +1,1155 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "architecture-fit",
+    "logic",
+    "risk-rollback",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261108-da5h/plan-architecture-fit.md": "2b21838b4d518d6af796f17259e5e2271ad6f476f76590a689156a2ab7950943",
+    "R-261108-da5h/plan-logic.md": "66450d8c2cfa4d0034f8ca9029405418811960dc4e98485184d07adfefe80695",
+    "R-261108-da5h/plan-risk-rollback.md": "bbb585e834425547aed1f68fe69e5b6470df694f74658ad0b7ef3b4843fb076e",
+    "R-261108-da5h/plan-test-proof.md": "56e95ef2935a3b2f6a4d15b4c08dced300a648fe188f1385b7b70493735d7006",
+    "R-261108-da5h/plan-refuter.md": "400f1a3d2f9ce30e8674895e61f434a5449152281b6e10f9ba219703c96a5ec7",
+    "R-261108-da5h/plan-test-proof-2.md": "f78ca031110e50b14a46ae2ff7aead596ea75b1c78a4e111121ec5970a6b9159",
+    "R-261108-da5h/plan-test-proof-3.md": "0722fb41fc0be121f6555ad79c20d1ef89503f30afa31a1641b44eeb496c6000",
+    "R-261108-zs66/plan-architecture-fit.md": "aec3ec5e09544dcd6c7cd6c96c83e77aade2651573a45e709aee8f4ff3eba944",
+    "R-261108-zs66/plan-logic.md": "f816ffbfef45c14a606fddde50b377b85e83db3f86ce56e1949a0d7b2c865b71",
+    "R-261108-zs66/plan-risk-rollback.md": "613f281b1218b1d31a92beb8077e83b1ebd6c34e6a55883d8571cac583cf505f",
+    "R-261108-zs66/plan-test-proof.md": "5895174908643d1f4143d8b97765488e7563581141c579115bd7f91add9c29bd"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "c5572a48e8d46ddeaf9cd5298812a9ad0109bf51",
+      "judged": 3
+    },
+    "plan-logic": {
+      "attempts": 2,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": false,
+      "errors": [
+        "section `## Reasoning` is missing or empty"
+      ],
+      "round": 3,
+      "version": "c5572a48e8d46ddeaf9cd5298812a9ad0109bf51",
+      "judged": 1
+    },
+    "plan-risk-rollback": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "c5572a48e8d46ddeaf9cd5298812a9ad0109bf51",
+      "judged": 3
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "c5572a48e8d46ddeaf9cd5298812a9ad0109bf51",
+      "judged": 3
+    },
+    "plan-test-proof-2": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "49ce2ae2c926d3e28c2e3a5ca9bea5f01a2ed1e6",
+      "judged": 2
+    },
+    "plan-test-proof-3": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "49ce2ae2c926d3e28c2e3a5ca9bea5f01a2ed1e6",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Project docs reach the jury packs but can never ground a finding",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-18",
+        "FR-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "appends `onboard.docs_for(root, \"scope\", slug)` to the scope lens's pack at the spec gate and `onboard.docs_for(root, \"architecture-fit\", slug)` to the architecture-fit lens's pack at the plan gate; other packs are unchanged.",
+        "files += [root / \"CLAUDE.md\"] + [root / n for n in dict.fromkeys(named)]",
+        "Files to read (quotes may come only from these):"
+      ],
+      "fix": "extend CT-18 to bind `jury.sources` too: at the spec gate (scope) and plan gate (architecture-fit), add the project docs `docs_for` mapped for that reader and slug. They are then listed under \"Files to read\" and count for grounding. Add a TC where an architecture-fit finding quoting principles.md stays grounded.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The architecture-fit juror reads principles.md in its pack and raises \"CT-n breaks principle X\", quoting principles.md. `jury.grounding` checks quotes only against `jury.sources`, which lists the spec folder, CLAUDE.md and the bound/Like files, never `.nio/project/*.md`. So `add()` marks the finding ungrounded and drops it, and the pack header itself tells the juror it may not quote the docs. The same happens to a scope finding quoting product.md. The docs are delivered but cannot be used.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`jury.sources` (jury.py:200-214) lists only the spec folder, CLAUDE.md and the bound/Like files, and `grounding` reads only those. CT-18 appends `docs_for` to the pack text only and does not touch `sources`. A finding that quotes principles.md or product.md would therefore be marked ungrounded.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q29 (delegated session): jury.sources lists the docs the scope and architecture-fit lenses get, so their quotes ground (CT-18, CT-22, TC-55)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "US-6's scenario and tests need the onboard skill, which a later story delivers",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "US-6",
+        "US-2",
+        "QS-3",
+        "TC-42",
+        "CT-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "### US-6 Flag stale docs and reconcile them\\n- Depends on: US-5\\n- Delivers: CT-14",
+        "- Needs: QS-1 finished.",
+        "- Covers: CT-13"
+      ],
+      "fix": "either move US-2 before US-6 (US-6 depends on US-2), or rewrite QS-3's Needs to a setup that doesn't use the skill (docs written by hand plus `nio onboard confirm`, as QS-4 does) and move TC-42 to US-2's test list.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "When US-6 is done, QS-3 (its scenario) cannot be run. It needs QS-1 finished, and QS-1 runs `/nio:onboard`, which is CT-13, delivered by US-2. US-2 comes after US-6 and depends on it. US-6's test list also holds TC-42, which runs `@nio:onboard` (Covers CT-13). The US-6 entry can't show what it delivers until US-2 is built.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "Only full specs can name apps; epic and lite efforts in a multi-app project lose their docs",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-6",
+        "CT-9",
+        "FR-28"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`src/nio/templates/spec.md`'s front matter gains `apps: []",
+        "\"template\": \"spec-epic\"",
+        "When `onboard.progress(root)[\"apps\"]` is not empty and the route is `full` or `epic`",
+        "with no slug, or a spec naming none, the `spec` and `scope` readers get every app and the others none"
+      ],
+      "fix": "add `apps: []` to `spec-epic.md` and `spec-bugfix.md` too, and either check apps for lite as well, or state in CT-6/CT-9 what a lite spec's worker gets (for example, every app's worker docs).",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "Epic specs are created from `spec-epic.md`, which CT-6 leaves without `apps:`. Yet `check` demands apps for the epic route, so every epic spec in a multi-app project fails `nio check spec` unless someone adds the key by hand. Lite specs (`spec-bugfix.md`) never name apps. By CT-9's rule, a lite effort's worker pack in a multi-app project then gets no stack or principles docs at all. FR-28 says \"each spec\" names its apps.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-6 adds `apps:` only to `templates/spec.md`. `spec.py` maps the epic route to `spec-epic` and the lite route to `spec-bugfix`, and no template other than `spec.md` gets the key. `check` demands apps for `epic`, and CT-9 gives a spec that names no apps no stack or principles docs for the worker. FR-28 says \"each spec\".",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q24 (delegated session): apps: [] in all three templates; the check applies on every route to a spec with the key; older specs exempt; none named means every app (CT-6, CT-9)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "CT-18 adds the docs differently from what architecture.md settles",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "CT-18",
+        "CT-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "call `pack.build` with their reader and slug, so they carry the project docs too (FR-17)",
+        "appends `onboard.docs_for(root, \"scope\", slug)` to the scope lens's pack"
+      ],
+      "fix": "keep CT-18 and correct architecture.md through a change request, so it says the jury packs append `onboard.docs_for` and only the worker pack goes through `pack.build`.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "architecture.md, which is read-only to the plan, says the scope and architecture-fit packs call `pack.build` with a reader. CT-18 appends `docs_for` straight into `_pack_text`. Today `_pack_text` calls `memory.build` only for the consistency lens. CT-18's route is the sensible one, since calling `pack.build` would also add memory records to those packs, but it contradicts the approved note.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "architecture.md now says the lens packs append onboard.docs_for and only the worker pack uses pack.build (C-261108-unxo)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "`HEADINGS` has nothing to check for personas.md",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-12",
+        "CT-4",
+        "AC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "personas: one `### P-1 <name>` entry with `Who`, `Wants`, `Allowed to`, `How often` lines",
+        "`HEADINGS` maps each doc to its `## ` headings, read by `confirm` (CT-4)."
+      ],
+      "fix": "state in CT-12 what `confirm` checks for personas (at least one `### P-<n>` entry, each holding the four lines), and add that case to TC-6.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The personas template has no `## ` headings, only a `### P-1` entry with `Who`/`Wants`/`Allowed to`/`How often` lines. So `HEADINGS[\"personas\"]` is empty or undefined. `nio onboard confirm personas` then accepts any personas.md, even one with no P-n entry, and TC-6's \"every heading `onboard.HEADINGS[<doc>]` lists\" passes without checking anything for personas.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-12 check_doc: personas need a ### P-<n> entry with Who/Wants/Allowed to/How often lines; TC-6 asserts it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "Reconcile can never report \"nothing to reconcile\" when a scan file has no source record",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-22",
+        "AC-25",
+        "CT-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the scan's files no doc records yet",
+        "IF reconcile finds no changed, new or deleted file THEN THE SYSTEM SHALL report that there is nothing to reconcile and change nothing."
+      ],
+      "fix": "make \"new\" mean a scan file outside the secrets category whose path no project doc has ever recorded. Let the onboarding grill record every non-secrets file it reviewed, even one that yielded no fact, for example in `onboarding.json`. Otherwise reconcile has nothing to compare against.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "a freshly onboarded repo has a `.env` (secrets entry, path only, hash `\"\"`, never read, so never recorded in any doc). It may also have a README the grill judged to hold no fact, so no doc records it. CT-14 treats every scan file no doc records as a file to review. Nothing changed since onboarding, yet reconcile finds a \"new\" file on every run. FR-22 and AC-25 say it must report nothing to reconcile, and CT-14 gives the opposite outcome. A secrets file also cannot be recorded, because it has no hash and is never read, so the loop never ends.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-14 reviews \"the scan's files no doc records yet\". A secrets entry has hash `\"\"`, is never read, and so is never recorded. FR-22 and AC-25 require \"nothing to reconcile\" when nothing changed or was added, which CT-14 cannot produce in a repo that has a `.env`.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q25 (delegated session): onboarding.json keeps seen; nio onboard changed lists changed, deleted and new files; reconcile ends with nio onboard reconciled (CT-3, CT-4, CT-11, CT-14, TC-54; C-261108-unxo)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "Empty repo: nothing creates the NEEDS CLARIFICATION docs for stack, architecture and infra",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-12",
+        "AC-13",
+        "CT-3",
+        "CT-13",
+        "FR-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the docs to confirm, `product`, `personas`, `principles` when `empty` (FR-12), else all six",
+        "mark every field of stack.md, architecture.md and infra.md NEEDS CLARIFICATION"
+      ],
+      "fix": "say which step writes the three template copies. For example, `start --empty` copies the CT-12 templates for the docs it does not grill. State that `confirm`'s last-doc transition requires them to exist.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "in an empty repo, `expected` leaves out stack, architecture and infra. CT-4 `confirm` creates nothing, and CT-13 only says to write \"the doc `next:` names\". After the three docs are confirmed, state is `done`, yet no `.nio/project/stack.md`, `architecture.md` or `infra.md` exists. AC-13 requires those files to read NEEDS CLARIFICATION in every field. CT-9 will instead emit `missing: stack` for the plan and worker readers. CT-21 (FR-13) has no NEEDS CLARIFICATION fields to find, so the first full spec's grill never asks them.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "With `empty`, CT-3's `expected` leaves out stack, architecture and infra. CT-4 `confirm` writes no doc, and CT-13 only writes the doc `next:` names. No contract step creates the three NEEDS CLARIFICATION files that FR-12 and AC-13 require.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q26 (delegated session): start --empty writes the three blank docs from their templates (CT-4, TC-56)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "CT-4 sends \"ignore\" cells to exit 0 and also to exit 1",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "state table Onboarding"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "confirm, pause or skip outside the states the table allows → exit 1 naming the state",
+        "`ignore` cells exit 0 and change nothing"
+      ],
+      "fix": "limit the exit-1 sentence to the table's `reject` cells (start on `done`, skip on `done`). Say that a confirm outside `in progress` is `ignore`, exit 0.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "`nio onboard pause` while `not started` is the table cell `dev stops`/`not started` = `ignore`. A second `nio onboard skip \"x\"` while `skipped` is `ignore`. Calling `nio onboard confirm product` while `paused` or `skipped` is `ignore`. CT-4's Fails line says exit 1 for each, and its State line says exit 0 and change nothing. The table has two kinds of non-transition, `ignore` and `reject`, and `reject` is exit 1 only on `done`. A test written from the table (exit 0) fails against the Fails line (exit 1), or the reverse.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-4's Fails line says \"confirm, pause or skip outside the states the table allows → exit 1\". Its State line says \"`ignore` cells exit 0 and change nothing\". The spec table (lines 231-235) has `ignore` cells for pause on `not started`, confirm on `paused`, and skip on `skipped`. Those cells fall under both sentences.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q26 (delegated session): ignore cells exit 0 and print ignored; only start and skip on done exit 1 (CT-4, TC-56)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "The secrets scan walks git-ignored dependency and build trees",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-24",
+        "AC-38",
+        "CT-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "plus, for the secrets check only, `git ls-files --others --ignored --exclude-standard`"
+      ],
+      "fix": "bound the ignored-file pass, for example by excluding ignored directories (`--directory`) or well-known dependency directories. Alternatively, state in the spec that listing all of them is intended.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "the second `ls-files` call returns every ignored file, including all of `node_modules/`, `.venv/` and `build/`. Packages there routinely hold `*.key`, `*.pem`, `credentials*`, `secrets.*` and `.env*` files. FR-24 says every matching name is listed under secrets, git-ignored or not. Scanning a normal JS or Python repo can therefore yield hundreds of secrets entries. That drowns the real ones (`.env`, `prod.tfvars`) and slows the scan. FR-3 and NFR-2 expect a quick, readable scan, and AC-28 expects \"two secrets entries\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`git ls-files --others --ignored --exclude-standard` lists every ignored file, including `node_modules/` and `.venv/` contents, and CT-1 applies the secrets name match to all of them. FR-24 does say \"git-ignored or not\", but nothing bounds the pass, so large lists are possible.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the human gave the orchestrator standing authority to take the recommended option (2026-11-08). FR-24 says secrets names are listed git-ignored or not; bounding the pass would change the approved spec. Entries are paths only and never read.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "Build order uses contracts before the stories that deliver them",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "plan US-4",
+        "US-6",
+        "CT-16",
+        "CT-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the spec skill builds its drafting pack with",
+        "and, after an effort, those `nio onboard changed <ref>` lists"
+      ],
+      "fix": "move CT-16's pack step to US-5. Move CT-11 to US-6 or ahead of it, or add US-7 to US-6's dependencies.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "US-4 delivers CT-16, whose spec skill calls `nio pack ... --reader spec`. The `--reader` flag is CT-10, which is delivered by US-5, a later story. US-6 delivers CT-14, whose steps run `nio onboard changed <ref>`. That command is CT-11, which is delivered by US-7, a later story. At the end of US-4 and at the end of US-6 the shipped skill text names a command or flag that does not exist yet. The `Depends on` chain (US-4 to US-5 to US-6 to US-7) never lets those stories pass their own e2e checks.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "build order now US-1, US-4, US-5, US-2, US-3, US-6, US-7; CT-16 in US-5, CT-11 in US-6",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "A patched repo doc has no backup and its restore is never tested",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-13",
+        "FR-8",
+        "CT-1",
+        "TC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "offer a patch to a stale repo doc and apply it only on a yes",
+        "Candidates are `git ls-files --cached --others --exclude-standard` (tracked and untracked, not ignored)",
+        "Assert: after run one CONTRIBUTING.md bytes equal the original; after run two they differ and mention `pytest`"
+      ],
+      "fix": "in CT-13 (and in CT-14, if reconcile ever patches repo docs), run `nio onboard backup <file>` before applying any patch to a repo file. Extend TC-9 or TC-42 to copy the backup back and assert the original bytes.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the dev says yes to a patch of an untracked `docs/DEPLOY.md` or README, and the patch is wrong. The original bytes are gone. Agent files get `nio onboard backup` first (CT-13: \"before changing one run `nio onboard backup <file>`\"), but repo-doc patches don't, and git can't help with an untracked file.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-13 runs `nio onboard backup` only for agent files. The patch to a stale repo doc has no backup step, and CT-1 candidates include untracked files that git cannot restore. TC-9 only checks that the bytes differ after a yes.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q27 (delegated session): nio onboard backup before every repo-file patch in onboard and reconcile; TC-9 asserts the backup (CT-13, CT-14)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "A torn or corrupt onboarding.json is undefined, and resetting it would overwrite confirmed docs",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-4",
+        "CT-5",
+        "Data model Onboarding progress"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`progress(root) -> dict` reads `.nio/project/onboarding.json` (see the data model)",
+        "Written only by `nio onboard`, read by `onboard.py`.",
+        "write the doc from the template with only confirmed content"
+      ],
+      "fix": "in CT-4, write onboarding.json to a temp file and `os.replace` it, as `flow.record` does. In CT-3, have a file that isn't valid JSON exit 1 and name the file, never read as `not started`. Add an integration test with a truncated onboarding.json.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`nio onboard confirm` dies partway through writing the file. If `progress` raises, every full or epic `nio new spec` fails through CT-5. If it falls back to the missing-file default, `next_doc` returns `product` again, `start` writes an empty `confirmed`, and the skill rewrites the already-confirmed product.md from the template. Unlike `flow.record`, the contract names no temp-file-and-rename write.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-3 and CT-4 define no write method for `onboarding.json` and no behaviour for invalid JSON. CT-3 gives only the missing-file default, so a torn file has no defined handling.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q28 (delegated session): onboarding.json written via temp file and os.replace; invalid JSON stops the commands naming the file (CT-3, CT-4, TC-53)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "Resuming onboarding can overwrite an existing doc with its template",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-13",
+        "CT-4",
+        "CT-21"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "for the doc `next:` names, read the files that feed it",
+        "a later start from `paused` or `skipped` keeps the saved `confirmed`, `empty` and `apps` and ignores new flags"
+      ],
+      "fix": "in CT-13, say that when the `next:` doc already exists, the skill starts from that file's content (or backs it up) rather than from the template. Add an e2e assertion that the existing facts survive.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the dev skipped onboarding, and a full spec's grill then wrote dev answers into stack.md (CT-21). Or the dev paused halfway through a doc. A later `@nio:onboard` writes that doc again \"from the template\", and the existing content is lost without anyone being asked.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q27 (delegated session): an existing doc is resumed from its own text, not the template (CT-13)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "CT-17's keep-first rule and outside-repo refusal have no integration test",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "CT-17",
+        "TC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A second backup of the same file on the same day keeps the first copy and prints its path.",
+        "the file doesn't exist, or lies outside the repo → exit 1 naming it; nothing written."
+      ],
+      "fix": "add an integration test in `tests/test_onboard.py`. It backs up a file, changes it, backs it up again and asserts the backup still holds the original bytes. It also checks that a missing file and a path outside the repo both exit 1 with nothing written.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "if an implementation overwrites the same-day backup on a second call, the only copy of the original is replaced by changed bytes. TC-18, the only test of CT-17, runs only with `NIO_E2E=1` and calls backup just once.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-52 (misuse, integration) covers backup keep-first and refusals",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "Specs written before `apps:` existed fail `nio check spec` in a multi-app project",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "Data model App"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "When `onboard.progress(root)[\"apps\"]` is not empty and the route is `full` or `epic`, `check` adds `spec names no app; the project has apps: <a>, <b>` when `apps` is empty"
+      ],
+      "fix": "say in CT-6 how a spec created before onboarding is treated: either it is exempt, or the dev adds `apps:` through a change request. Add one TC for an old spec with no `apps` key.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "a project with a full spec already in flight onboards with apps `web` and `api`. The old spec has no `apps` key, so `nio check spec` (and any gate that runs it) now fails on a spec that was already approved. The plan gives no backfill or grace rule.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "grill Q24 (delegated session): a spec without the apps key, written before this feature, is left as it is and its packs get every app (CT-6, CT-9)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "TC-42 runs the onboard skill a story before the skill is built",
+      "kind": "inconsistency",
+      "severity": "blocker",
+      "cites": [
+        "TC-42",
+        "AC-43",
+        "CT-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Tests: TC-35, TC-36, TC-37, TC-38, TC-39, TC-40, TC-41, TC-42, TC-43, TC-49, TC-51",
+        "- Action: run @nio:onboard",
+        "- Delivers: CT-6, CT-13, CT-17"
+      ],
+      "fix": "move TC-42 to US-2's Tests, or deliver CT-13 before US-6.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-42 is in US-6's build-order entry and runs @nio:onboard, but `skills/onboard/SKILL.md` (CT-13) is delivered by US-2, which \"Depends on: US-6\". The test can't pass inside its own entry, so US-6 can't close green. If someone makes it pass early by stubbing the skill, a missing rehash after a patch goes unnoticed.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The US-6 entry lists TC-42, which runs `@nio:onboard` (CT-13). CT-13 is delivered by US-2, and US-2 \"Depends on: US-6\". The test cannot pass inside its own story.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-42 moved to US-2, which delivers the onboard skill",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "TC-6 and TC-31 take their expected values from the code under test",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-6",
+        "AC-6",
+        "TC-31",
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each `.nio/project/<doc>.md` holds every heading `onboard.HEADINGS[<doc>]` lists",
+        "the `### ` doc headings in each pack equal `onboard.READERS[<r>]` (as `<doc>.md`), no more, no fewer",
+        "| worker | stack, principles | [human] |"
+      ],
+      "fix": "write the expected heading lists from spec Key entities, and the expected reader-to-docs sets from the Docs per reader table, as literals in the tests.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "if `HEADINGS[\"stack\"]` leaves out `CI` (and the template it seeds leaves it out too), or `READERS[\"worker\"]` adds `architecture`, both tests still pass, because each compares the code against its own table. AC-6 requires \"every heading Key entities names for it\", and AC-18 requires the decision table's rows.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-test-proof-2",
+          "lens": "test-proof",
+          "situation": "`READERS[\"worker\"]` written as `[\"stack\"]`, or `HEADINGS[\"infra\"]` and the infra template both missing `Eventing and queues`. The tests compare the output with the same table that produced it, so they pass.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "say `READERS[\"worker\"]` is built wrongly with `\"architecture\"` in it, or `HEADINGS[\"stack\"]` and the stack template both leave out `CI`. Each pack or doc then matches the same wrong source, so TC-31 and TC-6 pass even though AC-18 (the decision table Docs per reader) and AC-6 (the headings Key entities names) are broken.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-6 compares each doc's headings with `onboard.HEADINGS[<doc>]`. Its only literal heading is `Commands`. TC-31 compares pack headings with `onboard.READERS[<r>]`. A wrong table entry in code (a missing `CI` heading, or `architecture` added to the worker's docs) would pass both tests.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-6 and TC-31 assert literal headings and reader rows from the spec",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-18",
+      "title": "TC-44 can't catch a missing effort-close proposal or a missing dependency",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-44",
+        "AC-26",
+        "CT-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Observable: proposal names stack.md and the dependency; stack.md bytes unchanged after a decline, holding the dependency after an approval.",
+        "- Assert: prints `pyproject.toml: stack.md`; stack.md bytes unchanged (nothing applied without the dev)"
+      ],
+      "fix": "run `epic_done` on the fixture and assert the CT-20 line. Then cover the approval and the dependency name with an e2e test of the reconcile skill after an effort, or narrow AC-26 to what CT-11 and CT-20 do.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-44 covers CT-20 but never runs `flow.epic_done`, so a close that never prints the `project docs: ... changed` line passes. Nothing asserts that `httpx` (the dependency) is named, and the approval branch is not tested. \"stack.md bytes unchanged\" can't fail, because `onboard.changed` never writes.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-test-proof-2",
+          "lens": "test-proof",
+          "situation": "`flow.epic_done` never prints the `project docs: ... propose edits with @nio:reconcile-onboarding` line, so when an effort finishes nothing is proposed. TC-44 still passes: it only calls `nio onboard changed` and `onboard.changed`. Its bytes check is true by construction, since neither call writes. The approval half of AC-26 is never tested.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-44 only runs `nio onboard changed` and `onboard.changed`, never `flow.epic_done`, so CT-20's printed line is untested. The only CT-20 test is TC-44, per the plan's Coverage table. It does not assert the dependency name. The \"stack.md bytes unchanged\" check cannot fail, because `onboard.changed` never writes.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-44 asserts close_lines and the epic close line; dependency naming and apply/decline are reconcile's (TC-38, TC-41)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-19",
+      "title": "TC-8 checks a line the test itself wrote, not one the agent wrote",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-8",
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Setup: a repo with pyproject.toml; stack.md holding `- Python 3.12 (source: pyproject.toml@<h>)` where `<h>` is the hash `nio onboard scan` printed for it",
+        "Given a confirmed fact taken from pyproject.toml, when stack.md is written, then that fact names pyproject.toml and the file's hash at the time."
+      ],
+      "fix": "add to an existing onboard e2e test (for example TC-5) an assert that stack.md's fact lines carry `(source: pyproject.toml@<h>)` with `<h>` equal to the scan's hash.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "AC-8 is about how stack.md gets written. If the onboard skill writes facts with no `(source: …)` record, or with a stale hash, TC-8 still passes, because its fixture line is hand-made. The asserts only show that `SOURCE` parses a well-formed record and that `stale` returns `[]`, which a stub returning `[]` also does.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-8's setup hand-writes the `(source: pyproject.toml@<h>)` line. TC-5, the e2e test that runs the skill and writes stack.md, asserts only that the framework is Flask and not Django. Nothing checks that the skill writes source records.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-5 asserts Flask facts end with (source: pyproject.toml@<scan hash>)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "TC-30 sits before the drafting pack that gives the drafter the personas",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-30",
+        "AC-32",
+        "CT-16",
+        "CT-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the spec skill builds its drafting pack with `nio pack \"<summary>\" --reader spec`",
+        "- Tests: TC-25, TC-26, TC-27, TC-28, TC-29, TC-30, TC-50",
+        "- Delivers: CT-9, CT-10, CT-18, CT-19"
+      ],
+      "fix": "move TC-30 to US-5, or have it build the drafter's input through `nio pack --reader spec`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-30 is in US-4, but the `--reader spec` pack that puts personas.md in front of the drafter is CT-10 (with CT-9), delivered in US-5. In US-4 the drafter only sees personas if the test hands it the file directly. The test then passes without proving that the real pack carries personas, so a pack that drops personas.md goes unnoticed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-16 makes the spec skill build its pack with `nio pack --reader spec`. CT-10 adds that flag and is delivered in US-5, but TC-30 sits in US-4. The test asserts nothing about the pack carrying personas.md.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-30 moved to US-5, after the --reader spec pack exists",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-21",
+      "title": "The pack tests use `nio pack`, so the jury and worker wiring (CT-18, CT-19) goes untested",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-31",
+        "TC-16",
+        "TC-51",
+        "AC-18",
+        "AC-35",
+        "CT-18",
+        "CT-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Action: `nio pack \"x\" --reader <r>` for spec, scope, plan, architecture-fit and worker",
+        "appends `onboard.docs_for(root, \"scope\", slug)` to the scope lens's pack at the spec gate",
+        "memory, _ = pack.build(root, task[\"title\"], task[\"files\"], task[\"serves\"], task[\"id\"], worker=False)"
+      ],
+      "fix": "add asserts that build a scope pack and an architecture-fit pack through `jury._pack_text`, and a worker pack through `implement.worker_pack`. Check each for its mapped `### ` headings, and check that the worker pack still has exactly five `## ` parts.",
+      "sources": [
+        {
+          "juror": "plan-test-proof-2",
+          "lens": "test-proof",
+          "situation": "the jury's scope and architecture-fit packs are built by `jury._pack_text`, and a worker's pack by `implement.worker_pack`. Neither goes through `nio pack`. If `_pack_text` never calls `docs_for`, or `worker_pack` keeps calling `pack.build` without `reader=\"worker\"`, every planned test still passes. Yet real lenses and workers get no project docs, which breaks AC-18 for the scope and architecture-fit lens readers and AC-35's worker pack.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "every pack test goes through the `nio pack` CLI. Today `implement.worker_pack` calls `pack.build(root, task[\"title\"], task[\"files\"], task[\"serves\"], task[\"id\"], worker=False)` with no reader, and `jury._pack_text` is never called by any planned test. So a build where the real worker pack and the jury's scope and architecture-fit packs carry no project docs passes TC-31, TC-16 and TC-36. In the same way, `flow.epic_done` is never run, so a missing `project docs: … changed` line passes TC-44.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-31 (tests.md:226-231) and TC-16 drive every reader only through `nio pack`, while CT-18 binds `jury.py:_pack_text` and CT-19 binds `implement.py:worker_pack` (contracts.md:136-143). No planned test calls either function, so a build that leaves them without docs still passes.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-31 drives jury._pack_text for scope and architecture-fit and implement.worker_pack (five parts kept); TC-44 runs the epic close",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-22",
+      "title": "TC-3's `.nio/` half can't fail: its fixture matches no category",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-3",
+        "AC-3",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Setup: a repo whose .gitignore holds `build/`, with `build/README.md` and `.nio/project/notes.md`",
+        "product-docs `README*`, `docs/*.md`",
+        "keep a copy of the original at `.nio/backup/<date>/<path>`, which NIO never deletes and the scan never lists"
+      ],
+      "fix": "use a `.nio/` fixture that matches a category, e.g. `.nio/backup/2026-11-08/CLAUDE.md` or `.nio/project/README.md`, and assert it is absent.",
+      "sources": [
+        {
+          "juror": "plan-test-proof-2",
+          "lens": "test-proof",
+          "situation": "the scan drops its `.nio/` exclusion. `notes.md` matches no category pattern, so it is never listed anyway and TC-3 passes. Meanwhile `.nio/backup/<date>/CLAUDE.md` (agent-docs by base name) would be listed, against FR-3 and FR-29.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "`notes.md` matches no category (no README*, no docs/*.md, no agent-docs name), so it is never listed whether or not the `.nio/` exclusion exists. If that exclusion is missing, `.nio/backup/<date>/CLAUDE.md` (written by FR-29) would be listed as agent-docs through the base-name match, and TC-3 still passes.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-3 (tests.md:33) uses `.nio/project/notes.md`, which matches none of the category patterns, so it is absent whether or not the `.nio/` exclusion exists. A `.nio/backup/<date>/CLAUDE.md` would be listed unnoticed.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-3 uses .nio/project/README.md and .nio/backup/2026-11-08/CLAUDE.md, which match categories",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-23",
+      "title": "\"No stale line\" also passes when the source record is dropped instead of rehashed",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-41",
+        "TC-42",
+        "AC-42",
+        "AC-43"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Assert: stack.md's text with its `(source: …)` records removed is unchanged; `nio status` prints no `stale:` line",
+        "- Assert: `nio status` prints no `stale:` line after the run",
+        "then stack.md is unchanged and records pyproject.toml's new hash"
+      ],
+      "fix": "also assert the record is present with the new hash. For TC-41, `(source: pyproject.toml@<h>)` where `<h>` is the post-change hash from `nio onboard scan`. For TC-42, the same for CONTRIBUTING.md after the patch.",
+      "sources": [
+        {
+          "juror": "plan-test-proof-2",
+          "lens": "test-proof",
+          "situation": "on a decline, reconcile deletes stack.md's `(source: pyproject.toml@…)` record rather than rewriting it. Or after the CONTRIBUTING.md patch, onboard never records CONTRIBUTING.md as a source of stack.md at all. In both cases nothing is left to go stale, so both tests pass while AC-42 and AC-43 fail.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "suppose the reconcile skill, on a decline, strips the `(source: pyproject.toml@…)` record instead of writing the new hash. The text with records removed is then the same as before, and with no record `stale()` finds nothing. Both asserts pass while AC-42's \"records pyproject.toml's new hash\" is broken, and the fact silently loses its source.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-41 and TC-42 (tests.md:301, 308) only assert that no `stale:` line appears. A dropped `(source: …)` record, or one never recorded, also leaves nothing to go stale. Neither test checks that the new hash is present.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-41 and TC-42 assert the source record carries the scan's new hash",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-24",
+      "title": "TC-41 passes when a decline deletes the source record instead of rehashing it",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-41",
+        "AC-42"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "stack.md's text with its `(source: …)` records removed is unchanged; `nio status` prints no `stale:` line",
+        "then stack.md is unchanged and records pyproject.toml's new hash"
+      ],
+      "fix": "also assert that stack.md holds `(source: pyproject.toml@<h>)`, where `<h>` is the hash `nio onboard scan` prints after the change, as TC-38 already does.",
+      "sources": [
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "suppose the reconcile skill, on a decline, strips the `(source: pyproject.toml@…)` record instead of writing the new hash. The text with records removed is then the same as before, and with no record `stale()` finds nothing. Both asserts pass while AC-42's \"records pyproject.toml's new hash\" is broken, and the fact silently loses its source.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-23",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-25",
+      "title": "TC-42 runs @nio:onboard but is scheduled in US-6, before the skill exists",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-42",
+        "AC-43"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Tests: TC-35, TC-36, TC-37, TC-38, TC-39, TC-40, TC-41, TC-42, TC-43, TC-49, TC-51",
+        "- Action: run @nio:onboard",
+        "- Delivers: CT-6, CT-13, CT-17"
+      ],
+      "fix": "move TC-42 to US-2's Tests, or rewrite it as a reconcile run (CT-14) if AC-43 is meant to belong to US-6.",
+      "sources": [
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "US-6 is built before US-2, but TC-42 runs `@nio:onboard`, and `skills/onboard/SKILL.md` (CT-13) is only delivered in US-2. TC-42 can't pass within its own build-order entry. Its Covers line also lists CT-13 and not CT-14, even though plan.md puts it in US-6.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "plan.md puts TC-42 in US-6, which delivers only CT-14. TC-42 runs `@nio:onboard` and covers CT-13, and CT-13 is delivered in US-2, which depends on US-6. The test cannot pass within its own build-order entry.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-42 moved to US-2",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-26",
+      "title": "CT-18, CT-19 and CT-20 are never exercised by any test",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-31",
+        "TC-16",
+        "TC-36",
+        "AC-18",
+        "AC-35",
+        "TC-44",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Action: `nio pack \"x\" --reader <r>` for spec, scope, plan, architecture-fit and worker",
+        "- Action: `nio pack \"task\" --reader worker --slug <slug>`",
+        "calls `pack.build(..., reader=\"worker\", slug=slug)`, so the docs sit inside its first part and the pack keeps exactly five `## ` parts.",
+        "- Action: `nio onboard changed main`; and `onboard.changed(root, \"main\")`"
+      ],
+      "fix": "add asserts that call `implement.worker_pack` (the docs are present and there are still exactly five `## ` parts) and `jury._pack_text` for scope and architecture-fit. For CT-20, run `flow.epic_done` on TC-44's fixture and assert the `project docs:` line.",
+      "sources": [
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "every pack test goes through the `nio pack` CLI. Today `implement.worker_pack` calls `pack.build(root, task[\"title\"], task[\"files\"], task[\"serves\"], task[\"id\"], worker=False)` with no reader, and `jury._pack_text` is never called by any planned test. So a build where the real worker pack and the jury's scope and architecture-fit packs carry no project docs passes TC-31, TC-16 and TC-36. In the same way, `flow.epic_done` is never run, so a missing `project docs: … changed` line passes TC-44.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-21",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-27",
+      "title": "TC-3's .nio file matches no category, so a dropped .nio/ filter passes",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-3",
+        "AC-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Setup: a repo whose .gitignore holds `build/`, with `build/README.md` and `.nio/project/notes.md`",
+        "files under `.nio/`, and anything that is not a regular file inside the repo"
+      ],
+      "fix": "use a `.nio/` file whose name matches a category, such as `.nio/backup/2026-11-08/CLAUDE.md` or `.nio/project/README.md`, and assert it is absent.",
+      "sources": [
+        {
+          "juror": "plan-test-proof-3",
+          "lens": "test-proof",
+          "situation": "`notes.md` matches no category (no README*, no docs/*.md, no agent-docs name), so it is never listed whether or not the `.nio/` exclusion exists. If that exclusion is missing, `.nio/backup/<date>/CLAUDE.md` (written by FR-29) would be listed as agent-docs through the base-name match, and TC-3 still passes.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-22",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      3,
+      "human"
+    ],
+    [
+      3,
+      "closed"
+    ]
+  ],
+  "versions": {
+    "1": "49ce2ae2c926d3e28c2e3a5ca9bea5f01a2ed1e6",
+    "2": "49ce2ae2c926d3e28c2e3a5ca9bea5f01a2ed1e6",
+    "3": "c5572a48e8d46ddeaf9cd5298812a9ad0109bf51"
+  },
+  "asked": {},
+  "closed": [
+    3,
+    "c5572a48e8d46ddeaf9cd5298812a9ad0109bf51",
+    "all findings fixed; stuck only on escalation bookkeeping and logic juror format"
+  ]
+}
