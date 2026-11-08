@@ -103,6 +103,41 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: split: TC-14/15 lead the code
 
+#### Fixes
+
+### T-22 Fix: CT-1 counts as named when only CT-10 is in the map
+- From: J-1 (implementation-E-2, round 1)
+- Files: `src/nio/explain.py`
+- Serves: AC-7, CT-4
+- Test: TC-12
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-23 Fix: A path that resolves to a plan explainer but is spelled differently runs as topic mode
+- From: J-2 (implementation-E-2, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-4, AC-7
+- Test: TC-3
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-24 Fix: AC-5 has no passing evidence
+- From: J-10 (implementation-E-2, round 1)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-3 Images beside the explainer (US-3)
 ### T-5 Add `explain.finish`: refusals, hashes, drill-down markers, one atomic write (CT-5 steps 1-4, 7, 8)
 - Files: `src/nio/explain.py`, `tests/test_explain.py`
