@@ -166,6 +166,11 @@ def main():
     if a.cmd == "usage" and a.usage_cmd == "event":  # before repo_root: a hook must never fail the agent's call
         usage.record(a.host)
         return
+    if a.cmd == "onboard":  # before repo_root: outside a git repo it says so instead of a traceback
+        if records.git(".", "rev-parse", "--is-inside-work-tree", full=True)[0]:
+            sys.exit("nio onboard scan needs a git repository")
+        onboard.scan()
+        return
     root = records.repo_root()
     if a.cmd == "new":
         try:
@@ -345,8 +350,6 @@ def main():
             sys.exit(f"error: {e}")
         print("\n".join(lines))
         sys.exit(code)
-    elif a.cmd == "onboard":
-        onboard.scan()
     elif a.cmd == "task":
         try:
             print("\n".join(tasks.show(root, a.slug, a.id)))
