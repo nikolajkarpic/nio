@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-1
 subject: 2026-11-08-project-onboarding
-round: 1
-outcome: rejected
+round: 2
+outcome: human
 ---
 # Implementation-e-1 jury: 2026-11-08-project-onboarding
 
@@ -11,12 +11,12 @@ outcome: rejected
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | J-1 | major | contradiction | CT-1 | adversary, correctness | merged | merged |  | new, 0 |
-| J-2 | major | contradiction | CT-2 | adversary, conformance, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | gap | CT-1 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-2 | major | contradiction | CT-2 | adversary, conformance, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-3 | major | gap | CT-1 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-4 | major | gap | CT-1 | adversary | merged | merged |  | new, 0 |
-| J-5 | major | inconsistency | CT-1, CT-2 | adversary, conformance, consistency, security | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | major | inconsistency | CT-1, CT-2 | adversary, conformance, consistency, security | confirmed | open |  | unchanged, 1 |
 | J-6 | major | contradiction | CT-1, FR-3 | adversary, conformance, consistency, correctness | refuted | refuted |  | new, 0 |
-| J-7 | major | contradiction | CT-1, FR-1 | adversary, conformance, consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-7 | major | contradiction | CT-1, FR-1 | adversary, conformance, consistency, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-8 | major | gap | CT-1, CT-2 | conformance, security | merged | merged |  | new, 0 |
 | J-9 | major | gap | FR-1, CT-1 | consistency | merged | merged |  | new, 0 |
 | J-10 | minor | risk | AC-3, FR-3 | consistency | grounded | open |  | new, 0 |
@@ -62,8 +62,7 @@ outcome: rejected
 - situation (conformance): `scan` only prints and returns nothing. CT-1 wants it to return a sorted `list[tuple]` that CT-3, CT-9 and CT-11 can reuse. The `SECRETS` list and the git-ignored-file pass are also absent. If the CT-4 and CT-11 tasks need this return value, they will have to rework `scan`.
 - situation (security): `CATS` has no secrets category and `scan` has no `SECRETS` list. `scan` only lists files in the existing categories and only through `git ls-files --exclude-standard`. Files FR-24 lists, such as `.env`, are therefore never reported as path-only entries, and git-ignored ones are never seen. Any secret-named file whose name also matches a category would be hashed with its content-derived hash instead of `("secrets", path, "")`. The dev never learns that onboarding found a secrets file and kept it out. CT-11's `seen` and `to_reconcile` logic also depends on this category existing.
 - fix: return the sorted tuples from `scan` and print them in the CLI layer. Land the remaining CT items, or mark them out of this epic's scope.
-- validation: confirmed: `onboard.scan` sorts by path only (`sorted(set(...))`), where CT-1 says category then path. It also prints and returns `None`, where CT-1 says it returns a sorted `list[tuple]`, and CT-2 puts the printing in the CLI layer. The claims about missing `--reader` and `backup`, and the missing secrets handling and tests, belong to later tasks (T-2, T-6, T-12, T-13) and don't count against T-1.
-- disposition: fix-task by agent: fix task T-28
+- validation: confirmed: implementation-E-1-consistency: the sort and CLI-shape parts are fixed, but the remaining CT items are not all landed: CT-1's symlink and non-regular-file exclusion has no test in `tests/test_onboard.py`, and CT-2's `secrets <path>` line is not asserted through the CLI (the secrets test checks the Python tuple repr only).
 
 ### J-6 A symlink is listed and its target is read
 - quote: "A path under `.nio/`, a symlink, or anything that is not a regular file is left out."
@@ -136,8 +135,8 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-1-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-1-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-1-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-1-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-1-consistency | consistency | juror / claude-code / haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-1-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
