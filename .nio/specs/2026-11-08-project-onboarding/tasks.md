@@ -172,6 +172,17 @@ retired: [T-8]
 - Effort: med
 - Mode: single: a fix from a jury finding
 
+### T-52 Fix: add next_doc(p) per CT-3/CT-4; start and confirm print the next doc from it
+- From: J-20 (implementation-E-2, round 6)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-3, CT-4, J-20
+- Test: new: next_doc(p) returns the first expected doc not confirmed, and None when all are confirmed (CT-3)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: low
+- Mode: single: a fix from a jury finding
+
 ## E-3 Stages read the project docs (US-5)
 
 ### T-6 `docs_for` and `nio pack --reader/--slug`: the project docs a reader gets, with state, stale, missing and size lines
