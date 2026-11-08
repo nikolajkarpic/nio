@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-2
 subject: 2026-11-08-explainer
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-2 jury: 2026-11-08-explainer
 
@@ -10,8 +10,8 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-7, CT-4 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | CT-4, AC-7 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | AC-7, CT-4 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | gap | CT-4, AC-7 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | gap | AC-36, CT-1 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | gap | AC-5, CT-1 | adversary | grounded | open |  | new, 0 |
 | J-5 | minor | risk | AC-6, CT-4 | adversary | grounded | open |  | new, 0 |
@@ -84,7 +84,7 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-2-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-2-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-2-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
 | implementation-E-2-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
