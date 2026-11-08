@@ -109,7 +109,7 @@ def check(root, target, gate=False, base="HEAD"):
         cm = core.get("component map")
         if cm and cm["diagram"]:
             labels = " ".join(re.findall(r'"[^"]*"|\[[^\]]*\]', cm["block"] or "")) if fmt == "mermaid" else cm["walk"] + (cm["block"] or "")
-            errors += [f"component map misses {c}" for c, _ in spec.items((p.parent / "contracts.md").read_text().splitlines() if (p.parent / "contracts.md").exists() else []) if c.startswith("CT-") and c not in labels]
+            errors += [f"component map misses {c}" for c, _ in spec.items((p.parent / "contracts.md").read_text().splitlines() if (p.parent / "contracts.md").exists() else []) if c.startswith("CT-") and not re.search(rf"\b{re.escape(c)}(?!\d)", labels)]
         for s in secs:
             if s["block"] and len(nodes(s["block"])) > 20:
                 errors.append(f"too many nodes: {s['title']} ({len(nodes(s['block']))} > 20)")
