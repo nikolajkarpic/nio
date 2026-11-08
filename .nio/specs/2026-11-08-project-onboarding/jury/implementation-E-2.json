@@ -1039,10 +1039,10 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-2-consistency: `expected(st)` is added and used by start and confirm, and the progress save is atomic (`tmp.replace(f)`). But `next_doc(p)` is not in `onboard.py`: grep finds no `next_doc` in any Python file, and start and confirm still build the next doc inline. The ask was to add it and print from it.",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "add next_doc(p) per CT-3/CT-4; start and confirm use it",
       "baseline": "unchanged",
       "rounds": 1,
       "first_round": 1,
@@ -1711,7 +1711,7 @@
       "tampering": false
     }
   ],
-  "outcome": "human",
+  "outcome": "rerun",
   "recorded": [
     [
       5,
