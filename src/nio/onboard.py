@@ -51,12 +51,23 @@ SECTIONS = {"product": ["Purpose", "Users"], "personas": ["Personas"], "stack": 
             "architecture": ["Components", "Data flow"], "infra": ["Hosting", "CI"], "principles": ["Principles"]}
 
 
+def progress(root="."):
+    import json
+    f = Path(root) / ".nio/project/onboarding.json"
+    if not f.exists():
+        return {"state": "not started", "reason": "", "empty": False, "apps": {}, "confirmed": [], "seen": []}
+    try:
+        return json.loads(f.read_text())
+    except ValueError:
+        raise ValueError(".nio/project/onboarding.json is not valid JSON: fix or restore it") from None
+
+
 def act(action, reason="", doc="", empty=False, root="."):
     """start/confirm/pause/skip; returns the line to print, raises ValueError on refusal."""
     import json
     d = Path(root) / ".nio/project"
     f = d / "onboarding.json"
-    st = json.loads(f.read_text()) if f.exists() else {"state": "new", "confirmed": []}
+    st = progress(root)
 
     def save():
         d.mkdir(parents=True, exist_ok=True)
