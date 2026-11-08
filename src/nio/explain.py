@@ -119,10 +119,17 @@ def check(root, target, gate=False, base="HEAD"):
                     errors.append(f"walk-through missing: {s['title']}")
                 elif n > 120:
                     errors.append(f"walk-through too long: {s['title']} ({n} words)")
+    notes = []
     for s in secs:
-        # ponytail: "no node"/"unreachable" are no error here; T-4 adds the skipped note
         if s["fence"] == "mermaid" and s["block"]:
             with tempfile.TemporaryDirectory() as d:
-                if render(s["block"], Path(d) / "o.svg").startswith("broken"):
-                    errors.append(f"broken diagram: {s['title']}")
-    return errors, []
+                r = render(s["block"], Path(d) / "o.svg")
+            if r == "no node":
+                notes.append("render skipped: Node is not installed")
+                break
+            if r == "unreachable":
+                notes.append("render skipped: the renderer could not be fetched")
+                break
+            if r.startswith("broken"):
+                errors.append(f"broken diagram: {s['title']}")
+    return errors, notes
