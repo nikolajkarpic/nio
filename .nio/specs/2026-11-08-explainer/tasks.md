@@ -25,6 +25,52 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: split: CLI behaviour has a test (TC-16)
 
+#### Fixes
+
+### T-17 Fix: Node cap undercounts common Mermaid syntax, so oversized diagrams pass
+- From: J-1 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-2, AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-18 Fix: Any non-parse render failure becomes "unreachable", which skips the check and hides every later block
+- From: J-2 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-3, CT-4, AC-9
+- Test: TC-14
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-19 Fix: A node whose ID starts with `end` is skipped
+- From: J-9 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-2, FR-7, J-9
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-20 Fix: AC-9 has no passing evidence
+- From: J-14 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: AC-9
+- Test: TC-14
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-2 Check the explainer (US-2)
 ### T-3 Add the plan-mode checks of `explain.check` (CT-4)
 - Files: `src/nio/explain.py`, `tests/test_explain.py`
