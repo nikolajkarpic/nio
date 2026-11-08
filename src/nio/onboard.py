@@ -82,36 +82,62 @@ def act(action, reason="", doc="", empty=False, root="."):
 
     def save():
         d.mkdir(parents=True, exist_ok=True)
-        f.write_text(json.dumps(st))
+        tmp = f.with_suffix(".tmp")
+        tmp.write_text(json.dumps(st))
+        tmp.replace(f)
     if action == "skip":
         if not reason.strip():
             raise ValueError("skip needs a reason: nio onboard skip <reason>")
+        if st["state"] == "done":
+            return "ignored: onboarding is done"
         st.update(state="skipped", reason=reason.strip())
         save()
         return "skipped"
     if action == "pause":
-        if st["state"] == "paused":
-            return "ignored: onboarding is paused"
+        if st["state"] != "in progress":
+            return f"ignored: onboarding is {st['state']}"
         st["state"] = "paused"
         save()
         return "paused"
-    if st["state"] == "paused":
-        raise ValueError("onboarding is paused")
     if action == "start":
+        if st["state"] in ("done", "in progress"):
+            return f"ignored: onboarding is {st['state']}"
         st["state"] = "in progress"
+        st["empty"] = st["empty"] or empty
         d.mkdir(parents=True, exist_ok=True)
         if empty:
             for n in ("stack", "architecture", "infra"):
                 if not (d / f"{n}.md").exists():
                     (d / f"{n}.md").write_text((Path(__file__).parent / f"templates/project/{n}.md").read_text())
         save()
-        return "next: " + DOCS[0]
-    if doc not in DOCS:
-        raise ValueError(f"confirm needs a doc: {', '.join(DOCS)}")
+        rest = [n for n in expected(st) if n not in st["confirmed"]]
+        return "next: " + (rest[0] if rest else DOCS[0])
+    if st["state"] == "paused":
+        raise ValueError("onboarding is paused")
+    if st["state"] != "in progress":
+        return f"ignored: onboarding is {st['state']}"
+    if doc not in expected(st):
+        raise ValueError(f"confirm needs a doc: {', '.join(expected(st))}")
+    f_doc = d / f"{doc}.md"
+    if not f_doc.is_file():
+        raise ValueError(f"{f_doc.relative_to(root)} does not exist: write it first")
+    text = f_doc.read_text()
+    if lack := check_doc(doc, text):
+        raise ValueError(f"{doc}.md lacks: {', '.join(lack)}")
+    if "NEEDS CLARIFICATION" in text:
+        raise ValueError(f"{doc}.md still has NEEDS CLARIFICATION: answer it first")
     st["confirmed"] = sorted(set(st["confirmed"]) | {doc})
+    rest = [n for n in expected(st) if n not in st["confirmed"]]
+    if not rest:
+        st["state"] = "done"
+        st["seen"] = [list(e) for e in scan(root)]
     save()
-    rest = [n for n in DOCS if n not in st["confirmed"]]
     return "next: " + rest[0] if rest else "done"
+
+
+def expected(st):
+    """The docs this onboarding walks: --empty leaves the three blank stubs out."""
+    return [n for n in DOCS if not (st["empty"] and n in ("stack", "architecture", "infra"))]
 
 
 def status_lines(root="."):
