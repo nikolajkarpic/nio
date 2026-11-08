@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-3",
   "subject": "2026-11-08-explainer",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -15,7 +15,8 @@
     "R-261108-k2xx/implementation-E-3-consistency.md": "1d79f4d92defbf815f628d8ee8dbddb5f4cb76ef9d3b5a9ff8b811d21c051927",
     "R-261108-k2xx/implementation-E-3-correctness.md": "964fee50910d4ee8168984e9079fb2e824c6aa0c95940908f43e31190844182e",
     "R-261108-k2xx/implementation-E-3-refuter.md": "932c0d83cbe816d579929c1050bc871b940c0f7d32b52f962dbd14d0034587d0",
-    "R-261108-ti5f/implementation-E-3-adversary.md": "d3ffcf132c268fbbcb163cd86d04c4d563b75d4fc5df4ac4c2ec37391f60c477"
+    "R-261108-ti5f/implementation-E-3-adversary.md": "d3ffcf132c268fbbcb163cd86d04c4d563b75d4fc5df4ac4c2ec37391f60c477",
+    "R-261108-fp35/implementation-E-3-adversary.md": "b58829ba259ab6971709923060b793e953374270571fa7b344df1639ae76caa4"
   },
   "jurors": {
     "implementation-E-3-adversary": {
@@ -25,9 +26,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "70ee54e232ee01b34e06ce85466a20bc8f926876",
-      "judged": 2
+      "round": 3,
+      "version": "6724712dbf1d976cf8631545adaddf311f1e7173",
+      "judged": 3
     },
     "implementation-E-3-conformance": {
       "attempts": 1,
@@ -88,17 +89,18 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-3-adversary: the separator is now \"; \", which a heading can still contain. A drill-down titled `## Drill-down: Retries; backoff` is written as one record and split into \"Retries\" and \"backoff\". Neither matches `plain`, so finish raises \"drill-down sections missing\" forever. That is the same lock J-1 reported. The ask was one heading per record line, or a separator a heading can't hold. The new test only covers a comma. Records written by earlier finishes with \", \" are also split wrongly now, but that is a minor migration issue.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "human",
       "note": "Fix it (recommended; orchestrator under the human's standing approval of 2026-11-08): record drill-down headings so no heading text can break the record, e.g. one (drill-down: <heading>) line per section.",
-      "baseline": "unchanged",
+      "baseline": "absent",
       "rounds": 1,
       "first_round": 1,
       "last_round": 2,
       "gap": "partial",
       "where": "src/nio/explain.py finish (steps 2 and 7)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 3
     },
     {
       "id": "J-2",
@@ -587,7 +589,7 @@
       "tampering": false
     }
   ],
-  "outcome": "human",
+  "outcome": "approved",
   "recorded": [
     [
       1,
@@ -596,11 +598,16 @@
     [
       2,
       "human"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "c81e5f19c79521566fe97c05014690c92defc897",
-    "2": "70ee54e232ee01b34e06ce85466a20bc8f926876"
+    "2": "70ee54e232ee01b34e06ce85466a20bc8f926876",
+    "3": "6724712dbf1d976cf8631545adaddf311f1e7173"
   },
   "matched": {
     "AC-33": []
@@ -611,7 +618,7 @@
     "ids": [
       "J-1"
     ],
-    "final": null,
+    "final": 3,
     "flagged": []
   }
 }
