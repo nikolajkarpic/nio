@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-1",
   "subject": "2026-11-08-project-onboarding",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -16,7 +16,12 @@
     "R-261108-vtn4/implementation-E-1-consistency.md": "e337701db61433ac464666186dcb80f136621b7616b8a8c27f8114d5da80591a",
     "R-261108-vtn4/implementation-E-1-correctness.md": "782ff264e1176aef8c4456544144dae1105c1476b63500a79366b444b2f01f39",
     "R-261108-vtn4/implementation-E-1-security.md": "ddd1d159b1b7e3883ba5e2c6e478f0d5130702e2143b96568aed4385ce2a074c",
-    "R-261108-vtn4/implementation-E-1-refuter.md": "ad3217edb10f3346144087a9188629a62dccc279cbcb5cb251754f792adce894"
+    "R-261108-vtn4/implementation-E-1-refuter.md": "ad3217edb10f3346144087a9188629a62dccc279cbcb5cb251754f792adce894",
+    "R-261108-tkow/implementation-E-1-adversary.md": "ab5beeaf2973662be9e480cec52106c0ba0872e1cb44a6dcb917f9223f8a8fa0",
+    "R-261108-tkow/implementation-E-1-conformance.md": "f56f50325a52df271ffc37fd5bcd21d7b0e8c22845a2113d7fe39760cfacb733",
+    "R-261108-tkow/implementation-E-1-consistency.md": "9bdb2584852f3a372e2c32334e557d0d5f7e41af83b20823f78f7645da3ac1cd",
+    "R-261108-tkow/implementation-E-1-correctness.md": "d05f88239301f4740c710fa1428b60f10cce26cf5c0f102fe2e01047043643e6",
+    "R-261108-tkow/implementation-E-1-security.md": "13729fd21cb1599b12b12239371321951c9c6d58c38e99f0432d3d35cb16cd3e"
   },
   "jurors": {
     "implementation-E-1-adversary": {
@@ -26,9 +31,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
-      "judged": 1
+      "round": 2,
+      "version": "1fb81a851bb087a8b7471e67279241bbe4a2de7b",
+      "judged": 2
     },
     "implementation-E-1-conformance": {
       "attempts": 1,
@@ -37,20 +42,20 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
-      "judged": 1
+      "round": 2,
+      "version": "1fb81a851bb087a8b7471e67279241bbe4a2de7b",
+      "judged": 2
     },
     "implementation-E-1-consistency": {
       "attempts": 1,
       "lens": "consistency",
-      "by": "juror / claude-code / claude-haiku-5-5",
+      "by": "juror / claude-code / haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
-      "judged": 1
+      "round": 2,
+      "version": "1fb81a851bb087a8b7471e67279241bbe4a2de7b",
+      "judged": 2
     },
     "implementation-E-1-correctness": {
       "attempts": 1,
@@ -59,9 +64,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
-      "judged": 1
+      "round": 2,
+      "version": "1fb81a851bb087a8b7471e67279241bbe4a2de7b",
+      "judged": 2
     },
     "implementation-E-1-security": {
       "attempts": 1,
@@ -70,9 +75,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
-      "judged": 1
+      "round": 2,
+      "version": "1fb81a851bb087a8b7471e67279241bbe4a2de7b",
+      "judged": 2
     }
   },
   "findings": [
@@ -157,17 +162,18 @@
       ],
       "validation": "confirmed",
       "reason": "`records.git` returns `r.stdout.splitlines()` and ignores the exit code unless `full=True`. `onboard.scan` calls it without `full`, so a non-git directory prints \"no candidate files found\" and exits 0, not the CT-2 exit 1. No task in the plan defers this.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-26",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/onboard.py:scan, src/nio/cli.py",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -193,17 +199,18 @@
       ],
       "validation": "confirmed",
       "reason": "`scan` runs `ls-files -co --exclude-standard` without `-z` and without `core.quotepath=off`. Git then returns quoted, escaped paths for non-ASCII names, `(Path(root)/f).is_file()` fails on them, and the files are dropped silently.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-27",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/onboard.py:scan",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-4",
@@ -286,15 +293,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "`onboard.scan` sorts by path only (`sorted(set(...))`), where CT-1 says category then path. It also prints and returns `None`, where CT-1 says it returns a sorted `list[tuple]`, and CT-2 puts the printing in the CLI layer. The claims about missing `--reader` and `backup`, and the missing secrets handling and tests, belong to later tasks (T-2, T-6, T-12, T-13) and don't count against T-1.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-28",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "implementation-E-1-consistency: the sort and CLI-shape parts are fixed, but the remaining CT items are not all landed: CT-1's symlink and non-regular-file exclusion has no test in `tests/test_onboard.py`, and CT-2's `secrets <path>` line is not asserted through the CLI (the secrets test checks the Python tuple repr only).",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "partial",
       "where": "src/nio/onboard.py:scan, tests/test_onboard.py, src/nio/cli.py",
       "tampering": false
@@ -404,18 +411,19 @@
       ],
       "validation": "confirmed",
       "reason": "`category()` sends `docs/*.md` to `implementation-docs`, but CT-1 says product-docs. It also matches exact lowercase names only, so the patterns CT-1 names (`README*` variants, `requirements*.txt`, `docker-compose*.yml` and others) are missed. Nothing in T-1 defers this.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-29",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/onboard.py:CATS, category",
       "tampering": false,
-      "right": "spec"
+      "right": "spec",
+      "fixed_in": 2
     },
     {
       "id": "J-8",
@@ -719,15 +727,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "human"
     ]
   ],
   "versions": {
-    "1": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2"
+    "1": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
+    "2": "1fb81a851bb087a8b7471e67279241bbe4a2de7b"
   },
   "matched": {
     "AC-1": [
@@ -755,5 +768,13 @@
       ]
     ]
   },
-  "asked": {}
+  "asked": {},
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-5"
+    ],
+    "final": null,
+    "flagged": []
+  }
 }
