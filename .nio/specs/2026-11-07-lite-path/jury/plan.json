@@ -1,0 +1,520 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-07-lite-path",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "architecture-fit",
+    "logic",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261107-oxtn/plan-architecture-fit.md": "fcf6bf95edc5799053ea2ec255a83cf95390da2371eb094442ea640cd2849800",
+    "R-261107-oxtn/plan-logic.md": "6208de51230d7127f313069d676be7a54bb5c7c8f95a5b14c32d4fc7297ffdcb",
+    "R-261107-oxtn/plan-test-proof.md": "f41f52685575ea3cd45a0faad993382dbc09dda8fadce2574dd9ff4df07209fd",
+    "R-261107-oxtn/plan-refuter.md": "35534ec49adf5a28cc9d13c1ae03f3b1a9a0447747f08468b3ed40b5737632bd",
+    "R-261107-n27d/plan-architecture-fit.md": "0835c87fe0bcfc84cfae0cfe6e414f8afe613d346f8dabdcbd079e739dc29ff2",
+    "R-261107-n27d/plan-logic.md": "11901964fe5d5d2c3a42a530554d30eb2d62313bc190046d1bc88d1255910c5a",
+    "R-261107-n27d/plan-test-proof.md": "8032e15074ea01d8d71db0259ae0f12f2c235665d09d3982311fe5e069db7c12"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "01f5f5b33bd5ed78c76d20e99d8c707f9f203ff3",
+      "judged": 2
+    },
+    "plan-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "01f5f5b33bd5ed78c76d20e99d8c707f9f203ff3",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "01f5f5b33bd5ed78c76d20e99d8c707f9f203ff3",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The tasks skill still waits for the spec jury on a bug fix",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-7",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Use after the plan jury approves (or, for a bug fix, after the spec jury does)",
+        "the slug of a spec whose spec jury approved it, or which the human closed with a reason",
+        "the tasks skill's step 4 stops on an `escalate:` note",
+        "on `route: lite`, `may_start` returns `(True, ...)` when `spec.check(root, slug, gate=True)` has no errors"
+      ],
+      "fix": "widen CT-7, or add a contract on `skills/tasks/SKILL.md`, so the description, Inputs and step 1 say a lite spec starts once `nio check spec --gate` passes.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "CT-3 lets `nio new tasks` start a lite effort once the grill passes, with no spec jury. CT-7 changes only step 4 of `skills/tasks/SKILL.md`. Its description, its Inputs, and step 1 (\"It refuses ... when the spec isn't approved\") still tell the agent that a bug fix needs an approved spec jury first. An agent following the skill text would stop, or send the effort to a spec jury that the lite route skips.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-7 edits only step 4 of `skills/tasks/SKILL.md`, while its description (line 3, \"for a bug fix, after the spec jury does\"), Input (line 18, \"spec jury approved it\") and step 1 (line 43, \"isn't approved\") still require the spec jury that CT-3 and FR-2 skip on lite; no other contract binds those lines.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-7: tasks skill description, Inputs and step 1 start a bug fix on nio check spec --gate",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "`Mode: direct` is put on the drafter, but the evaluator sets `Mode:`",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-8",
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`Mode: direct` as the drafter proposes it",
+        "It sets every `Tier:` (with a reason), `Mode:` and `Effort:`",
+        "Leave `Tier:` and `Effort:` as `strong: to be rated` and `med`: the evaluator rates them."
+      ],
+      "fix": "add the rule to the evaluator's card or tasks-skill step 3 (a bug fix's unchanged-behaviour task keeps `Mode: direct`), or have `nio check tasks` enforce it on a lite spec.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "In the existing flow the drafter card never writes `Mode:`, and tasks-skill step 3 has the evaluator set every `Mode:`, with \"rating lines\" as the only lines it may change. CT-8 only edits the drafter card. The evaluator can still rate the unchanged-behaviour task `split` or `single`, which drops FR-7's `direct` guarantee. No contract binds the evaluator card or step 3.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`skills/tasks/SKILL.md` line 50 has the evaluator set every `Mode:` after the drafter, and CT-8 edits only the drafter card; nothing binds the evaluator or `nio check tasks` to keep `direct` on the unchanged-behaviour task, so FR-7's guarantee can be overwritten.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-14: evaluator card keeps a preservation task Mode: direct; tasks step 3 says it",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "A skipped stage gets two different labels",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`skipped: lite route` for a route's own; `done` prints `skipped <stage> (not built)` or `skipped <stage> (lite route)`; `next` prints `skipped: <stages> (not built)` as today, with the route's stages among them"
+      ],
+      "fix": "have `next` give each skipped stage its own label, the same way `done` does.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The same skip of spec_jury, planning or plan_jury appears as \"lite route\" in history and in `done`'s output. `nio flow next` calls it \"(not built)\", although those stages are built. The existing `next_step` line `skipped: {...} (not built)` was written only for `NOT_BUILT` stages.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1: next prints not-built and lite-route skips on separate lines",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "Two skills keep a fallback that is wrong once lite is driven",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-2",
+        "CT-6",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the implement stage.",
+        "If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the grill.",
+        "The closing line's fallback names the tasks stage for a bug fix."
+      ],
+      "fix": "in the contracts that bind those two skills, cut \"a lite or bug-fix spec\" from both fallbacks, leaving \"no `nio`\".",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "After CT-2, `nio flow next` prints a `next:` line for a lite effort. CT-6 fixes the grill's closing line, but the same \"a lite or bug-fix spec\" fallback stays in `skills/tasks/SKILL.md` and `skills/spec/SKILL.md`, where it now describes a case that no longer happens.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-5, CT-7 cut the lite case from the closing fallback; CT-6 already did",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "A declined escalation re-stops the lite effort on every run",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "AC-9",
+        "CT-4",
+        "CT-7",
+        "CT-13"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the tasks skill stops on it",
+        "stops on an `escalate:` note",
+        "continue the effort on lite and log the human's call"
+      ],
+      "fix": "say in CT-7 that the stop is skipped when `grill.md` already holds an escalation-declined call naming that trigger. Or have CT-4 leave the note out once the call is logged.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "A lite spec has two non-test folders, `src/a/x.py` and `src/b/y.py`. `nio check tasks` prints `escalate:`, the tasks skill stops and offers the full flow, and the human declines. CT-13 logs `## Call · escalation declined` in `grill.md`, and the effort goes on. `check` still prints the note on every later run, because CT-4 only says \"Errors and exit code are unchanged by it\". That covers the tasking guard, the tasks jury plan and any re-run after a tasks-jury rejection. CT-7 says the skill stops on the note, and nothing in CT-4 or CT-7 reads the logged decline. So FR-11 (the effort continues on lite) and CT-7 (stop on the note) give two outcomes for the same state.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-4 leaves the `escalate:` note on every `check` run (\"Errors and exit code are unchanged\"), CT-7 says the skill stops on the note, and CT-13 only logs the decline in `grill.md`; nothing in CT-4 or CT-7 reads that log, so a declined effort re-stops on the next run, against FR-11.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-7: step 4 skips the stop when grill.md logs a declined call for that trigger",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "The folder trigger can't fire for a fix task appended after the tasks check",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "CT-4",
+        "CT-12"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a lite fix changes non-test files in more than one folder",
+        "when the non-test files named by every task's `Files:` line (`files` then `file_of`) have more than one direct parent folder"
+      ],
+      "fix": "add the folder trigger to CT-12's list, or say in CT-4 that the count is re-run when a fix task is appended.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "The tasks gate passes with all files in `src/a`. The implementation jury then rejects the fix, and the existing loop appends a fix task under `#### Fixes` whose `Files:` names `src/b/z.py`. In `guard`, the implementing stage runs `implement.left`, not `tasks.check`, so no `escalate:` note appears and the effort goes on in two folders. FR-8 says the trigger covers the fix as changed. CT-4 only evaluates the planned `Files:` lines when `check` happens to run. CT-12 covers only a blocked handoff that names a dependency, an interface or stored data. A second folder is not in its list.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-12: a fix task in a second folder offers the full flow",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "Escalation window differs between AC-11 and the state table",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-11",
+        "FR-10",
+        "state table \"Lite effort\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a lite effort at tasking or later",
+        "| drafting | → grilling | ignore | → full route | [agent] |"
+      ],
+      "fix": "drop \"at tasking or later\" from AC-11, or cover the drafting and grilling rows with their own observable.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "The table moves drafting and grilling to \"full route\" on a rewrite. CT-6 has the grill stop and offer the full flow, which is escalation at grilling. AC-11 and its TC-11 only cover a lite effort \"at tasking or later\". An escalation accepted at grilling has no AC or test for where the effort stands. FR-10 puts no stage limit on the switch.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-11 adds an escalation from grilling",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "TC-1 never calls the lite gate of `may_start`, so `nio new tasks` can stay broken on a lite effort",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-1",
+        "AC-1",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then `tasks.md` written from `tests/fixtures/tasks/tasks.md` cut to the bug fix's ACs (AC-1, AC-2) so `nio check tasks` passes",
+        "on `route: lite`, `may_start` returns `(True, ...)` when `spec.check(root, slug, gate=True)` has no errors",
+        "if jury.standing(root, slug, \"spec\") not in (\"approved\", \"closed\"):",
+        "Use from @nio:tasks after `nio new tasks`."
+      ],
+      "fix": "in TC-1, create `tasks.md` through `tasks.new(root, S)` (or assert `tasks.may_start(root, S)[0]` is True) after `done grilling`. Also add an assert that it returns False with the stated message when the gate check fails.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`may_start` is called only from `tasks.new`. TC-1 writes `tasks.md` from a fixture and never calls `tasks.new`. If CT-3 is left undone, `may_start` still returns \"the spec must be approved first\" on a lite effort, because a lite effort has no spec jury, so the real lite path breaks at `nio new tasks`. TC-1 still passes.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`may_start` in `src/nio/tasks.py` is called only from `tasks.new`, and still requires `jury.standing(root, slug, \"spec\")` approved or closed (line 41), which a lite effort never has; TC-1 writes `tasks.md` from a fixture and never calls `tasks.new` or `may_start`, so it passes with CT-3 undone.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-1 creates tasks.md through tasks.new and asserts may_start's refusal before the grill",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "TC-5's refusal comes from the undone task, not the epic gate, and done is never reached",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-5",
+        "AC-5",
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "one commit `T-1: fix` touching a file.",
+        "`done implementing` exits 1 with an output naming a task not done or the epic's missing `epic` line, and history gains no `implementing → done` line.",
+        "each task not done with what it still needs, then each",
+        "Observable: `nio jury plan <slug> implementation-E-1` on a lite effort plans the conformance and correctness lenses, and `nio flow next` reaches done only after the epic's gate passes."
+      ],
+      "fix": "bring T-1 to done first. Then assert that `done implementing` names \"E-1 has no epic line\" (or that `next` shows `implementation-E-1 is open`). After approving the gate with `flow.done(root, \"implementation-E-1\", S, by=BY)`, assert that history gains `implementing → done`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "in the setup, T-1 has a commit but no red or green lines, so `implement.left` already lists \"T-1 is ...: needs ...\" and `done implementing` exits 1 whatever the epic gate does. If a lite bug skips or auto-closes the implementation gate, TC-5 still passes, because the assert accepts either reason. No test drives a lite effort to `done` after an approval, so a lite effort that can never reach done also passes (TC-1 stops at implementing).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-5's setup gives T-1 only a commit, so `implement.left` (line 691) already reports \"T-1 is ...: needs ...\" and `done implementing` exits 1 regardless of the epic gate; the assert accepts either reason, and no test reaches `implementing → done` on a lite effort.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-5 brings E-1's tasks to done, asserts the missing epic line, then done after the gate",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "TC-16 doesn't check the interface trigger",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-16",
+        "AC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Assert: each names `new dependency`, `stored data` and `Escalating a bug fix` (the card: the first two).",
+        "Given a lite effort whose fix needs a new dependency, a change to an interface used outside the bug's folder or to stored data"
+      ],
+      "fix": "also assert a literal phrase for the interface trigger (for example `outside the bug's folder`) in each file.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "the grill, tasks and implement skills and the drafter card could all leave out \"an interface used outside the bug's folder\", one of AC-16's three triggers, and TC-16 would still pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-16 asserts outside the bug's folder",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "TC-15 is already true on today's skill and names no literal string",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "TC-15",
+        "AC-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Assert: it says the route is told in one line by what it means and that the human can change it.",
+        "and that they can change either"
+      ],
+      "fix": "give literal strings to look for (for example `one line` and `can change`), and accept in the plan that this AC is already met, or tie it to new wording that CT-5 adds.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "step 1 of the spec skill already tells the human the route by what it means and says they can change it, so the test passes before any work. Its assert is prose rather than a string a self-check can look for, so deleting the sentence may or may not fail it, depending on how the author codes the check.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-15 asserts literal wording CT-5 adds",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "TC-14's \"says `full` otherwise\" is already true today",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-14",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "it names `auth`, `money`, `data-deletion`, `migration` and `pii`, and says `full` otherwise.",
+        "`full`: everything else."
+      ],
+      "fix": "assert the flags and the full route in the same sentence or bullet (for example a line holding both `pii` and `full`), as TC-2 and TC-8 already do with their \"in one paragraph/bullet\" rule.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`full` is already in step 1 today, so that half of the assert can't fail. A step 1 that lists the five flags but says they may stay lite (flipping the risk row of the decision table) would pass, because only the flag names and the word `full` are checked.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-14 asserts the flags and full on one line",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "3bf3085614d0eaeb21c46f08c455ae4a48fce0bd",
+    "2": "01f5f5b33bd5ed78c76d20e99d8c707f9f203ff3"
+  }
+}

@@ -35,6 +35,7 @@ Rate the work, not the task's length: a short task with subtle logic needs more 
 - `Mode: <split|single|direct>: <one-line reason>`. Split: one worker writes the failing test, another the code (the
   default). Single: one worker does both, still proving red and green. Direct: no test first, for a task a test
   can't lead (config, docs, wiring).
+- On a bug fix, a task serving only unchanged-behaviour ACs gets `Mode: direct`: red can't accept a test that passes before the fix.
 - Edit each task's `Tier:`, `Effort:` and `Mode:` lines in place, one edit per line; never write `tasks.md` whole.
 - Never change any other line, and never decide `Parallel:` from the tier or the effort.
 

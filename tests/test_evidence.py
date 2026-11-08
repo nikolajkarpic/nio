@@ -3463,6 +3463,18 @@ def test_ac12_step_at_the_implementation_gate():
     print("ok")
 
 
+def test_a_lite_epic_s_added_test_is_listed_with_its_result():
+    root, _ = join_repo()
+    (root / ".nio/specs/s/tests.md").unlink()  # a lite spec has no tests.md
+    (root / "tests/test_lite.py").write_text("import unittest\n\n\nclass Lite(unittest.TestCase):\n    def test_x(self):\n        self.assertEqual(1, 1)\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-2: lite test")
+    results = start(root)
+    found = [t for t in results["tests"] if t["name"].endswith("test_x")]
+    assert len(found) == 1 and found[0]["result"] == "passed", results["tests"]
+    print("ok")
+
+
 def test_ac14_epic_commit_changed_while_jurors_ran():
     from nio import jury, records
     root, _ = gate_repo()
@@ -3481,6 +3493,7 @@ def test_ac14_epic_commit_changed_while_jurors_ran():
     except ValueError as e:
         assert f"changed after {run}'s packs were written" in str(e), e
     assert jury.load(root, "s", "implementation-E-1")["round"] == 0
+    print("ok")
 
 
 if __name__ == "__main__":

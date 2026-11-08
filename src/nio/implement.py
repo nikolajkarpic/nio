@@ -57,7 +57,8 @@ def wrong_reason(name, code, output):
     (pytest exit 2 or 4 too), or that no tests ran (pytest exit 5 too). An unknown runner has no wrong reason (FR-9)."""
     r = RUNNERS.get(name)
     if not r:
-        return ""
+        crash = re.search(r"^(?:SyntaxError|IndentationError|ImportError|ModuleNotFoundError)\b", output, re.M)
+        return f"collection, import or syntax error: {crash[0]}" if crash and not re.search(r"^ran \d+ tests?", output, re.M | re.I) else ""
     marker = next((m for m in r["error"] if m in output), f"exit {code}" if name == "pytest" and code in (2, 4) else "")
     if marker:
         return f"collection, import or syntax error: {marker}"
@@ -365,7 +366,9 @@ def land(root, slug, tid, tree, since):
     git's error or "", the main tree untouched on an error). The effort's state and history are never applied."""
     keep = [f".nio/specs/{slug}/state.json", f".nio/specs/{slug}/history.jsonl"]
     records.git(tree, "add", "-A")
-    diff = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, raw=True)[1]
+    code, diff, err = records.git(tree, "diff", "--cached", "--binary", "--no-renames", since, raw=True, full=True)
+    if code:
+        return "", {}, err.strip() or "git diff failed"
     path = tree.parent / f"{tid}.patch"
     path.write_bytes(diff)
     names = [p for p in records.git(tree, "-c", "core.quotepath=off", "diff", "--cached", "--name-only", "--no-renames", since) if p not in keep]
@@ -749,11 +752,13 @@ def green(root, slug, tid, command, by):
         if tree != root:
             patch, saved, err = land(root, slug, tid, tree, since_claim(lines, tid)[0]["evidence"]["commit"])
             if err:
-                records.git(root, "worktree", "remove", "--force", str(tree), full=True)
+                if patch:  # no patch (the diff failed): the tree is the only copy of the work, so it stays
+                    records.git(root, "worktree", "remove", "--force", str(tree), full=True)
+                where = patch or str(tree.relative_to(root))
                 why = f"{tid} blocked: its changes don't apply"
                 flow.write(root, slug, [entry("blocked", tid, cause="apply", patch=patch)],
                            {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}, w, "implementing")
-                return 1, printed + [why, f"  {err}", f"its changes are in {patch}"]
+                return 1, printed + [why, f"  {err}", f"its changes are in {where}"]
         line = review(root, slug, task, lines)
         ev = line["evidence"]
         if not ev["passed"]:

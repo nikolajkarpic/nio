@@ -5,7 +5,7 @@ from pathlib import Path
 
 from test_jury import PLAN_FINDING, PSLUG, approve_plan, approve_spec, change, plan_lens, plan_repo
 
-from nio import jury, records, tasks
+from nio import jury, records, spec, tasks
 import selfcheck
 
 SLUG = PSLUG
@@ -98,8 +98,9 @@ def test_ac59_it_refuses_given_a_bug_fix_spec_whose_sp():
     except ValueError as e:
         assert str(e).startswith("the plan must be approved first"), e
     assert not tasks.path(root, SLUG).exists()
-    lite = repo(route="lite", write=False)
-    approve_spec(lite, "R-S1")
+    lite = repo(write=False)
+    bug = Path(__file__).parent / "fixtures/spec/spec-bugfix.md"
+    spec.path(lite, SLUG).write_text(re.sub(r"^slug: .*$", f"slug: {SLUG}", bug.read_text(), count=1, flags=re.M))
     assert tasks.new(lite, SLUG).exists()
     print("ok")
 
@@ -558,6 +559,43 @@ def test_ac28_skill_starts_run_with_bare_nio_run():
     step3 = skill.split("3. **Rate.**", 1)[1].split("4. **Verify", 1)[0]
     assert "`nio run`" in step3, step3
     assert "nio run <slug>" not in step3, step3
+    print("ok")
+
+
+def lite_repo(files):
+    """A lite repo: the bug-fix spec fixture, and tasks.md whose T-1 names `files` (T-2 and T-3 are dropped)."""
+    root = repo(write=False, route="lite")
+    bug = Path(__file__).parent / "fixtures/spec/spec-bugfix.md"
+    spec.path(root, SLUG).write_text(re.sub(r"^slug: .*$", f"slug: {SLUG}", bug.read_text(), count=1, flags=re.M))
+    text = TASKS[:TASKS.index("### T-2 ")].replace("`app.py`", ", ".join(f"`{f}`" for f in files)).replace("TC-1", "AC-1")
+    tasks.path(root, SLUG).write_text(text)
+    return root
+
+
+def test_lite_escalate_note():
+    notes = lambda root: [n for n in tasks.check(root, SLUG)[1] if n.startswith("escalate:")]
+    one = lite_repo(["src/a/x.py", "tests/test_x.py"])
+    assert notes(one) == [], notes(one)
+    two = lite_repo(["src/a/x.py", "src/a/sub/y.py"])
+    assert len(notes(two)) == 1 and notes(two)[0] == 'escalate: the fix changes files in 2 folders (src/a, src/a/sub): offer the full flow (@nio:spec, "Escalating a bug fix")', notes(two)
+    assert tasks.check(two, SLUG)[0] == tasks.check(one, SLUG)[0], (tasks.check(two, SLUG)[0], tasks.check(one, SLUG)[0])
+    full = repo(lambda t: t.replace("`app.py`", "`src/a/x.py`, `src/b/y.py`", 1))
+    assert notes(full) == [], notes(full)
+    print("ok")
+
+
+def test_ac1_lite_epic_without_suffix_is_not_foundation():
+    root = lite_repo(["src/a/x.py"])
+    p = tasks.path(root, SLUG)
+    p.write_text(p.read_text().replace("## E-1 Customer refunds a paid order (US-1)", "## E-1 Fix the double refund"))
+    assert "## E-1 Fix the double refund" in p.read_text()
+    bad = [e for e in errs(root) if "which no task depending on it serves" in e]
+    assert bad == [], bad
+    print("ok")
+
+
+def test_ac2_full_foundation_epic_still_fails():
+    test_ac46_it_fails_naming_t_1_and_ac_4()
     print("ok")
 
 
