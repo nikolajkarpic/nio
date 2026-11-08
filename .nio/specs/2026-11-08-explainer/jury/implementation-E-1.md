@@ -2,7 +2,7 @@
 gate: implementation-E-1
 subject: 2026-11-08-explainer
 round: 3
-outcome: human
+outcome: approved
 ---
 # Implementation-e-1 jury: 2026-11-08-explainer
 
@@ -10,7 +10,7 @@ outcome: human
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | open |  | unchanged, 2 |
+| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | disposed | accepted-risk (human) | unchanged, 2 |
 | J-2 | major | gap | CT-3, CT-4, AC-9 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | gap | AC-5, AC-9, CT-4 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | CT-1, CT-4 | adversary | grounded | open |  | new, 0 |
@@ -32,6 +32,7 @@ outcome: human
 - situation (consistency): a sequence diagram of 25 lines `Client->>Svc1: call` through `Client->>Svc25: call`. ARROW.split gives `Client` and `Svc1: call`; `Svc1: call` fails ID.fullmatch, so nodes() returns {Client}, one node, and the 20-node check passes a 26-node diagram. The same happens to `B` in `A -- retry --> B`, because `A -- retry` is not an ID.
 - fix: parse the endpoints more strictly. Strip edge text and trailing `: ...`, split on `&` and `;`, and keep `DROP` within one line. Add tests for sequence, state, `&` and labelled-edge forms.
 - validation: confirmed: implementation-E-1-consistency: The named arrow forms (`<-->`, `--o`, `--x`, `--->`, `==>`, `-.->`) and per-line DROP are implemented and traced correctly. But the test for an unbalanced quote is missing, although the fix note claims it. Sequence activation (`Client->>+Svc3`) and `A o--o B` still drop a node (inferred by trace, not run), so the undercount of common syntax that J-1 names is not closed.
+- disposition: accepted-risk by human: Accept, file an issue: common forms count right; rare forms (activation +, o--o, unclosed quote) can slip past the cap until nodes are counted from the rendered SVG (https://github.com/nikolajkarpic/nio/issues/127).
 
 ### J-2 Any non-parse render failure becomes "unreachable", which skips the check and hides every later block
 - quote: "after which no further block is rendered"
