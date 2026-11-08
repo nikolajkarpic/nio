@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-1
 subject: 2026-11-08-explainer
-round: 2
-outcome: rerun
+round: 3
+outcome: human
 ---
 # Implementation-e-1 jury: 2026-11-08-explainer
 
@@ -10,7 +10,7 @@ outcome: rerun
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | disposed | fix-task (human) | unchanged, 1 |
+| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | open |  | unchanged, 2 |
 | J-2 | major | gap | CT-3, CT-4, AC-9 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | gap | AC-5, AC-9, CT-4 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | CT-1, CT-4 | adversary | grounded | open |  | new, 0 |
@@ -31,8 +31,7 @@ outcome: rerun
 - situation (correctness): `Alice->>John: Hello` leaves `John: Hello` after the split, which is not an ID, so John is not counted. `A --> B & C` and `A -- text --> B` are also missed. A sequence or state diagram with more than 20 participants can pass the cap. The test covers only flowchart chains.
 - situation (consistency): a sequence diagram of 25 lines `Client->>Svc1: call` through `Client->>Svc25: call`. ARROW.split gives `Client` and `Svc1: call`; `Svc1: call` fails ID.fullmatch, so nodes() returns {Client}, one node, and the 20-node check passes a 26-node diagram. The same happens to `B` in `A -- retry --> B`, because `A -- retry` is not an ID.
 - fix: parse the endpoints more strictly. Strip edge text and trailing `: ...`, split on `&` and `;`, and keep `DROP` within one line. Add tests for sequence, state, `&` and labelled-edge forms.
-- validation: confirmed: implementation-E-1-adversary: the parsing of edge text, `&`, `;` and `: ...` is now right, and the sequence, state, `&` and labelled-edge tests were added. But `DROP` still runs over the whole block, so one unbalanced `"`, `(`, `[` or `{` in a line swallows every line up to the next closer. A valid sequence message such as `Client->>Svc3: retry (see note` followed by `Client->>Svc4: ok)` loses both lines before the `:` split ever runs. Those nodes are not counted, so an oversized diagram passes the AC-5 cap, which is the original symptom. No test covers it. Fix: apply `DROP` per line, `DROP.sub("", line)` inside the loop.; implementation-E-1-consistency: the listed steps (strip `: ...`, split `&` and `;`, DROP first) and their tests are in, but `A <--> B` still drops `A` and `A --o B` drops both endpoints, so the node cap still undercounts common flowchart syntax.; implementation-E-1-correctness: the parsing is stricter and the new forms are tested, but `DROP` is still applied to the whole block and can span lines, so one unbalanced quote or bracket still hides later nodes from the cap.
-- disposition: fix-task by human: Fix it: clean labels one line at a time (DROP per line) and handle the remaining arrow forms (<-->, --o, --x, longer arrows), with a test for each, including an unbalanced quote/bracket.
+- validation: confirmed: implementation-E-1-consistency: The named arrow forms (`<-->`, `--o`, `--x`, `--->`, `==>`, `-.->`) and per-line DROP are implemented and traced correctly. But the test for an unbalanced quote is missing, although the fix note claims it. Sequence activation (`Client->>+Svc3`) and `A o--o B` still drop a node (inferred by trace, not run), so the undercount of common syntax that J-1 names is not closed.
 
 ### J-2 Any non-parse render failure becomes "unreachable", which skips the check and hides every later block
 - quote: "after which no further block is rendered"
@@ -115,7 +114,7 @@ outcome: rerun
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
 | implementation-E-1-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| implementation-E-1-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
-| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-1-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 3 |
+| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |

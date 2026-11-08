@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-1",
   "subject": "2026-11-08-explainer",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -18,7 +18,10 @@
     "R-261108-43px/implementation-E-1-adversary.md": "bc163efd61ca7fb48da8012dd033871c3c1e5b5b085160dd32afe01191550928",
     "R-261108-43px/implementation-E-1-conformance.md": "07fe0429bd24627a03c744669ea5088370dabb22a19bff8b58627f1e63d23483",
     "R-261108-43px/implementation-E-1-consistency.md": "1737ab62a2376d99038631b6339ba1990af1a74ead49a8f8ecdcc7e6e881dd6d",
-    "R-261108-43px/implementation-E-1-correctness.md": "e64aa0b3039638da068f85c8666064c58cb971551588b00080da75df71ebc5c1"
+    "R-261108-43px/implementation-E-1-correctness.md": "e64aa0b3039638da068f85c8666064c58cb971551588b00080da75df71ebc5c1",
+    "R-261108-gd7e/implementation-E-1-adversary.md": "70de6086af225874367eb5eb261ab6eb028dfa87ea06a5c3033c043c728e8b69",
+    "R-261108-gd7e/implementation-E-1-consistency.md": "180b097a6f2d864e249780593c28fc2caada12cd41e20dbd2f9ce9cd99da3436",
+    "R-261108-gd7e/implementation-E-1-correctness.md": "01d23cff6486987f9770d01ecafc059d3ca3a3c9988a49729e0b4a001639d85c"
   },
   "jurors": {
     "implementation-E-1-adversary": {
@@ -28,9 +31,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
-      "judged": 2
+      "round": 3,
+      "version": "8cebb6e680bf6c815a6987e6afdc7e32e81f0650",
+      "judged": 3
     },
     "implementation-E-1-conformance": {
       "attempts": 1,
@@ -50,9 +53,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
-      "judged": 2
+      "round": 3,
+      "version": "8cebb6e680bf6c815a6987e6afdc7e32e81f0650",
+      "judged": 3
     },
     "implementation-E-1-correctness": {
       "attempts": 1,
@@ -61,9 +64,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
-      "judged": 2
+      "round": 3,
+      "version": "8cebb6e680bf6c815a6987e6afdc7e32e81f0650",
+      "judged": 3
     }
   },
   "findings": [
@@ -105,15 +108,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "implementation-E-1-adversary: the parsing of edge text, `&`, `;` and `: ...` is now right, and the sequence, state, `&` and labelled-edge tests were added. But `DROP` still runs over the whole block, so one unbalanced `\"`, `(`, `[` or `{` in a line swallows every line up to the next closer. A valid sequence message such as `Client->>Svc3: retry (see note` followed by `Client->>Svc4: ok)` loses both lines before the `:` split ever runs. Those nodes are not counted, so an oversized diagram passes the AC-5 cap, which is the original symptom. No test covers it. Fix: apply `DROP` per line, `DROP.sub(\"\", line)` inside the loop.; implementation-E-1-consistency: the listed steps (strip `: ...`, split `&` and `;`, DROP first) and their tests are in, but `A <--> B` still drops `A` and `A --o B` drops both endpoints, so the node cap still undercounts common flowchart syntax.; implementation-E-1-correctness: the parsing is stricter and the new forms are tested, but `DROP` is still applied to the whole block and can span lines, so one unbalanced quote or bracket still hides later nodes from the cap.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "human",
-      "note": "Fix it: clean labels one line at a time (DROP per line) and handle the remaining arrow forms (<-->, --o, --x, longer arrows), with a test for each, including an unbalanced quote/bracket.",
+      "reason": "implementation-E-1-consistency: The named arrow forms (`<-->`, `--o`, `--x`, `--->`, `==>`, `-.->`) and per-line DROP are implemented and traced correctly. But the test for an unbalanced quote is missing, although the fix note claims it. Sequence activation (`Client->>+Svc3`) and `A o--o B` still drop a node (inferred by trace, not run), so the undercount of common syntax that J-1 names is not closed.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
       "baseline": "unchanged",
-      "rounds": 1,
+      "rounds": 2,
       "first_round": 1,
-      "last_round": 2,
+      "last_round": 3,
       "gap": "partial",
       "where": "src/nio/explain.py:nodes",
       "tampering": false
@@ -602,7 +605,7 @@
       "fixed_in": 2
     }
   ],
-  "outcome": "rerun",
+  "outcome": "human",
   "recorded": [
     [
       1,
@@ -611,11 +614,16 @@
     [
       2,
       "human"
+    ],
+    [
+      3,
+      "human"
     ]
   ],
   "versions": {
     "1": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
-    "2": "36275fff3f3e6755465d9860c41f75fcfe70c00c"
+    "2": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
+    "3": "8cebb6e680bf6c815a6987e6afdc7e32e81f0650"
   },
   "matched": {
     "AC-5": [
@@ -644,7 +652,9 @@
       "J-1",
       "J-9"
     ],
-    "final": null,
-    "flagged": []
+    "final": 3,
+    "flagged": [
+      "J-1"
+    ]
   }
 }
