@@ -72,6 +72,12 @@ def test_scan_outside_git_repo():
     assert r.returncode == 1 and "nio onboard scan needs a git repository" in r.stderr, (r.returncode, r.stdout, r.stderr)
 
 
+def test_scan_keeps_non_ascii_paths():
+    root = repo({"docs/résumé.md": "x", "docs/a b.md": "y"})
+    code, out = scan(root)
+    assert "docs/résumé.md" in out and "docs/a b.md" in out and "2 candidate files" in out, out
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
-                    test_scan_empty_repo, test_scan_outside_git_repo])
+                    test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths])

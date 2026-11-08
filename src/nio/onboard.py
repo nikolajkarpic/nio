@@ -30,7 +30,7 @@ def category(path):
 def scan(root="."):
     """Print `category path sha12` per candidate file (tracked or untracked, not ignored); never file contents."""
     n = 0
-    for f in sorted(set(records.git(root, "ls-files", "-co", "--exclude-standard"))):
+    for f in sorted(set(records.git(root, "ls-files", "-z", "-co", "--exclude-standard", full=True)[1].split("\0")) - {""}):
         cat = category(f)
         if cat and (Path(root) / f).is_file():
             print(cat, f, hashlib.sha256((Path(root) / f).read_bytes()).hexdigest()[:12])
