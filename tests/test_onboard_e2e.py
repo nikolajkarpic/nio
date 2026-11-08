@@ -2,6 +2,7 @@
 git repo. They cost a model run each, so they run only when asked:
     NIO_E2E=1 uv run python tests/test_onboard_e2e.py
 Without NIO_E2E they print `skipped` and pass."""
+import datetime
 import subprocess
 import tempfile
 from pathlib import Path
@@ -46,6 +47,35 @@ def test_ac17_install_points_to_onboard():
     closing = last_paragraph(out)
     assert "onboard" in closing.lower(), out
     assert not (root / ".nio" / "project").exists(), "onboarding started"
+
+
+@e2e
+def test_ac32_actor_names_persona():
+    root = fresh_repo()
+    nio = ["uv", "run", "--project", str(ROOT), "nio"]
+    (root / ".nio/project").mkdir(parents=True)
+    (root / ".nio/project/personas.md").write_text("### P-1 Shop owner\nWho: owns a shop\nWants: orders\n"
+                                                   "Allowed to: manage stock\nHow often: daily\n")
+    slug = datetime.date.today().isoformat() + "-shop"
+    subprocess.run(nio + ["onboard", "skip", "e2e fixture"], cwd=root, check=True, capture_output=True)
+    subprocess.run(nio + ["new", "spec", "shop", "--route", "full"], cwd=root, check=True, capture_output=True)
+    intake = root / ".nio/specs" / slug / "intake.md"
+    intake.write_text("The shop owner can see today's orders. A courier collects parcels.\n")
+    run = subprocess.run(nio + ["run"], cwd=root, check=True, capture_output=True, text=True).stdout.split()[-1]
+    subprocess.run(nio + ["pack", "shop owner orders and courier", "--run", run, "--reader", "spec", "--slug", slug],
+                   cwd=root, check=True, capture_output=True)
+    pack = next((root / ".nio/runs" / run / "packs").glob("*.md"))
+    card = (ROOT / "src/nio/agents/spec-drafter.md").read_text().split("---", 2)[2].strip()
+    r = subprocess.run(["claude", "-p", "--system-prompt", card, "--allowedTools", TOOLS],
+                       input=f"Slug: {slug}. Intake: {intake.relative_to(root)}. Spec: .nio/specs/{slug}/spec.md. "
+                       f"Pack: {pack.relative_to(root)}. CLI: {' '.join(nio)}. Write the spec and report the actor lines.",
+                       cwd=root, capture_output=True, text=True, timeout=1500)
+    assert r.stdout.strip(), r.stderr
+    spec = (root / ".nio/specs" / slug / "spec.md").read_text()
+    owner = [l for l in spec.splitlines() if "shop owner" in l.lower()]
+    courier = [l for l in spec.splitlines() if "courier" in l.lower()]
+    assert any("P-1" in l for l in owner), spec
+    assert any("no persona" in l for l in courier), spec
 
 
 if __name__ == "__main__":
