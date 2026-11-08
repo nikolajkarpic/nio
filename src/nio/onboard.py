@@ -93,7 +93,9 @@ def act(action, reason="", doc="", empty=False, root="."):
         if not reason.strip():
             raise ValueError("skip needs a reason: nio onboard skip <reason>")
         if st["state"] == "done":
-            return "ignored: onboarding is done"
+            raise ValueError("onboarding is done already")
+        if st["state"] == "skipped":
+            return "ignored: onboarding is skipped"
         st.update(state="skipped", reason=" ".join(reason.split()))
         save()
         return "skipped"
@@ -104,9 +106,14 @@ def act(action, reason="", doc="", empty=False, root="."):
         save()
         return "paused"
     if action == "start":
-        if st["state"] in ("done", "in progress"):
-            return f"ignored: onboarding is {st['state']}"
+        if st["state"] == "done":
+            raise ValueError("onboarding is done; it runs once: use @nio:reconcile-onboarding")
+        if st["state"] == "in progress":
+            return "ignored: onboarding is in progress"
+        resume = st["state"] in ("paused", "skipped")  # resuming keeps saved progress and ignores new flags
         st["state"] = "in progress"
+        if resume:
+            empty = False
         st["empty"] = st["empty"] or empty
         d.mkdir(parents=True, exist_ok=True)
         if empty:
@@ -116,8 +123,6 @@ def act(action, reason="", doc="", empty=False, root="."):
         save()
         rest = [n for n in expected(st) if n not in st["confirmed"]]
         return "next: " + (rest[0] if rest else DOCS[0])
-    if st["state"] == "paused":
-        raise ValueError("onboarding is paused")
     if st["state"] != "in progress":
         return f"ignored: onboarding is {st['state']}"
     if doc not in expected(st):

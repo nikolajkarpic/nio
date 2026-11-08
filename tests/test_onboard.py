@@ -136,7 +136,7 @@ def test_empty_start_writes_blank_docs():
     r = nio(root, "pause")
     assert r.returncode == 0 and "ignored: onboarding is paused" in r.stdout, (r.stdout, r.stderr)
     r = nio(root, "confirm", "stack")
-    assert r.returncode == 1, (r.stdout, r.stderr)
+    assert r.returncode == 0 and "ignored: onboarding is paused" in r.stdout, (r.stdout, r.stderr)
 
 
 def test_empty_start_keeps_existing_docs():
@@ -150,6 +150,52 @@ def test_empty_start_keeps_existing_docs():
     assert (d / "product.md").read_text() == "mine\n"
     assert (d / "architecture.md").exists() and (d / "infra.md").exists()
     assert not (d / "personas.md").exists() and not (d / "principles.md").exists()
+
+
+def test_state_table_cells():
+    import json
+    # (state to reach, action) -> (exit, stdout fragment); "x" is the skip reason
+    def at(state):
+        root = repo({})
+        steps = {"not started": [], "in progress": [["start"]], "paused": [["start"], ["pause"]], "skipped": [["skip", "r"]],
+                 "done": [["start", "--empty"]]}[state]
+        for a in steps:
+            assert nio(root, *a).returncode == 0, a
+        if state == "done":
+            d = root / ".nio/project"
+            tpl = Path(__file__).parent.parent / "src/nio/templates/project"
+            for n in ("product", "personas", "principles"):
+                (d / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled"))
+                nio(root, "confirm", n)
+        return root
+    cells = {
+        ("not started", "pause"): (0, "ignored"), ("not started", "confirm"): (0, "ignored"), ("not started", "start"): (0, "next:"),
+        ("not started", "skip"): (0, "skipped"),
+        ("in progress", "start"): (0, "ignored"), ("in progress", "pause"): (0, "paused"), ("in progress", "skip"): (0, "skipped"),
+        ("paused", "start"): (0, "next:"), ("paused", "pause"): (0, "ignored"), ("paused", "confirm"): (0, "ignored"),
+        ("paused", "skip"): (0, "skipped"),
+        ("skipped", "start"): (0, "next:"), ("skipped", "pause"): (0, "ignored"), ("skipped", "confirm"): (0, "ignored"),
+        ("skipped", "skip"): (0, "ignored"),
+        ("done", "start"): (1, "onboarding is done"), ("done", "skip"): (1, "onboarding is done already"),
+        ("done", "pause"): (0, "ignored"), ("done", "confirm"): (0, "ignored"),
+    }
+    for (state, action), (code, frag) in cells.items():
+        root = at(state)
+        before = (root / ".nio/project/onboarding.json")
+        before = before.read_text() if before.exists() else None
+        args = {"skip": ["skip", "y"], "confirm": ["confirm", "product"]}.get(action, [action])
+        r = nio(root, *args)
+        assert r.returncode == code and frag in r.stdout + r.stderr, (state, action, r.returncode, r.stdout, r.stderr)
+        if frag == "ignored" or code == 1:
+            f = root / ".nio/project/onboarding.json"
+            assert (f.read_text() if f.exists() else None) == before, (state, action)
+    root = at("paused")
+    nio(root, "pause")
+    f = root / ".nio/project/onboarding.json"
+    st = json.loads(f.read_text()); st["confirmed"] = ["product"]; f.write_text(json.dumps(st))
+    assert nio(root, "start", "--empty").returncode == 0
+    st = json.loads(f.read_text())
+    assert st["state"] == "in progress" and st["confirmed"] == ["product"] and st["empty"] is False, st
 
 
 def newspec(root, route):
@@ -259,6 +305,6 @@ def test_confirm_checks_docs_and_finishes():
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
-                    test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs,
+                    test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
                     test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes])
