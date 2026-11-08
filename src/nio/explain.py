@@ -149,7 +149,7 @@ def _put(path, text):
 
 
 def finish(root, path):
-    """The lines `nio explain finish` prints (CT-5 steps 1-5, 7, 8; drawing the images is not here yet). ValueError refuses."""
+    """The lines `nio explain finish` prints (CT-5 steps 1-8). ValueError refuses."""
     from nio import flow, implement, plan
     p = (Path(path) if Path(path).is_absolute() else root / path).resolve()
     d = p.parent
@@ -203,7 +203,7 @@ def finish(root, path):
             out.append("still stale: no diagram changed since the last finish; redraw the diagrams to clear the stale line")
     prefix = "explainer-" if plan_mode else p.stem + "--"
     # step 6, without drawing: drop image links and notes, except in a drill-down whose image exists
-    new, keep, fenced, kept_sec = [], [], False, False
+    new, keep, fenced, kept_sec, kept_titles = [], [], False, False, set()
     for l in body:
         if not fenced and l.startswith("## "):
             kept_sec = False
@@ -213,20 +213,56 @@ def finish(root, path):
             m = LINK.match(l)
             if m and any(h.startswith("Drill-down: ") for h in [new_title(new)]) and (d / m[1]).is_file():
                 keep.append(m[1])
+                kept_titles.add(new_title(new))
             else:
                 continue
         new.append(l)
+    # step 6, drawing: name and render each other Mermaid section's first block
+    drawn, used, plans, title, fenced, first, halt = [], set(), [], "", False, False, False
+    for i, l in enumerate(new):
+        if not fenced and l.startswith("## "):
+            title, first, ti = l[3:].strip().removesuffix(EARLIER), True, i
+        if l.strip().startswith("```"):
+            fenced = not fenced
+            if fenced:
+                start, lang = i, l.strip()[3:].strip()
+            elif first and title and lang == "mermaid":
+                first = False
+                if new[ti][3:].strip() in kept_titles:
+                    continue
+                base = p.stem + "--" + "-".join(re.sub(r"[^a-z0-9 ]", "", re.sub(r"[-/_]", " ", title.lower())).split())
+                name, k = base + ".svg", 1
+                while name in used:
+                    k += 1
+                    name = f"{base}-{k}.svg"
+                used.add(name)
+                plans.append((ti, i, name, "\n".join(new[start + 1:i]) + "\n"))
+    adds = {}
+    for ti, i, name, block in plans:
+        if halt:
+            break
+        r = render(block, d / name)
+        if r in ("no node", "unreachable"):
+            why = "Node is not installed" if r == "no node" else "the renderer could not be fetched"
+            adds.setdefault(ti, []).append(f"> Images not rendered: {why}.")
+            halt = True
+        elif r == "ok":
+            drawn.append(name)
+            adds.setdefault(i, []).append(f"![{new[ti][3:].strip().removesuffix(EARLIER)}]({name})")
+        else:
+            adds.setdefault(i, []).append(f"> Broken diagram: {r.removeprefix('broken: ')}")
+    new = [y for i, l in enumerate(new) for y in [l] + (["", *adds[i]] if i in adds else [])]
     old_imgs = [x for v in rec.get("images", []) for x in v.split(", ") if x]
     dels = []
     for x in old_imgs:
         f = (d / x).resolve()
         if f.parent != d or not f.name.startswith(prefix):
             out.append(f"warning: ignored {x}: not this explainer's own image")
-        elif f.is_file() and x not in keep:
+        elif f.is_file() and x not in keep and f.name not in used:
             dels.append(f)
     text = "\n".join(new).rstrip() + "\n"
     recs = [f"({k}: {v})" for k in ("source", "diagrams") for v in rec.get(k, [])]
-    recs += [f"(images: {', '.join(keep)})", f"(drill-downs: {', '.join(t.removesuffix(EARLIER) for t in drill)})"]
+    recs += [f"(images: {', '.join(drawn + keep)})", f"(drill-downs: {', '.join(t.removesuffix(EARLIER) for t in drill)})"]
     for f in dels:
         f.unlink()
         out.append(f"deleted: {f.name}")

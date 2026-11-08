@@ -335,7 +335,150 @@ def test_ac4_read_first_once():
         plan.approved = keep
 
 
+def npx_bin():
+    """A PATH dir with a fake npx: copies -i to -o; FAKE_NPX=hang sleeps 5 s first."""
+    import stat
+    import tempfile
+    b = Path(tempfile.mkdtemp())
+    n = b / "npx"
+    n.write_text('#!/bin/sh\n[ "$FAKE_NPX" = hang ] && sleep 5\nwhile [ $# -gt 0 ]; do case $1 in -i) i=$2;; -o) o=$2;; esac; shift; done\ncat "$i" > "$o"\n')
+    n.chmod(n.stat().st_mode | stat.S_IEXEC)
+    return b
+
+
+def fin_at(root, path, bin, hang=False):
+    """explain.finish in-process with PATH = bin (+ the system PATH when bin holds npx)."""
+    import os
+    old = dict(os.environ)
+    os.environ["PATH"] = str(bin) + ("" if not (Path(bin) / "npx").exists() else os.pathsep + old["PATH"])
+    os.environ.pop("FAKE_NPX", None)
+    if hang:
+        os.environ["FAKE_NPX"] = "hang"
+    try:
+        return explain.finish(root, path)
+    finally:
+        os.environ.clear()
+        os.environ.update(old)
+
+
+EX = ".nio/specs/checkout-refunds/explainer.md"
+
+
+def test_ac33_safe_delete():
+    # TC-10
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, _ = fin_repo()
+        d = root / ".nio/specs/checkout-refunds"
+        for n, b in (("explainer-flow-uj-2.svg", "uj2"), ("notes.svg", "n"), ("other.svg", "o")):
+            (d / n).write_text(b)
+        (root / ".nio/README.md").write_text("r")
+        ex = d / "explainer.md"
+        ex.write_text(ex.read_text() + "\n(drill-downs: Drill-down: one)\n(images: explainer-flow-uj-2.svg, explainer-drill-1.svg, other.svg, ../../README.md)\n")
+        names = ["explainer-drill-1.svg", "notes.svg", "other.svg"]
+        before = {n: (d / n).read_bytes() for n in names}
+        out = fin_at(root, EX, npx_bin())
+        assert not (d / "explainer-flow-uj-2.svg").exists()
+        assert before == {n: (d / n).read_bytes() for n in names}
+        assert (root / ".nio/README.md").read_text() == "r"
+        img = next(l for l in ex.read_text().splitlines() if l.startswith("(images: "))
+        assert "explainer-drill-1.svg" in img, img
+        assert "explainer--component-map.svg" in img and (d / "explainer--component-map.svg").is_file(), (img, out)
+        assert "warning: ignored other.svg: not this explainer's own image" in out, out
+        assert "warning: ignored ../../README.md: not this explainer's own image" in out, out
+        assert [l for l in out if l.startswith("deleted:")] == ["deleted: explainer-flow-uj-2.svg"], out
+    finally:
+        plan.approved = keep
+
+
+def test_nfr2_no_tools():
+    # TC-38
+    import tempfile
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, _ = fin_repo(drill=False)
+        d = root / ".nio/specs/checkout-refunds"
+        (d / "explainer-drill-1.svg").unlink()
+        fin_at(root, EX, tempfile.mkdtemp())
+        assert "> Images not rendered: Node is not installed." in (d / "explainer.md").read_text()
+        assert not list(root.rglob("*.svg")), list(root.rglob("*.svg"))
+        import os
+        old = os.environ["PATH"]
+        os.environ["PATH"] = tempfile.mkdtemp()
+        try:
+            errors, _ = explain.check(root, "checkout-refunds")
+        finally:
+            os.environ["PATH"] = old
+        assert errors == [], errors
+    finally:
+        plan.approved = keep
+
+
+def test_ac33_rerun_after_partial():
+    # TC-45
+    from nio import plan
+    keep, t = plan.approved, explain.TIMEOUT
+    try:
+        root, _ = fin_repo(drill=False)
+        d = root / ".nio/specs/checkout-refunds"
+        (d / "explainer-drill-1.svg").unlink()
+        ex = d / "explainer.md"
+        ex.write_text(ex.read_text() + "\n(images: explainer-x.svg)\n")
+        explain.TIMEOUT = 1
+        b = npx_bin()
+        out = fin_at(root, EX, b, hang=True)
+        assert not [l for l in out if l.startswith("deleted:")], out
+        assert "> Images not rendered: the renderer could not be fetched." in ex.read_text(), ex.read_text()
+        explain.TIMEOUT = t
+        out = fin_at(root, EX, b)
+        assert not [l for l in out if l.startswith("deleted:")], out
+        text = ex.read_text()
+        assert "Images not rendered" not in text, text
+        import re
+        links = re.findall(r"^!\[[^\]]*\]\(([^)]+)\)$", text, re.M)
+        assert sorted(links) == ["explainer--build-order.svg", "explainer--component-map.svg"], text
+        assert all((d / l).is_file() for l in links), links
+    finally:
+        explain.TIMEOUT = t
+        plan.approved = keep
+
+
+def test_ac33_unique_names():
+    # TC-46
+    from nio import plan
+    from test_records import repo
+    root = repo()
+    r = root / ".nio/research"
+    r.mkdir(parents=True, exist_ok=True)
+    sec = lambda t, n: f"## {t}\n\n```mermaid\nflowchart LR\n{n}1 --> {n}2\n```\n\nWalk {n}.\n\n"
+    (r / "2026-11-08-x-explainer.md").write_text(sec("Overview", "A") + sec("2 Overview", "B"))
+    (r / "2026-11-08-x-explainer-2.md").write_text(sec("Overview", "C"))
+    b = npx_bin()
+    fin_at(root, ".nio/research/2026-11-08-x-explainer-2.md", b)
+    s2 = r / "2026-11-08-x-explainer-2--overview.svg"
+    assert s2.is_file(), list(r.iterdir())
+    before = s2.read_bytes()
+    fin_at(root, ".nio/research/2026-11-08-x-explainer.md", b)
+    for n in ("2026-11-08-x-explainer--overview.svg", "2026-11-08-x-explainer--2-overview.svg"):
+        assert (r / n).is_file(), (n, list(r.iterdir()))
+    assert s2.read_bytes() == before
+    keep = plan.approved
+    try:
+        root, _ = fin_repo(drill=False, )
+        d = root / ".nio/specs/checkout-refunds"
+        ex = d / "explainer.md"
+        ex.write_text(ex.read_text() + "\n" + sec("Calls", "D") + sec("calls!", "E"))
+        fin_at(root, EX, b)
+        assert (d / "explainer--calls.svg").is_file() and (d / "explainer--calls-2.svg").is_file(), list(d.iterdir())
+        assert (d / "explainer--calls.svg").read_bytes() != (d / "explainer--calls-2.svg").read_bytes()
+    finally:
+        plan.approved = keep
+
+
 if __name__ == "__main__":
     selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
-                    test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once])
+                    test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
+                    test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names])
