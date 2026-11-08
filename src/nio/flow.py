@@ -521,7 +521,7 @@ def judged_blob(root, slug, name):
     """The blob CT-7 compares a file by: git's hash of the raw file, or for tasks.md of its planned part as the jury
     reads it. The same on every side (approval commit, override line, now), so line endings never read as an edit."""
     from nio import jury
-    if name == "tasks.md":
+    if name in ("tasks.md", "quickstart.md"):
         return jury.blob(root, planned(name, (root / ".nio/specs" / slug / name).read_text()))
     return records.git(root, "hash-object", f".nio/specs/{slug}/{name}")[0]
 
@@ -585,7 +585,7 @@ def scan(root, slug, lines, found=None):
             names = [n for n in JUDGED_BY if (folder / n).exists()]
             raw = dict(zip(names, records.git(root, "hash-object", *[f"{rel}/{n}" for n in names])))
         current = raw.get(name)
-        if name == "tasks.md" and current != judged:  # compare the planned part only: a fix task doesn't count
+        if name in ("tasks.md", "quickstart.md") and current != judged:  # compare the planned part only: a fix task doesn't count
             if h:
                 code, text, _ = records.git(root, "show", f"{h}:{rel}/{name}", full=True)
                 judged = jury.blob(root, planned(name, text)) if code == 0 else judged
