@@ -151,8 +151,8 @@ words or cut scope still bring the human back. It serves "Autonomy is earned thr
   Observable: status `waiting_for_human` naming the `risk:` change; no new jury round in the ledger. Level: unit.
 - **AC-37** (FR-37) Given an auto fix round that removed AC-4 and added a Non-goals entry, when the round ends, then the effort pauses naming both. [human]
   Observable: status `waiting_for_human` naming AC-4 and the new non-goal; no new round. Level: unit.
-- **AC-38** (FR-38) Given a driver claim whose process is gone, or which was last refreshed 31 minutes ago, when a new driver starts, then it takes the effort over; given a fresh claim of a live process, it is refused. [human]
-  Observable: the claim names the new driver in the first two cases; in the third, non-zero exit naming the running driver and the claim unchanged. Level: unit.
+- **AC-38** (FR-38) Given a driver claim last refreshed 31 minutes ago, when a new driver starts, then it takes the effort over; given a claim refreshed 5 minutes ago, it is refused. [human]
+  Observable: the claim names the new driver in the first case; in the second, non-zero exit naming the running driver and the claim unchanged. Level: unit.
 - **AC-39** (FR-39) Given an auto round whose refuter output has no verdict for J-2 (a major), when the round ends, then the effort pauses naming J-2. [human]
   Observable: status `waiting_for_human` naming J-2; the gate not passed. Level: unit.
 - **AC-40** (FR-39) Given an auto round with a refuted blocker and a refuted major, when the run report is written, then the blocker is listed first. [human]
@@ -184,7 +184,7 @@ words or cut scope still bring the human back. It serves "Autonomy is earned thr
 - **FR-12** WHILE the auto flag is on, WHEN a fix round ends with a `[human]`-tagged line changed or gone THE SYSTEM SHALL pause for the human before the next round. [derived: FR-10]
 - **FR-36** WHILE the auto flag is on, WHEN a fix adds, removes or changes a flag in the spec's `risk:` list THE SYSTEM SHALL pause for the human before the next round, naming the change. [human]
 - **FR-37** WHILE the auto flag is on, WHEN a fix round ends with any FR, AC or user story removed, or an entry added to Non-goals, compared with the previous round THE SYSTEM SHALL pause for the human, naming each; this is what FR-11 calls cutting scope. [human]
-- **FR-38** THE SYSTEM SHALL treat a driver as running while its claim names a process that is alive on its machine and was refreshed within the last 30 minutes; the claim is taken atomically, so of two drivers starting at once exactly one gets it; the driver refreshes its claim at each stage and at least every 10 minutes while it waits on a long command; a claim that fails either test is stale and may be taken over by a new driver. [human]
+- **FR-38** THE SYSTEM SHALL treat a driver as running while its claim was refreshed within the last 30 minutes; the claim is taken atomically, so of two drivers starting at once exactly one gets it; the driver refreshes its claim at each stage and at least every 10 minutes while it waits on a long command; a claim older than 30 minutes is stale and may be taken over by a new driver. [human]
 - **FR-39** WHILE the auto flag is on, WHEN the refuter returns no verdict for a blocker or major THE SYSTEM SHALL pause for the human, naming the finding; a refuted blocker is accepted under FR-17 and listed first in the run report. [human]
 - **FR-41** WHEN the human resumes an auto effort paused because its pull request couldn't be opened THE SYSTEM SHALL only try to open the pull request again, running no stage, and IF it fails again keep it paused by FR-24. [human]
 - **FR-40** WHEN the human resumes an auto effort stopped at its jury cap or stuck THE SYSTEM SHALL give the stopped gate 2 more rounds and raise the effort's jury cap by 2, recording both in history. [human]
@@ -264,6 +264,7 @@ words or cut scope still bring the human back. It serves "Autonomy is earned thr
 ## Risks and evidence against
 - With no human in the loop, the jury and the fixer can agree on a spec the human wouldn't sign; the `[human]`-line guard, the scope-cut pause and the report are the only checks. [agent]
 - The human-only grant rests on `--by human`, the same trust as gate approval with `--commit`: an agent that writes it anyway can grant auto. The skills forbid it, and the grant's history line records the host and model that ran it. [human]
+- A driver that crashed holds the effort for up to 30 minutes, since its claim goes stale only by age (C-261108-mplt). [human]
 
 ## Decisions
 - Auto runs wait on backgrounded commands by the completion notice, never polling (Q1).

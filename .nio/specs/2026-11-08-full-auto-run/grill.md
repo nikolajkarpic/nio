@@ -235,3 +235,16 @@ Patched: added FR-40, AC-41
 Question: spec jury round 2 left four findings: fix or accept each as risk?
 Answer: J-1 accept as risk: same trust as gate approvals, named in Risks, history shows who ran each grant. J-3 fix: atomic claim, refreshed at least every 10 minutes while waiting, test for two drivers starting together. J-5 accept as risk: mechanical scope check only; softened wording can slip, the PR report lists every fix. J-10 fix: resuming after a failed PR only retries opening the PR, running no stage. [human]
 Patched: FR-38; added FR-41, AC-43, AC-44, AC-45, state table row pr_pending
+
+Session 3 (2026-11-08): plan stage.
+
+## Call · plan: CT-12, CT-16, CT-17 · 2026-11-08
+An epic's gate gets no fixer: its confirmed findings already become fix tasks the implement stage runs (FR-16). Under auto, minors are left out of what holds a gate, as the epic gate already does, instead of the fixer disposing each one (FR-17). Both are below the bar: neither changes what a user can do or sees, who may do it, what data is kept, or what it costs, beyond what FR-16 and FR-17 already fix. [agent]
+
+## Change · C-261108-mplt · 2026-11-08
+The human chose a driver claim that goes stale on its refresh time alone (architecture.md). That contradicts FR-38 and AC-38's "process gone" case, so it went to change request C-261108-mplt against the spec (pending); the spec is not patched until the human settles it. The grant's model is `unknown` when it can't be detected, which keeps AC-42 as written. [human]
+
+## Q21 · C-261108-mplt · 2026-11-08
+Question: accept the change request: a driver claim goes stale on its refresh time alone?
+Answer: 1. Accept: FR-38 and AC-38 drop the process test; Risks names the 30-minute hold. [human]
+Patched: FR-38, AC-38, Risks
