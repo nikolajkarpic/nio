@@ -294,10 +294,10 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-1-consistency: the sort and CLI-shape parts are fixed, but the remaining CT items are not all landed: CT-1's symlink and non-regular-file exclusion has no test in `tests/test_onboard.py`, and CT-2's `secrets <path>` line is not asserted through the CLI (the secrets test checks the Python tuple repr only).",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "the two tests are planned in T-13 (TC-13, TC-19, TC-48), epic E-4; the code already does it",
       "baseline": "unchanged",
       "rounds": 1,
       "first_round": 1,
@@ -727,7 +727,7 @@
       "tampering": false
     }
   ],
-  "outcome": "human",
+  "outcome": "approved",
   "recorded": [
     [
       1,
@@ -736,6 +736,10 @@
     [
       2,
       "human"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
