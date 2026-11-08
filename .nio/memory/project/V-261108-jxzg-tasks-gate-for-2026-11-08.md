@@ -1,0 +1,29 @@
+---
+id: V-261108-jxzg
+type: verdict
+title: "tasks gate for 2026-11-08-project-onboarding: rejected (round 1)"
+answers: jury             # why | reuse | jury
+date: 2026-11-08
+by: "jury"                # role / host / model, or human
+run: ""              # run ID; empty when written by hand
+subject: "tasks:2026-11-08-project-onboarding"
+outcome: rejected
+tier: medium
+paths: [".nio/specs/2026-11-08-project-onboarding/jury/tasks.md"]
+tags: []
+supersedes: []
+---
+## Ruling
+The tasks jury ruled **rejected** for `2026-11-08-project-onboarding` in round 1 (3 open, 2 refuted). Ledger: `.nio/specs/2026-11-08-project-onboarding/jury/tasks.md`.
+## Jurors
+| Lens | Host | Model | Vote |
+| --- | --- | --- | --- |
+| executability | claude-code | claude-haiku-5-5 | block |
+## Reasons
+- unresolved: J-2, J-3, J-4
+- J-2 [major/inconsistency] TC-22 is shared by T-15 and T-23, with no dependency between them, so neither can pass alone: open
+- J-3 [major/inconsistency] Two tasks list a test whose assertions need code from a later task: open
+- J-4 [major/gap] The spec skill's apps step (CT-16) is in T-9's title but has no check: open
+## What was rejected
+- J-1 T-2 cannot finish its confirm step, because the heading check it must run is tested only in T-14: refuted (T-14 lists src/nio/onboard.py and TC-6, and its title and Serves (AC-6) make it the task that adds the heading check. T-2 serves only AC-30 and its tests TC-28, TC-53 and TC-56 do not need a heading check. Building the check in a later task is incremental ordering, not a task that cannot finish.)
+- J-5 T-25's Test relies on a fixture in tests/test_flow.py, which is not in T-25's Files: refuted (TC-44 is a test in tests/test_onboard.py (`test_changed_sources_listed`). It can reuse or import the last-epic fixture from tests/test_flow.py and set up its own project doc set, so no edit to test_flow.py is needed. Nothing requires an edit to a file outside T-25's Files.)

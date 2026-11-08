@@ -1,0 +1,249 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261108-xcqp/tasks-executability.md": "5aadda1393e704e6ee89489e002661b646547723ef1dfcd51e32be2fde400df6",
+    "R-261108-xcqp/tasks-refuter.md": "a5d3c44ba54cd6cba1275c9a8662fe6ec3365290f116bf10011f1df35ba9f21b",
+    "R-261108-rzti/tasks-executability.md": "ef6e9f1d790aa363e1db112988b12987c45d03767ac42809268eb345a8522c4e"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "706305b2234307a098b02bd81532e184a383e552",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-2 cannot finish its confirm step, because the heading check it must run is tested only in T-14",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-2",
+        "T-14",
+        "CT-4",
+        "CT-12",
+        "TC-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Onboarding progress, `start|confirm|pause|skip` and the six doc templates",
+        "Project docs hold their headings and source hashes",
+        "read by `confirm` (CT-4)",
+        "fails CT-12's check"
+      ],
+      "fix": "name check_doc and HEADINGS as part of T-2 (Files and Test with TC-6's heading and persona cases), or move them to a task that T-2 depends on.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-2 is built and its tests (TC-28, TC-53, TC-56) pass. Those tests never confirm a complete doc, so nothing in T-2 checks headings. A worker running `nio onboard confirm stack` on a stack.md with `## Commands` deleted (the case TC-6 asserts) gets exit 0, and the state moves on. The check arrives only in T-14, which depends on T-4, which depends on T-2. Two outcomes: T-2 ships a confirm that accepts headless docs (against CT-4), or the T-2 worker has to implement check_doc, which no task names as its own. TC-6 is the only test of this, and it sits in T-14.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "T-14 lists src/nio/onboard.py and TC-6, and its title and Serves (AC-6) make it the task that adds the heading check. T-2 serves only AC-30 and its tests TC-28, TC-53 and TC-56 do not need a heading check. Building the check in a later task is incremental ordering, not a task that cannot finish.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "TC-22 is shared by T-15 and T-23, with no dependency between them, so neither can pass alone",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "T-15",
+        "T-23",
+        "TC-22",
+        "AC-41"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Depends on: T-9, T-12, T-14",
+        "Depends on: T-21",
+        "the repo's own `skills/onboard/SKILL.md` and `skills/reconcile-onboarding/SKILL.md`"
+      ],
+      "fix": "give T-23 a dependency on T-15 (or split TC-22 so each task owns the assertion on its own file).",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-23 (the reconcile skill) and T-15 (the onboard skill) each list TC-22, which reads both skill files. The task order allows T-23 before T-15, and then the onboard SKILL.md file does not exist yet, so TC-22 fails and T-23's done check cannot pass. If T-15 runs first, the reconcile skill is missing, and T-15's check fails. Either worker ends with a test that can only pass after the other task.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-22 reads both skills/onboard/SKILL.md and skills/reconcile-onboarding/SKILL.md. T-15 depends on T-9, T-12, T-14 and T-23 depends on T-21, so neither depends on the other and whichever runs first fails TC-22.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-23 now depends on T-15, so both skills exist when TC-22 runs",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "Two tasks list a test whose assertions need code from a later task",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "T-7",
+        "T-8",
+        "T-2",
+        "T-3",
+        "TC-31",
+        "TC-53",
+        "CT-18",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Test: TC-31",
+        "`jury._pack_text` for the scope lens at the spec gate",
+        "`nio onboard start`; `nio new spec x --route full`",
+        "A full or epic spec refuses until onboarding is done or skipped"
+      ],
+      "fix": "list only the pieces each task can pass (the worker and pack-wiring half of TC-31 in T-7; the progress-file half of TC-53 in T-2), and give the rest to T-8 and T-3.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-7 lists TC-31 as its test. TC-31 also checks the scope lens and architecture-fit packs through `jury._pack_text`, and that is T-8's work (src/nio/jury.py), which has no dependency on T-7. The T-7 worker cannot get TC-31 green. Likewise T-2 lists TC-53, whose second command `nio new spec x --route full` must exit 1 with the torn-file message. That refusal is CT-5, which lives in T-3 and depends on T-2. The T-2 worker cannot get the second half green.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-31 runs `jury._pack_text` for the scope and architecture-fit lenses, which is T-8's jury.py work, and T-8 does not depend on T-7. TC-53 runs `nio new spec x --route full`, which is T-3's gate (CT-5), and T-3 comes after T-2.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "TC-31 moved to T-8, which now depends on T-7; T-7 takes TC-36 and TC-51 (AC-31, worker pack stale marks) from T-22; TC-53 moved to T-3, which delivers the spec gate",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "The spec skill's apps step (CT-16) is in T-9's title but has no check",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-9",
+        "T-10",
+        "CT-16",
+        "FR-28",
+        "TC-30",
+        "AC-32"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "The spec skill and drafter use personas and apps",
+        "Serves: AC-32",
+        "the shop owner's actor line contains `P-1`",
+        "in a project with apps writes the apps the work touches into `apps:`"
+      ],
+      "fix": "add to T-9's Test a case where the spec skill writes `apps:` in a two-app project, or set Serves to cover FR-28 and name the e2e case.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a worker on T-9 reads the title, and the test it is given checks only personas. In a two-app project, the spec skill can skip writing `apps:`. T-10 then refuses the spec at `nio check spec` with \"spec names no app\", and nothing in the test set shows the skill asks for the apps before that. The FR-28 requirement that each spec name its apps has no passing test.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-16 requires the spec skill to write `apps:`, but its only test, TC-30, checks personas. TC-46 tests the `nio check spec` refusal, not that the skill writes the apps, so FR-28's skill half has no test.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the human gave the orchestrator standing authority to take the recommended option (2026-11-08). The plan has no test for the spec skill writing apps:, and the tasks stage can't add one; a spec that names no app in a multi-app project is refused by nio check spec (TC-46, T-10), so the miss is caught at the spec gate.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "T-25's Test relies on a fixture in tests/test_flow.py, which is not in T-25's Files",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "T-25",
+        "TC-44",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`src/nio/flow.py`, `tests/test_onboard.py`",
+        "on the last-epic fixture of `tests/test_flow.py` with this project doc set up"
+      ],
+      "fix": "add tests/test_flow.py to T-25's Files, or name the fixture to reuse and say how the project doc set gets into it.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-25's Files list flow.py and test_onboard.py. TC-44 needs the epic-close proof run on the last-epic fixture in tests/test_flow.py, with a project doc set up in it. The worker either edits test_flow.py, which is not in its Files list, against the rule that the task names every file it changes, or it cannot set up the fixture, and the close half of AC-26 has no proof.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "TC-44 is a test in tests/test_onboard.py (`test_changed_sources_listed`). It can reuse or import the last-epic fixture from tests/test_flow.py and set up its own project doc set, so no edit to test_flow.py is needed. Nothing requires an edit to a file outside T-25's Files.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "1bd80182bbc3060f0bbd1432059dd634bde187ad",
+    "2": "706305b2234307a098b02bd81532e184a383e552"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  },
+  "asked": {}
+}
