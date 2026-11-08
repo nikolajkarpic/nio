@@ -1464,10 +1464,10 @@ def step(root, slug, gate, run="", add=(), pick=None):
     if batch:
         refuter_pack(root, slug, gate, run, batch)
         return lines + [f"next: run nio-refuter on .nio/runs/{run}/jury/packs/refuter.md (output .nio/runs/{run}/jury/{gate}-refuter.md), then {again.format(run)}"]
-    for f in led["findings"]:
+    for f in led["findings"]:  # escalation jurors land in a later round than the blocker: count every round since it was raised
         for l in dict.fromkeys(s["lens"] for s in f["sources"] if s["lens"] in names):
             if f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" and \
-                    sum(j["lens"] == l and j["round"] == led["round"] for j in led["jurors"].values()) < 3:
+                    sum(j["lens"] == l and j["round"] >= f.get("first_round", led["round"]) for j in led["jurors"].values()) < 3:
                 return lines + [f"next: escalate {l}: run 2 more jurors on copies of its pack whose ## Your output line names "
                                 f"{gate}-{l}-2.md and {gate}-{l}-3.md (in the first review the copies are of packs/{l}.md; after it, of "
                                 f"nio jury fixcheck {slug} {gate} --lens {l} --blocker {f['id']} plus the lens output format), then {again.format(run)}"]
