@@ -99,6 +99,34 @@ def test_scan_contract_categories():
     assert got == want, got
 
 
+def nio(root, *args):
+    return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "onboard", *args],
+                          cwd=root, capture_output=True, text=True)
+
+
+def test_skip_needs_reason():
+    root = repo({})
+    r = nio(root, "skip", "  ")
+    assert r.returncode == 1, (r.stdout, r.stderr)
+    assert not (root / ".nio/project/onboarding.json").exists()
+
+
+def test_empty_start_writes_blank_docs():
+    root = repo({})
+    r = nio(root, "start", "--empty")
+    assert r.returncode == 0 and "next: product" in r.stdout, (r.stdout, r.stderr)
+    for d in ("stack", "architecture", "infra"):
+        text = (root / f".nio/project/{d}.md").read_text()
+        bodies = [b for b in text.split("\n## ")[1:]]
+        assert bodies and all("NEEDS CLARIFICATION" in b for b in bodies), (d, text)
+    assert nio(root, "pause").returncode == 0
+    r = nio(root, "pause")
+    assert r.returncode == 0 and "ignored: onboarding is paused" in r.stdout, (r.stdout, r.stderr)
+    r = nio(root, "confirm", "stack")
+    assert r.returncode == 1, (r.stdout, r.stderr)
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
-                    test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories])
+                    test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
+                    test_skip_needs_reason, test_empty_start_writes_blank_docs])
