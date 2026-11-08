@@ -168,15 +168,15 @@ def main():
     if a.cmd == "usage" and a.usage_cmd == "event":  # before repo_root: a hook must never fail the agent's call
         usage.record(a.host)
         return
-    if a.cmd == "onboard" and a.action != "scan":
-        try:
-            print(onboard.act(a.action, " ".join(a.arg), a.arg[0] if a.arg else "", a.empty))
-        except ValueError as e:
-            sys.exit(f"error: {e}")
-        return
     if a.cmd == "onboard":  # before repo_root: outside a git repo it says so instead of a traceback
         if records.git(".", "rev-parse", "--is-inside-work-tree", full=True)[0]:
-            sys.exit("nio onboard scan needs a git repository")
+            sys.exit(f"nio onboard {a.action} needs a git repository")
+        if a.action != "scan":
+            try:
+                print(onboard.act(a.action, " ".join(a.arg), a.arg[0] if a.arg else "", a.empty, root=records.repo_root()))
+            except ValueError as e:
+                sys.exit(f"error: {e}")
+            return
         found = onboard.scan()
         for c, f, h in found:
             print(c, f, h) if h else print(c, f)
