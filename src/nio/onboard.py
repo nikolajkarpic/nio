@@ -163,7 +163,7 @@ READERS = {"spec": ["product", "personas"], "scope": ["product", "personas"], "p
 LIMIT = 16384
 
 
-def doc_paths(root, reader, slug=""):
+def _pairs(root, reader, slug=""):
     """(label, path) per mapped doc; an app's doc is `api/stack.md`, kept in .nio/project/api/stack.md."""
     import re
     root, apps = Path(root), list(progress(root).get("apps") or {})
@@ -175,11 +175,16 @@ def doc_paths(root, reader, slug=""):
     return [(f"{a}/{d}.md" if a else f"{d}.md", root / ".nio/project" / a / f"{d}.md") for a in (apps or [""]) for d in READERS[reader]]
 
 
+def doc_paths(root, reader, slug=""):
+    """The files `docs_for` carries (CT-22)."""
+    return [p for _, p in _pairs(root, reader, slug)]
+
+
 def docs_for(root, reader, slug=""):
     """## Project docs for a reader: the mapped docs that exist, then size, missing and state lines (CT-9).
     ponytail: no stale line yet, it needs the docs' source records (CT-7)."""
     st = progress(root)
-    pairs = doc_paths(root, reader, slug)
+    pairs = _pairs(root, reader, slug)
     have = [(n, p) for n, p in pairs if p.is_file()]
     if st["state"] == "not started" and not have:
         return ""

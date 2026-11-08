@@ -197,7 +197,7 @@ def artefact(root, slug, gate):
 LIKE = re.compile(r"^- (?:Binding|Like):\s*`([^`:]+)", re.M)
 
 
-def sources(root, slug, gate):
+def sources(root, slug, gate, lens=""):
     """The files a juror at this gate is given, which are also the only files its quotes may come from (#57 FR-42,
     FR-43). The plan gate adds CLAUDE.md and every file a contract binds or a `Like:` line names."""
     folder = root / ".nio/specs" / slug
@@ -211,6 +211,10 @@ def sources(root, slug, gate):
         contracts = folder / "contracts.md"
         named = LIKE.findall(contracts.read_text()) if contracts.exists() else []
         files += [root / "CLAUDE.md"] + [root / n for n in dict.fromkeys(named)]
+    reader = {("spec", "scope"): "scope", ("plan", "architecture-fit"): "architecture-fit"}.get((gate, lens))
+    if reader:
+        from nio import onboard
+        files += onboard.doc_paths(root, reader, slug)
     return [p for p in dict.fromkeys(files) if p.is_file() and p.resolve().is_relative_to(root.resolve())]
 
 
@@ -1350,8 +1354,12 @@ def _pack_text(root, slug, gate, run, lens, fix):
     else:
         errors, notes = {"spec": spec, "plan": plans, "tasks": tasks}[gate].check(root, slug, True, "HEAD")
         body = "\n".join([f"# Pack: {lens}, {gate} gate of {slug}", "", "Files to read (quotes may come only from these):",
-                          *[str(p.relative_to(root)) for p in sources(root, slug, gate)], "", f"## nio check {gate} {slug}", "",
+                          *[str(p.relative_to(root)) for p in sources(root, slug, gate, lens)], "", f"## nio check {gate} {slug}", "",
                           *[f"ERROR {e}" for e in errors], *notes, f"{len(errors)} errors", ""])
+        reader = {("spec", "scope"): "scope", ("plan", "architecture-fit"): "architecture-fit"}.get((gate, lens))
+        if reader:
+            from nio import onboard
+            body += "\n" + onboard.docs_for(root, reader, slug)
         if lens == "scope":
             body += "\n".join(["## Intake and the human's answers", f".nio/specs/{slug}/intake.md", "", *answers(root, slug), ""])
         if lens == "consistency":

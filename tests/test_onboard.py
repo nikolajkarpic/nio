@@ -368,6 +368,52 @@ def test_oversized_doc_flagged():
     assert "over 16 KB: stack.md (20 KB)" in r.stdout, r.stdout
 
 
+ROWS = {"spec": ["product.md", "personas.md"], "plan": ["stack.md", "architecture.md", "infra.md", "principles.md"], "worker": ["stack.md", "principles.md"]}
+ROWS["scope"], ROWS["architecture-fit"] = ROWS["spec"], ROWS["plan"]
+SIX = {n: f"## {n.title()}\n{n} text\n" for n in ("product", "personas", "stack", "architecture", "infra", "principles")}
+
+
+def headings(text):
+    return [l[4:] for l in text.splitlines() if l.startswith("### ") and l.endswith(".md")]
+
+
+def test_reader_packs():
+    for r, want in ROWS.items():
+        root = repo({})
+        setup_project(root, "done", SIX)
+        out = pack_reader(root, r)
+        assert out.returncode == 0, (r, out.stdout, out.stderr)
+        assert headings(out.stdout) == want, (r, headings(out.stdout))
+    from test_jury import plan_repo, PSLUG
+    from nio import jury
+    root = plan_repo()
+    setup_project(root, "done", SIX)
+    got = headings(jury._pack_text(root, PSLUG, "spec", "R-1", "scope", False))
+    assert got == ROWS["spec"], got
+    got = headings(jury._pack_text(root, PSLUG, "plan", "R-1", "architecture-fit", False))
+    assert got == ROWS["plan"], got
+    import test_implement
+    from nio import implement
+    root = test_implement.impl()
+    setup_project(root, "done", SIX)
+    task = implement.tasks_of(root, test_implement.S)[0]
+    text = implement.worker_pack(root, test_implement.S, task)
+    assert headings(text) == ROWS["worker"], headings(text)
+    assert len([l for l in text.splitlines() if l.startswith("## ")]) == 5, text
+
+
+def test_lens_sources_include_docs():
+    from test_jury import plan_repo, PSLUG
+    from nio import jury
+    root = plan_repo()
+    setup_project(root, "done", SIX)
+    p = root / ".nio/project/principles.md"
+    assert p in jury.sources(root, PSLUG, "plan", lens="architecture-fit"), "docs not in sources"
+    assert p not in jury.sources(root, PSLUG, "plan", lens="test-proof"), "test-proof must not get docs"
+    text = jury._pack_text(root, PSLUG, "plan", "R-1", "architecture-fit", False)
+    assert ".nio/project/principles.md" in text.split("## nio check")[0], text[:600]
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -375,4 +421,5 @@ if __name__ == "__main__":
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
                     test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes,
                     test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed,
-                    test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged])
+                    test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
+                    test_reader_packs, test_lens_sources_include_docs])
