@@ -85,5 +85,82 @@ def test_ac9_broken_block():
     assert "Component map" not in r.stdout, r.stdout
 
 
+def good(walk_build="Order walk.", extra="", calls=None, contracts=("CT-1", "CT-2"), cmap_nodes=None, build=True, cmap_walk="Map walk."):
+    """(root, run) for a refunds effort with a GOOD explainer; run() -> (exit code, stdout) of the CLI check, with a fake npx."""
+    import os
+    import stat
+    import subprocess
+    import sys
+    import tempfile
+    from test_records import repo
+    from test_spec import put
+
+    root = repo()
+    slug = put(root, "spec.md")
+    d = root / ".nio/specs" / slug
+    (d / "contracts.md").write_text("".join(f"### {c} Thing (FR-1) [agent]\n- Kind: function\n\n" for c in contracts))
+    m = cmap_nodes or 'A["CT-1 Refund"] --> B["CT-2 Ledger"]'
+    t = f"## Component map\n\n```mermaid\nflowchart LR\n{m}\n```\n\n{cmap_walk}\n\n"
+    if build:
+        t += f"## Build order\n\n```mermaid\nflowchart LR\nA --> B\n```\n\n{walk_build}\n\n"
+    if calls:
+        t += f"## Calls\n\n```mermaid\n{calls}```\n\nCalls walk.\n"
+    (d / "explainer.md").write_text(t + extra)
+    bin = Path(tempfile.mkdtemp())
+    npx = bin / "npx"
+    npx.write_text('#!/bin/sh\nwhile [ $# -gt 0 ]; do case $1 in -o) o=$2;; esac; shift; done\ntouch "$o"\n')
+    npx.chmod(npx.stat().st_mode | stat.S_IEXEC)
+    env = dict(os.environ, PATH=str(bin) + os.pathsep + os.environ["PATH"])
+    code = "import sys; sys.argv = ['nio', 'check', 'explainer', 'checkout-refunds']; from nio.cli import main; main()"
+
+    def run():
+        r = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True, env=env)
+        return r.returncode, r.stdout + r.stderr
+    return run
+
+
+def test_ac5_node_cap_check():
+    # TC-5: 21 chained IDs fail naming the diagram, 20 pass
+    c, out = good(calls=chain(21))()
+    assert c == 1 and "ERROR too many nodes: Calls (21 > 20)" in out, (c, out)
+    c, out = good(calls=chain(20))()
+    assert c == 0 and "too many nodes" not in out, (c, out)
+
+
+def test_ac36_walk_limit():
+    # TC-6
+    c, out = good(walk_build="word " * 121)()
+    assert c == 1 and "ERROR walk-through too long: Build order (121 words)" in out, (c, out)
+    c, out = good(walk_build="word " * 120)()
+    assert c == 0, (c, out)
+
+
+def test_ac6_passes():
+    # TC-11
+    c, out = good()()
+    assert c == 0 and out.strip().splitlines()[-1] == "0 errors", (c, out)
+
+
+def test_ac7_missing_contract():
+    # TC-12
+    c, out = good(contracts=("CT-1", "CT-2", "CT-3"), cmap_walk="CT-3 comes later.")()
+    assert c == 1 and "ERROR component map misses CT-3" in out, (c, out)
+    assert "CT-1" not in out and "CT-2" not in out, out
+
+
+def test_ac8_missing_build_order():
+    # TC-13
+    c, out = good(build=False)()
+    assert c == 1 and "ERROR missing core diagram: build order" in out, (c, out)
+
+
+def test_uj1_huge_diagram():
+    # TC-39
+    m = " --> ".join(f"c{i}" for i in range(1, 29))
+    c, out = good(cmap_nodes=m + '\nc29["CT-1"] --> c30["CT-2"]')()
+    assert c == 1 and "ERROR too many nodes: Component map (30 > 20)" in out, (c, out)
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block])
+    selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
+                    test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram])
