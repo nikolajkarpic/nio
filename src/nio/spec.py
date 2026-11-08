@@ -5,7 +5,7 @@ import itertools
 import re
 from importlib import resources
 
-from nio import records
+from nio import onboard, records
 
 ROUTES = {
     "full": {"mandatory": ["Summary", "Actors and journeys", "User stories", "Functional requirements", "Non-goals"],
@@ -50,6 +50,9 @@ def new(root, name, route="full", epic="", today=None):
         raise ValueError("name must be lowercase words joined by dashes")
     if epic and not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*/R-\d+", epic):
         raise ValueError("--epic must look like <epic slug>/R-<n>")
+    state = onboard.progress(root)["state"] if route != "lite" else "done"
+    if state not in ("done", "skipped"):
+        raise ValueError(f'onboarding is {state}: run @nio:onboard first, or skip it on purpose with nio onboard skip "<reason>"')
     taken = sorted((root / ".nio/specs").glob(f"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-{name}/spec.md"))
     if taken or path(root, name).exists():
         raise ValueError(f"{(taken or [path(root, name)])[0].relative_to(root)} already exists")

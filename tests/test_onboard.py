@@ -126,7 +126,43 @@ def test_empty_start_writes_blank_docs():
     assert r.returncode == 1, (r.stdout, r.stderr)
 
 
+def newspec(root, route):
+    return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "new", "spec", "x", "--route", route],
+                          cwd=root, capture_output=True, text=True)
+
+
+def test_spec_waits_for_onboarding():
+    root = repo({})
+    for step in (None, ["start"], ["pause"]):
+        if step:
+            assert nio(root, *step).returncode == 0
+        for route in ("full", "epic"):
+            r = newspec(root, route)
+            msg = r.stdout + r.stderr
+            assert r.returncode == 1 and "@nio:onboard" in msg and "nio onboard skip" in msg, (step, route, msg)
+            assert not list((root / ".nio/specs").glob("*")), (step, route)
+
+
+def test_lite_spec_starts():
+    root = repo({})
+    r = newspec(root, "lite")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert list((root / ".nio/specs").glob("*/spec.md"))
+
+
+def test_torn_progress_file():
+    root = repo({})
+    assert nio(root, "start").returncode == 0
+    f = root / ".nio/project/onboarding.json"
+    f.write_bytes(f.read_bytes()[:10])
+    before = f.read_bytes()
+    for r in (nio(root, "start"), newspec(root, "full")):
+        assert r.returncode == 1 and ".nio/project/onboarding.json" in r.stdout + r.stderr, (r.stdout, r.stderr)
+    assert f.read_bytes() == before
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
-                    test_skip_needs_reason, test_empty_start_writes_blank_docs])
+                    test_skip_needs_reason, test_empty_start_writes_blank_docs,
+                    test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file])
