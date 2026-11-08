@@ -97,8 +97,29 @@ def check(root, target, gate=False, base="HEAD"):
         p = spec.path(root, target).parent / "explainer.md"
     if not p.exists():
         return [f"explainer missing: {p.relative_to(root)}"], []
-    errors = []
-    for s in sections(p.read_text()):
+    errors, secs = [], sections(p.read_text())
+    plan_mode = target in {p.parent.name} or p == spec.path(root, p.parent.name).parent / "explainer.md"
+    if plan_mode:
+        from nio import records
+        fmt = records.config(root).get("explain", {}).get("format", "mermaid")
+        core = {s["title"].lower(): s for s in secs}
+        for name in ("component map", "build order"):
+            if not core.get(name, {}).get("diagram"):
+                errors.append(f"missing core diagram: {name}")
+        cm = core.get("component map")
+        if cm and cm["diagram"]:
+            labels = " ".join(re.findall(r'"[^"]*"|\[[^\]]*\]', cm["block"] or "")) if fmt == "mermaid" else cm["walk"] + (cm["block"] or "")
+            errors += [f"component map misses {c}" for c, _ in spec.items((p.parent / "contracts.md").read_text().splitlines() if (p.parent / "contracts.md").exists() else []) if c.startswith("CT-") and c not in labels]
+        for s in secs:
+            if s["block"] and len(nodes(s["block"])) > 20:
+                errors.append(f"too many nodes: {s['title']} ({len(nodes(s['block']))} > 20)")
+            if s["diagram"]:
+                n = len(s["walk"].split())
+                if not n:
+                    errors.append(f"walk-through missing: {s['title']}")
+                elif n > 120:
+                    errors.append(f"walk-through too long: {s['title']} ({n} words)")
+    for s in secs:
         # ponytail: "no node"/"unreachable" are no error here; T-4 adds the skipped note
         if s["fence"] == "mermaid" and s["block"]:
             with tempfile.TemporaryDirectory() as d:
