@@ -71,6 +71,17 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: med
 - Mode: single: a fix from a jury finding
 
+### T-21 Fix: Node cap still undercounts: labels cleaned across lines and arrow forms `<-->`, `--o`, `--x` missed
+- From: J-1 (implementation-E-1, round 2)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: CT-2, AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-2 Check the explainer (US-2)
 ### T-3 Add the plan-mode checks of `explain.check` (CT-4)
 - Files: `src/nio/explain.py`, `tests/test_explain.py`
