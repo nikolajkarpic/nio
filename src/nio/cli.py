@@ -62,6 +62,8 @@ def main():
     k.add_argument("--task", default="", help="task ID; names the pack")
     k.add_argument("--diff", metavar="REF", help="juror pack: add the files changed since REF and judge against the records")
     k.add_argument("--run", help="also save the pack to .nio/runs/<run>/packs/")
+    k.add_argument("--reader", choices=list(onboard.READERS), help="add the project docs this reader gets")
+    k.add_argument("--slug", default="", help="effort slug; picks the apps its spec names")
     sub.add_parser("hooks", help="install git hooks: refresh the index and agent files after pulls, checkouts and rebases; check memory before commits and pushes")
     al = sub.add_parser("allow", help="let agents run stage commands without a prompt on Claude Code; the human's decisions still prompt")
     scope = al.add_mutually_exclusive_group(required=True)
@@ -264,6 +266,8 @@ def main():
     elif a.cmd == "pack":
         try:
             text, ids = pack.build(root, a.text, a.path, a.ac, a.task, a.diff)
+            if a.reader:
+                text += "\n" + onboard.docs_for(root, a.reader, a.slug)
             name = a.task or records.slug(a.text)
             if a.run:
                 print(f"saved {pack.save(root, a.run, name, text).relative_to(root)}", file=sys.stderr)
