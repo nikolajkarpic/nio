@@ -2,7 +2,7 @@
 gate: implementation-E-1
 subject: 2026-11-08-explainer
 round: 2
-outcome: human
+outcome: rerun
 ---
 # Implementation-e-1 jury: 2026-11-08-explainer
 
@@ -10,7 +10,7 @@ outcome: human
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | open |  | unchanged, 1 |
+| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | disposed | fix-task (human) | unchanged, 1 |
 | J-2 | major | gap | CT-3, CT-4, AC-9 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | gap | AC-5, AC-9, CT-4 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | CT-1, CT-4 | adversary | grounded | open |  | new, 0 |
@@ -18,7 +18,7 @@ outcome: human
 | J-6 | blocker | gap | AC-9 | conformance | refuted | refuted |  | new, 0 |
 | J-7 | blocker | gap | AC-5 | conformance | refuted | refuted |  | new, 0 |
 | J-8 | major | contradiction | CT-2, FR-7 | consistency | merged | merged |  | new, 0 |
-| J-9 | major | ambiguity | CT-2, FR-7 | consistency | confirmed | open |  | unchanged, 1 |
+| J-9 | major | ambiguity | CT-2, FR-7 | consistency | confirmed | disposed | accepted-risk (human) | unchanged, 1 |
 | J-10 | minor | inconsistency | CT-3, FR-11 | consistency | grounded | open |  | new, 0 |
 | J-11 | minor | inconsistency | CT-1 | consistency | grounded | open |  | new, 0 |
 | J-12 | minor | risk | CT-2 | correctness | grounded | open |  | new, 0 |
@@ -32,6 +32,7 @@ outcome: human
 - situation (consistency): a sequence diagram of 25 lines `Client->>Svc1: call` through `Client->>Svc25: call`. ARROW.split gives `Client` and `Svc1: call`; `Svc1: call` fails ID.fullmatch, so nodes() returns {Client}, one node, and the 20-node check passes a 26-node diagram. The same happens to `B` in `A -- retry --> B`, because `A -- retry` is not an ID.
 - fix: parse the endpoints more strictly. Strip edge text and trailing `: ...`, split on `&` and `;`, and keep `DROP` within one line. Add tests for sequence, state, `&` and labelled-edge forms.
 - validation: confirmed: implementation-E-1-adversary: the parsing of edge text, `&`, `;` and `: ...` is now right, and the sequence, state, `&` and labelled-edge tests were added. But `DROP` still runs over the whole block, so one unbalanced `"`, `(`, `[` or `{` in a line swallows every line up to the next closer. A valid sequence message such as `Client->>Svc3: retry (see note` followed by `Client->>Svc4: ok)` loses both lines before the `:` split ever runs. Those nodes are not counted, so an oversized diagram passes the AC-5 cap, which is the original symptom. No test covers it. Fix: apply `DROP` per line, `DROP.sub("", line)` inside the loop.; implementation-E-1-consistency: the listed steps (strip `: ...`, split `&` and `;`, DROP first) and their tests are in, but `A <--> B` still drops `A` and `A --o B` drops both endpoints, so the node cap still undercounts common flowchart syntax.; implementation-E-1-correctness: the parsing is stricter and the new forms are tested, but `DROP` is still applied to the whole block and can span lines, so one unbalanced quote or bracket still hides later nodes from the cap.
+- disposition: fix-task by human: Fix it: clean labels one line at a time (DROP per line) and handle the remaining arrow forms (<-->, --o, --x, longer arrows), with a test for each, including an unbalanced quote/bracket.
 
 ### J-2 Any non-parse render failure becomes "unreachable", which skips the check and hides every later block
 - quote: "after which no further block is rendered"
@@ -80,6 +81,7 @@ outcome: human
 - situation (consistency): the flowchart line `endpoint --> api` starts with `end`, so `line.startswith(SKIP)` is true and both `endpoint` and `api` are dropped. A 25-node flowchart whose nodes are named `endpoint1 --> endpoint2` and so on counts zero nodes and passes the cap.
 - fix: match the keyword `end` only as the whole word (the line equal to `end`, or `end` followed by a space), say so in CT-2, and add `endpoint --> api` to the self-check.
 - validation: confirmed: implementation-E-1-consistency: the code now matches the whole word `end` and the self-check line is added, but CT-2 in `contracts.md` line 24 still lists `end` as a skipped line prefix and does not state the whole-word rule the fix asked for.
+- disposition: accepted-risk by human: Accept as risk: code and test are right; CT-2's wording lags; note it for the next plan change.
 
 ### J-10 Broken-diagram reason is read from both streams, not stderr
 - quote: "first stderr line holding Parse error"

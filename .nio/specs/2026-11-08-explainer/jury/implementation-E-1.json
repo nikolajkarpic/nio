@@ -106,10 +106,10 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-1-adversary: the parsing of edge text, `&`, `;` and `: ...` is now right, and the sequence, state, `&` and labelled-edge tests were added. But `DROP` still runs over the whole block, so one unbalanced `\"`, `(`, `[` or `{` in a line swallows every line up to the next closer. A valid sequence message such as `Client->>Svc3: retry (see note` followed by `Client->>Svc4: ok)` loses both lines before the `:` split ever runs. Those nodes are not counted, so an oversized diagram passes the AC-5 cap, which is the original symptom. No test covers it. Fix: apply `DROP` per line, `DROP.sub(\"\", line)` inside the loop.; implementation-E-1-consistency: the listed steps (strip `: ...`, split `&` and `;`, DROP first) and their tests are in, but `A <--> B` still drops `A` and `A --o B` drops both endpoints, so the node cap still undercounts common flowchart syntax.; implementation-E-1-correctness: the parsing is stricter and the new forms are tested, but `DROP` is still applied to the whole block and can span lines, so one unbalanced quote or bracket still hides later nodes from the cap.",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "Fix it: clean labels one line at a time (DROP per line) and handle the remaining arrow forms (<-->, --o, --x, longer arrows), with a test for each, including an unbalanced quote/bracket.",
       "baseline": "unchanged",
       "rounds": 1,
       "first_round": 1,
@@ -405,10 +405,10 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-1-consistency: the code now matches the whole word `end` and the self-check line is added, but CT-2 in `contracts.md` line 24 still lists `end` as a skipped line prefix and does not state the whole-word rule the fix asked for.",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Accept as risk: code and test are right; CT-2's wording lags; note it for the next plan change.",
       "baseline": "unchanged",
       "rounds": 1,
       "first_round": 1,
@@ -602,7 +602,7 @@
       "fixed_in": 2
     }
   ],
-  "outcome": "human",
+  "outcome": "rerun",
   "recorded": [
     [
       1,
