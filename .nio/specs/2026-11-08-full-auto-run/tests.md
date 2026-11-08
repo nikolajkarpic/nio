@@ -42,12 +42,12 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Action: run the driver once.
 - Assert: history has, after the `grant`, a `pass` line for spec_jury, planning, plan_jury, tasking, tasks_jury and implementing in that order, and no line whose `who.role` is `human`.
 
-### TC-5 The plan gate's third round pauses the driver (AC-5; integration) [agent]
+### TC-5 The plan gate's third round pauses the driver: regression guard (AC-5; integration) [agent]
 - File: `tests/test_flow.py:test_auto_round_limit_pauses` (new)
 - Covers: CT-6, CT-16
 - Setup: `effort("plan_jury")`, granted; plan ledger at round 3, outcome rejected, one open major; no `budgets`.
 - Action: `nio flow next S --by BY`.
-- Assert: `state.json` `waiting.why` holds `plan jury ran 3 rounds`; no `pass` line after it; the output holds the reason and `nio flow start S --by human`; `skills/auto/SKILL.md` step 4 holds `waiting_for_human`, `suspended` and `Talking to the human`.
+- Assert: `state.json` `waiting.why` holds `plan jury ran 3 rounds`; no `pass` line after it; the output holds the reason and `nio flow start S --by human`; `skills/auto/SKILL.md` step 4 holds `waiting_for_human`, `suspended` and `Talking to the human`. The pause itself is today's code, so this guards it from regressing under auto; TC-56 checks the driver's last message.
 
 ### TC-6 Each stage runs in a fresh subagent (AC-6; e2e) [agent]
 - File: `tests/test_auto_e2e.py:test_driver_reaches_done` (new)
@@ -63,7 +63,7 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Action: run the driver once.
 - Assert: history ends with `implementing → done`; the run's usage has no `agent_called` event for a stage skill.
 
-### TC-8 Resume keeps auto (AC-8; unit) [agent]
+### TC-8 Resume keeps auto: regression guard (AC-8; unit) [agent]
 - File: `tests/test_flow.py:test_auto_resume_keeps_auto` (new)
 - Covers: CT-7, CT-3
 - Setup: `effort("plan_jury")`, granted, then paused (a `pause` written through `stop_line`).
@@ -74,7 +74,7 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - File: `tests/test_flow.py:test_auto_second_driver_refused` (new)
 - Covers: CT-5
 - Setup: granted effort; `nio flow drive S --by "driver / a / m"`.
-- Action: `nio flow drive S --by "driver / b / m"`.
+- Action: `nio flow drive S --by "driver / b / m"` (no token).
 - Assert: exit 1, output holds `driver / a / m`; `driver.lock` unchanged byte for byte; history line count unchanged.
 
 ### TC-10 The driver waits on the completion notice (AC-10; e2e) [agent]
@@ -145,7 +145,7 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Covers: CT-10
 - Setup: TC-17's spec with FR-2 and AC-1 tagged `[auto]`.
 - Action: `nio jury next S spec`; read every `packs/<lens>.md`.
-- Assert: each holds `Defaults the run chose (judge each): FR-2, AC-1`.
+- Assert: each holds `Defaults the run chose (judge each): AC-1, FR-2` (spec order: the stories come before the requirements).
 
 ### TC-20 E-1 is fixed and re-judged before E-2 starts (AC-20; integration) [agent]
 - File: `tests/test_flow.py:test_auto_epic_fix_before_next_epic` (new)
@@ -229,7 +229,7 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Covers: CT-3, CT-11
 - Setup: auto effort at spec_jury, round 1 rejected, J-1 confirmed; the fixer has edited `spec.md` but not disposed.
 - Action: `nio flow manual S --by human`; the fixer's `nio jury dispose S spec J-1 spec-fix --by auto ...`; `nio flow manual S --by "orchestrator / test / test"`.
-- Assert: `auto: false`; a `switch_off` line by the human; the spec edit is kept; the `--by auto` dispose is refused (auto off); the orchestrator's switch-off is refused; ledger `round` still 1.
+- Assert: `auto: false`; a `switch_off` line by the human; the spec edit is kept; the `--by auto` dispose is refused (auto off); the orchestrator's switch-off is refused; ledger `round` still 1; the switch-off output holds `restore spec as round 1 judged it: git cat-file -p refs/nio/S/spec/1`, and that command prints `spec.md` as it was before the fixer's edit.
 
 ### TC-32 Before tasks the cap is 6 (AC-32; unit) [agent]
 - File: `tests/test_flow.py:test_auto_cap` (new)
@@ -238,7 +238,7 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Action: `flow.cap(root, S)`.
 - Assert: `6`.
 
-### TC-33 No subagent cap unless configured (AC-33; unit) [agent]
+### TC-33 No subagent cap unless configured: regression guard (AC-33; unit) [agent]
 - File: `tests/test_flow.py:test_auto_subagent_cap` (new)
 - Covers: CT-6
 - Setup: granted effort at plan_jury (ready fail) whose ledgers' `collected` hold 200 keys; a copy with `budgets.subagents: 3` and 3 keys.
@@ -278,7 +278,7 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Covers: CT-5
 - Setup: `driver.lock` naming `driver / a / m` with `at` 31 minutes ago; a second with `at` 5 minutes ago (C-261108-mplt's wording; the "process gone" case is dropped with it).
 - Action: `nio flow drive S --by "driver / b / m"` on each.
-- Assert: first: exit 0, the claim names `driver / b / m`; second: exit 1 naming `driver / a / m`, the file unchanged.
+- Assert: first: exit 0, the claim names `driver / b / m` with a new token; second: exit 1 naming `driver / a / m`, the file unchanged; the effort's `.gitignore` holds `driver.lock*`.
 
 ### TC-39 No refuter verdict pauses (AC-39; unit) [agent]
 - File: `tests/test_jury.py:test_auto_no_refuter_verdict` (new)
@@ -306,7 +306,7 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Covers: CT-1
 - Setup: `effort("grilling")`; env `CLAUDECODE=1`, no `ANTHROPIC_MODEL`.
 - Action: `nio flow start S --auto --by human`.
-- Assert: the `grant` line's `evidence.ran_in` is `{"host": "claude-code", "model": "unknown"}`.
+- Assert: the `grant` line's `who` is `{"role": "human", "host": "claude-code", "model": "unknown"}`.
 
 ### TC-43 Two drivers at once: one wins (AC-43; integration) [agent]
 - File: `tests/test_flow.py:test_auto_driver_race` (new)
@@ -318,9 +318,9 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 ### TC-44 A long wait keeps the claim (AC-44; integration) [agent]
 - File: `tests/test_flow.py:test_auto_driver_refresh` (new)
 - Covers: CT-5, CT-16
-- Setup: claim by `driver / a / m` created 45 minutes ago and refreshed (same `--by`) 8 minutes ago.
+- Setup: claim by `driver / a / m` created 45 minutes ago and refreshed (same token) 8 minutes ago.
 - Action: `nio flow drive S --by "driver / b / m"`.
-- Assert: claim `at` under 10 minutes old; exit 1 naming `driver / a / m`; `skills/auto/SKILL.md` holds `every 10 minutes`.
+- Assert: exit 1 naming `driver / a / m`; the claim unchanged; `skills/auto/SKILL.md` holds `every 10 minutes`. The claim's age is set by the setup, so it isn't asserted: that the driver refreshes every 10 minutes is the skill's instruction, checked here by its text only.
 
 ### TC-45 Resume after a failed PR only opens it (AC-45; integration) [agent]
 - File: `tests/test_flow.py:test_auto_pr_retry` (new)
@@ -328,6 +328,76 @@ with `NIO_E2E=1` like `tests/test_tasks_e2e.py`, on a copy of the refunds fixtur
 - Setup: TC-24's paused effort; then `origin` added (a bare repo).
 - Action: `nio flow start S --by human`; `nio flow next S`; `nio flow pr S --by BY`.
 - Assert: next says `done`; `gh.log` holds one `pr create`; history after the `resume` has no `pass`, jury or task line.
+
+### TC-49 A new driver goes on after the jury approved (AC-11; integration) [agent]
+- File: `tests/test_flow.py:test_auto_resume_after_approval` (new)
+- Covers: CT-20, CT-5
+- Setup: granted effort (no risk flag) at spec_jury, the spec ledger approved by a recorded round, no approval commit; a stale claim.
+- Action: `nio flow drive S --by "driver / b / m"`; `nio flow next S`; the `done:` command it prints.
+- Assert: next says `state: spec_jury (working)` and prints `done: nio flow done spec_jury S`; no `waiting_for_human: approve`; after done, one `pass` from spec_jury and a `nio: approve spec` commit. The same effort with `risk: [money]` still says `waiting_for_human: approve spec`.
+
+### TC-50 The jury skill hands `rejected` to the fixer under auto (AC-12; integration) [agent]
+- File: `tests/test_flow.py:test_auto_skill_texts` (new)
+- Covers: CT-21, CT-16
+- Setup: `skills/jury/SKILL.md` and `skills/auto/SKILL.md` as shipped.
+- Action: read the jury skill's `## Under auto` section.
+- Assert: it holds `rejected`, `nio-fixer`, `never disposes \`--by agent\`` and `never grills`; the driver skill holds `## Under auto` and `--token`.
+
+### TC-51 Two drivers with the same --by: the second is refused (AC-9; integration) [agent]
+- File: `tests/test_flow.py:test_auto_driver_same_by` (new)
+- Covers: CT-5
+- Setup: granted effort; `nio flow drive S --by "driver / claude-code / m"` prints `token: <t1>`.
+- Action: `nio flow drive S --by "driver / claude-code / m"` (no token); then `nio flow drive S --by "driver / claude-code / m" --token wrong`; then `--token <t1>`.
+- Assert: the first two exit 1 naming the driver, `driver.lock` unchanged; the third exits 0 and the claim keeps token `<t1>` with a newer `at`; no `driver.lock.*` file is left.
+
+### TC-52 After the human resumes, a round-check hit lets the next round start (AC-15; unit) [agent]
+- File: `tests/test_jury.py:test_auto_round_check_resume` (new)
+- Covers: CT-12, CT-13
+- Setup: TC-15's paused effort (`[human] line changed: FR-1`).
+- Action: `nio flow start S --by human`; `nio jury check S spec --record`; `nio jury next S spec`.
+- Assert: the resume line names gate `spec` and round 1; the outcome is `rerun`; the step writes the fix-check packs for round 2.
+
+### TC-53 Auto commits land on the effort branch (AC-1; unit) [agent]
+- File: `tests/test_flow.py:test_auto_grant_switches_branch` (new)
+- Covers: CT-1, CT-2, CT-20
+- Setup: `effort("spec_jury")` on `main`, spec ledger approved by a recorded round; a copy with an uncommitted change to `README.md`.
+- Action: `nio flow start S --auto --by human`; `nio flow done spec_jury S --by BY`; on the copy, `nio flow start S --auto --by human`.
+- Assert: `git rev-parse main` unchanged; the current branch is `nio/S`; the `nio: approve spec` commit is on `nio/S` and not on `main`; the copy exits non-zero naming `commit or stash`, stays on `main` with `auto: false`.
+
+### TC-54 A held finding needs the human in every mode (AC-13; integration) [agent]
+- File: `tests/test_jury.py:test_held_without_auto` (new)
+- Covers: CT-11, CT-12, CT-3
+- Setup: TC-13's ledger with J-1 held.
+- Action: `nio flow manual S --by human`; `nio jury check S spec --record`.
+- Assert: outcome `human` naming `held for the human: J-1`.
+
+### TC-55 The fixer card acts on each row of the fixer table (AC-13; integration) [agent]
+- File: `tests/test_auto_e2e.py:test_fixer_card_rows` (new)
+- Covers: CT-17, CT-11
+- Setup: an auto spec ledger with one finding per row of the decision table "Fixer action on a finding": confirmed blocker and confirmed major with fixes in an `[agent]` line; confirmed blocker whose fix rewrites FR-1 (`[human]`); confirmed major whose fix drops US-2; refuted blocker; refuted major; blocker and major left `pending` after the refuter; a minor.
+- Action: run `nio-fixer` on them with `claude -p` (as `tests/test_tasks_e2e.py:run_card` does).
+- Assert: the two fixable findings are disposed `spec-fix` `by: auto` and their lines changed; the FR-1 and US-2 findings are disposed `held` `by: auto`, FR-1 and US-2 unchanged in `spec.md`; the refuted, pending and minor findings have no disposition and their lines are unchanged.
+
+### TC-56 The driver's last message after the round pause (AC-5; integration) [agent]
+- File: `tests/test_auto_e2e.py:test_driver_stops_with_reason` (new)
+- Covers: CT-16, CT-6
+- Setup: TC-5's effort.
+- Action: run the driver once.
+- Assert: its last message holds `3 rounds` and `nio flow start S --by human`; no `pass` line after the pause.
+
+### TC-57 A lost judged version pauses (AC-15; unit) [agent]
+- File: `tests/test_jury.py:test_auto_round_check_missing_version` (new)
+- Covers: CT-13, CT-22
+- Setup: auto effort, first review judged; `refs/nio/S/spec/1` deleted and the blob's loose object removed; `spec.md` edited.
+- Action: `jury.cuts(...)`; `nio jury check S spec --record`.
+- Assert: `["judged version missing: <blob>"]`; outcome `human`.
+
+### TC-58 A fix the human re-disposes is still in the report (AC-23; integration) [agent]
+- File: `tests/test_flow.py:test_auto_report_keeps_fixer_record` (new)
+- Covers: CT-11, CT-14
+- Setup: TC-23's effort; J-1 then re-disposed `accepted-risk --by human`.
+- Action: `flow.report(root, S)`.
+- Assert: J-1's `was` is `{"disposition": "spec-fix", "by": "auto", ...}`; the report lists J-1 under `## Fixed by the run` with `then accepted-risk by the human`.
 
 ## Quality tests
 
