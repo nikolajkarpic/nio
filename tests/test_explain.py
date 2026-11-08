@@ -463,6 +463,19 @@ def test_ac33_safe_delete():
         plan.approved = keep
 
 
+def test_ac29_skill_text():
+    import re
+    import test_talk
+    root = Path(__file__).resolve().parent.parent
+    text = (root / "skills/explain/SKILL.md").read_text()
+    sec = lambda h: next((b for t, b in re.findall(r"^#+ ([^\n]*)\n(.*?)(?=^#|\Z)", text, re.M | re.S) if h in t), None)
+    assert sec("Mermaid cheat-sheet") is not None
+    rules = sec("Diagram rules")
+    assert rules and "one question" in rules and "20" in rules
+    assert re.search(r"^Credit:.*https://", text, re.M)
+    assert not [p for p in test_talk.problems(root) if "explain" in p]
+
+
 def test_nfr2_no_tools():
     # TC-38
     import tempfile
@@ -549,7 +562,7 @@ def test_ac33_unique_names():
 
 
 if __name__ == "__main__":
-    selfcheck.main([test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
+    selfcheck.main([test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
                     test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines])
