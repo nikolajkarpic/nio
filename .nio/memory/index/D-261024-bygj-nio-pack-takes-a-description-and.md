@@ -12,6 +12,7 @@ task: ""                  # task ID, if any
 paths: ["src/nio/pack.py", "src/nio/cli.py"]
 tags: ["pack", "context", "research"]
 supersedes: []            # IDs of records this replaces
+outdated_by: ["C-261108-mk6n"]
 ---
 ## Decision
 `nio pack` takes a required description of the work plus optional `--path`, `--ac` and `--task`, as flags. It only reads memory: it never researches the code to find the scope. A person or the main session supplies the scope today; a research skill will later (issue #18). Whoever hands the work off calls it, never the worker itself.
