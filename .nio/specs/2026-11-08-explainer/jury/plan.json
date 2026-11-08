@@ -1,0 +1,653 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-08-explainer",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "architecture-fit",
+    "risk-rollback",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261108-slht/plan-architecture-fit.md": "d7bd35cd1e047f91eededcca89d1a6753b7c9a09584924ff4a6dfb9d6a3b397f",
+    "R-261108-slht/plan-risk-rollback.md": "6dc5144c60c6f62a64e84543e79092b1007d1c993c55593304b2fff0dcb3d9d7",
+    "R-261108-slht/plan-test-proof.md": "81645f0bb7cd1d1a0bce5e310d2b62e383f98b7ab005d1107ec145dded086782",
+    "R-261108-slht/plan-refuter.md": "2e134326144ec220e7fdf5283ebf82bb2d77bf0d5ec70cfd1cb681d990afe137",
+    "R-261108-lvky/plan-architecture-fit.md": "f68e4d04bbaedb22f39375088d3d7ac8c19e825885fb80ff168bd2e19a79ccb0",
+    "R-261108-lvky/plan-risk-rollback.md": "dc51eda2570fa1557f21c479f03993533ee4c36faaa4e9ae97512f28def18638",
+    "R-261108-lvky/plan-test-proof.md": "db81506a9f4d7a5650937dd9e5b73ebeb30ae693011b20389a2c0013552a5f25"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 2,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "2f631ebcf9d2f0f008784629e6dc39ef56472ccb",
+      "judged": 2
+    },
+    "plan-risk-rollback": {
+      "attempts": 2,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "2f631ebcf9d2f0f008784629e6dc39ef56472ccb",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 2,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "2f631ebcf9d2f0f008784629e6dc39ef56472ccb",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Lite efforts are offered an explainer that the skill's guard lets through and `finish` refuses",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-8",
+        "CT-11",
+        "CT-5",
+        "FR-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the stage is `tasking`, `tasks_jury` or `implementing` and `.nio/specs/<slug>/explainer.md` doesn't exist",
+        "run `nio check plan <slug> --approved`; on a non-zero exit refuse",
+        "refuses unless `plan.approved(root, slug)` is ok and plan.md exists",
+        "return True, \"a bug-fix spec has no plan stage\"",
+        "ROUTE_SKIPS = {\"lite\": {\"spec_jury\", \"planning\", \"plan_jury\"}}"
+      ],
+      "fix": "Have CT-8 suggest only when spec.md's route is `full`, or when plan.md exists. Have CT-11's guard also require",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "A lite effort skips `plan_jury` and reaches `tasking` with no plan.md. CT-8 checks only the stage and",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "plan.approved returns True for a lite spec (\"a bug-fix spec has no plan stage\"), so CT-11's guard passes, while CT-5 step 1 also demands plan.md and refuses; CT-8 checks only the stage, and a lite effort reaches tasking (ROUTE_SKIPS skips plan_jury), so it is offered an explainer that finish refuses.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "Suggestion and skill guard require plan.md (CT-8, CT-11)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "US-3's tests run the skill, which is only delivered at US-1",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "US-3",
+        "US-1",
+        "TC-17",
+        "TC-18",
+        "TC-19",
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Tests: TC-17, TC-18, TC-19, TC-38",
+        "Delivers: CT-9, CT-11",
+        "Action: run `@nio:explain checkout-refunds`."
+      ],
+      "fix": "Move US-1 (CT-11) before US-3. Or rewrite TC-17 to TC-19 as integration tests that call",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "US-3 comes before US-1 in the build order (US-1 says \"Depends on: US-3\"). TC-17 and TC-19 run the",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "US-3 comes before US-1 in the build order. TC-17 and TC-19 run `@nio:explain`, and TC-18 starts from TC-17's output. All three need CT-11, which US-1 delivers later, so they cannot pass inside US-3's entry. Likewise TC-26, in US-5, needs CT-12's offer-and-pick. CT-12 is delivered by US-4, which depends on US-5.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "plan.md orders US-3 (Tests TC-17..19, which run `@nio:explain`) before US-1 (Delivers CT-11, Depends on US-3); nothing else settles it.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "Tests moved to the story that delivers what they run: TC-17/18/19 to US-1, TC-26 to US-4, TC-10 to US-3",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "The explainer hashes through `implement.digest`, not the `flow.sha` architecture.md fixes",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "CT-7",
+        "FR-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "hashes through `flow.sha` (RF-12)",
+        "Everything else is the standard library: `hashlib` through `flow.sha`",
+        "hash `implement.digest(root, path)[:12]`"
+      ],
+      "fix": "Name `flow.sha` of the file's bytes in CT-5 and CT-7, as architecture.md does, and change TC-9 to match. Or",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "architecture.md, which the plan may not change without a change request, says the source hashes go",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "implement.digest is `flow.sha(p.read_bytes())` (src/nio/implement.py:426), so the contract does hash through flow.sha as architecture.md says; the value is identical and the contract is not at odds with the architecture.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "`nio status` calls `explain.status`, but architecture.md names `explain.stale`",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "CT-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio status` appends `explain.stale` lines after the index lines it prints today",
+        "Binding: `src/nio/explain.py:status` (new)"
+      ],
+      "fix": "Rename CT-7's binding to `explain.py:stale` and CT-10's call with it. Or correct architecture.md through a",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The interface architecture.md records for `nio status` is `explain.stale`. CT-7 binds",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "Status function named explain.stale in CT-7, CT-10",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "QS-1 passes a component map that CT-4 would fail",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "QS-1",
+        "CT-4",
+        "SC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the component map names CT-1 to CT-11",
+        "for each `### CT-n` in contracts.md (`implement.defs`) not named in the component map's node labels",
+        "### CT-13 The skill's diagram format (FR-19, FR-20, FR-21) [agent]"
+      ],
+      "fix": "Change QS-1's pass condition to \"names CT-1 to CT-13\", or to \"names every `### CT-n` in contracts.md\".",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "contracts.md defines CT-1 to CT-13, and CT-4 reports an error for each `### CT-n` that the map doesn't",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "QS-1 requires CT-1 to CT-13",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "A drill-down the model drops on a re-run is lost, and then its SVG is deleted",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "CT-5",
+        "FR-25",
+        "FR-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "On a re-run keep the old source and images lines and every `## Drill-down: ` section below the diagrams, unchanged (FR-25).",
+        "and that this run will not draw: no current diagram section's name (step 4) and no image a `## Drill-down: ` section links",
+        "it SHALL never delete a drill-down section's SVG"
+      ],
+      "fix": "before the skill rewrites explainer.md, have `finish` (or a new step) record the drill-down headings. Have `finish` refuse, writing nothing and deleting nothing, when a previously recorded drill-down heading is missing. Add an integration test: an explainer whose drill-down was removed after a first `finish`; a second `finish` exits 1 and the drill-down's SVG is byte-unchanged.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "on a re-run, the model rewrites explainer.md and leaves out a `## Drill-down:` section. The human drove that drill-down interactively, and the text is now gone with no copy. Then `nio explain finish` runs step 3. No section links the drill-down's image any more and no current section has its name, but the old images line still lists it, so the SVG is deleted. If it was never committed, it cannot be recovered. TC-9 is e2e and only proves the case where the model keeps the section.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-5 step 3 deletes a listed SVG when no current section or drill-down link names it, and step 4/5 list drill-down images; a drill-down section the model drops leaves its SVG deletable, and only the skill text (not finish) guards the section; TC-9 covers only the kept case.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "Human Q15: finish records drill-down headings and refuses before writing or deleting if one is missing (CT-5, TC-43)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "`finish` alone clears the stale record without redrawing anything",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "CT-7",
+        "FR-16",
+        "FR-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then replaces the source lines with one per spec.md, plan.md and contracts.md",
+        "`nio explain finish .nio/specs/checkout-refunds/explainer.md`, then `nio status`",
+        "Regenerating the explainer on its own when the plan changes; it is only flagged stale."
+      ],
+      "fix": "have `finish` refresh the hashes only when the diagram sections' text changed since the last finish (store a hash of that text alongside the source lines), or behind an explicit flag the skill passes. Change TC-29 and QS-4 to show that `finish` alone keeps the stale line, and that only a redraw clears it.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the plan changes and `nio status` flags the explainer as stale. Someone runs `nio explain finish`, as TC-29 and QS-4 step 2 do. The source hashes are overwritten with today's, so the stale line disappears, but the diagrams still show the old plan. Nothing records the drift any more (only the drill-down marker hints at it), and a developer now trusts an explainer the plan has outgrown. This is the misuse UJ-1 names.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-5 step 2 overwrites the source hashes unconditionally and TC-29 and QS-4 assert that finish alone clears the stale line, though nothing checks the diagrams were redrawn.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "grill",
+      "note": "Human Q16: finish refreshes source hashes only after a diagram changed, else prints still stale (CT-5, TC-29, TC-44, QS-4)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "An older nio reads the \"Read first\" line as an edit to the approved plan",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-9",
+        "CT-5",
+        "FR-5",
+        "FR-17"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "makes `Read first: [explainer.md](explainer.md)` the first line of quickstart.md's body, once",
+        "`flow.judged_blob` and `flow.scan` compare quickstart.md through `planned` as they do tasks.md."
+      ],
+      "fix": "state the minimum nio version for an effort whose quickstart carries the line, for example by having `finish` refuse unless the flow state was written by a nio that knows CT-9. Or say plainly in the plan that a mixed-version team must upgrade first, and add a test showing that removing the line by hand restores a byte-identical quickstart (the way back).",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "one clone, with the new nio, runs `@nio:explain` and commits quickstart.md with the line. Another clone still has the old nio. Its `flow.scan` compares quickstart.md by its raw `hash-object`, sees a plan-gate file edited after approval, and sends the effort back to `plan_jury` with a `back` line. That line goes into the append-only history, which only `nio flow` writes and no one can retract by hand. FR-17 says the explainer must never do this. No test covers mixed versions, and the plan says nothing about it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "quickstart.md is a plan-gate file, and flow.judged_blob compares non-tasks files by raw hash-object, so an older nio sees the Read first line as an edit; CT-9 and the plan say nothing on mixed versions and no test covers it.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Accept as risk: single user, nio ships with the repo, so mixed versions are unlikely; if it happens the effort goes back to the plan jury once.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "It is not stated whether `finish` can be re-run after stopping halfway",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "deletes each SVG the old images line lists that sits in the explainer's own folder",
+        "running `npx -y MERMAID -i <temp .mmd> -o <out>` with `subprocess.run`"
+      ],
+      "fix": "in CT-5, say that the explainer is written once, atomically (temp file plus `os.replace`), and that a listed file already gone is skipped silently. Give CT-3's `subprocess.run` a timeout that maps to `unreachable`. Add a test: an images line listing a missing `explainer-x.svg`; `finish` exits 0 and prints no `deleted:` line for it.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "step 3 deletes orphan SVGs, then step 4 renders. Each render spawns `npx`, which can hang while fetching 382 MB and has no timeout. If `finish` is interrupted or killed during step 4, the explainer on disk still has its old images line and links, which point at files already deleted. The contract does not say whether the file is written once at the end or step by step. It also does not say whether step 3 treats an already-missing listed file as done or fails with `FileNotFoundError`. If it fails, every later `finish` fails. No test re-runs `finish` after a partial one.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-5 does not say whether the explainer is written once or stepwise, nor how step 3 treats an already-missing listed file, and CT-3 gives subprocess.run no timeout; no test re-runs finish after a partial one.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "finish writes once at the end, skips already-gone images, npx has a 120 s timeout; TC-45",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "Image names can collide and overwrite another section's or another topic's SVG",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "CT-6",
+        "FR-14",
+        "FR-26"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "renders each Mermaid section's block (CT-3) to `<stem>-<title slug>.svg` beside the explainer",
+        "whose name starts `<stem>-` (`explainer-` in plan mode)",
+        "then `-explainer-2.md`, `-3` and on"
+      ],
+      "fix": "have step 4 refuse, or add a numeric suffix to, a target name that another section in this run already uses, or that exists on disk without being listed in this explainer's images line. Use a separator that a slug cannot start with (for example `<stem>--<title slug>.svg`).",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "in `.nio/research/`, the stem `<date>-x-explainer` is a prefix of `<date>-x-explainer-2`. If the first file has a section titled `2 Overview`, its image is `<date>-x-explainer-2-overview.svg`, which is exactly the second file's `Overview` image. Rendering silently overwrites the other explainer's image, and a later orphan delete removes it. In the same way, two sections whose titles slug the same overwrite each other in one run.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "Images named <stem>--<title slug>.svg with -2, -3 on clash; TC-46",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "The orphan-delete test never checks that the drill-down's image survives",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-10",
+        "AC-33"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "an SVG for the drill-down section exists",
+        "the drill-down SVG, README.md and notes.svg unchanged",
+        "whose name starts `<stem>-` (`explainer-` in plan mode)"
+      ],
+      "fix": "assert that `explainer-drill-1.svg` is byte-unchanged and still named in the images line. Add a listed in-folder `other.svg` and assert that it survives with its warning.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "Finish deletes `explainer-drill-1.svg` because it ignores the \"no image a `## Drill-down: ` section links\" rule. Step 4 then renders the drill-down block to `explainer-drill-down-one.svg`, so \"an SVG for the drill-down section exists\" still holds and TC-10 passes. That is exactly the deletion FR-26 forbids. The test also lists no in-folder SVG without the `explainer-` prefix, so a dropped prefix check is not caught either: `../../README.md` fails the folder check anyway.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-10 asserts only \"an SVG for the drill-down section exists\", which a re-render under another name satisfies even if explainer-drill-1.svg was deleted; it also has no listed in-folder SVG lacking the prefix.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-10 asserts drill-down SVG bytes unchanged and a listed other.svg survives with a warning",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "Tests placed before the story that delivers the skill they run",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-17",
+        "TC-18",
+        "TC-19",
+        "TC-26",
+        "AC-12",
+        "AC-13",
+        "AC-14",
+        "AC-34"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Tests: TC-17, TC-18, TC-19, TC-38",
+        "- Delivers: CT-9, CT-11",
+        "- Covers: CT-11, CT-5, CT-3",
+        "- Tests: TC-23, TC-24, TC-25, TC-26, TC-27, TC-42",
+        "Setup: TC-21's file for `git hooks`, from today; script: pick the first offer, then `stop`."
+      ],
+      "fix": "move TC-17, TC-18 and TC-19 to US-1, or put US-1 before US-3. Move TC-26 to US-4, or put US-4 before US-5.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "US-3 comes before US-1 in the build order. TC-17 and TC-19 run `@nio:explain`, and TC-18 starts from TC-17's output. All three need CT-11, which US-1 delivers later, so they cannot pass inside US-3's entry. Likewise TC-26, in US-5, needs CT-12's offer-and-pick. CT-12 is delivered by US-4, which depends on US-5.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "Re-run marking is never tested for \"only when changed\" or \"never twice\"",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-9",
+        "AC-32"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "marking each as written for an earlier plan only when a source's hash differs from the one recorded (FR-24), and never twice",
+        "Assert: the heading is `## Drill-down: refund retries (written for an earlier plan)` and its text is unchanged"
+      ],
+      "fix": "add an integration test of `nio explain finish`. Re-run with unchanged sources and assert no marker. Change a source and run finish twice, asserting exactly one marker.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-9 re-runs only once, and only after a change. Finish could append the marker on every run, whether or not a hash changed, and TC-9 still passes. After a no-change re-run, or a second re-run, the heading would carry a false or doubled marker. No test exercises this, although CT-5 step 2 is plain code that an integration test could cover.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "only TC-9 touches the marker, with one re-run after a change; no test covers an unchanged re-run or a second re-run (FR-25 \"never twice\").",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-47: no marker without a change, exactly one after two runs",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "The contract-ID check is not pinned to node labels",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-12",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a component map whose node labels name only CT-1 and CT-2",
+        "not named in the component map's node labels (the bracketed and quoted text CT-2 drops)",
+        "Assert: exit 1; `ERROR component map misses CT-3`; no line names CT-1 or CT-2."
+      ],
+      "fix": "in TC-12, add the prose line `CT-3 comes later.` to the component map's walk-through and keep the assert that `ERROR component map misses CT-3` is printed.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "In Mermaid mode the check could search the whole section text (the host-format rule) instead of the node labels. Every test still passes, because `GOOD` names no CT ID in its prose. A map that lacks a CT-3 node but mentions \"CT-3\" in its walk-through would pass the check, against FR-4.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "TC-12's GOOD has no CT ID in prose, so a check that scans the whole section text instead of node labels still passes; CT-4 requires node labels in Mermaid mode but the test cannot tell.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-12 walk-through names CT-3 in prose; check must read node labels only",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "TC-42's status assert cannot fail",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-42"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`.nio/research/2026-11-08-checkout-refunds-explainer.md` holding `GOOD`",
+        "`nio status` prints no stale line",
+        "An explainer with no source lines, and every file under `.nio/research/`, gives nothing."
+      ],
+      "fix": "give the research file source lines with a stale hash, for example `(source: .nio/specs/checkout-refunds/plan.md@000000000000)`, so that only the exclusion keeps the stale line away.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`GOOD` has no source lines, so a `status` that also scans `.nio/research/` still prints nothing for it. The assert passes whether or not topic explainers are excluded.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-42 topic file has a never-matching source line",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "0e28a1cb31108e5c3e964742aaff884550ae9560",
+    "2": "2f631ebcf9d2f0f008784629e6dc39ef56472ccb"
+  },
+  "asked": {}
+}
