@@ -1,4 +1,5 @@
 """Helpers for the explainer: its sections, a diagram's node IDs and rendering one Mermaid block."""
+import os
 import re
 import shutil
 import subprocess
@@ -134,3 +135,112 @@ def check(root, target, gate=False, base="HEAD"):
             if r.startswith("broken"):
                 errors.append(f"broken diagram: {s['title']}")
     return errors, notes
+
+
+REC = re.compile(r"^\((source|diagrams|images|drill-downs): (.*)\)$")
+EARLIER = " (written for an earlier plan)"
+LINK = re.compile(r"^!\[[^\]]*\]\(([^)]+)\)$")
+
+
+def _put(path, text):
+    with tempfile.NamedTemporaryFile("w", dir=path.parent, delete=False, suffix=".tmp") as f:
+        f.write(text)
+    os.replace(f.name, path)
+
+
+def finish(root, path):
+    """The lines `nio explain finish` prints (CT-5 steps 1-5, 7, 8; drawing the images is not here yet). ValueError refuses."""
+    from nio import flow, implement, plan
+    p = (Path(path) if Path(path).is_absolute() else root / path).resolve()
+    d = p.parent
+    plan_mode = p == (spec.path(root, d.name).parent / "explainer.md").resolve()
+    rel = lambda f: str((d / f).relative_to(root.resolve()))
+    if plan_mode:
+        try:
+            ok, why = (False, "there is no plan.md") if not (d / "plan.md").exists() else plan.approved(root, d.name)
+        except ValueError as e:
+            ok, why = False, str(e)
+        if not ok:
+            raise ValueError(f"the plan jury comes first ({why}); explain a topic instead")
+    rec, body = {}, []
+    for l in p.read_text().splitlines():
+        m = REC.match(l.strip())
+        if m:
+            rec.setdefault(m[1], []).append(m[2])
+        else:
+            body.append(l)
+    drill = [s["title"] for s in sections("\n".join(body)) if s["drill"]]
+    plain = [t.removesuffix(EARLIER) for t in drill]
+    old_drills = [h for v in rec.get("drill-downs", []) for h in v.split(", ") if h]
+    if gone := [h for h in old_drills if h not in plain]:
+        raise ValueError(f"drill-down sections missing: {', '.join(gone)}; restore them before finishing")
+    out, stale = [], False
+    if plan_mode:
+        src = {}
+        for v in rec.get("source", []):
+            f, _, h = v.rpartition("@")
+            src[f] = h
+        stale = any(implement.digest(root, f)[:12] != h for f, h in src.items())
+        if stale:
+            body = [l + EARLIER if l.startswith("## Drill-down: ") and not l.endswith(EARLIER) else l for l in body]
+        blocks, fenced, skip = [], None, False
+        for l in body:
+            if fenced is None and l.startswith("## "):
+                skip = l.startswith("## Drill-down: ")
+            if l.strip().startswith("```"):
+                if fenced is None:
+                    fenced = []
+                else:
+                    blocks += [] if skip else fenced
+                    fenced = None
+            elif fenced is not None:
+                fenced.append(l)
+        dg = flow.sha(("\n".join(blocks)).encode())[:12]
+        if not src or rec.get("diagrams", [""])[0] != dg:
+            rec["source"] = [f"{rel(f)}@{implement.digest(root, rel(f))[:12]}" for f in ("spec.md", "plan.md", "contracts.md")]
+            rec["diagrams"] = [dg]
+        elif stale:
+            out.append("still stale: no diagram changed since the last finish; redraw the diagrams to clear the stale line")
+    prefix = "explainer-" if plan_mode else p.stem + "--"
+    # step 6, without drawing: drop image links and notes, except in a drill-down whose image exists
+    new, keep, fenced, kept_sec = [], [], False, False
+    for l in body:
+        if not fenced and l.startswith("## "):
+            kept_sec = False
+        if l.strip().startswith("```"):
+            fenced = not fenced
+        elif not fenced and (l.startswith("![") or l.startswith("> ")):
+            m = LINK.match(l)
+            if m and any(h.startswith("Drill-down: ") for h in [new_title(new)]) and (d / m[1]).is_file():
+                keep.append(m[1])
+            else:
+                continue
+        new.append(l)
+    old_imgs = [x for v in rec.get("images", []) for x in v.split(", ") if x]
+    dels = []
+    for x in old_imgs:
+        f = (d / x).resolve()
+        if f.parent != d or not f.name.startswith(prefix):
+            out.append(f"warning: ignored {x}: not this explainer's own image")
+        elif f.is_file() and x not in keep:
+            dels.append(f)
+    text = "\n".join(new).rstrip() + "\n"
+    recs = [f"({k}: {v})" for k in ("source", "diagrams") for v in rec.get(k, [])]
+    recs += [f"(images: {', '.join(keep)})", f"(drill-downs: {', '.join(t.removesuffix(EARLIER) for t in drill)})"]
+    for f in dels:
+        f.unlink()
+        out.append(f"deleted: {f.name}")
+    i = text.find("## ") if text.startswith("## ") else text.find("\n## ") + 1  # records sit above the first section
+    _put(p, text[:i] + "\n".join(recs) + "\n\n" + text[i:])
+    q = d / "quickstart.md"
+    line = "Read first: [explainer.md](explainer.md)"
+    if plan_mode and q.exists() and line not in q.read_text():
+        pre, fm, rest = q.read_text().split("---\n", 2) if q.read_text().startswith("---\n") else ("", "", q.read_text())
+        _put(q, (f"---\n{fm}---\n" if fm else "") + f"\n{line}\n\n" + rest.lstrip("\n"))
+    out.append(f"finished: {path}")
+    return out
+
+
+def new_title(lines):
+    """The title of the last `## ` heading in lines."""
+    return next((l[3:].strip() for l in reversed(lines) if l.startswith("## ")), "")
