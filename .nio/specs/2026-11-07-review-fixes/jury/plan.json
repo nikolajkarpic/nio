@@ -1,0 +1,792 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-07-review-fixes",
+  "round": 4,
+  "tier": "high",
+  "expect": [
+    "architecture-fit",
+    "risk-rollback",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261107-h752/plan-architecture-fit.md": "5a62544c0d5043e7eab2e2d2da4a52bf5497a18baf96d41d3c40e4d1d6711dba",
+    "R-261107-h752/plan-risk-rollback.md": "a3089b1fd0d49ad50b6df7c88c1be219b385a3a613a026afe60469d1b17acb88",
+    "R-261107-h752/plan-test-proof.md": "794cbbf119ae5671fa51d49c3d03ae841cfb01e1ff1f48d5b870fcb58737241e",
+    "R-261107-h752/plan-refuter.md": "f326b488ae4316bb2e7b568509432bb4a5201428cec59506eb0e318e6576dc63",
+    "R-261107-h752/plan-architecture-fit-2.md": "b0d578c1eb25f99b5353c91adf97fa436631fec71695a35ee963d48053b7f508",
+    "R-261107-h752/plan-architecture-fit-3.md": "8efa5daebeb7646096549a286cc5f1214e2340671092d9e85231d239d86f1e43",
+    "R-261107-jsdp/plan-architecture-fit.md": "5a2fa290c664ead6494401b4cbb01694ca8b9edbc47679d86b2e8faf33c1700d",
+    "R-261107-jsdp/plan-risk-rollback.md": "3ddd78b2c393f4c94bdba456e18c79448427b70c77d4e6677b81006879d1498b",
+    "R-261107-jsdp/plan-test-proof.md": "06965fe89f04141d76e24240238c3ca84b63d7dd24a565e061c2d0961ca6f065",
+    "R-261107-2yhq/plan-risk-rollback.md": "ab23fb76c564cf0dec5d6e0bb087d747d8ec7feb72eecd4fe46697e712f09baf"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "dd62b49bcbd1bcb5651bb89603c5e185fe2a6fa8",
+      "judged": 3
+    },
+    "plan-risk-rollback": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "b3c2a5c7c321c4a383e56bac10784e7c1a0874a3",
+      "judged": 4
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "dd62b49bcbd1bcb5651bb89603c5e185fe2a6fa8",
+      "judged": 3
+    },
+    "plan-architecture-fit-2": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "d7e46727b2b4f44a3a0b72d0b5afb47379a24033",
+      "judged": 2
+    },
+    "plan-architecture-fit-3": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "d7e46727b2b4f44a3a0b72d0b5afb47379a24033",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "asked[run] is recorded when collect builds the batch, but step can drop that batch without printing it",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "CT-1",
+        "FR-1",
+        "US-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "When it prints the refuter batch it also adds the batch's finding IDs to the ledger's `asked[run]` (see Data model) and saves the ledger, in that same call.",
+        "The ledger records a batch only in a call that printed it",
+        "if redo:"
+      ],
+      "fix": "Record `asked[run]` only where the batch is actually emitted: in `step`, right where it calls `refuter_pack`, and in the CLI `collect` command that prints it. Do not record it inside `collect`'s return value. Add a misuse test that sends a refuter file during a `redo`.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "In `step`, `got = collect(...)` returns the batch lines. When a packed lens has no output yet, or a juror was invalid, `if redo:` returns the `next: re-run <lens>` lines. That return drops `batch` and never calls `refuter_pack`. Under CT-1, `collect` has already saved `asked[run]` with every pending ID. The re-run lens juror can then write `<gate>-refuter.md` refuting a peer's finding, and the next call applies it because `asked[run]` is non-empty. That is the forgery US-1 is meant to stop, and TC-13 does not test this path.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`step` (jury.py 1422-1435) calls `collect`, which per CT-1 saves `asked[run]` when it builds the batch. Then `if redo:` returns the re-run lines without calling `refuter_pack`. The re-run lens juror can write `spec-refuter.md`, and the next `collect` applies it because `asked[run]` is already non-empty. CT-1's rule \"records a batch only in a call that printed it\" is broken on this path, and TC-13 doesn't cover it.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1: collect takes ask (default True for nio jury collect, which prints the batch); step passes False and records the batch in refuter_pack, which it calls only when it shows the batch; TC-16 covers a refuter file written during a redo",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-2",
+      "title": "CT-7 drops the outcome check entirely, which goes beyond FR-10's rejected round",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "FR-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "applies after any recorded outcome, `rejected` included, not only `approved`, `human` or `closed`",
+        "IF a gate's round was rejected, the artefact changed since in anything but whitespace"
+      ],
+      "fix": "Limit the widened branch to a ledger with a recorded `rejected` round (plus the `rerun` that follows it), and say so in CT-7.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "In the existing code, the fallback `rerun = set(votes(led))` runs only when `led[\"recorded\"][-1][1] in (\"approved\", \"human\", \"closed\")`. CT-7 lets it run after any outcome. That includes a first review that was never rejected, where the empty set is currently left to FR-5's \"show the human\". This changes first-review behaviour that no requirement asks for, and the spec's non-goal rules out \"Any refactor beyond the lines each fix needs\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-7: the widened branch applies only at the spec, plan and tasks gates after a rejected round",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-3",
+      "title": "Every \"show the human\" call from the empty-lens guard leaves a new empty run",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "FR-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "and no pack or `step.json` written",
+        "run = run or _reusable(root, slug, gate) or records.new_run(root)"
+      ],
+      "fix": "Check for empty lenses in `step` before it calls `records.new_run`, or let `_begin`'s show-the-human line leave out `run:` and have the caller skip creating the run.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`step` creates the run before `_begin`, on both the no-output path and the `rerun` path (`fresh = _reusable(root, slug, gate) or records.new_run(root)`). `_reusable` only finds a run through its `packs/step.json`. Since CT-6 writes no `step.json`, each call (TC-8 makes three) creates and names another empty `R-…` run.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "plan-architecture-fit-2",
+          "lens": "architecture-fit",
+          "situation": "`step` creates the run (folder plus `promote.md`) before `_begin` sees the empty lens list. CT-6 then writes no `step.json`, so `_reusable` never finds that run again. Every repeated call (TC-8 makes three) leaves another empty `R-*` folder. The `run:` line also names a run nobody will drive.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-6: _begin allocates the run only when lenses is non-empty; the show-the-human path prints no run line and creates no folder; TC-8 counts run folders",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-4",
+      "title": "TC-9 says it covers CT-7, but the plan maps AC-9 to CT-6",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "CT-7",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "| AC-9 | CT-6 | TC-9 |",
+        "- Covers: CT-7"
+      ],
+      "fix": "Make the two files agree. Either TC-9 covers CT-6 and CT-7, or the coverage row for AC-9 lists CT-7.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "The plan's coverage table says TC-9 checks CT-6 (FR-5). tests.md says TC-9 covers CT-7, and its assertion (`changed(...)[1] == [\"testability\"]`) checks `changed`, which is CT-7's binding.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-9 covers CT-6 and CT-7; TC-7 covers CT-7, TC-8 CT-6, matching the coverage rows the check derives",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-5",
+      "title": "No test proves a failed land's patch restores the work after the worktree is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "FR-3",
+        "TC-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "major data loss: a shelved or failed-to-land patch is the only copy of the work (#102).",
+        "for each of the four files the main tree's bytes equal the worktree's; the saved patch's bytes contain",
+        "records.git(root, \"worktree\", \"remove\", \"--force\", str(tree), full=True)"
+      ],
+      "fix": "add a TC in which `land` fails (the main tree has a conflicting edit to `win.txt`), then `git apply --binary` the saved patch on a clean checkout of the base and assert that every file's bytes equal the worktree's bytes from before.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "a wave task's `land` fails to apply (e.g. a conflict with the main tree). The worktree is force-removed and the `T-n.patch` is the only copy. TC-4, TC-6 and TC-14 test only a land that succeeds, so nothing shows that this patch, written by the new byte path, re-applies with the CRLF, latin-1 and binary files intact.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "`land` writes the patch and then applies that same file (implement.py 368-373). TC-4 and TC-14 apply the saved patch successfully with CRLF, latin-1 and binary files, and TC-6 shows its bytes equal git's. TC-5 re-applies shelve's patch with `git apply --binary`. A failed apply doesn't change how the patch is written, so a failure test adds no proof of the byte path.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "A failed `git diff` still lets shelve delete the work after saving an empty or partial patch",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "CT-5",
+        "FR-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the patch file is `git diff --binary`'s stdout through CT-4 with `raw=True`, written with `write_bytes` before anything is applied or restored (as today).",
+        "diff = records.git(root, \"diff\", \"HEAD\", \"--binary\", \"--\", *paths, full=True)[1]"
+      ],
+      "fix": "in CT-5, have `land` and `shelve` check the `raw=True` exit code and raise before any restore, unlink or worktree removal. Add a misuse TC where `git diff` fails and assert that the files and the worktree are still there.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`git diff` exits non-zero (an index lock, a path git can't read). `shelve` keeps only stdout, writes an empty or truncated patch, then runs `checkout HEAD`/`unlink` on every path and force-removes the worktree, so the task's work is lost. `land` drops the same exit code and then deletes the worktree on the apply error that follows.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Ignoring `git diff`'s exit code is the code as it stands today (implement.py 368, 454, \"as today\" in CT-5). The spec asks only for byte-exact patches (FR-3, FR-4), and its non-goals exclude \"Any refactor beyond the lines each fix needs\". Nothing in the spec requires handling a failed diff, so this is a new requirement, not a flaw in the plan.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "A run half done when the code changes has its real refuter output refused",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-1",
+        "Data model \"Gate ledger\" (asked)"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "asked: `{run ID: [finding IDs]}`, new, optional (a ledger without it has asked for no batch).",
+        "`ValueError(\"refuter output before its batch: <path> was not asked for; delete it and call again\")`"
+      ],
+      "fix": "record in Decisions that a run in flight across the upgrade must have its refuter re-run (delete the file and call again), and add a TC that loads a ledger without `asked`, refuses, then deletes the file and gets the batch printed.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the old code printed a run's refuter batch and the refuter wrote its output. After the upgrade the ledger has no `asked[run]`, so the new code refuses that file. The only way on is to delete the refuter's work and run it again. The plan doesn't say so, and no test loads a ledger without `asked`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "plan.md Decisions and CT-1 Fails: a run in flight has its refuter file deleted and the step called again",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-8",
+      "title": "shelve with no changed paths writes a str through write_bytes",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "FR-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "written with `write_bytes` before anything is applied or restored (as today)",
+        "diff = \"\""
+      ],
+      "fix": "in CT-5, make the empty patch `b\"\"`, and add a TC that shelves a task with no changes.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "a task with no changes is shelved. Under CT-5, `diff = \"\"` reaches `write_bytes` and raises a TypeError. `shelve` then stops before the worktree is removed, and the caller records nothing.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "plan-risk-rollback: CT-5 now makes the empty patch `b\"\"`, but no test in tests.md shelves a task with no changes, so the path that left the worktree behind is still unproved. TC-5 and the other shelve tests all have changes to save.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-5 now also shelves a clean tree and asserts an empty b'' patch and no error (delegated: the human's standing authority picks fix)",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 3,
+      "fixed_in": 4
+    },
+    {
+      "id": "J-9",
+      "title": "TC-2's second finding merges into J-1, so there is no J-2 to stay pending",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-2",
+        "AC-2",
+        "TC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with logic giving a major finding of its own (built like `FINDING`, with another title and a quote from the fixture spec), so J-1 (testability) and J-2 (logic) are pending",
+        "same kind and the same cited IDs; near-duplicates are the refuter's `same-as`",
+        "where logic writes `FINDING` too (two findings)"
+      ],
+      "fix": "give logic's finding another cite or kind in both setups, as the existing round-trip test does with `FINDING.replace(\"EB-1\", \"AC-1\")`, and check after the first step that J-2 exists.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`add` merges a finding from another juror into an existing one with the same kind and cited IDs, regardless of title or quote. Logic's finding keeps `FINDING`'s `kind: gap` and `cites: EB-1`, so it joins J-1 as a second source. No J-2 exists. TC-2's \"J-2's is `pending`\" then errors or fails for a reason unrelated to `asked`, and the FR-2 filter is never exercised. TC-13 has the same problem: logic's `FINDING` is J-1 itself, so it never tests refuting a peer's finding.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`add` merges findings when `same` holds, which compares `kind` and cited IDs (jury.py 760-769) and ignores title and quote. TC-2's logic finding is \"built like `FINDING`\" (kind gap, cites EB-1), so it joins J-1 as a second source and no J-2 exists. TC-13's \"logic writes `FINDING` too\" is the same merge, so no peer finding is ever refuted.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-2 and TC-13: logic's finding cites AC-1 with its own quote, so it is J-2; TC-2 asserts J-2 exists",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-10",
+      "title": "No test tells a per-run batch from any batch, so a forged refuter in a later run is let through",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-1",
+        "TC-13",
+        "AC-1",
+        "FR-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "A `<gate>-refuter.md` not yet collected is applied only when `asked[run]` is non-empty, through CT-2 with `asked[run]`.",
+        "Setup: the first round's outputs, plus `.nio/runs/<run>/jury/spec-refuter.md` holding `REFUTE.format(n=1)` (#101's repro)."
+      ],
+      "fix": "add a test where run 1 printed a batch and recorded its outcome, and a later run's refuter file written before that run's batch is refused with \"refuter output before its batch\".",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "TC-1 and TC-13 refuse a refuter file in the first run, when the ledger has no batch at all. A build that checks `led.get(\"asked\")`, or passes the union of every run's IDs to `refute`, passes every TC. Yet in a re-review run a lens juror could still write `spec-refuter.md` before that run's batch and refute an ID an earlier run listed, which is #101 in round 2.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-1 says the file is applied only when `asked[run]` is non-empty, and the ledger keeps `asked` per run. TC-1 and TC-13 run in the first round, where `asked` is empty everywhere. A build that checks `led.get(\"asked\")` or unions all runs' IDs would pass every TC, and no test covers a later run whose file arrives before its own batch.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-15 adds a forged refuter file in a later (fix-check) run",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-11",
+      "title": "AC-14's refusal already happens today, so TC-12 checks only the message",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "TC-12",
+        "AC-14",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "evidence.current(root, slug, epic, evidence.load(root, run))",
+        "Assert: raises `ValueError` whose text holds `changed after <run>'s packs were written`; the ledger's `round` is 0."
+      ],
+      "fix": "say in CT-3 that the version check runs before `evidence.current`, or accept that AC-14 is a message change and say so in the test.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "at the implementation gate, `collect` already raises before anything is saved when the epic's last commit differs from the commit the results were collected at, so a new `T-2` commit is refused today and the round stays 0. TC-12 fails today only on the error text. It also passes after the fix only if CT-3's check runs before line 585, because otherwise `evidence.current`'s message wins. The plan doesn't say where the check goes.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-3: the check runs before evidence.current; TC-12 says today's refusal differs only in its text",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-12",
+      "title": "AC-2's listed-but-unanswered case is not tested",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-2",
+        "AC-2",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with a batch listing J-1 and J-3 and no J-3 block, J-3 stays pending",
+        "Assert: J-1's validation is `refuted`; J-2's is `pending`."
+      ],
+      "fix": "in TC-2, list a third pending ID in `asked[run]` with no block for it, and assert that it stays `pending`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "a build that treats any ID in `asked` with no refuter block as answered, for example by setting a default validation while walking `asked`, passes TC-2. That breaks FR-2's \"a listed ID with no verdict stays pending\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-2 case a: a listed ID with no block stays pending",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-13",
+      "title": "The batch is recorded as asked even when step never prints it",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "FR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "When it prints the refuter batch it also adds the batch's finding IDs to the ledger's `asked[run]` (see Data model) and saves the ledger, in that same call.",
+        "if redo:",
+        "return lines + [f\"next: re-run {l} on .nio/runs/{run}/jury/packs/{l}.md, adding the INVALID lines above to it \""
+      ],
+      "fix": "record `asked[run]` where the batch actually reaches the orchestrator: in `step`'s `if batch:` branch next to `refuter_pack`, and in the `nio jury collect` CLI path. Or have `collect` record it only when its caller says the batch is printed. Add a test where one juror is redone and a refuter file written before the batch is still refused.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit-2",
+          "lens": "architecture-fit",
+          "situation": "`collect` builds the \"## Refuter batch\" lines and returns them; it prints nothing. `step` cuts the batch out of what `collect` returns, and when any lens has to be re-run (invalid output or needs-more) it returns the `re-run` lines and drops the batch: no refuter pack is written and no refuter is asked. Under CT-1, `asked[run]` is already filled at that point. The re-run lens juror, which has write access, can write `<gate>-refuter.md` for those IDs, and the next call applies it. That is exactly the forgery FR-1 forbids (\"The ledger records a batch only in a call that printed it\").",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "plan-architecture-fit-3",
+          "lens": "architecture-fit",
+          "situation": "`collect` returns the `## Refuter batch` lines, and CT-1 records `asked[run]` there. `step` then cuts the batch out (`batch = got[cut:end]`). When `redo` is non-empty, `step` returns the re-run line and never writes `packs/refuter.md` or shows the batch. So `asked[run]` is non-empty while a lens juror is being re-run in that same run. That juror can write `<gate>-refuter.md` and the next call applies it, which is #101's exploit by another route. TC-1 and TC-13 don't cover this path.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-1 binds the `asked[run]` write to `collect`, which only returns the batch lines. `step` (jury.py 1422-1438) returns the re-run lines and never writes `packs/refuter.md` when `redo` is non-empty. So `asked[run]` can be filled in a call that showed no batch, which FR-1 forbids, and nothing else in the contracts settles this.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "same as J-1: CT-1 records the batch only where it is shown",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-14",
+      "title": "CT-7 bypasses the implementation gate's conformance-only re-run",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-7",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "applies after any recorded outcome, `rejected` included, not only `approved`, `human` or `closed`.",
+        "if (ids and not rerun) or any(awaits_fix_verdict(f) and any(s[\"lens\"] == \"cli\" for s in f[\"sources\"]) for f in led[\"findings\"]):",
+        "and when nothing else would start the round the fixes need (CT-20)"
+      ],
+      "fix": "limit CT-7's widened branch to the spec, plan and tasks gates (`gate in GATES`), or state and justify the new implementation-gate behaviour; add a test for whichever is chosen.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit-2",
+          "lens": "architecture-fit",
+          "situation": "at an implementation gate, `diff` returns the files changed since the judged commit as `ids`. Today, a rejected round whose code changed with no lens holding a fix re-runs only `conformance`. Under CT-7, `rerun = set(votes(led))` runs first, so `ids and not rerun` is never true: every voting lens re-runs after each implementation rejection that changed code, and the CT-20 branch becomes dead code. The plan doesn't mention the implementation gate. The spec's non-goal says \"Any refactor beyond the lines each fix needs\".",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "In `changed` (jury.py 451-462), a rejected round leaves `rerun` empty when no lens holds a fix. Today only the conformance-only branch (`ids and not rerun`) then fires. CT-7 widens line 456 to `rejected`, so `rerun = set(votes(led))` fills first and that branch becomes dead for changed code. The spec files mention the implementation gate only in a test setup (tests.md:93), and nothing states or justifies the new behaviour.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "same as J-2: the implementation gate keeps its conformance re-run",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-15",
+      "title": "The coverage table and the tests' Covers lines disagree on CT-6 and CT-7",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "CT-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "| AC-9 | CT-6 | TC-9 |",
+        "- Covers: CT-7"
+      ],
+      "fix": "make TC-9's `Covers:` line CT-6, or change the coverage rows so both files say the same thing.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit-2",
+          "lens": "architecture-fit",
+          "situation": "plan.md maps AC-9 to CT-6 and AC-7 to CT-7 only. tests.md has TC-9 covering CT-7, and TC-7 covering \"CT-6, CT-7\". So the guard that leads to \"show the human\" (CT-6) has a different test depending on which file you read.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "same as J-4",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-16",
+      "title": "shelve's empty patch default is still a str",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "written with `write_bytes` before anything is applied or restored (as today).",
+        "diff = \"\""
+      ],
+      "fix": "have CT-5 make the default `b\"\"`, and the same for `land`'s `(0, \"\", \"\")` fallback if it is ever written.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit-2",
+          "lens": "architecture-fit",
+          "situation": "when no path is kept, `shelve` writes `diff`, which stays `\"\"`. CT-5 only says to switch to `write_bytes` and to read stdout through `raw=True`; it doesn't change the default. `write_bytes(\"\")` raises TypeError, so a task with nothing to shelve would crash.",
+          "severity": "minor",
+          "round": 2
+        },
+        {
+          "juror": "plan-architecture-fit-3",
+          "lens": "architecture-fit",
+          "situation": "`shelve` sets `diff = \"\"` and fills it only when there are changed paths. With CT-5's `path.write_bytes(diff)`, a shelve with nothing to save raises TypeError instead of writing an empty patch. CT-5 says it returns \"as today\".",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "same as J-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-17",
+      "title": "CT-6 prints a run that holds nothing, and makes a new one on every call",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with an empty `lenses`, `[\"run: <run>\", \"next: show the human: the <gate> changed but no lens has a fix to check\"]`, and no pack or `step.json` written",
+        "fresh = _reusable(root, slug, gate) or records.new_run(root)",
+        "(run / \"promote.md\").write_text(f\"# Memory candidates for {rid}\\n\")"
+      ],
+      "fix": "in `step`, compute the lenses to re-run first and allocate a run only when the list is non-empty. Or have CT-6 print no `run:` line and say the empty run is left behind on purpose.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit-3",
+          "lens": "architecture-fit",
+          "situation": "`step` creates a run with `records.new_run` before `_begin` sees the empty lens list. With no `step.json`, `_reusable` never finds that run again. So each call in the AC-8 state (TC-8 makes three) leaves a new `.nio/runs/R-*` holding only `promote.md`, and prints a `run:` line for a run in which nothing will happen.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "same as J-3",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-18",
+      "title": "CT-4's `raw` changes the return shape regardless of `full`",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with `raw`, `(exit code, stdout as bytes, stderr decoded with errors=\"replace\")`; without it, exactly as today.",
+        "\"\"\"git's stdout lines; with `full`, (exit code, stdout, stderr), for a caller that must see git fail (CT-19).\"\"\""
+      ],
+      "fix": "say `raw` applies only with `full=True` (`(code, bytes, str)`), or that `raw` implies `full`.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit-3",
+          "lens": "architecture-fit",
+          "situation": "in the existing `git`, the tuple shape is `full`'s job. CT-4 gives the tuple to `raw` too, so `raw=True, full=False` has two possible readings: bytes lines, or the tuple. Both CT-5 callers pass `full=True`, so the contract only needs to cover that case.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-4: raw implies full",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "fixed_in": 3
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "rejected"
+    ],
+    [
+      3,
+      "human"
+    ],
+    [
+      4,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "d7e46727b2b4f44a3a0b72d0b5afb47379a24033",
+    "2": "d7e46727b2b4f44a3a0b72d0b5afb47379a24033",
+    "3": "dd62b49bcbd1bcb5651bb89603c5e185fe2a6fa8",
+    "4": "b3c2a5c7c321c4a383e56bac10784e7c1a0874a3"
+  },
+  "list": {
+    "round": 3,
+    "ids": [
+      "J-8"
+    ],
+    "final": 4,
+    "flagged": []
+  }
+}

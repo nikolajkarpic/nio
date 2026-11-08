@@ -1,0 +1,541 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-07-review-fixes",
+  "round": 3,
+  "tier": "high",
+  "expect": [
+    "adversary",
+    "logic",
+    "testability"
+  ],
+  "collected": {
+    "R-261107-zw65/spec-adversary.md": "d369b99bf307da112e9f95a2c2039b667c2402463db13b88f2ded94ca8c30424",
+    "R-261107-zw65/spec-logic.md": "ecf0eea67856e56d754f83dfe2d32a2a3047cb300b5cf6db00affa14a78d3997",
+    "R-261107-zw65/spec-testability.md": "23ec64b83b089721cc82b4edde1bc1c8c1e4674a50f1b17c2780fc61d2fc1b1a",
+    "R-261107-zw65/spec-refuter.md": "21fc2aa3ee76af8b602d6eb51a6d62ae2e9886250e55f4b8ee87aab51cec384e",
+    "R-261107-qgps/spec-adversary.md": "3e91d6b2ca5a6031f6075f9645ac22f182a93dbbccf96b0d670b4c12c055ad3e",
+    "R-261107-qgps/spec-logic.md": "f6118a7f8e4eb46c62f60911fd8bd12459bd94c782cb170f9ebcbc21ac034a76",
+    "R-261107-qgps/spec-testability.md": "d3312ab12d73c08bbbfb43fa2023afefeb7e4cf6a10fc7a5a60413bd2329052b",
+    "R-261107-ofze/spec-adversary.md": "1a81137959430f41d38bbbabb64e983c63e8150792ab1ef9777fdcc90559acac",
+    "R-261107-ofze/spec-testability.md": "56e4e2cbb1e0387f613f48aade59b8f2b5c1de6a3c8085dde449ff119bb1ff99"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "22e286321c1d921db6d89440e7f1333151b7e645",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "78568f607322cb91d0c455ea87ab55a71c26bc14",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "22e286321c1d921db6d89440e7f1333151b7e645",
+      "judged": 3
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A refuter file planted before the batch is printed can still count",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "AC-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "no refuter batch was printed for that run",
+        "no refuter batch was written before it"
+      ],
+      "fix": "say how a refuter output is tied to its batch (for example, it must be created after the batch and carry the batch's identity). Add an AC where the file exists before the batch is printed and the refuter never rewrites it. That AC must refuse the file.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a lens juror writes `<gate>-refuter.md` while the lenses run. `nio jury next` then prints the refuter batch, so a batch now exists for the run. FR-1 only tests whether a batch was printed at all, so the planted file is no longer refused. Its verdicts are applied if they name the batch's IDs. AC-1's \"before it\" implies an ordering comparison, but the spec never says what is compared (time, a stored marker, or the file's content). The refuter may also be skipped or may fail to overwrite the file, and the forged verdict is then applied silently.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A juror writes `<gate>-refuter.md` early, forging J-1 and J-2 as refuted. The orchestrator then runs `nio jury next`, which writes the refuter batch. On the next call a batch has been printed, so FR-1's refusal condition (\"no refuter batch was printed\") is false. FR-2 limits the verdicts to the batch's IDs, but the forged file is still applied. AC-1 says the file must not count when it came before the batch, and FR-1 as written only refuses when no batch exists. Neither FR-1 nor FR-2 says how \"before\" or \"later\" is decided, for example by file time or by checking that the file differs from what was there when the batch was written. The wording also differs: FR-1 says \"printed\", AC-1 says \"written\".",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-1 says \"written before it\" and FR-1 says \"printed\". A test cannot tell whether the order comes from file mtime, a ledger record or a batch marker. A refuter file written between the batch being written and printed, or in the same second, can pass one reading and fail the other. The test could pass while the forging bug is still there.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-1 refuses only when \"no refuter batch was printed for that run\". A file planted before the batch is printed passes that test once the batch exists. AC-1's \"written before it\" implies an ordering that FR-1 never states, and nothing else in the spec ties the file to its batch.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-1 and AC-1 now name the ledger's batch record as the order and the same word; a file present before the batch is refused by the call that would print it|FR-2 says the first verdict per ID counts, other IDs are ignored, a listed ID with no verdict stays pending|FR-10 and AC-8 define a change as anything but whitespace, front matter and tables included|AC-14 adds the implementation-gate case (a new epic commit); the text gates share the blob check AC-13 tests|AC-3, AC-6 and AC-9 state concrete observables|AC-13 gives the exact refusal text; AC-7 states the second call's output",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "A refused run after an artefact change has no recovery path",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "AC-13"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THEN THE SYSTEM SHALL collect none of them and refuse, saying the artefact changed while its jurors ran"
+      ],
+      "fix": "state the compared basis, apply FR-9 to refuter output too, and say the explicit next step after a refusal (rewrite the packs and re-run the lenses). Add an AC for the refuter case.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the human legitimately fixes a typo in the spec while jurors run. FR-9 then refuses and discards every output, and the spec doesn't say how the run continues. If `next` keeps refusing, the run is stuck. If packs are quietly rewritten, a juror's earlier edit to the spec is accepted as the new baseline. A juror can also edit the spec and then revert it, or edit it in a way that does not change the compared text. The spec doesn't say what \"changed\" is compared on, such as a hash or the epic's last commit. It also doesn't say whether this check covers the refuter's output, because AC-13 only exercises lens outputs.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 says to refuse, but neither FR-9 nor AC-13 says what \"changed\" is compared on or what the orchestrator does next. AC-13 exercises only lens outputs, so the spec leaves open whether the refuter output is covered (\"new juror outputs\" is ambiguous).",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "grill Q6 (delegated session): the refusal names both ways on, restore the judged version or start a new run; FR-9 says what is compared and why the refuter output needs no check",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "Binary and mode-only changes in a patch are not covered",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-4",
+        "AC-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "keep the patch's bytes as git produced them, with no decoding and no newline translation"
+      ],
+      "fix": "add an AC with a binary file, a mode change and a quoted path through `land` and `shelve`. Require that a patch which cannot be applied is a loud failure, with the patch still saved.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a wave task adds or changes a binary file, a file with a non-ASCII or quoted name, or only a mode bit. Unless git is asked for a binary patch, its output says only \"Binary files differ\", which `git apply` cannot apply. Saving the bytes exactly as git produced them then faithfully saves a patch that drops the work. `land` or `shelve` may report success while the file is lost. This matters because the spec itself calls a saved patch \"the only copy of the work\". AC-4 and AC-5 test only CRLF and latin-1 text files. The spec also doesn't say whether the patch is saved before it is applied. If it isn't, a failed apply leaves no copy.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-3 and FR-4 respond to #102, which is about CRLF and non-UTF-8 text decoding. The non-goals exclude \"Any refactor beyond the lines each fix needs\", and the summary scopes the effort to minimal fixes. Binary, mode-only and quoted-path handling is existing behaviour that this spec neither allows nor changes.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "Duplicate or conflicting verdicts for one ID in a refuter output",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-2",
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "apply verdicts only for the finding IDs its batch lists, and name any other ID in one line"
+      ],
+      "fix": "say that duplicate or conflicting verdicts for one ID refuse the output, that a listed ID with no verdict stays pending, and that the extra-ID line is capped.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the refuter output holds J-1 twice, once refuted and once upheld. It may also hold a verdict for an ID the batch lists but with a malformed or empty body, or a batch ID with no verdict at all. FR-2 filters on ID only. It doesn't say which verdict wins, whether the output is refused, or what happens to a listed ID that gets no verdict. \"name … in one line\" also hides a flood: a hostile output with 1000 foreign IDs is covered only by one line.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the output could drop the one-line naming of J-2 and AC-2 would still pass, so the FR could break unnoticed. The AC also doesn't say what happens when the refuter output has an ID the batch never listed, such as J-9, as opposed to a listed one.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "spec-testability: The ignore-other-IDs rule is tested by AC-2. The new FR-2 clauses \"the first verdict per ID counting\" and \"a listed ID with no verdict stays pending\" have no AC and no Observable. A duplicate or missing verdict could break and every AC would still pass.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-2's Observable now checks first-verdict-wins (a second J-1 block does not change it) and that a batch ID with no block stays pending (delegated: the human's standing authority picks fix)",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-5",
+      "title": "\"Items or sections changed\" is undefined, so a real change can go unreviewed",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-5",
+        "FR-10",
+        "AC-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the artefact's items or sections changed since",
+        "an edit that changes no item or section (whitespace only)"
+      ],
+      "fix": "define the change test in the spec (for example, \"any difference in the normalised text other than whitespace\") and add an AC for a front-matter-only edit.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the edit changes only a front-matter field (`risk:` or `retired:`), a table cell, or a Decisions line, or it reorders items. Nothing says whether the spec counts these as \"items or sections\". If it doesn't, FR-5 prints \"show the human\" and no lens re-checks a substantive change after an accepted-risk disposition. That is the silent approval path the effort is meant to close. AC-8 says \"whitespace only\", which is narrower than FR-5's wording.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-1 and AC-1 now name the ledger's batch record as the order and the same word; a file present before the batch is refused by the call that would print it|FR-2 says the first verdict per ID counts, other IDs are ignored, a listed ID with no verdict stays pending|FR-10 and AC-8 define a change as anything but whitespace, front matter and tables included|AC-14 adds the implementation-gate case (a new epic commit); the text gates share the blob check AC-13 tests|AC-3, AC-6 and AC-9 state concrete observables|AC-13 gives the exact refusal text; AC-7 states the second call's output",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "FR-1 only checks that a batch exists, not that it came first",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "AC-1",
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "no refuter batch was printed for that run",
+        "a run where no refuter batch was written before it",
+        "a later refuter output"
+      ],
+      "fix": "state in FR-1 that the refuter file must be newer than the batch, or record it as absent when the batch is written. Use one word for printed or written in both FR-1 and AC-1.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A juror writes `<gate>-refuter.md` early, forging J-1 and J-2 as refuted. The orchestrator then runs `nio jury next`, which writes the refuter batch. On the next call a batch has been printed, so FR-1's refusal condition (\"no refuter batch was printed\") is false. FR-2 limits the verdicts to the batch's IDs, but the forged file is still applied. AC-1 says the file must not count when it came before the batch, and FR-1 as written only refuses when no batch exists. Neither FR-1 nor FR-2 says how \"before\" or \"later\" is decided, for example by file time or by checking that the file differs from what was there when the batch was written. The wording also differs: FR-1 says \"printed\", AC-1 says \"written\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "FR-5 and FR-10 both govern a rerun with no fix to check",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-5",
+        "FR-10",
+        "AC-7",
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a gate's outcome is `rerun` and no lens is named to re-run THEN THE SYSTEM SHALL name no juror and print a `next:` line that says to show the human.",
+        "no lens has a fix to check THEN THE SYSTEM SHALL re-run every lens that voted in that round on what changed"
+      ],
+      "fix": "change FR-5 to \"and no lens is named and no item or section changed\", or say that FR-5 applies only after FR-10 has found no lens to re-run.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The round was rejected, the only finding was accepted as risk, and a spec item was reworded, which is the AC-7 setup. The outcome is `rerun` and no fix names a lens. FR-5 reads literally as \"name no juror, show the human\". FR-10 says \"re-run every voting lens\". The two rules differ only by whether items changed. FR-5 does not say it applies after FR-10 has run, and it does not condition on \"no item changed\". AC-8 cites only FR-5 and AC-7 only FR-10, so the tests pass while the requirements still conflict.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "FR-5 applies only when \"no lens is named to re-run\". When items changed, FR-10 names every voting lens, so FR-5's condition is false. AC-7 (FR-10) and AC-8 (FR-5) split the cases by whether an item changed. The rules are consistent, and a literal contradiction is not shown.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "FR-10 and AC-7 re-run a lens for a finding that has no fix",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-10",
+        "AC-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "start a fix-check run of every lens that voted in that round",
+        "re-run every lens that voted in that round on what changed, as it does for an approved gate that changed"
+      ],
+      "fix": "say whether the pack is a full review of the changed items or a fix-check, and drop \"fix-check\" from AC-7 if it is the former.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "AC-7 calls the run a \"fix-check run\". Under the lens card, a fix-check pack holds \"your own findings that were fixed\". Here the only finding was accepted as risk, so no finding was fixed and the fix-check pack for each lens would be empty. FR-10 instead says \"on what changed\", which is the approved-and-changed behaviour. The spec does not say which pack content each lens gets, or whether a lens with no finding of its own is included. An implementer can build either, and AC-7 only checks for a `run <lens>:` line and a pack.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "FR-9 covers four judged artefacts but only the spec has a test",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "AC-13",
+        "NFR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the spec, plan or tasks text, or the epic's last commit",
+        "when a lens juror also edits the spec it judges"
+      ],
+      "fix": "add one AC for each other judged version, or narrow FR-9 to the spec.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-9 lists a spec, plan, tasks text and an epic's last commit. AC-13 only edits the spec. The plan, tasks and epic-commit comparison could be missing or wrong, and every AC and NFR-1 would still pass. The epic case is the hardest to check because it compares a commit, not text, and no AC says what counts as changed there.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 lists the spec, plan or tasks text, and the epic's last commit. AC-13 covers only the spec, and no AC says what counts as a change to an epic commit. NFR-1 is met by the one spec test, so the other branches could be wrong with every AC and NFR passing.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-1 and AC-1 now name the ledger's batch record as the order and the same word; a file present before the batch is refused by the call that would print it|FR-2 says the first verdict per ID counts, other IDs are ignored, a listed ID with no verdict stays pending|FR-10 and AC-8 define a change as anything but whitespace, front matter and tables included|AC-14 adds the implementation-gate case (a new epic commit); the text gates share the blob check AC-13 tests|AC-3, AC-6 and AC-9 state concrete observables|AC-13 gives the exact refusal text; AC-7 states the second call's output",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "\"Before\" in FR-1 and AC-1 has no testable meaning",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "no refuter batch was written before it",
+        "no refuter batch was printed for that run"
+      ],
+      "fix": "state the observable ordering, for example \"the ledger has no batch record for the run\", and use the same word in the FR and the AC.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-1 says \"written before it\" and FR-1 says \"printed\". A test cannot tell whether the order comes from file mtime, a ledger record or a batch marker. A refuter file written between the batch being written and printed, or in the same second, can pass one reading and fail the other. The test could pass while the forging bug is still there.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "AC-3, AC-6 and AC-9 point at test suites, not at an observable",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-3",
+        "AC-6",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Observable: the existing refuter tests in `tests/test_jury.py` pass unchanged.",
+        "Observable: the existing wave tests pass unchanged.",
+        "Observable: the existing fix-check tests pass unchanged."
+      ],
+      "fix": "name the specific outputs or tests, or state one concrete observable per AC.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the pass condition depends on whichever tests exist when the check runs. Tests can be renamed or deleted, and the AC still reads as met. Nothing says which behaviour the AC guards, such as the verdict record fields, or that the patch bytes of an LF file are identical.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-1 and AC-1 now name the ledger's batch record as the order and the same word; a file present before the batch is refused by the call that would print it|FR-2 says the first verdict per ID counts, other IDs are ignored, a listed ID with no verdict stays pending|FR-10 and AC-8 define a change as anything but whitespace, front matter and tables included|AC-14 adds the implementation-gate case (a new epic commit); the text gates share the blob check AC-13 tests|AC-3, AC-6 and AC-9 state concrete observables|AC-13 gives the exact refusal text; AC-7 states the second call's output",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "AC-13 and AC-7 Observables lack exact, checkable text",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-13",
+        "AC-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the error names the changed artefact",
+        "calling it again does not print a bare \"run each juror\" with no `run <lens>:` line"
+      ],
+      "fix": "give the exact refusal text for AC-13, and for AC-7 state the second call's expected output.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-13 gives no required phrase, unlike AC-1, which gives an exact string. FR-9 says only \"saying the artefact changed while its jurors ran\". Two implementations can differ and both pass by judgement, and AC-13 never says what \"names the changed artefact\" must contain. AC-7's \"calling it again\" is a negative check on a second call with no stated Given. It doesn't say whether the second call must be idempotent or must still list the same lenses.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-1 and AC-1 now name the ledger's batch record as the order and the same word; a file present before the batch is refused by the call that would print it|FR-2 says the first verdict per ID counts, other IDs are ignored, a listed ID with no verdict stays pending|FR-10 and AC-8 define a change as anything but whitespace, front matter and tables included|AC-14 adds the implementation-gate case (a new epic commit); the text gates share the blob check AC-13 tests|AC-3, AC-6 and AC-9 state concrete observables|AC-13 gives the exact refusal text; AC-7 states the second call's output",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "3ccd98c1df5edb689010b8e93f1bd8e7f83abacb",
+    "2": "78568f607322cb91d0c455ea87ab55a71c26bc14",
+    "3": "22e286321c1d921db6d89440e7f1333151b7e645"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-4"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}
