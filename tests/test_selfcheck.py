@@ -74,6 +74,18 @@ def test_misuse_unknown_name_runs_nothing():
     print("ok")
 
 
+def test_ac10_flags_are_not_test_names():
+    with tempfile.TemporaryDirectory() as tmp:
+        script(tmp, {"test_one": OK, "test_two": OK})
+        code, out, lines = run(tmp, "-v")
+        assert "no test named -v" not in out, out.splitlines()[:1]
+        assert lines and lines[-1] == "ran 2 tests, 0 failed", out.splitlines()[:1]
+        assert code == 0, out.splitlines()[:1]
+        code, out, lines = run(tmp, "-v", "test_one")
+        assert lines and lines[-1] == "ran 1 tests, 0 failed", out.splitlines()[:1]
+    print("ok")
+
+
 def test_every_script_uses_selfcheck():
     bad = [f.name for f in sorted(HERE.glob("test_*.py"))
            if "selfcheck.main(" not in f.read_text().split('if __name__ == "__main__":')[-1]]

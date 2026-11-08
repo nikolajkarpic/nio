@@ -43,8 +43,12 @@ SECTIONS = {
 }
 
 
-def git(root, *args, full=False):
-    """git's stdout lines; with `full`, (exit code, stdout, stderr), for a caller that must see git fail (CT-19)."""
+def git(root, *args, full=False, raw=False):
+    """git's stdout lines; with `full`, (exit code, stdout, stderr), for a caller that must see git fail (CT-19).
+    `raw` (implies `full`) keeps stdout as bytes, so a patch of it loses nothing (CT-4)."""
+    if raw:
+        r = subprocess.run(["git", *args], cwd=root, capture_output=True)
+        return r.returncode, r.stdout, r.stderr.decode(errors="replace")
     r = subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
     return (r.returncode, r.stdout, r.stderr) if full else r.stdout.splitlines()
 

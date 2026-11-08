@@ -69,12 +69,12 @@ def test_ac16_worktree_failure_refuses_the_claim():
     before, listed = len(lines(root)), trees(root)
     real, seen = records.git, []
 
-    def fake(r, *args, full=False):
+    def fake(r, *args, full=False, **kw):
         if args[:2] == ("worktree", "add"):
             seen.append(args)
             if len(seen) == 2:
                 return (128, "", "fatal: boom") if full else []
-        return real(r, *args, full=full)
+        return real(r, *args, full=full, **kw)
     records.git = fake
     try:
         implement.claim(root, S, by=BY)
@@ -351,10 +351,10 @@ def test_ac9_failed_commit_restores_and_retry_lands():
     before, m1 = kept(root), (root / "m1.py").read_bytes()
     real = records.git
 
-    def fake(r, *args, full=False):
+    def fake(r, *args, full=False, **kw):
         if args[:1] == ("commit",):
             return (1, "", "hook said no") if full else []
-        return real(r, *args, full=full)
+        return real(r, *args, full=full, **kw)
     records.git = fake
     try:
         code, said = implement.green(root, S, "T-1", "true", BY)
@@ -376,10 +376,10 @@ def test_ac9_raising_commit_restores_the_main_tree():
     before, m1 = kept(root), (root / "m1.py").read_bytes()
     real = records.git
 
-    def fake(r, *args, full=False):
+    def fake(r, *args, full=False, **kw):
         if args[:1] == ("write-tree",):
             return (1, "", "no tree") if full else []
-        return real(r, *args, full=full)
+        return real(r, *args, full=full, **kw)
     records.git = fake
     try:
         implement.green(root, S, "T-1", "true", BY)
@@ -442,6 +442,100 @@ def test_gone_worktree_refuses_red_and_green():
         code, o = flow(root, verb, S, "T-1", *extra)
         assert code == 1 and "the worktree of T-1 is gone" in o and wt(out, "T-1") in o, o
     assert not mark.exists() and len(lines(root)) == before
+    print("ok")
+
+
+FILES = {"win.txt": b"a\r\nB\r\n", "added.txt": b"new\r\nfile\r\n", "latin.txt": b"caf\xe9\n", "bin.dat": bytes(range(256))}
+
+
+def byte_repo(files):
+    root = Path(tempfile.mkdtemp()) / "r"
+    root.mkdir()
+    for a in (["init", "-q"], ["config", "user.name", "t"], ["config", "user.email", "t@t"]):
+        git(root, *a)
+    for n, b in files.items():
+        (root / n).write_bytes(b)
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "base")
+    return root, git(root, "rev-parse", "HEAD").strip()
+
+
+def byte_tree(root, base):
+    tree = root / ".nio/runs/R-1/worktree"
+    git(root, "worktree", "add", "-q", "--detach", str(tree), base)
+    return tree
+
+
+def test_ac4b_land_keeps_bytes():
+    root, base = byte_repo({"win.txt": b"a\r\nb\r\n"})
+    tree = byte_tree(root, base)
+    for n, b in FILES.items():
+        (tree / n).write_bytes(b)
+    out = implement.land(root, "s", "T-1", tree, base)
+    assert out[2] == "", out[2]
+    for n, b in FILES.items():
+        assert (root / n).read_bytes() == b, n
+    assert b"\r\n" in (root / out[0]).read_bytes()
+    print("ok")
+
+
+def test_ac5b_shelve_keeps_bytes():
+    root, base = byte_repo({"win.txt": b"a\r\nb\r\n"})
+    for n, b in FILES.items():
+        (root / n).write_bytes(b)
+    rel = implement.shelve(root, "s", "R-1", "T-1")
+    assert (root / "win.txt").read_bytes() == b"a\r\nb\r\n" and not (root / "added.txt").exists()
+    git(root, "apply", "--binary", str(root / rel))
+    for n, b in FILES.items():
+        assert (root / n).read_bytes() == b, n
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "kept")
+    implement.shelve(root, "s", "R-2", "T-2")
+    assert (root / ".nio/runs/R-2/T-2.patch").read_bytes() == b""
+    print("ok")
+
+
+def test_shelve_refuses_when_diff_fails():
+    root, base = byte_repo({"win.txt": b"a\r\nb\r\n"})
+    for n, b in FILES.items():
+        (root / n).write_bytes(b)
+    real = records.git
+
+    def fake(r, *args, **kw):
+        if args[:1] == ("diff",):
+            return 128, b"", "fatal: boom"
+        return real(r, *args, **kw)
+    records.git = fake
+    try:
+        implement.shelve(root, "s", "R-1", "T-1")
+        raise AssertionError("shelve must raise")
+    except ValueError as e:
+        assert "boom" in str(e), e
+    finally:
+        records.git = real
+    for n, b in FILES.items():
+        assert (root / n).read_bytes() == b, n
+    assert not (root / ".nio/runs/R-1/T-1.patch").exists()
+    print("ok")
+
+
+def test_ac6b_lf_patch_unchanged():
+    root, base = byte_repo({"a.txt": b"x\n"})
+    tree = byte_tree(root, base)
+    (tree / "a.txt").write_bytes(b"y\n")
+    out = implement.land(root, "s", "T-1", tree, base)
+    want = subprocess.run(["git", "diff", "--cached", "--binary", "--no-renames", base], cwd=tree, capture_output=True, check=True).stdout
+    assert (root / out[0]).read_bytes() == want and (root / "a.txt").read_bytes() == b"y\n"
+    print("ok")
+
+
+def test_misuse_crlf_edit_lands():
+    root, base = byte_repo({"win.txt": b"a\r\nb\r\n"})
+    tree = byte_tree(root, base)
+    (tree / "win.txt").write_bytes(b"a\r\nB\r\n")
+    out = implement.land(root, "s", "T-1", tree, base)
+    assert out[2] == "", out[2]
+    assert (root / "win.txt").read_bytes() == b"a\r\nB\r\n"
     print("ok")
 
 
