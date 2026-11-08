@@ -347,7 +347,12 @@ def main():
         print("\n".join(lines))
         sys.exit(code)
     elif a.cmd == "explain":
-        sys.exit(f"error: `nio explain {a.action}` isn't built yet")
+        if a.action != "finish":
+            sys.exit(f"error: `nio explain {a.action}` isn't built yet")
+        try:
+            print("\n".join(explain.finish(root, a.target)))
+        except ValueError as e:
+            sys.exit(f"error: {e}")
     elif a.cmd == "task":
         try:
             print("\n".join(tasks.show(root, a.slug, a.id)))

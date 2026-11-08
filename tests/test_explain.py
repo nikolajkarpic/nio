@@ -194,6 +194,148 @@ def test_uj1_huge_diagram():
     assert c == 1 and "ERROR too many nodes: Component map (30 > 20)" in out, (c, out)
 
 
+DRILL = "## Drill-down: one\n\n```mermaid\nflowchart LR\nX --> Y\n```\n\nDrill walk.\n\n![one](explainer-drill-1.svg)\n"
+
+
+def fin_repo(drill=True, plan_md=True, approve=True):
+    """(root, finish) for the approved refunds fixture with GOOD (+ a drill-down) in explainer.md; no npx on PATH."""
+    import os
+    import tempfile
+    from nio import plan
+    run = good(extra=DRILL if drill else "")
+    root = run.root
+    d = root / ".nio/specs/checkout-refunds"
+    if plan_md:
+        (d / "plan.md").write_text("# plan\n")
+    (d / "quickstart.md").write_text("---\nid: QS\n---\n\n# Quickstart\n\nbody\n")
+    (d / "explainer-drill-1.svg").write_text("<svg>drill</svg>")
+    if approve:
+        plan.approved = lambda root, slug: (True, "ok")  # TC fixture stand-in for the plan jury
+    empty = tempfile.mkdtemp()  # no npx: rendering is T-6's, finish must still work
+
+    def finish():
+        assert hasattr(explain, "finish"), "nio.explain.finish missing"
+        old = os.environ["PATH"]
+        os.environ["PATH"] = empty
+        try:
+            return explain.finish(root, ".nio/specs/checkout-refunds/explainer.md")
+        finally:
+            os.environ["PATH"] = old
+    return root, finish
+
+
+def raises(fn, text):
+    try:
+        fn()
+    except ValueError as e:
+        assert text in str(e), (text, str(e))
+        return
+    raise AssertionError("no ValueError: " + text)
+
+
+def test_ct5_refusals():
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, fin = fin_repo(plan_md=False, approve=False)
+        ex = root / ".nio/specs/checkout-refunds/explainer.md"
+        raises(fin, "the plan jury comes first")
+        root, fin = fin_repo(approve=False)
+        raises(fin, "the plan jury comes first")
+    finally:
+        plan.approved = keep
+
+
+def test_ac33_dropped_drill_down():
+    # TC-43
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, fin = fin_repo()
+        fin()
+        d = root / ".nio/specs/checkout-refunds"
+        ex = d / "explainer.md"
+        t = ex.read_text()
+        t = t[:t.index("## Drill-down: one")]
+        t = t.replace("(images: ", "(images: explainer-flow-uj-2.svg, ") if "(images: " in t else t + "(images: explainer-flow-uj-2.svg)\n"
+        ex.write_text(t)
+        (d / "explainer-flow-uj-2.svg").write_text("<svg>uj2</svg>")
+        names = ["explainer.md", "quickstart.md", "explainer-drill-1.svg", "explainer-flow-uj-2.svg"]
+        before = {n: (d / n).read_bytes() for n in names}
+        raises(fin, "drill-down sections missing: Drill-down: one")
+        assert before == {n: (d / n).read_bytes() for n in names}
+    finally:
+        plan.approved = keep
+
+
+def test_ct5_hashes_and_warning():
+    from nio import implement, plan
+    keep = plan.approved
+    try:
+        root, fin = fin_repo()
+        d = root / ".nio/specs/checkout-refunds"
+        (d / "explainer-flow-uj-2.svg").write_text("x")
+        (d / "notes.svg").write_text("n")
+        (root / ".nio/README.md").write_text("r")
+        ex = d / "explainer.md"
+        ex.write_text(ex.read_text() + "(images: explainer-flow-uj-2.svg, explainer-drill-1.svg, ../../README.md)\n")
+        out = fin()
+        t = ex.read_text()
+        for f in ("spec.md", "plan.md", "contracts.md"):
+            assert f"(source: .nio/specs/checkout-refunds/{f}@{implement.digest(root, '.nio/specs/checkout-refunds/' + f)[:12]})" in t, (f, t)
+        import re
+        assert re.search(r"\(diagrams: [0-9a-f]{12}\)", t), t
+        assert not (d / "explainer-flow-uj-2.svg").exists()
+        assert (d / "explainer-drill-1.svg").exists() and (d / "notes.svg").exists() and (root / ".nio/README.md").exists()
+        assert any("../../README.md" in l and l.startswith("warning:") for l in out), out
+        assert out[-1].startswith("finished: "), out
+    finally:
+        plan.approved = keep
+
+
+def test_uj4_marker_once():
+    # TC-47
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, fin = fin_repo()
+        ex = root / ".nio/specs/checkout-refunds/explainer.md"
+        fin()
+        fin()
+        assert "## Drill-down: one\n" in ex.read_text() and "earlier plan" not in ex.read_text()
+        sp = root / ".nio/specs/checkout-refunds/spec.md"
+        sp.write_text(sp.read_text() + "\nchanged\n")
+        fin()
+        fin()
+        t = ex.read_text()
+        assert t.count("(written for an earlier plan)") == 1, t
+        assert "## Drill-down: one (written for an earlier plan)" in t
+    finally:
+        plan.approved = keep
+
+
+def test_ac4_read_first_once():
+    # TC-4, plus one os.replace per file
+    import os
+    from nio import plan
+    keep, real = plan.approved, os.replace
+    calls = []
+    try:
+        root, fin = fin_repo()
+        os.replace = lambda a, b: (calls.append(Path(b).name), real(a, b))[1]
+        fin()
+        assert calls.count("explainer.md") == 1, calls
+        fin()
+        q = (root / ".nio/specs/checkout-refunds/quickstart.md").read_text()
+        line = "Read first: [explainer.md](explainer.md)"
+        assert q.count(line) == 1, q
+        assert q.split("---\n", 2)[2].lstrip("\n").splitlines()[0] == line, q
+    finally:
+        os.replace = real
+        plan.approved = keep
+
+
 if __name__ == "__main__":
     selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
-                    test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node])
+                    test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
+                    test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once])
