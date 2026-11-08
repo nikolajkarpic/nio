@@ -2728,5 +2728,30 @@ def test_lite_skill_texts():
     assert any(all(k in ln for k in ("one line", "by what it means", "can change")) for ln in s1.splitlines()), "TC-15"
 
 
+def test_ac23_explainer_never_blocks():
+    """TC-30 (CT-9): the `Read first` line finish adds to quickstart.md is not an edit to the approved plan."""
+    root = effort("tasking")
+    from nio import plan
+    ok0 = plan.approved(root, S)
+    assert ok0[0], ok0
+    base = nxt(root)
+    q = root / ".nio/specs" / S / "quickstart.md"
+    line = "Read first: [explainer.md](explainer.md)"
+    text = q.read_text()
+    assert jury.planned("quickstart.md", line + "\n\n" + text) == text
+    assert jury.planned("quickstart.md", text) == text
+    (root / ".nio/specs" / S / "explainer.md").write_text("# Explainer\n")
+    q.write_text(line + "\n\n" + text)
+    out = nxt(root)
+    assert "back" not in out and "state: tasking" in out, out
+    drop = lambda o: "\n".join(l for l in o.splitlines() if not l.startswith("suggest:"))
+    assert drop(out) == drop(base), (out, base)
+    ok = plan.approved(root, S)
+    assert ok[0], ok
+    for d in (jury.GATES, flow.SKILL, flow.EXIT):
+        assert "explain" not in str(d), d
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
