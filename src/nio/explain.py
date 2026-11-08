@@ -62,6 +62,9 @@ def nodes(block):
     return found
 
 
+COULD_NOT_RUN = ("npm ERR", "ENOTFOUND", "EAI_AGAIN", "ETIMEDOUT", "ECONNREFUSED", "Failed to launch", "Could not find Chrome")
+
+
 def render(block, out):
     """Render a Mermaid block to the SVG `out`: ok, broken: <reason>, no node or unreachable."""
     if shutil.which("npx") is None:
@@ -77,9 +80,11 @@ def render(block, out):
     both = r.stdout + r.stderr
     if r.returncode == 0 and Path(out).exists():
         return "ok"
-    if r.returncode != 0 and "Parse error" in both:
-        return "broken: " + next(l for l in both.splitlines() if "Parse error" in l).strip()
-    return "unreachable"
+    if r.returncode == 0 or any(m in both for m in COULD_NOT_RUN):
+        return "unreachable"
+    lines = [l.strip() for l in both.splitlines() if l.strip()]
+    # ponytail: marker list is a heuristic; add markers when a new fetch/launch failure shows up
+    return "broken: " + next((l for l in lines if "Parse error" in l), lines[0] if lines else "exit %d" % r.returncode)
 
 
 def check(root, target, gate=False, base="HEAD"):
