@@ -215,7 +215,7 @@ def finish(root, path):
             kept_sec = False
         if l.strip().startswith("```"):
             fenced = not fenced
-        elif not fenced and (l.startswith("![") or l.startswith("> ")):
+        elif not fenced and (l.startswith(("> Images not rendered:", "> Broken diagram:")) or (LINK.match(l) and LINK.match(l)[1].startswith(prefix))):
             m = LINK.match(l)
             if m and any(h.startswith("Drill-down: ") for h in [new_title(new)]) and (d / m[1]).is_file():
                 keep.append(m[1])
