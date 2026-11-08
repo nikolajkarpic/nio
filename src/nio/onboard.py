@@ -4,28 +4,27 @@ from pathlib import Path
 
 from nio import records
 
-CATS = [
-    ("agent-docs", {"claude.md", "agents.md", "gemini.md", ".cursorrules"}),
-    ("product-docs", {"readme.md", "readme", "changelog.md"}),
-    ("implementation-docs", {"architecture.md", "design.md", "contributing.md"}),
-    ("manifests", {"pyproject.toml", "package.json", "cargo.toml", "go.mod", "pom.xml", "gemfile", "requirements.txt"}),
-    ("iac", {"dockerfile", "docker-compose.yml", "docker-compose.yaml"}),
-]
+# implementation-docs first: docs/adr/* must win over docs/*.md (fnmatch's * crosses "/")
+CATEGORIES = {
+    "implementation-docs": ["ARCHITECTURE*", "CONTRIBUTING*", "docs/adr/*"],
+    "agent-docs": ["CLAUDE.md", "AGENTS.md", "GEMINI.md", ".cursor/rules/*.mdc", ".github/copilot-instructions.md",
+                   ".github/instructions/*.instructions.md", ".windsurfrules", ".clinerules", ".kiro/steering/*"],
+    "product-docs": ["README*", "docs/*.md"],
+    "manifests": ["pyproject.toml", "package.json", "go.mod", "Cargo.toml", "requirements*.txt", "Gemfile", "pom.xml",
+                  "build.gradle*"],
+    "iac": ["*.tf", "Pulumi.yaml", "cdk.json", "serverless.yml", "cloudbuild.yaml", "Dockerfile", "docker-compose*.yml",
+            "Chart.yaml", "fly.toml", "vercel.json", "app.yaml"],
+    "ci": [".github/workflows/*", ".gitlab-ci.yml", "Jenkinsfile", ".circleci/config.yml"],
+}
 
 
 def category(path):
-    p = Path(path)
-    if p.parts[0] == ".nio":
+    if path.startswith(".nio/"):
         return None
-    if p.parts[:2] == (".github", "workflows"):
-        return "ci"
-    if p.suffix == ".tf":
-        return "iac"
-    for cat, names in CATS:
-        if p.name.lower() in names:
+    name = Path(path).name
+    for cat, pats in CATEGORIES.items():
+        if any(fnmatch(path, q) or fnmatch(name, q) for q in pats):
             return cat
-    if p.parts[0] == "docs" and p.suffix == ".md":
-        return "implementation-docs"
 
 
 SECRETS = [".env", ".env.*", "*.pem", "*.key", "id_rsa", "id_ed25519", "*.p12", "*.pfx", "credentials*", ".npmrc", ".pypirc", "*.tfvars", "secrets.*"]
