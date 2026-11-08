@@ -9,7 +9,7 @@ from nio import spec
 
 MERMAID = "@mermaid-js/mermaid-cli@11.4.2"
 TIMEOUT = 120
-ARROW = re.compile(r"-->>|->>|-\.->|==>|-->|---|->")
+ARROW = re.compile(r"<?(?:-\.+-|[-=]{3,}|[-=]{2}(?=[>ox])|->)(?:>>?|[ox])?")
 SKIP = ("%%", "classDef", "class ", "style ", "linkStyle", "click ", "subgraph")
 DROP = re.compile(r'"[^"]*"|\[[^\]]*\]|\([^)]*\)|\{[^}]*\}|\|[^|]*\|')
 ID = re.compile(r"[A-Za-z_]\w*")
@@ -47,8 +47,8 @@ def sections(text):
 def nodes(block):
     """The distinct node IDs of a diagram block."""
     found = set()
-    for line in DROP.sub("", block).splitlines()[1:]:
-        line = line.strip()
+    for line in block.splitlines()[1:]:
+        line = DROP.sub("", line).strip()
         if not line or line.startswith(SKIP) or line == "end" or line.startswith("end "):
             continue
         if m := re.match(r"(?:participant|actor|state)\s+(\w+)", line):
