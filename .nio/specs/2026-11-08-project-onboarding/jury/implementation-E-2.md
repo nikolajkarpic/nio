@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-2
 subject: 2026-11-08-project-onboarding
-round: 6
-outcome: rerun
+round: 7
+outcome: approved
 ---
 # Implementation-e-2 jury: 2026-11-08-project-onboarding
 
@@ -29,7 +29,7 @@ outcome: rerun
 | J-17 | blocker | contradiction | CT-4, CT-5 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-18 | blocker | contradiction | CT-4, CT-12 | consistency | merged | merged |  | new, 0 |
 | J-19 | major | contradiction | CT-4, AC-15 | adversary, consistency, correctness, security | confirmed | fixed | fix-task (agent) | absent, 0 |
-| J-20 | major | contradiction | CT-3, CT-4 | consistency | confirmed | disposed | fix-task (human) | unchanged, 1 |
+| J-20 | major | contradiction | CT-3, CT-4 | consistency | confirmed | fixed | fix-task (human) | absent, 1 |
 | J-21 | minor | inconsistency | CT-4, CT-12 | consistency | grounded | open |  | new, 0 |
 | J-22 | blocker | contradiction | CT-4, CT-5, AC-15 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-23 | blocker | risk | CT-4, AC-30 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
@@ -340,7 +340,7 @@ outcome: rerun
 | implementation-E-2-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-2-conformance-2 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |
 | implementation-E-2-conformance-3 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |
-| implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 6 |
+| implementation-E-2-consistency | consistency | juror / claude-code / haiku-5.5 | sufficient | yes | 1 | 7 |
 | implementation-E-2-consistency-2 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 4 |
 | implementation-E-2-consistency-3 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | no: F1: cites must hold an AC, FR or CT ID; F2: cites must hold an AC, FR or CT ID; F3: cites must hold an AC, FR or CT ID; F4: cites must hold an AC, FR or CT ID; F5: cites must hold an AC, FR or CT ID | 1 | 4 |
 | implementation-E-2-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
