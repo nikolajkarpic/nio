@@ -101,8 +101,9 @@ def act(action, reason="", doc="", empty=False, root="."):
         st["state"] = "in progress"
         d.mkdir(parents=True, exist_ok=True)
         if empty:
-            for n in DOCS:
-                (d / f"{n}.md").write_text((Path(__file__).parent / f"templates/project/{n}.md").read_text())
+            for n in ("stack", "architecture", "infra"):
+                if not (d / f"{n}.md").exists():
+                    (d / f"{n}.md").write_text((Path(__file__).parent / f"templates/project/{n}.md").read_text())
         save()
         return "next: " + DOCS[0]
     if doc not in DOCS:
