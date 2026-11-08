@@ -1,0 +1,93 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-07-lite-gate-fixes",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261107-lshd/tasks-executability.md": "714f168ed13eeca6e393073545d43f51885b83a09ff443f3e8f38b622da3ec60",
+    "R-261107-3n6z/tasks-executability.md": "e67f8f409facb990f52dad992e6778b4ef33e07054c62ad3b5f80d8375498fad"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "048d024e10ab8ca62affd5f0c1c94c4862a64029",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Lite test results: source of the `passing` result is not stated",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "T-2",
+        "AC-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "whose epic's commit adds a passing test function to a test file, `results.json` `tests` holds that test with its result"
+      ],
+      "fix": "name the commit the result is taken at (the epic's last commit, as `current` in evidence.py checks it) in T-2's Test line.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a worker reads this as \"run the added test at the epic's last commit\" and another reads it as \"take the result from the existing suite run\". Both produce a `results.json` that passes the Test line, but the two can disagree when the test is added in an earlier commit than the last one.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "tasks-executability: the source is now the suite run, which removes the \"run the added test\" reading, but the commit the result is taken at (the epic's last commit, as `current` in evidence.py checks it) is not named in the changed heading, and the T-2 Test line is not in the pack, so the requested commit naming cannot be seen.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the suite run evidence uses is always at the epic's last commit (evidence.collect runs it there), so naming the suite run names the commit.",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "de783f23f5dfaffd4802011a27a09f595862f59f",
+    "2": "048d024e10ab8ca62affd5f0c1c94c4862a64029"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-1"
+    ],
+    "final": null,
+    "flagged": []
+  }
+}

@@ -1,5 +1,6 @@
 """The tasks stage (#42): create tasks.md next to an approved spec and plan, run its free checks, print the estimate,
 show one task, and answer whether the implement stage may start."""
+from pathlib import PurePosixPath
 import collections
 import os
 import re
@@ -38,6 +39,11 @@ def may_start(root, slug):
     kind = route(root, slug)
     if kind == "epic":
         return False, f"`{slug}` is an epic: run the tasks stage on each slice's spec"
+    if kind == "lite":
+        from nio import spec
+        if spec.check(root, slug, gate=True)[0]:
+            return False, "the bug-fix spec must pass nio check spec --gate first (the grill)"
+        return True, "the tasks stage may start"
     if jury.standing(root, slug, "spec") not in ("approved", "closed"):
         return False, "the spec must be approved first"
     if kind == "full":
@@ -248,7 +254,7 @@ def check(root, slug, gate=False, base="HEAD"):
     # a foundational task serves only ACs its dependents serve (#42 FR-45)
     above = {t: {u for u in tasks if t in below[u]} for t in tasks}
     for e in epics:
-        if e["story"] in ("", "Foundation"):
+        if e["story"] == "Foundation" or not e["story"] and kind != "lite":
             for t in (x for x in e["tasks"] if not tasks[x]["fix"]):  # a fix task is appended with no dependents
                 theirs = {i for u in above[t] for i in ids(tasks[u]["fields"].get("Serves", ""))}
                 errs += [f"{t} serves {ac}, which no task depending on it serves" for ac in ids(tasks[t]["fields"].get("Serves", ""))
@@ -262,7 +268,13 @@ def check(root, slug, gate=False, base="HEAD"):
             errs += [f"{e['id']} names `{f}` in no `Files:` line, though its build-order entry delivers it" for f in sorted(want_files - named)]
             errs += [f"{e['id']} has no task citing {tc}, which its build-order entry lists" for tc in want_tcs if tc not in cited]
     errs += check_fixes(root, slug, parsed, retired, base)
-    return errs, estimate(parsed)
+    notes = estimate(parsed)
+    if kind == "lite":
+        paths = [PurePosixPath(f) for t in tasks.values() for f in files(t["fields"].get("Files", ""))]
+        dirs = {str(q.parent) for q in paths if not ({"tests", "test"} & set(q.parts[:-1]) or q.name.startswith("test_"))}
+        if len(dirs) > 1:
+            notes.append(f"escalate: the fix changes files in {len(dirs)} folders ({', '.join(sorted(dirs))}): offer the full flow (@nio:spec, \"Escalating a bug fix\")")
+    return errs, notes
 
 
 def check_fixes(root, slug, parsed, retired, base="HEAD"):

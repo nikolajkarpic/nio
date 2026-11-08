@@ -166,8 +166,8 @@ def test_ac4_no_current_effort():
         assert "no effort 2026-10-29-nothing under .nio/specs/" in str(e) and "  2026-10-21-refunds" in str(e), e
     assert flow.kind(root, "grilling") == "legacy" and flow.kind(root, S) == "effort"
     spec = root / ".nio/specs" / S / "spec.md"
-    spec.write_text(spec.read_text().replace("route: full", "route: lite", 1))
-    assert flow.kind(root, S) == "unsupported: lite" and S not in flow.efforts(root)
+    spec.write_text(spec.read_text().replace("route: full", "route: epic", 1))
+    assert flow.kind(root, S) == "unsupported: epic" and S not in flow.efforts(root)
     print("ok")
 
 
@@ -604,8 +604,8 @@ def test_next_on_legacy_unsupported_and_parked():
     assert (last["kind"], last["reason"], last["to"]) == ("resume", "parked: waiting on legal", "planning"), last
     assert flow.load(root, S)[0]["pause"] is None and not (root / ".nio/specs" / S / "flow.lock").exists()
     spec = root / ".nio/specs" / S / "spec.md"
-    spec.write_text(spec.read_text().replace("route: full", "route: lite", 1))
-    assert flow.next_step(root, S) == (0, ["unsupported: lite: nio flow drives full-route specs only"])
+    spec.write_text(spec.read_text().replace("route: full", "route: epic", 1))
+    assert flow.next_step(root, S) == (0, ["unsupported: epic: nio flow drives full and lite specs only"])
     print("ok")
 
 
@@ -1021,6 +1021,20 @@ def test_ac22_skips_not_built():
     print("ok")
 
 
+def test_fr17_past_when_history_lags():
+    """FR-17: history behind the files; `done` for a stage before both records nothing."""
+    root = effort("planning")
+    flow.start(root, S, by=BY)
+    folder = root / ".nio/specs" / S
+    for name in ("plan.md", "contracts.md", "tests.md", "quickstart.md"):  # the files move on; history stays at planning
+        (folder / name).write_text((FIXTURES / "plan" / name).read_text().replace("slug: checkout-refunds", f"slug: {S}"))
+    approve(root, S, "plan")
+    n = count(root)
+    code, out = flow.done(root, "drafting", S, by=BY)
+    assert code == 0 and out == [f"{S} is past drafting; nothing to do"] and count(root) == n, out
+    print("ok")
+
+
 def test_uj1_no_say_so():
     """TC-68: a handoff saying the grill is done doesn't pass it; a hand-set wait in state.json breaks the effort."""
     root = effort("grilling")
@@ -1365,13 +1379,270 @@ def test_ac32_legacy_folder():
 
 
 def test_ac53_lite_unsupported():
-    """TC-53: a lite spec is unsupported in status and next, which name no skill and write nothing."""
-    root = effort("drafting", route="lite")
+    """TC-53: an epic spec is unsupported in status and next, which name no skill and write nothing."""
+    root = effort("drafting", route="epic")
     (root / ".nio/specs" / S / "spec.md").write_text(
-        re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M))
-    assert "unsupported: lite" in line_for(root, S)
+        re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-epic.md").read_text(), count=1, flags=re.M))
+    assert "unsupported: epic" in line_for(root, S)
     out = nxt(root)
-    assert "unsupported: lite" in out and "@nio:" not in out and not flow_files(root), out
+    assert "unsupported: epic" in out and "@nio:" not in out and not flow_files(root), out
+    print("ok")
+
+
+def test_lite_route_stages():
+    """TC-1: a lite effort runs only the lite stages: the rest are recorded as skipped, and no plan or spec jury."""
+    from nio import tasks
+    root = repo()
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    flow.start(root, S, by=BY)  # no spec yet: drafting still fails, so `done drafting` below is a real pass
+    lite = re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M)
+    (folder / "spec.md").write_text(lite.replace(
+        "create exactly one refund. [human]", "create exactly one refund. [default]"))
+    assert flow.kind(root, S) == "effort" and S in flow.efforts(root)
+    assert tasks.may_start(root, S) == (
+        False, "the bug-fix spec must pass nio check spec --gate first (the grill)")
+    (folder / "spec.md").write_text(lite)
+    plan_words = lambda out: "@nio:plan" not in out and "spec-jury" not in out and "jury spec" not in out
+    assert plan_words(nxt(root))
+    assert flow.done(root, "drafting", S, by=BY)[0] == 0
+    assert plan_words(nxt(root))
+    code, out = flow.done(root, "grilling", S, by=BY)
+    assert code == 0 and "next: run the nio:tasks skill" in "\n".join(out), out
+    assert plan_words(nxt(root))
+    tasks.new(root, S)
+    (folder / "tasks.md").write_text(
+        (FIXTURES / "tasks/tasks.md").read_text().replace("slug: checkout-refunds", f"slug: {S}"))
+    flow.done(root, "tasking", S, by=BY)
+    assert plan_words(nxt(root))
+    approve(root, S, "tasks")
+    flow.done(root, "tasks_jury", S, by=BY)
+    assert not (folder / "jury/spec.json").exists()
+    got = lines_of(root)
+    passes = [(x["from"], x["to"]) for x in got if x["kind"] == "pass"]
+    assert passes == [("drafting", "researching"), ("grilling", "spec_jury"), ("tasking", "tasks_jury"),
+                      ("tasks_jury", "implementing")], passes
+    skips = {x["from"]: x["reason"] for x in got if x["kind"] == "skip"}
+    want = {s: "skipped: not built" for s in ("researching", "advocate_walking", "arch_grilling")}
+    want |= {s: "skipped: lite route" for s in ("spec_jury", "planning", "plan_jury")}
+    assert skips == want, skips
+    assert S in "\n".join(flow.status(root)[1])
+    print("ok")
+
+
+def test_lite_epic_gate():
+    """TC-5: the implementation jury reviews a lite fix: implementing waits for the epic's gate, then passes."""
+    from nio import evidence, tasks
+    root = repo()
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    (folder / "spec.md").write_text(re.sub(
+        r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M))
+    flow.start(root, S, by=BY)
+    for stage in ("drafting", "grilling"):
+        flow.done(root, stage, S, by=BY)
+    tasks.new(root, S)
+    (folder / "tasks.md").write_text(
+        (FIXTURES / "tasks/tasks.md").read_text().replace("slug: checkout-refunds", f"slug: {S}"))
+    flow.done(root, "tasking", S, by=BY)
+    approve(root, S, "tasks")
+    flow.done(root, "tasks_jury", S, by=BY)
+    history(root, S, *[task_line("task_done", t) for t in ("T-1", "T-2", "T-3")])
+    (root / "fix.py").write_text("x = 1\n")
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "T-1: fix")
+    gate = "implementation-E-1"
+    plan, ok = jury.plan(root, S, gate)
+    assert ok and "conformance" in plan[1] and "correctness" in plan[1], plan
+    code, out = flow.done(root, "implementing", S, by=BY)
+    assert code == 1 and "E-1 has no epic line" in "\n".join(out) and "is not done" not in "\n".join(out), out
+    assert not any(x["to"] == "done" for x in lines_of(root)), lines_of(root)
+    run = f"R-{gate}"
+    for lens in ("conformance", "correctness", "consistency"):
+        path = root / ".nio/runs" / run / "jury" / f"{gate}-{lens}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"---\nlens: {lens}\ngate: {gate}\nsubject: {S}\nby: \"juror / claude-code / opus\"\n"
+                        "context: sufficient\n---\n## Reasoning\nChecked the diff.\n\n## Findings\nnone\n"
+                        + "\n## Matches\nAC-1 -> `tests/test_fix.py:1`\nAC-2 -> `tests/test_fix.py:1`\n" * (lens == "conformance"))
+    evidence.save(root, run, {**evidence.load(root, run), "slug": S, "epic": "E-1",
+                              "tests": [{"name": "test_fix", "file": "tests/test_fix.py", "line": 1, "result": "passed"}],
+                              "commit": evidence.commits_of(root, S, "E-1")[0]})
+    jury.collect(root, S, gate, run)
+    assert jury.check(root, S, gate, record=True)[0] == "approved"
+    code, out = flow.done(root, gate, S, by=BY)
+    assert code == 0, out
+    last = lines_of(root)[-1]
+    assert (last["kind"], last["from"], last["to"]) == ("pass", "implementing", "done"), last
+    print("ok")
+
+
+def test_lite_escalation_placement():
+    """TC-11: an escalated lite effort stands at the spec jury when its rewritten spec passes the gate check, and at
+    grilling while the spec keeps an open point."""
+    root = effort("tasks_jury", route="lite")
+    later = "2026-10-22-refunds-grill"
+    effort("grilling", slug=later, route="lite", root=root)
+    full = (FIXTURES / "spec/spec.md").read_text()  # route: full, OP-1 open
+    settled = re.sub(r"^- \*\*OP-1\*\*.*\n", "", full, flags=re.M).replace("[default]", "[human]")
+
+    def escalate(slug, text):
+        (root / ".nio/specs" / slug / "spec.md").write_text(text.replace("slug: checkout-refunds", f"slug: {slug}"))
+
+    escalate(S, settled)
+    got = nxt(root, S)
+    assert "state: spec_jury" in got and "state: tasking" not in got and "state: implementing" not in got, got
+    escalate(later, full)
+    got = nxt(root, later)
+    assert "state: grilling" in got and "state: spec_jury" not in got, got
+    escalate(later, settled)
+    got = nxt(root, later)
+    assert "state: spec_jury" in got and "state: implementing" not in got, got
+    skill = (Path(__file__).parent.parent / "skills/spec/SKILL.md").read_text()
+    assert "## Escalating a bug fix" in skill and "keeps its tag" in skill, "spec skill"
+    print("ok")
+
+
+def test_lite_escalated_to_full_runs_full_stages():
+    """UB-1 (AC-5): a lite effort whose spec.md becomes the full fixture reports no lite-route skip and no route-change stop."""
+    root = repo()
+    git(root, "config", "user.name", "t")
+    git(root, "config", "user.email", "t@t")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    flow.start(root, S, by=BY)
+    spec = lambda name: re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+    (folder / "spec.md").write_text(spec("spec-bugfix.md"))
+    nxt(root)  # the lite route is seen
+    (folder / "spec.md").write_text(spec("spec.md"))
+    out = nxt(root)
+    assert "(lite route)" not in out and "route changed" not in out, out
+    n = len(lines_of(root))
+    assert flow.park(root, S, "x", by=BY)[0] == 0 and len(lines_of(root)) > n
+    print("ok")
+
+
+def test_header_matching_route_skips_unchanged():
+    """UB-2 (AC-6): a lite effort whose header says lite lists exactly spec_jury, planning, plan_jury as skipped
+    (lite route) past grilling; a full effort whose header says full lists none."""
+    def run(name, done):
+        root = repo()
+        git(root, "config", "user.name", "t")
+        git(root, "config", "user.email", "t@t")
+        (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+        folder = root / ".nio/specs" / S
+        folder.mkdir(parents=True)
+        (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+        flow.start(root, S, by=BY)
+        text = re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+        (folder / "spec.md").write_text(text)
+        for stage in done:
+            assert flow.done(root, stage, S, by=BY)[0] == 0
+        return nxt(root)
+
+    out = run("spec-bugfix.md", ("drafting", "grilling"))
+    skipped = [ln for ln in out.splitlines() if "(lite route)" in ln]
+    assert len(skipped) == 1, out
+    assert skipped[0] == "skipped: spec_jury, planning, plan_jury (lite route)", skipped
+    out = run("spec.md", ())
+    assert "(lite route)" not in out, out
+    print("ok")
+
+
+def spec_text(name):
+    """A spec fixture under the slug S."""
+    return re.sub(r"^slug: .*$", f"slug: {S}", (FIXTURES / "spec" / name).read_text(), count=1, flags=re.M)
+
+
+def downgraded():
+    """A full effort at spec_jury with no approval, started by `nio flow start`, its spec.md then overwritten with the
+    bug-fix fixture (`route: lite`)."""
+    root = effort("spec_jury")
+    flow.start(root, S, by=BY)
+    (root / ".nio/specs" / S / "spec.md").write_text(spec_text("spec-bugfix.md"))
+    return root
+
+
+def test_route_recorded_by_start():
+    """EB-1 (AC-2): `nio flow start` on a full effort with no history records route full on its first line."""
+    root = effort("spec_jury")
+    flow.start(root, S, by=BY)
+    first = lines_of(root)[0]
+    assert first["evidence"].get("route") == "full", first
+    print("ok")
+
+
+def test_route_recorded_by_first_done():
+    """EB-1 (AC-2): the first `nio flow done` (drafting) on a full effort with no history records route full. With no
+    history the files decide the stage, so the spec is only its `route: full` header and the human passes drafting."""
+    root = effort("drafting")
+    (root / ".nio/specs" / S / "spec.md").write_text(spec_text("spec.md").split("\n## ")[0] + "\n")
+    assert flow.done(root, "drafting", S, human="drafted by hand", by="human")[0] == 0
+    first = lines_of(root)[0]
+    assert first["evidence"].get("route") == "full", first
+    print("ok")
+
+
+def test_downgrade_skips_nothing():
+    """EB-2 (AC-1): a full effort whose header is rewritten to lite reports no lite-route skip and is not at tasking."""
+    out = nxt(downgraded())
+    assert "(lite route)" not in out and "state: tasking" not in out, out
+    print("ok")
+
+
+def test_downgrade_refused():
+    """EB-3 (AC-3): next names both routes on a `route changed:` line; done and start refuse, recording nothing."""
+    root = downgraded()
+    out = nxt(root)
+    changed = [ln for ln in out.splitlines() if ln.startswith("route changed:")]
+    assert changed and "full" in changed[0] and "lite" in changed[0], out
+    hp = root / ".nio/specs" / S / "history.jsonl"
+    before = hp.read_bytes()
+    for call in (lambda: flow.done(root, "tasking", S, by=BY), lambda: flow.start(root, S, by=BY)):
+        try:
+            call()
+            err = ""
+        except Exception as e:
+            err = str(e)
+        assert "route changed:" in err, err
+        assert hp.read_bytes() == before
+    print("ok")
+
+
+def test_escalated_downgrade_refused():
+    """EB-2 legacy: a lite effort with no recorded route and no spec-jury round keeps its lite skips (the header
+    decides). EB-4 (AC-4): a lite effort escalated to full whose spec jury has a round, its header rewritten back to
+    lite, is refused as in AC-3."""
+    root = effort("drafting")  # intake only
+    folder = root / ".nio/specs" / S
+    flow.start(root, S, by=BY)
+    folder.joinpath("spec.md").write_text(spec_text("spec-bugfix.md"))
+    for stage in ("drafting", "grilling"):
+        assert flow.done(root, stage, S, by=BY)[0] == 0
+    hp = folder / "history.jsonl"
+    old = [json.loads(x) for x in hp.read_text().splitlines()]
+    for x in old:
+        x["evidence"].pop("route", None)
+    hp.write_text("".join(json.dumps(x, ensure_ascii=False) + "\n" for x in old))
+    assert "(lite route)" in nxt(root), "legacy lite effort lost its skips"
+
+    settled = re.sub(r"^- \*\*OP-1\*\*.*\n", "", spec_text("spec.md"), flags=re.M).replace("[default]", "[human]")
+    folder.joinpath("spec.md").write_text(settled)  # escalated to route: full
+    approve(root, S, "spec", commit=False)  # the escalated spec's jury has a round
+    folder.joinpath("spec.md").write_text(spec_text("spec-bugfix.md"))
+    out = nxt(root)
+    changed = [ln for ln in out.splitlines() if ln.startswith("route changed:")]
+    assert changed and "full" in changed[0] and "lite" in changed[0], out
+    assert "(lite route)" not in out, out
     print("ok")
 
 
@@ -1554,7 +1825,7 @@ def test_ac55_abandon():
 
 
 def test_ac62_abandon_refusals():
-    """TC-62: abandon refuses an empty reason, a legacy, a lite and a done effort, writing nothing anywhere."""
+    """TC-62: abandon refuses an empty reason, a legacy, an epic and a done effort, writing nothing anywhere."""
     root = effort("planning")
     flow.start(root, S, by=BY)
     (root / ".nio/specs/grilling").mkdir()
@@ -1562,7 +1833,7 @@ def test_ac62_abandon_refusals():
     fix = root / ".nio/specs/2026-10-21-fix"
     fix.mkdir()
     (fix / "spec.md").write_text(
-        re.sub(r"^slug: .*$", "slug: 2026-10-21-fix", (FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M))
+        re.sub(r"^slug: .*$", "slug: 2026-10-21-fix", (FIXTURES / "spec/spec-epic.md").read_text(), count=1, flags=re.M))
     finished = "2026-10-22-refunds"
     effort("implementing", slug=finished, root=root)
     flow.start(root, finished, by=BY)
@@ -2388,6 +2659,73 @@ def test_isolated_tests_keep_a_subprocess():
     for src in sources:
         assert "subprocess.run(" in src and "cli(" not in src and "run_main(" not in src, src[:80]
     print("ok")
+
+
+def test_lite_skill_texts():
+    """AC-2 / CT-6: step 4 of the grill says a lite spec skips six-facet coverage and asks zero questions."""
+    text = (Path(__file__).parent.parent / "skills/grill/SKILL.md").read_text()
+    step4 = re.search(r"^4\. \*\*The bar\.\*\*.*?(?=^5\. )", text, re.S | re.M)
+    assert step4, "step 4 (The bar) not found"
+    paras = [p for p in step4.group(0).split("\n\n") if p.strip()]
+    assert any(all(k in p for k in ("six-facet coverage", "zero questions", "lite")) for p in paras), paras
+    # AC-8 / TC-8 (CT-7, CT-8, CT-14): a bug fix's unchanged-behaviour tests are their own direct tasks.
+    root = Path(__file__).parent.parent
+    drafter = (root / "src/nio/agents/tasks-drafter.md").read_text()
+    evaluator = (root / "src/nio/agents/evaluator.md").read_text()
+    skill = (root / "skills/tasks/SKILL.md").read_text()
+    bullets = ["- " + b for b in drafter.split("\n- ")]
+    assert any(all(k in b for k in ("unchanged-behaviour", "Mode: direct", "depends on")) for b in bullets), "drafter"
+    assert any("unchanged-behaviour" in ln and "Mode: direct" in ln for ln in evaluator.splitlines()), "evaluator"
+    step1 = re.search(r"^1\. \*\*Check the inputs\.\*\*.*?(?=^2\. )", skill, re.S | re.M)
+    step3 = re.search(r"^3\. \*\*Rate\.\*\*.*?(?=^4\. )", skill, re.S | re.M)
+    assert step1 and "nio check spec" in step1.group(0) and "--gate" in step1.group(0), "skill step 1"
+    assert step3 and any("unchanged-behaviour" in ln and "Mode: direct" in ln
+                         for ln in step3.group(0).splitlines()), "skill step 3"
+    # FR-8: the escalation trigger counts non-test files only.
+    spec_t = (root / "skills/spec/SKILL.md").read_text()
+    impl_t = (root / "skills/implement/SKILL.md").read_text()
+    assert "non-test files in more than one folder" in spec_t, "spec trigger"
+    assert "non-test files in more than one folder" in skill, "tasks description"
+    assert "non-test files sit in a second folder" in impl_t, "implement step 4"
+    # CT-7: a bug fix's tasks stage starts at the spec gate, with no spec jury.
+    desc = re.search(r"^description: .*$", skill, re.M).group(0)
+    assert "nio check spec <slug> --gate" in desc and "no spec jury" in desc, "skill description"
+    assert "full flow" in desc, "skill description: full flow offer"
+    inp = re.search(r"^- \*\*Input:\*\*.*?(?=^- \*\*Outputs)", skill, re.S | re.M).group(0)
+    assert "nio check spec <slug> --gate" in inp and "no spec jury" in inp, "skill input"
+    assert "(no `nio`)" in skill and "lite or bug-fix spec, or no" not in skill, "skill fallback"
+    step4 = re.search(r"^4\. \*\*Verify.*?(?=^5\. )", skill, re.S | re.M).group(0)
+    for k in ("escalate:", "escalation declined", "new dependency", "outside the bug's folder", "stored data",
+              "Escalating a bug fix"):
+        assert k in step4, ("skill step 4", k)
+    # TC-16 (AC-16, CT-12): the implement skill's blocked-handoff step names the triggers and the full-flow offer.
+    impl = (root / "skills/implement/SKILL.md").read_text()
+    impl4 = re.search(r"^4\. \*\*On a `blocked` handoff\*\*.*?(?=^5\. )", impl, re.S | re.M)
+    assert impl4, "implement step 4 (blocked handoff) not found"
+    for k in ("new dependency", "outside the bug's folder", "stored data", "second folder", "Escalating a bug fix"):
+        assert k in impl4.group(0), ("implement step 4", k)
+    # TC-16 (AC-16, CT-6, CT-8): the grill and the drafter card name the triggers; wrapped lines count as one space.
+    flat = lambda s: re.sub(r"\s+", " ", s)
+    grill_flat = flat((root / "skills/grill/SKILL.md").read_text())
+    drafter_flat = flat(drafter)
+    for k in ("new dependency", "outside the bug's folder", "stored data", "Escalating a bug fix"):
+        assert k in grill_flat, ("grill", k)
+    for k in ("new dependency", "outside the bug's folder", "stored data"):
+        assert k in drafter_flat, ("drafter card", k)
+    # TC-12 (AC-12, CT-13): a declined switch continues on lite and is logged in grill.md; the rewrite keeps tags.
+    spec_skill = (root / "skills/spec/SKILL.md").read_text()
+    esc = re.search(r"^## Escalating a bug fix\n.*?(?=^## |\Z)", spec_skill, re.S | re.M)
+    assert esc, "spec skill: ## Escalating a bug fix"
+    for k in ("continue on lite", "grill.md", "keeps its tag"):
+        assert k in esc.group(0), ("spec skill escalation", k)
+    # TC-13..15 (AC-13..15, CT-5): step 1 routes lite only when all four hold, and tells the route in one line.
+    route_step = re.search(r"^1\. \*\*Name and route\.\*\*.*?(?=^2\. )", spec_skill, re.S | re.M)
+    assert route_step, "spec skill step 1 (name and route)"
+    s1 = route_step.group(0)
+    assert all(k in s1 for k in ("defect", "stated or obvious", "one module", "risk flag", "all four")), "TC-13"
+    assert any(all(k in ln for k in ("auth", "money", "data-deletion", "migration", "pii", "full"))
+               for ln in s1.splitlines()), "TC-14"
+    assert any(all(k in ln for k in ("one line", "by what it means", "can change")) for ln in s1.splitlines()), "TC-15"
 
 
 if __name__ == "__main__":

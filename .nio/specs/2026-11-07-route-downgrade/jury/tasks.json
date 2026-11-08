@@ -1,0 +1,228 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-07-route-downgrade",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261107-5ccw/tasks-executability.md": "edf16a606a5cede35642deba85e48e2bc210b9f026fb521211dd465fcef86bc7",
+    "R-261107-5ccw/tasks-refuter.md": "fd24894278181c6e6d6532d58b4d963f43dace4eba83214281e580412eaea0c3",
+    "R-261107-ug2q/tasks-executability.md": "4d1ba3a84ffc3df6f230b539075ac940dc32b14cf4ef7ee9952b37f440bb3989"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "abb20f791e98b14894fb0ba1735d6d9ff412e9ba",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "AC-3's `nio flow done` refusal may already happen today, and \"its stage\" has two readings",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "T-3",
+        "AC-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`nio flow done` for its stage refuses (raises or exits non-zero) with history.jsonl unchanged",
+        "written first, each failing before the fix"
+      ],
+      "fix": "name the stage and the call, for example \"`nio flow done tasking` (the stage the downgrade reports) refuses",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "before the fix, `nio flow next` puts the downgraded effort at `tasking`, but after the fix it is at",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-3 line 33 asserts only that `nio flow done` \"for its stage refuses (raises or exits non-zero) with history.jsonl unchanged\", and names no stage or message. In today's `done` (src/nio/flow.py), `done spec_jury` raises from `guard` (\"has no guard to run\") because `skips` already contains spec_jury on a lite header. `done tasking` fails its guard on the missing tasks.md and, outside auto mode, writes nothing. So either reading passes before the fix, and the assertion proves nothing about the route refusal EB-3 adds.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "tasks.md: a fixed 'route changed:' marker asserted by T-1 (absent) and T-3 (present, with done tasking and start refusing, history unchanged); T-3 also tests the first line written by done, and a legacy history with no route falling back to the header",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "T-1 asserts no \"route-change stop\", but no such stop exists yet to match against",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "T-1",
+        "AC-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`nio flow next` prints no `(lite route)` skipped line and no route-change stop; green before the fix and after"
+      ],
+      "fix": "give the stop a fixed marker in the spec or task (for example a line starting `route changed:`). Have T-1",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-1 runs before T-3, which is what invents the stop's wording (\"names both routes\"). The T-1 worker has no",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-1 (tasks.md line 13) must assert \"no route-change stop\" before T-3 exists. Neither the task nor the spec gives that stop any wording or marker: EB-3 and AC-3 say only that `nio flow next` \"names the recorded and the header route\", and AC-5's observable says just \"no stop\". A wrong refusal shaped like today's unsupported-route output from `next_step` would also print no `(lite route)` line, so the one concrete assertion in T-1 would not catch it.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "tasks.md: a fixed 'route changed:' marker asserted by T-1 (absent) and T-3 (present, with done tasking and start refusing, history unchanged); T-3 also tests the first line written by done, and a legacy history with no route falling back to the header",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "Recording the route on a first line written by `nio flow done` is in the fix but in no test",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-3",
+        "EB-1",
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN an effort's first history line is written (by `nio flow start` or its first `nio flow done`) THE SYSTEM SHALL record spec.md's route on that line.",
+        "Fix in `record`/`start`/`done` (route on the first line's evidence)"
+      ],
+      "fix": "add to T-3's Test: an effort with no history, then `nio flow done <first stage>`: its first history line's",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "the T-3 test only covers `nio flow start` (AC-2). Take an effort whose first line comes from `nio flow",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "EB-1 (spec.md line 26) covers a first line written \"by `nio flow start` or its first `nio flow done`\", and T-3's fix names `done`. Today `done` does write the first history.jsonl line on an effort that has none: it goes through `record` with no `start`. But T-3's Test (and AC-2, the only AC for EB-1) checks only `nio flow start`, so a fix that leaves out `done` stays green.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "tasks.md: a fixed 'route changed:' marker asserted by T-1 (absent) and T-3 (present, with done tasking and start refusing, history unchanged); T-3 also tests the first line written by done, and a legacy history with no route falling back to the header",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "EB-3 refuses \"every writing `nio flow` command\", but T-3 tests and names only `done`",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "T-3",
+        "EB-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "every writing `nio flow` command refuses and records nothing until the header says `route: full` again",
+        "`refuse` (full → lite refused like an unsupported route)"
+      ],
+      "fix": "list the writing commands that must refuse in T-3, or say they all go through `refuse`, and test at least one",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "on a downgraded effort, `nio flow done` refuses under test. Other writing commands (for example",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "tasks.md: a fixed 'route changed:' marker asserted by T-1 (absent) and T-3 (present, with done tasking and start refusing, history unchanged); T-3 also tests the first line written by done, and a legacy history with no route falling back to the header",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "No rule for efforts whose history has no recorded route",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "T-3",
+        "EB-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`skips` (recorded full route or a spec-jury round wins over the header)"
+      ],
+      "fix": "state in T-3 that a missing recorded route falls back to the header (or a spec-jury round), and add one",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "efforts started before this fix (including the lite #44 effort on this branch) have history lines with",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "tasks.md: a fixed 'route changed:' marker asserted by T-1 (absent) and T-3 (present, with done tasking and start refusing, history unchanged); T-3 also tests the first line written by done, and a legacy history with no route falling back to the header",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "221d5d66b52965765747d62791df6d65dc96cba2",
+    "2": "abb20f791e98b14894fb0ba1735d6d9ff412e9ba"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  },
+  "asked": {}
+}

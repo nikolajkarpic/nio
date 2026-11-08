@@ -1,0 +1,338 @@
+{
+  "gate": "implementation-E-3",
+  "subject": "2026-11-07-lite-path",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-227t/implementation-E-3-conformance.md": "2af4ac2335b0475f454aa0a9b65bcd3e1280bbe55cf08538daac29fc73fcf668",
+    "R-261107-227t/implementation-E-3-consistency.md": "8b385ef510da2378ef54e19836dec418f2ad502696e010baa0ceda81a9250e37",
+    "R-261107-227t/implementation-E-3-correctness.md": "2540469fa012973daccd2664a8e76a94db9bd37efc6016cf6d16fd3a66936f38",
+    "R-261107-227t/implementation-E-3-refuter.md": "b2f54da0b1b12d13968a2337325ca70f77e945aeabff7de6d33bbc48d6506af2",
+    "R-261107-hx44/implementation-E-3-conformance.md": "722bf4e99cbdedf4a1fcdbaf42a603bf010aa1b461fc07cf1888fe50c02d75cb",
+    "R-261107-hx44/implementation-E-3-consistency.md": "b63cb30417366417a07d137a329e00d7ffe56d9850f4db4d4072141576aa5611",
+    "R-261107-hx44/implementation-E-3-correctness.md": "e125e58f6212f3d20326af6b5ca6016b06aa222eb096dfca4b502ae80333d71d"
+  },
+  "jurors": {
+    "implementation-E-3-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2",
+      "judged": 2
+    },
+    "implementation-E-3-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2",
+      "judged": 2
+    },
+    "implementation-E-3-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The folder note does not offer the full flow, and no test checks that it does",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-9",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then `nio check tasks` prints a note naming the folders and the full flow"
+      ],
+      "fix": "add the offer text from CT-4 to the note and assert it in `test_lite_escalate_note`",
+      "sources": [
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "the note the code prints ends \"consider a full spec\". CT-4 asks for \"offer the full flow (@nio:spec, \"Escalating a bug fix\")\". The test only checks `startswith(\"escalate: the fix changes files in 2 folders (src/a, src/a/sub)\")`, so a note that drops the offer still passes.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "a lite effort whose tasks span two folders gets `escalate: the fix changes files in 2 folders (src/a, src/a/sub); consider a full spec`. CT-4 asks for the offer of the full flow with the `@nio:spec` pointer, and AC-9 says the note names \"the full flow\". The code's wording calls it \"a full spec\", and the test only checks the prefix, so the mismatch passes unnoticed.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "a lite effort touches two folders. The note says \"consider a full spec\" and does not name the offer or the spec skill's \"Escalating a bug fix\" section. AC-9 says the check prints `escalate:` with each folder \"and the offer of the full flow\". `test_lite_escalate_note` asserts only the prefix up to the folder list, so it passes anyway.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "src/nio/tasks.py:276 prints `...; consider a full spec`, not CT-4's `: offer the full flow (@nio:spec, \"Escalating a bug fix\")`, and tests/test_tasks.py:580 (`test_lite_escalate_note`) asserts only the prefix up to the folder list, so the missing offer passes unnoticed. Nothing else in the spec settles the wording; AC-9 requires the offer of the full flow.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-19",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py, tests/test_tasks.py",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "The grill skill's trigger text for AC-16 is not asserted",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the tasks, grill and implement skills each name these triggers and the offer of the full flow"
+      ],
+      "fix": "assert \"new dependency\", \"outside the bug's folder\", \"stored data\" and \"Escalating a bug fix\" in the grill skill's step 4 in `test_lite_skill_texts`",
+      "sources": [
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "the new asserts cover the tasks and implement skills only. If the grill skill's FR-8 sentence were deleted, no test would fail.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "The agent-judged folder trigger drops the non-test qualifier that FR-8 and AC-9 keep",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "AC-9",
+        "CT-7",
+        "CT-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "changes non-test files in more than one folder",
+        "files in more than one folder;"
+      ],
+      "fix": "add \"non-test\" to the spec skill's trigger list and to the tasks skill description (and to CT-12's implement wording if it is meant to match), so the agent and the CLI apply the same rule.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "a lite fix changes `src/a/x.py` and `tests/test_x.py`. `nio check tasks` gives no note, since the test file is left out of the count (AC-9's own example). The spec skill's escalation list still says \"files in more than one folder\", so the agent stops and offers the full flow for a change FR-8 does not cover, and the tasks skill description repeats the same unqualified trigger. The spec and the CLI disagree on the same case.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-8 and AC-9 say \"non-test files\", and tasks.py excludes test paths from the count. skills/spec/SKILL.md:84 says \"files in more than one folder;\" and skills/tasks/SKILL.md:3 says \"files in more than one folder\" with no qualifier, and nothing nearby settles it. An agent following the skill would escalate on `src/a/x.py` plus `tests/test_x.py`, where the CLI gives no note.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-20",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "skills/spec/SKILL.md (Escalating a bug fix), skills/tasks/SKILL.md (description)",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "The folder count skips `file_of`, so a Files entry with no file path counts as a folder",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-4",
+        "FR-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "for f in files(t[\"fields\"].get(\"Files\", \"\"))"
+      ],
+      "fix": "pass each entry through `file_of` and drop the None results before taking `PurePosixPath(...).parent`, as CT-4 says.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "CT-4 builds the list from `files` then `file_of`, and `file_of` returns None for an entry with no file-like path. The code uses `files` alone, so a `Files:` entry such as `src/a/x.py, none` yields the parent `.` for `none` and reports two folders (`.` and `src/a`), giving a spurious escalate note. This is inferred from reading the helpers; I did not run it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/tasks.py (check, lite branch)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "Escalate note does not name the full flow",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-9",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "notes.append(f\"escalate: the fix changes files in {len(dirs)} folders ({', '.join(sorted(dirs))}); consider a full spec\")",
+        "offer the full flow (@nio:spec, \"Escalating a bug fix\")"
+      ],
+      "fix": "end the note with `: offer the full flow (@nio:spec, \"Escalating a bug fix\")` as CT-4 gives it, and assert that tail in the test",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "a lite effort touches two folders. The note says \"consider a full spec\" and does not name the offer or the spec skill's \"Escalating a bug fix\" section. AC-9 says the check prints `escalate:` with each folder \"and the offer of the full flow\". `test_lite_escalate_note` asserts only the prefix up to the folder list, so it passes anyway.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Files entries are not run through file_of",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "(`files` then `file_of`)"
+      ],
+      "fix": "map each entry through `file_of`, skip None, then take the parent",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "the folder set is built from the raw `files(...)` entries, not from `file_of`. An entry with trailing words that contain a slash, such as `src/a/x.py see docs/notes`, yields a bogus parent folder and a false or missed escalation. An entry naming no file, such as `docs`, counts as the root folder `.`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/tasks.py",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "e527566f9274b71f03dbe2ee1e51d4238cedf468",
+    "2": "1cc94d660c15d3c27ae069dfd2f6a3b86e6b9eb2"
+  },
+  "matched": {
+    "AC-9": [
+      [
+        "tests/test_tasks.py",
+        "test_lite_escalate_note"
+      ]
+    ],
+    "AC-11": [
+      [
+        "tests/test_flow.py",
+        "test_lite_escalation_placement"
+      ]
+    ],
+    "AC-12": [
+      [
+        "tests/test_flow.py",
+        "test_lite_skill_texts"
+      ]
+    ],
+    "AC-16": [
+      [
+        "tests/test_flow.py",
+        "test_lite_skill_texts"
+      ]
+    ]
+  }
+}

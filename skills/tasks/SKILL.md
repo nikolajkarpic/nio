@@ -1,6 +1,6 @@
 ---
 name: tasks
-description: Break an approved NIO spec (and, for a full spec, its approved plan) into epics and tasks in tasks.md, rated by model tier and effort, and show the human the estimate. Use after the plan jury approves (or, for a bug fix, after the spec jury does), when the human asks to break a spec into tasks or to continue the tasks stage.
+description: Break an approved NIO spec (and, for a full spec, its approved plan) into epics and tasks in tasks.md, rated by model tier and effort, and show the human the estimate. Use after the plan jury approves (for a bug fix, once `nio check spec <slug> --gate` passes, with no spec jury; on a bug fix that outgrows lite (non-test files in more than one folder, a new dependency, an outside interface or stored data), it stops and offers the full flow), when the human asks to break a spec into tasks or to continue the tasks stage.
 ---
 
 # @nio:tasks
@@ -16,7 +16,8 @@ Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit 
 ## Inputs and outputs
 
 - **Input:** the slug of a spec whose spec jury approved it, or which the human closed with a reason; on a full spec,
-  its plan approved too (`nio check plan <slug> --approved` exits 0).
+  its plan approved too (`nio check plan <slug> --approved` exits 0). A bug fix starts once
+  `nio check spec <slug> --gate` passes, with no spec jury; a full spec's stage starts after its plan, as before.
 - **Outputs:** `.nio/specs/<slug>/tasks.md`, passing `nio check tasks <slug>`; the tasks jury's ledger; one
   `nio: approve tasks` commit once the human approves the estimate.
 
@@ -42,14 +43,18 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 1. **Check the inputs.** Run `nio new tasks <slug>`. It refuses, and you stop and tell the human why, when the spec
    isn't approved (or was handed to the human but not closed), when a full spec's plan isn't approved, or when the
    spec is an epic (run the tasks stage on each slice's spec). If `tasks.md` already exists, this is a resume: run
-   `nio check tasks <slug>` and carry on from what it lists. Never overwrite `tasks.md`.
+   `nio check tasks <slug>` and carry on from what it lists. Never overwrite `tasks.md`. A bug fix's stage starts once `nio check spec <slug> --gate` passes (no spec jury); a full spec's starts after its plan, as today.
 2. **Draft.** Run the `nio-tasks-drafter` subagent with the slug, the paths of the spec and plan files, and the exact
    CLI command. If it stops on a design choice nothing settles, stop too: on a full spec, tell the human the plan or
    the spec needs a change request (`@nio:remember`); on a bug fix, that the spec must be re-routed to a full spec
    with a plan.
-3. **Rate.** Start a run with `nio run`. Before the evaluator, make a copy of `tasks.md` at `.nio/runs/<run>/tasks.before.md`. Then run the `nio-evaluator` subagent on `tasks.md`. It sets every `Tier:` (with a reason), `Mode:` and `Effort:`. Then run `nio check tasks <slug> --rated-from .nio/runs/<run>/tasks.before.md`. If it fails, send the errors back to the evaluator once; it may change only the rating lines.
+3. **Rate.** Start a run with `nio run`. Before the evaluator, make a copy of `tasks.md` at `.nio/runs/<run>/tasks.before.md`. Then run the `nio-evaluator` subagent on `tasks.md`. It sets every `Tier:` (with a reason), `Mode:` and `Effort:`. Then run `nio check tasks <slug> --rated-from .nio/runs/<run>/tasks.before.md`. If it fails, send the errors back to the evaluator once; it may change only the rating lines. On a bug fix, a task serving only unchanged-behaviour ACs keeps `Mode: direct`.
 4. **Verify, don't trust the reports.** Run `nio check tasks <slug>` yourself and fix every error (send structural
    ones back to the drafter once). It prints the estimate.
+   On a bug fix, stop on an `escalate:` note from the check (unless `grill.md` already holds a `## Call · escalation declined`
+   naming that trigger), or when the drafter stops over a new dependency, a change to an interface used
+   outside the bug's folder, or a change to stored data. Then offer the full flow
+   (`@nio:spec`, "Escalating a bug fix"), in the shape above.
 5. **Jury.** Run the tasks jury with `@nio:jury` at the `tasks` gate (`nio jury plan <slug> tasks` refuses until the
    check passes; its core lens is executability).
 6. **Show the human the estimate**, in the shape above: per epic, the task count, how many tasks run on each model tier
@@ -67,7 +72,7 @@ record's ID) and the seven lines. A task made pointless is removed and its ID li
 
 ## When to stop
 
-Stop after step 7, or when step 1 or 2 stops. Don't start the implement stage. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (a lite or bug-fix spec, or no `nio`), say the next stage is the implement stage.
+Stop after step 7, or when step 1 or 2 stops. Don't start the implement stage. End with the next step: run `nio flow next <slug>` and show the human its `next:` line, or the command it prints when the effort waits. If it prints neither (no `nio`), say the next stage is the implement stage.
 
 ## When `nio` is missing or fails
 

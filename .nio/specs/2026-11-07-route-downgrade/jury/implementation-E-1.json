@@ -1,0 +1,287 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-07-route-downgrade",
+  "round": 1,
+  "tier": "low",
+  "expect": [
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261107-nwms/implementation-E-1-conformance.md": "a0ff5d5139c955cda19a0a9f1edfc6e42f7f35b11f2a3f7b7272241a4903d373",
+    "R-261107-nwms/implementation-E-1-consistency.md": "71d2b1a8b5c0d8cb5ad8521ceb718f5413b162f5d00fc47dd50ca48d04f51163",
+    "R-261107-nwms/implementation-E-1-correctness.md": "17b052ad7f5232cdac738611cd87b6eb5bf5ee5ae44c6054884f1f0ac43b260c"
+  },
+  "jurors": {
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c2b5cf47364ae4da1a74250e0e482c0c6db2aad9",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c2b5cf47364ae4da1a74250e0e482c0c6db2aad9",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 2,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c2b5cf47364ae4da1a74250e0e482c0c6db2aad9",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "AC-5's test never records the lite route it is given",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a lite effort with its route recorded, when its spec.md is overwritten with the full refunds fixture",
+        "flow.start(root, S, by=BY)"
+      ],
+      "fix": "write spec-bugfix.md before `flow.start` (or start after drafting), then assert `lines_of(root)[0][\"evidence\"][\"route\"] == \"lite\"` before overwriting spec.md with the full fixture",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "in test_lite_escalated_to_full_runs_full_stages, `flow.start` runs before spec.md is written. `record` adds a route only when `header_route` finds one, and here spec.md does not exist yet, so the first history line carries no `route`. The test proves the escalation case for an effort with no recorded route. It does not prove it for one whose first line says `route: lite`, which is the precondition AC-5 states. The code reads only `== \"full\"`, so a recorded lite should not change the result, but the test does not show that.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py:1513",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Route decision reads the history record without a change request against D-261028-4kji",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-1",
+        "AC-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "if (json.loads(f.readline()).get(\"evidence\") or {}).get(\"route\") == \"full\":"
+      ],
+      "fix": "record a change request (or a new decision that names D-261028-4kji) stating that the effort's route is taken from its first history line, and that this can only stop lite skips, never pass a stage",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "D-261028-4kji says an effort's stage is the first stage whose guards fail on its files, and that `nio flow done` \"is not what makes a stage passed\". It also records \"Only `done` counts\" as a rejected alternative. With this diff, the first history line, written by `nio flow start` or `done`, decides whether spec_jury, planning and plan_jury are skipped. A history line now changes which stages the derivation passes over, and no change request against D-261028-4kji records this exception.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/flow.py ran_full / skips",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "An effort started before spec.md exists never records its route",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-2",
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN an effort's first history line is written (by `nio flow start` or its first `nio flow done`) THE SYSTEM SHALL record spec.md's route on that line.",
+        "if not lines and entries and (route := header_route(root, slug)):"
+      ],
+      "fix": "record the route on the first line written once spec.md names one (e.g. when no line carries `route` yet), and have `ran_full` look for the first line that carries a route rather than only line 1.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`nio flow start` on an intake-only folder writes the first line with no route (spec.md is missing); every later line has history, so the route is never recorded. Until the spec jury has a round, rewriting that full effort's header to lite still silently skips spec_jury, planning and plan_jury, the bug of CB-1.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/flow.py record / ran_full",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "A torn first write moves the route off the first line",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "entries.insert(0, {\"kind\": \"repair\", \"from\": last, \"to\": last,",
+        "if (json.loads(f.readline()).get(\"evidence\") or {}).get(\"route\") == \"full\":"
+      ],
+      "fix": "put the route on the line after any repair insertion, or let `ran_full` scan for the first line carrying `route`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "the very first write crashes mid-line; the next write has no complete lines, puts `route` on its entry, then inserts the `repair` line before it. `ran_full` reads only the first line (the repair), so the recorded full route is ignored.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/flow.py record",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "A slugless `nio flow next` hides the route-changed refusal",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "return sorted(p.name for p in specs.iterdir() if p.is_dir() and kind(root, p.name) == \"effort\") if specs.is_dir() else []",
+        "`nio flow next` names the recorded and the header route"
+      ],
+      "fix": "let `pick` consider `route changed:` folders too (they are efforts to report on), or have slugless `next` print route-changed efforts first.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "the downgraded effort is the newest one; `nio flow next` with no slug picks from `efforts()`, which now excludes it, so it reports another effort (or none) and never names the two routes. The refusal shows only when the slug is given.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/flow.py efforts / pick",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "c2b5cf47364ae4da1a74250e0e482c0c6db2aad9"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_flow.py",
+        "test_downgrade_skips_nothing"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_flow.py",
+        "test_route_recorded_by_start"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_flow.py",
+        "test_downgrade_refused"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_flow.py",
+        "test_escalated_downgrade_refused"
+      ]
+    ],
+    "AC-5": [
+      [
+        "tests/test_flow.py",
+        "test_lite_escalated_to_full_runs_full_stages"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_flow.py",
+        "test_header_matching_route_skips_unchanged"
+      ]
+    ]
+  }
+}

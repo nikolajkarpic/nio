@@ -1,0 +1,693 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-07-lite-path",
+  "round": 3,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261107-h3to/spec-consistency.md": "7aa2a5fe05f2f07294ec9793161eb8a38f6100ca8c4f002a26250bb35b3a547c",
+    "R-261107-h3to/spec-logic.md": "fe050f64ab7ed021931661dba119cb980e80ef54cbe9ba17a8db1b8018dc4f18",
+    "R-261107-h3to/spec-scope.md": "66271ef7ff54cdf88dd54147729198f09e24e7905ce88a7cebb728dfd39bf58f",
+    "R-261107-h3to/spec-testability.md": "61a8d6db2718fb8c9dd53ac4d87b3ac8b974cc0435c79072c525b36e20f95262",
+    "R-261107-h3to/spec-refuter.md": "0debf3b2ecdfc890c3acef64ff0c1c85f56b578854456865db9936ac737c68f0",
+    "R-261107-io5c/spec-consistency.md": "2bf16a532b8bfd71cbfefe212dd48b9d5579a1c1cf68c02e37bc783deb8166b7",
+    "R-261107-io5c/spec-logic.md": "63349f71ae46e742e7080e2e633a3e1ebcb8f9b62e492b2c6947d9cd28449357",
+    "R-261107-io5c/spec-scope.md": "c563891e048070dfe311fb5dad945a41566c5b5477abb47f85702f94088b11b6",
+    "R-261107-io5c/spec-testability.md": "fe950f770602529817d750e05259e0da07ac39d4b437e7e9cfe2851d7f93cffb",
+    "R-261107-4toh/spec-consistency.md": "ba336e3616f89fd2f3b9f90d7cc1fc1588336b16cf0eda2d1b97efaf92858835"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "19f6ed818a5afe88cb506ddaf382196d5d9264a9",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a6b474c73c46385d2ea24dbb1b655bd23a4171cc",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a6b474c73c46385d2ea24dbb1b655bd23a4171cc",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a6b474c73c46385d2ea24dbb1b655bd23a4171cc",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Escalation placement contradicts its own rule",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-11",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the flow places it at the first full-route stage not yet passed",
+        "`nio flow next` on the effort says grilling or spec_jury, not tasking or implementing",
+        "Given a lite effort past grilling"
+      ],
+      "fix": "define \"passed\" for skipped stages, and make the AC-11 observable name the stage the rule actually gives.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a lite effort at tasking is escalated. Its lite stages skipped researching and advocate_walking, and the spec does not say whether a skipped stage counts as passed. If it does not, the first full-route stage not yet passed is researching, not the grilling or spec_jury that AC-11 promises. If it does, every stage up to tasking counts as passed, so grilling or spec_jury is never reached. Either way the AC-11 observable cannot hold for an effort past grilling.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a lite effort escalates from tasking. Its history has `skip` lines for researching, advocate_walking and spec_jury.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "after the switch, one test run gets grilling and another gets spec_jury, and both satisfy the AC. No rule says which stage applies. Nothing says how \"not yet passed\" is judged for a spec that was rewritten, so a test cannot assert one stage.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-11 says the flow places an escalated effort at the \"first full-route stage not yet passed\", but nothing says whether the lite `skip` lines (AC-1) count as passed. The observable \"grilling or spec_jury\" cannot follow from either reading for an effort past grilling.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "a skip never counts as a gate's pass; spec_jury or grilling (grill Q11, delegated)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Spec says lite reuses the flow, but the code refuses every non-full route",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "existing stages, flow state machine and jury"
+      ],
+      "fix": "state that lifting the full-route guard for lite is new work, and add it to the FR list or to a stated change.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "src/nio/flow.py lines 334-335 return \"unsupported: <route>\" for any spec whose route is not full, and line 785 answers \"nio flow drives full-route specs only\". So nio flow next on a lite effort refuses today. The spec says lite only reuses the existing machinery and never says this route guard changes. AC-1 (\"the flow is driven to done\") cannot be met by reuse alone.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "src/nio/flow.py:335 returns `unsupported: <route>` for any non-full route, and line 785 answers \"nio flow drives full-route specs only\". The spec calls lite pure reuse (Summary, non-goals), and no FR lifts the guard.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-15 states the flow drives lite specs",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "Non-goal says no new state machine, yet the lite transition table adds transitions the existing table lacks",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-1",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "New stages, a new flow state machine or a new jury; lite reuses the existing ones.",
+        "### State table: Lite effort (start: intake; final: done, full route)"
+      ],
+      "fix": "say the lite table is a route-specific view or override of the existing machine, and list the transitions that differ.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the lite table has \"grilling | → tasking\" and \"implementing | → implementing\" on a jury rejection. The existing table in src/nio/flow.py (lines 16-19) sends grilling to spec_jury and implementing to done, with no reject loop. A reader who trusts the non-goal would expect the lite table to be the existing one. The two disagree.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "spec-consistency: the non-goal now says the table gains only a per-route set of skipped stages, but the lite table's grilling → tasking and implementing → implementing transitions are not listed as differences from the existing table, and the non-goal does not account for them.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-2 lists the transitions that differ: grilling → tasking from the skips; implementing's reject loop is the existing implementation gate's",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-4",
+      "title": "Escalation trigger is called objective, but the spec says the triggers are judged",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "an objective condition that stops a lite effort and offers the full flow.",
+        "needs a new dependency, or changes an interface used outside the bug's folder or stored data",
+        "A deterministic check for a new dependency or an interface change; those triggers are judged by the agent from the skill's list."
+      ],
+      "fix": "change \"objective\" to \"stated in the skills\", or name which triggers are checked and which are judged.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the key-entity definition says an escalation trigger is objective. FR-8's dependency and interface triggers are judged by the agent, as the non-goal says. A worker who reads \"objective\" may expect a check that does not exist for these two triggers.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "key entity: stated in the skills, folder trigger checked",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "A declined switch cannot continue on lite, because the module check keeps failing",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "AC-9",
+        "FR-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THEN THE SYSTEM SHALL stop the effort and offer the full flow",
+        "the check exits non-zero and its message names each folder and says to offer the full flow",
+        "THE SYSTEM SHALL continue the effort on lite and log the human's call"
+      ],
+      "fix": "define how a logged decline overrides the folder check (for example, the check passes when `grill.md` records the override). Or say the check only warns once the decline is logged.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a lite effort's tasks change non-test files in `src/a` and `src/b`. `nio check tasks` fails (AC-9) and the effort stops (FR-8). The human declines the switch, and FR-11 says the effort continues on lite. The tasks check still sees two folders, so it still fails. The effort cannot pass tasking to tasks_jury unless the check is bypassed, and no override is specified. Either the decline leaves the effort stuck, or the folder trigger is not a hard stop.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-9 makes `nio check tasks` fail on more than one folder, and FR-11/AC-12 only log a decline in `grill.md`. Nothing tells the check to honour that log, so a declined effort stays blocked at tasking.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "folder trigger is a note with an exact folder rule (grill Q10, delegated)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "\"First full-route stage not yet passed\" is ambiguous because lite records skips",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-11",
+        "AC-1",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then the flow places it at the first full-route stage not yet passed",
+        "a `skip` line for each of researching, advocate_walking, spec_jury, arch_grilling, planning and plan_jury"
+      ],
+      "fix": "state which stages the full route must re-run after escalation (for example, spec_jury at minimum) and whether a recorded skip counts as passed.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a lite effort escalates from tasking. Its history has `skip` lines for researching, advocate_walking and spec_jury.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "UJ-2 triggers do not match FR-8",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "UJ-2",
+        "FR-8",
+        "AC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the fix touches several modules, needs a new dependency or changes a contract",
+        "changes an interface used outside the bug's folder or stored data"
+      ],
+      "fix": "use one trigger list, and make UJ-2 refer to FR-8.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a fix changes a contract that is used only inside the bug's folder. UJ-2 says to escalate. FR-8 and AC-16 say not to. Stored-data changes have no named equivalent in UJ-2.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "UJ-2 refers to FR-8's list",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "Risk flags outside the five do not stop lite routing",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-12",
+        "decision table `Route at intake`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "no risk flag from auth, money, data-deletion, migration or PII applies",
+        "auth | pii | money | external-input | data-deletion | migration | multi-party | public-api"
+      ],
+      "fix": "say whether the other three flags are deliberately allowed on lite. If not, add them to FR-12 and the decision table.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a defect with obvious expected behaviour, one module and the flag `external-input` or `public-api` gets route lite. The template defines eight risk flags and FR-12 checks five. For `public-api` a later escalation may catch it, but only if the fix changes an interface used outside the bug's folder. UJ-1's misuse line (\"routes a risky ... change as lite\") is only partly covered.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "other three flags stay lite, lenses as usual (grill Q12, delegated)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "Nested folders and non-code files make the \"more than one folder\" trigger unclear",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "AC-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "**Module**: a folder holding the changed non-test files, as counted for the escalation trigger."
+      ],
+      "fix": "define the folder count, for example top-level module or nearest common folder, and say whether docs are excluded.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a fix changes `src/a/x.py` and `src/a/sub/y.py`. It is unclear whether that is one folder or two. A fix that also edits `docs/CHANGELOG.md` has non-test files in two folders and so escalates, although it is one module.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a fix touches `src/a/x.py` and `src/a/sub/y.py`. Is that one folder or two? Does a root-level file count as a folder? `conftest.py` or fixtures under `tests/` may or may not be \"test files\". Two implementations can disagree and both match the AC.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Glossary defines Module only as \"a folder holding the changed non-test files\". It is silent on nested folders, docs and root-level files, and on what counts as a test file, so two implementations could disagree.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "exact rule (grill Q10, delegated)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "AC-8 asserts a behaviour but its test only reads a card",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-8",
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given an unchanged-behaviour test, when it runs on the code before the fix and after it, then it passes on both.",
+        "the tasks drafter card says that on a bug fix each unchanged-behaviour test is its own `direct` task"
+      ],
+      "fix": "add an integration check on a fixture that runs the unchanged task before and after the fix and expects green both times. Alternatively, reword the AC and FR-7 as \"the card instructs\" and say the behaviour is judged at the implementation gate.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the drafter card carries the sentence, so the test passes. The drafter still emits a \"unchanged\" test that fails on the pre-fix code, or one that does not depend on the fix's task. FR-7 is broken and the AC stays green.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-8 asserts that the test passes before and after the fix, but its Observable (Level: unit) only checks that the drafter card contains a sentence. FR-7's behaviour is never exercised.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-7/AC-8 state the card instruction, judged at the tasks jury (grill Q13, delegated)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "AC-11 cannot name a single expected stage",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-11",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio flow next` on the effort says grilling or spec_jury, not tasking or implementing"
+      ],
+      "fix": "state the deterministic rule, for example \"re-enter at grilling when passed stages are drafting and grilling\". Then give each case an expected stage.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "after the switch, one test run gets grilling and another gets spec_jury, and both satisfy the AC. No rule says which stage applies. Nothing says how \"not yet passed\" is judged for a spec that was rewritten, so a test cannot assert one stage.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "NFR-2 has no baseline, no definition of \"small\" and no pass rule",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "NFR-2",
+        "SC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "complete a small lite effort at least 15 minutes faster in wall-clock than the same effort on the full flow"
+      ],
+      "fix": "define a reference effort (a named bug with a size cap), the number of runs and the pass rule. Or downgrade NFR-2 to a reported measure that is not pass/fail.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "\"the same effort on the full flow\" has to be run twice, and each run varies by minutes. SC-1 only says the time is \"reported\". Nothing says what happens if the gap is 14 minutes. \"Small\" has no size limit, so no test can fail the NFR.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "NFR-2 sets a 15-minute margin against \"the same effort on the full flow\" without defining \"small\", the number of runs or a pass rule. SC-1 only says the time is \"reported\".",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "NFR-2 is a reported measure (grill Q13, delegated)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "AC-2 states a count of questions but its test checks only a text sentence, and \"the bar\" is undefined",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-2",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then it asks the human zero questions",
+        "the grill skill says that on a lite spec it skips the six-facet coverage and asks only points over the bar"
+      ],
+      "fix": "define the bar as \"open point of kind decision\" in the AC. Test it against a fixture spec with no open decision and one with an open decision.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Observable never mentions zero questions and never says what the bar is. A grill that asks one question about a non-decision point still passes the text test. FR-12's \"obvious\" and \"likely\" criteria have the same problem, so a test cannot tell which intake is lite.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-2 names the bar and the zero-question case",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "Needs-a-decision escalation trigger dropped while Decisions says it was kept",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "AC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "The \"needs a decision\" trigger folds into the grill's bar and FR-8's list",
+        "needs a new dependency, or changes an interface used outside the bug's folder or stored data"
+      ],
+      "fix": "add \"the expected behaviour needs a human decision with two or more real options\" to FR-8 and to AC-16, or delete the Decisions sentence and record on purpose that the trigger was dropped.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "#44 (intake) lists \"the expected behaviour needs a human decision with two or more real options\" as an escalation trigger. A lite bugfix whose expected behaviour has two real options reaches the grill, FR-3 has the human answer, and no requirement stops the effort or offers the full flow. FR-8 and AC-16 name only the new dependency, interface and stored-data triggers, so the effort stays on lite with the trigger gone, even though Decisions says it was kept.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The Decisions line says the \"needs a decision\" trigger \"folds into the grill's bar\" and that FR-9 was retired in grill Q5. That is a recorded choice: the grill (FR-3, AC-2) handles real decisions, not an escalation. The finding's claim that Decisions \"says it was kept\" misreads \"folds into\".",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "Tasks stage kept on lite, reversing the skip list the human approved in #44",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "tasks and their jury, then implementing",
+        "Lite runs intake, drafting, grilling, tasks and the tasks jury, then implementing with the implementation jury"
+      ],
+      "fix": "have the human confirm the reversal of #44's tasks skip and record it as [human], or drop tasks from the lite stage list and have implementing read the bugfix spec.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake quotes #44 as \"Skipped: research fan-out, Actors and journeys, user advocate walk, architecture grill, plan and tasks stages.\" The spec runs tasks and the tasks jury on every lite effort and tags the reversal as [agent] (grill Q1). If the human did not confirm this reversal in the grill, the lite route adds a jury and a stage that the human's own issue removed, which works against the 15-minute target in NFR-2. The rationale is sound (implementing reads tasks.md), but it needs the human's confirmation or a tag change.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-scope: FR-2 now states the departure from #44's tasks skip, but the grill Q1 it cites is still tagged [agent] in Decisions. The fix asked for the human to confirm it or for the item to be tagged [human]. Neither was done.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the human gave the orchestrator standing authority to take the recommended option; keeping the tasks stage (Q1) and the gate's usual lenses (Q2) are recorded in the decision matrix for the human to review on the PR.",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-16",
+      "title": "Implementation gate keeps the usual lenses, not the one-lens default in #44",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "review the fix diff with its usual lenses",
+        "The implementation gate keeps its usual lenses on a lite fix"
+      ],
+      "fix": "state the lens set in FR-13 (for example the one correctness lens plus risk-triggered lenses) and cite the human's answer, or record the usual set as a human decision with its cost.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake quotes #44's default as \"the `low` ladder rung with one core lens: `correctness`\" plus triggered lenses. The spec gives every lite fix the usual lens set, which is more than the default the human's issue chose. For a one-module typo fix this adds review cost against the 15-minute target. Nothing in the intake asks for the heavier set.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "spec-scope: FR-13 now states the lens set and the departure from #44's default, which is the concrete part asked for. The cited answer (grill Q2) is still [agent], so the human's answer is not cited, and the cost of the heavier set is not recorded.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Delegated: the human gave the orchestrator standing authority to take the recommended option; keeping the tasks stage (Q1) and the gate's usual lenses (Q2) are recorded in the decision matrix for the human to review on the PR.",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "2165c8fb93b5566a6c539439634febd003927c9d",
+    "2": "a6b474c73c46385d2ea24dbb1b655bd23a4171cc",
+    "3": "19f6ed818a5afe88cb506ddaf382196d5d9264a9"
+  },
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-3",
+      "J-15",
+      "J-16"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}

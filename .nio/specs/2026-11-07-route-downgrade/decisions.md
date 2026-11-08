@@ -1,0 +1,14 @@
+# Decisions: 2026-11-07-route-downgrade (#114, lite)
+
+Orchestrator: claude-code / claude-opus-5-5, delegated by the human (Nikolaj). Wall clock 15:59Z (`nio new spec`) to 16:29Z (done): about 30 minutes.
+
+- Built on `nio/2026-11-07-lite-path` (#112), after the #113 effort was merged into it.
+- Route lite, no risk flag: a defect in one module (`src/nio/flow.py`).
+- Grill Q1: the route is recorded on the effort's first history line (`record`, so `nio flow start` and a first `nio flow done` both carry it), from spec.md's header at that moment. The human's spec approval was rejected as the point: a lite effort has none, and the repro's window is before approval.
+- Grill Q2: a full → lite header is refused like an unsupported route: `kind` returns `route changed: recorded full, spec.md says lite`, `refuse` stops every writing flow command, `nio flow next` says to restore `route: full`. No ruling command; a smaller fix becomes a new lite effort.
+- Grill Q3: an effort whose history holds no route keeps reading the header, except that a spec-jury round counts as full. That also keeps lite → full escalation working and makes it one-way once the spec jury has judged it.
+- Grill Q4: refusing `route: lite` with a risky flag is split out as #116.
+- Tasks jury round 1 rejected (3 major, 2 minor, all confirmed by the refuter): the refusal had no fixed marker, the AC-3 assertion passed before the fix, and the first line written by `done` was untested. Fixed in tasks.md (a `route changed:` marker, `done tasking` and `start` refusing with history unchanged, a first-`done` test, a legacy-history test); round 2 approved.
+- T-3's first green failed review: `test_lite_red_refuses_passing_test` built its "lite" effort as a full one with real spec-jury rounds and the header swapped, which the new rule refuses. The retry made `impl(route="lite")` drop the spec gate's ledger, so the fixture is a real lite effort (the #112 review had flagged that fixture).
+- Implementation jury round 1 approved with 5 minors, left open: J-1 (AC-5's test starts the effort before spec.md exists, so it records no route), J-2 (no change request against D-261028-4kji, "stage derived from the files"), J-3 (an effort started before spec.md exists records no route; `nio new spec` writes spec.md first, so the skills' path is covered), J-4 (a torn first write moves the route off the first line), J-5 (a slugless `nio flow next` skips a route-changed effort, so the refusal shows only when the slug is named).
+- Juror outputs: `.nio/runs/R-261107-5ccw/`, `R-261107-ug2q/` (tasks) and `R-261107-nwms/` (implementation) under `jury/`, git-ignored; copies in the orchestrator's scratchpad `n113/jurors-114/`. The first correctness and consistency outputs were refused by the CLI for citing EB-n instead of AC-n and re-run.
