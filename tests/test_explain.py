@@ -349,6 +349,29 @@ def test_ct5_comma_drill_title():
         plan.approved = keep
 
 
+def test_ct5_bad_quickstart_writes_nothing():
+    # T-26: a quickstart that can't be edited stops finish before any write or delete
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, fin = fin_repo()
+        d = root / ".nio/specs/checkout-refunds"
+        ex = d / "explainer.md"
+        ex.write_text("(images: explainer-old.svg)\n" + ex.read_text())
+        (d / "explainer-old.svg").write_text("<svg>old</svg>")
+        (d / "quickstart.md").write_text("---\nid: QS\n\n# Quickstart\n")
+        names = ["explainer.md", "quickstart.md", "explainer-old.svg"]
+        before = {n: (d / n).read_bytes() for n in names}
+        try:
+            fin()
+            assert False, "finish should refuse"
+        except ValueError:
+            pass
+        assert before == {n: (d / n).read_bytes() for n in names}
+    finally:
+        plan.approved = keep
+
+
 def npx_bin():
     """A PATH dir with a fake npx: copies -i to -o; FAKE_NPX=hang sleeps 5 s first."""
     import stat
@@ -495,4 +518,4 @@ if __name__ == "__main__":
     selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
-                    test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title])
+                    test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing])

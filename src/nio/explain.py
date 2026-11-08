@@ -162,6 +162,12 @@ def finish(root, path):
             ok, why = False, str(e)
         if not ok:
             raise ValueError(f"the plan jury comes first ({why}); explain a topic instead")
+    q = d / "quickstart.md"
+    line = "Read first: [explainer.md](explainer.md)"
+    qtext = None
+    if plan_mode and q.exists() and line not in q.read_text():
+        pre, fm, rest = q.read_text().split("---\n", 2) if q.read_text().startswith("---\n") else ("", "", q.read_text())
+        qtext = ((f"---\n{fm}---\n" if fm else "") + f"\n{line}\n\n" + rest.lstrip("\n"))
     rec, body = {}, []
     for l in p.read_text().splitlines():
         m = REC.match(l.strip())
@@ -268,11 +274,8 @@ def finish(root, path):
         out.append(f"deleted: {f.name}")
     i = text.find("## ") if text.startswith("## ") else text.find("\n## ") + 1  # records sit above the first section
     _put(p, text[:i] + "\n".join(recs) + "\n\n" + text[i:])
-    q = d / "quickstart.md"
-    line = "Read first: [explainer.md](explainer.md)"
-    if plan_mode and q.exists() and line not in q.read_text():
-        pre, fm, rest = q.read_text().split("---\n", 2) if q.read_text().startswith("---\n") else ("", "", q.read_text())
-        _put(q, (f"---\n{fm}---\n" if fm else "") + f"\n{line}\n\n" + rest.lstrip("\n"))
+    if qtext is not None:
+        _put(q, qtext)
     out.append(f"finished: {path}")
     return out
 
