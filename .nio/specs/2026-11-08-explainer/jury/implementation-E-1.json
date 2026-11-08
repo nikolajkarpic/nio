@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-1",
   "subject": "2026-11-08-explainer",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,7 +14,11 @@
     "R-261108-c5hf/implementation-E-1-conformance.md": "bfb743ae71ecc9dd062e26cacbb761b8c247bfaa386c85c8e3fa2d4c144fb05e",
     "R-261108-c5hf/implementation-E-1-consistency.md": "b8477a366a886de5d17d6587c6a5d2984bf49e16d9864d1ff490a19ffad4629a",
     "R-261108-c5hf/implementation-E-1-correctness.md": "720a76869c3d059062b7f1d4a3376b4ebf3131735337f75b15a372ee1e379d1b",
-    "R-261108-c5hf/implementation-E-1-refuter.md": "15c7d373224f789dfeebbb7cdb53163b407aca67e4c1fc3cdb08274ad8e0c8d8"
+    "R-261108-c5hf/implementation-E-1-refuter.md": "15c7d373224f789dfeebbb7cdb53163b407aca67e4c1fc3cdb08274ad8e0c8d8",
+    "R-261108-43px/implementation-E-1-adversary.md": "bc163efd61ca7fb48da8012dd033871c3c1e5b5b085160dd32afe01191550928",
+    "R-261108-43px/implementation-E-1-conformance.md": "07fe0429bd24627a03c744669ea5088370dabb22a19bff8b58627f1e63d23483",
+    "R-261108-43px/implementation-E-1-consistency.md": "1737ab62a2376d99038631b6339ba1990af1a74ead49a8f8ecdcc7e6e881dd6d",
+    "R-261108-43px/implementation-E-1-correctness.md": "e64aa0b3039638da068f85c8666064c58cb971551588b00080da75df71ebc5c1"
   },
   "jurors": {
     "implementation-E-1-adversary": {
@@ -24,9 +28,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
-      "judged": 1
+      "round": 2,
+      "version": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
+      "judged": 2
     },
     "implementation-E-1-conformance": {
       "attempts": 1,
@@ -35,9 +39,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
-      "judged": 1
+      "round": 2,
+      "version": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
+      "judged": 2
     },
     "implementation-E-1-consistency": {
       "attempts": 1,
@@ -46,9 +50,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
-      "judged": 1
+      "round": 2,
+      "version": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
+      "judged": 2
     },
     "implementation-E-1-correctness": {
       "attempts": 1,
@@ -57,9 +61,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
-      "judged": 1
+      "round": 2,
+      "version": "36275fff3f3e6755465d9860c41f75fcfe70c00c",
+      "judged": 2
     }
   },
   "findings": [
@@ -101,15 +105,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "explain.py nodes() keeps only split parts that fully match ID, so `Alice->>John: Hello` gives `John: Hello` and John is never counted. CT-2 calls every arrow endpoint an ID, and the same applies to `A -- text --> B`.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-17",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "implementation-E-1-adversary: the parsing of edge text, `&`, `;` and `: ...` is now right, and the sequence, state, `&` and labelled-edge tests were added. But `DROP` still runs over the whole block, so one unbalanced `\"`, `(`, `[` or `{` in a line swallows every line up to the next closer. A valid sequence message such as `Client->>Svc3: retry (see note` followed by `Client->>Svc4: ok)` loses both lines before the `:` split ever runs. Those nodes are not counted, so an oversized diagram passes the AC-5 cap, which is the original symptom. No test covers it. Fix: apply `DROP` per line, `DROP.sub(\"\", line)` inside the loop.; implementation-E-1-consistency: the listed steps (strip `: ...`, split `&` and `;`, DROP first) and their tests are in, but `A <--> B` still drops `A` and `A --o B` drops both endpoints, so the node cap still undercounts common flowchart syntax.; implementation-E-1-correctness: the parsing is stricter and the new forms are tested, but `DROP` is still applied to the whole block and can span lines, so one unbalanced quote or bracket still hides later nodes from the cap.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "partial",
       "where": "src/nio/explain.py:nodes",
       "tampering": false
@@ -140,17 +144,18 @@
       ],
       "validation": "confirmed",
       "reason": "render() returns \"unreachable\" for any non-zero exit without \"Parse error\", as CT-3 says (\"any other failure\"). A typo such as `flowchar TD` fails with an error other than Parse error. CT-4 then turns that into the \"could not be fetched\" note and stops rendering later blocks, so FR-11 and AC-9 are not met for it.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-18",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/explain.py:render",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -399,15 +404,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "SKIP contains the bare prefix \"end\" and the code uses `line.startswith(SKIP)`. `endpoint --> api` is therefore skipped whole, and no other text in CT-2 or FR-7 limits `end` to the whole word.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-19",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "implementation-E-1-consistency: the code now matches the whole word `end` and the self-check line is added, but CT-2 in `contracts.md` line 24 still lists `end` as a skipped line prefix and does not state the whole-word rule the fix asked for.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "contradicts",
       "where": "src/nio/explain.py:nodes",
       "tampering": false,
@@ -586,25 +591,31 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-20",
-      "baseline": "new",
+      "by": "human",
+      "note": "Build it now after all: dropping needs the tasks re-approved; T-20 builds the broken-diagram error now, T-4 still builds the render-skip note.",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "human"
     ]
   ],
   "versions": {
-    "1": "1d3b5aa566c53707a244aea5a03c7417d9877bac"
+    "1": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
+    "2": "36275fff3f3e6755465d9860c41f75fcfe70c00c"
   },
   "matched": {
     "AC-5": [
@@ -613,7 +624,12 @@
         "test_ac5_node_cap"
       ]
     ],
-    "AC-9": [],
+    "AC-9": [
+      [
+        "tests/test_explain.py",
+        "test_ac9_broken_block"
+      ]
+    ],
     "AC-11": [
       [
         "tests/test_explain.py",
@@ -621,5 +637,14 @@
       ]
     ]
   },
-  "asked": {}
+  "asked": {},
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-1",
+      "J-9"
+    ],
+    "final": null,
+    "flagged": []
+  }
 }

@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-1
 subject: 2026-11-08-explainer
-round: 1
-outcome: rejected
+round: 2
+outcome: human
 ---
 # Implementation-e-1 jury: 2026-11-08-explainer
 
@@ -10,20 +10,20 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | CT-3, CT-4, AC-9 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | risk | CT-2, AC-5 | adversary, consistency, correctness | confirmed | open |  | unchanged, 1 |
+| J-2 | major | gap | CT-3, CT-4, AC-9 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | gap | AC-5, AC-9, CT-4 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | risk | CT-1, CT-4 | adversary | grounded | open |  | new, 0 |
 | J-5 | minor | risk | CT-3 | adversary | grounded | open |  | new, 0 |
 | J-6 | blocker | gap | AC-9 | conformance | refuted | refuted |  | new, 0 |
 | J-7 | blocker | gap | AC-5 | conformance | refuted | refuted |  | new, 0 |
 | J-8 | major | contradiction | CT-2, FR-7 | consistency | merged | merged |  | new, 0 |
-| J-9 | major | ambiguity | CT-2, FR-7 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-9 | major | ambiguity | CT-2, FR-7 | consistency | confirmed | open |  | unchanged, 1 |
 | J-10 | minor | inconsistency | CT-3, FR-11 | consistency | grounded | open |  | new, 0 |
 | J-11 | minor | inconsistency | CT-1 | consistency | grounded | open |  | new, 0 |
 | J-12 | minor | risk | CT-2 | correctness | grounded | open |  | new, 0 |
 | J-13 | minor | gap | CT-1 | correctness | grounded | open |  | new, 0 |
-| J-14 | blocker | gap | AC-9 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-14 | blocker | gap | AC-9 | cli | confirmed | fixed | fix-task (human) | absent, 0 |
 
 ### J-1 Node cap undercounts common Mermaid syntax, so oversized diagrams pass
 - quote: "An ID is a token `[A-Za-z_][\w]*` that is an endpoint of an arrow"
@@ -31,8 +31,7 @@ outcome: rejected
 - situation (correctness): `Alice->>John: Hello` leaves `John: Hello` after the split, which is not an ID, so John is not counted. `A --> B & C` and `A -- text --> B` are also missed. A sequence or state diagram with more than 20 participants can pass the cap. The test covers only flowchart chains.
 - situation (consistency): a sequence diagram of 25 lines `Client->>Svc1: call` through `Client->>Svc25: call`. ARROW.split gives `Client` and `Svc1: call`; `Svc1: call` fails ID.fullmatch, so nodes() returns {Client}, one node, and the 20-node check passes a 26-node diagram. The same happens to `B` in `A -- retry --> B`, because `A -- retry` is not an ID.
 - fix: parse the endpoints more strictly. Strip edge text and trailing `: ...`, split on `&` and `;`, and keep `DROP` within one line. Add tests for sequence, state, `&` and labelled-edge forms.
-- validation: confirmed: explain.py nodes() keeps only split parts that fully match ID, so `Alice->>John: Hello` gives `John: Hello` and John is never counted. CT-2 calls every arrow endpoint an ID, and the same applies to `A -- text --> B`.
-- disposition: fix-task by agent: fix task T-17
+- validation: confirmed: implementation-E-1-adversary: the parsing of edge text, `&`, `;` and `: ...` is now right, and the sequence, state, `&` and labelled-edge tests were added. But `DROP` still runs over the whole block, so one unbalanced `"`, `(`, `[` or `{` in a line swallows every line up to the next closer. A valid sequence message such as `Client->>Svc3: retry (see note` followed by `Client->>Svc4: ok)` loses both lines before the `:` split ever runs. Those nodes are not counted, so an oversized diagram passes the AC-5 cap, which is the original symptom. No test covers it. Fix: apply `DROP` per line, `DROP.sub("", line)` inside the loop.; implementation-E-1-consistency: the listed steps (strip `: ...`, split `&` and `;`, DROP first) and their tests are in, but `A <--> B` still drops `A` and `A --o B` drops both endpoints, so the node cap still undercounts common flowchart syntax.; implementation-E-1-correctness: the parsing is stricter and the new forms are tested, but `DROP` is still applied to the whole block and can span lines, so one unbalanced quote or bracket still hides later nodes from the cap.
 
 ### J-2 Any non-parse render failure becomes "unreachable", which skips the check and hides every later block
 - quote: "after which no further block is rendered"
@@ -80,8 +79,7 @@ outcome: rejected
 - quote: "SKIP = ("%%", "classDef", "class ", "style ", "linkStyle", "click ", "subgraph", "end")"
 - situation (consistency): the flowchart line `endpoint --> api` starts with `end`, so `line.startswith(SKIP)` is true and both `endpoint` and `api` are dropped. A 25-node flowchart whose nodes are named `endpoint1 --> endpoint2` and so on counts zero nodes and passes the cap.
 - fix: match the keyword `end` only as the whole word (the line equal to `end`, or `end` followed by a space), say so in CT-2, and add `endpoint --> api` to the self-check.
-- validation: confirmed: SKIP contains the bare prefix "end" and the code uses `line.startswith(SKIP)`. `endpoint --> api` is therefore skipped whole, and no other text in CT-2 or FR-7 limits `end` to the whole word.
-- disposition: fix-task by agent: fix task T-19
+- validation: confirmed: implementation-E-1-consistency: the code now matches the whole word `end` and the self-check line is added, but CT-2 in `contracts.md` line 24 still lists `end` as a skipped line prefix and does not state the whole-word rule the fix asked for.
 
 ### J-10 Broken-diagram reason is read from both streams, not stderr
 - quote: "first stderr line holding Parse error"
@@ -109,13 +107,13 @@ outcome: rejected
 - situation (cli): no passing test proves AC-9: no test no match
 - fix: add or fix a test that proves AC-9
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-20
+- disposition: fix-task by human: Build it now after all: dropping needs the tasks re-approved; T-20 builds the broken-diagram error now, T-4 still builds the render-skip note.
 
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-1-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-1-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-1-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-1-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-1-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-1-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
