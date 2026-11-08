@@ -109,10 +109,10 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-1-consistency: The named arrow forms (`<-->`, `--o`, `--x`, `--->`, `==>`, `-.->`) and per-line DROP are implemented and traced correctly. But the test for an unbalanced quote is missing, although the fix note claims it. Sequence activation (`Client->>+Svc3`) and `A o--o B` still drop a node (inferred by trace, not run), so the undercount of common syntax that J-1 names is not closed.",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Accept, file an issue: common forms count right; rare forms (activation +, o--o, unclosed quote) can slip past the cap until nodes are counted from the rendered SVG (https://github.com/nikolajkarpic/nio/issues/127).",
       "baseline": "unchanged",
       "rounds": 2,
       "first_round": 1,
@@ -605,7 +605,7 @@
       "fixed_in": 2
     }
   ],
-  "outcome": "human",
+  "outcome": "approved",
   "recorded": [
     [
       1,
@@ -618,6 +618,10 @@
     [
       3,
       "human"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
