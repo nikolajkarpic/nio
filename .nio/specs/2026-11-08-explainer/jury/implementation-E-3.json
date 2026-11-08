@@ -1,0 +1,601 @@
+{
+  "gate": "implementation-E-3",
+  "subject": "2026-11-08-explainer",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261108-k2xx/implementation-E-3-adversary.md": "5fddf57862e5d2271c876ce939a1bce53eb6d64863cbeb03229294cc75b44a4a",
+    "R-261108-k2xx/implementation-E-3-conformance.md": "b292a99c0007f72a9ca678d2fea026bcabf748484d659d48995c448d39afccb1",
+    "R-261108-k2xx/implementation-E-3-consistency.md": "1d79f4d92defbf815f628d8ee8dbddb5f4cb76ef9d3b5a9ff8b811d21c051927",
+    "R-261108-k2xx/implementation-E-3-correctness.md": "964fee50910d4ee8168984e9079fb2e824c6aa0c95940908f43e31190844182e",
+    "R-261108-k2xx/implementation-E-3-refuter.md": "932c0d83cbe816d579929c1050bc871b940c0f7d32b52f962dbd14d0034587d0"
+  },
+  "jurors": {
+    "implementation-E-3-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c81e5f19c79521566fe97c05014690c92defc897",
+      "judged": 1
+    },
+    "implementation-E-3-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c81e5f19c79521566fe97c05014690c92defc897",
+      "judged": 1
+    },
+    "implementation-E-3-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c81e5f19c79521566fe97c05014690c92defc897",
+      "judged": 1
+    },
+    "implementation-E-3-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "c81e5f19c79521566fe97c05014690c92defc897",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A drill-down heading containing \", \" locks finishing forever",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "old_drills = [h for v in rec.get(\"drill-downs\", []) for h in v.split(\", \") if h]"
+      ],
+      "fix": "store one heading per record line, or use a separator a heading can't hold. Add a test with a comma in a drill-down title.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "the skill writes `## Drill-down: Retries, backoff`. The first finish records `(drill-downs: Drill-down: Retries, backoff)`. The next finish splits that on \", \" into `Drill-down: Retries` and `backoff`. `backoff` matches no section, so it refuses with `drill-down sections missing: backoff; restore them before finishing`. No edit of the file can satisfy that, so every later finish is refused. Only hand-editing the record line clears it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "explain.py:174 and :265 join and split drill-down headings on \", \", so a heading with a comma is split into a part that matches no section (:175-176) and finish is refused for good. CT-5 even specifies \"; \" as the separator (contracts.md:137), which the code doesn't use.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-25",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py finish (steps 2 and 7)",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "A quickstart with unusual front matter fails after explainer.md is already written and images deleted",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "pre, fm, rest = q.read_text().split(\"---\\n\", 2) if q.read_text().startswith(\"---\\n\") else (\"\", \"\", q.read_text())"
+      ],
+      "fix": "validate quickstart.md before step 8, or parse the front matter safely and treat a missing close as no front matter. Add a test for it.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "quickstart.md starts with `---\\n` but has no closing `---\\n`, for example `---\\nid: QS\\n---` with no trailing newline. The split gives 2 parts, so the unpack raises ValueError. cli.py turns it into `error: not enough values to unpack`. By then `_put(p, ...)` has replaced explainer.md and `f.unlink()` has deleted the old SVGs. The user sees a refusal-style error, but the work was done and CT-5 says a failure writes and deletes nothing. The message also says nothing about quickstart.md.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "explain.py:274 unpacks `split(\"---\\n\", 2)` into three names, and a quickstart that opens with `---\\n` but has no closing `---\\n` gives two parts, so it raises ValueError. That happens after `_put(p, ...)` (:270) and `f.unlink()` (:266-267), so explainer.md is already replaced and the images deleted. No later task covers it.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-26",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py finish (step 8, quickstart)",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "A stopped or broken render leaves old SVGs on disk that nothing tracks any more",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-33"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "elif f.is_file() and x not in keep and f.name not in used:"
+      ],
+      "fix": "keep the names of retained old SVGs that still sit on disk in the images line, or skip deleting only until a successful run.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`used` holds every planned name, including sections never rendered after a `no node` or `unreachable` halt, and sections that came out `Broken diagram`. Their old SVGs are therefore not deleted. The images line is then rebuilt from `drawn + keep` only, and step 6 has already stripped their links. The old files stay on disk, are linked from nowhere and listed nowhere. If the diagram is later removed, no run deletes them, so the AC-33 clean-up is lost silently. TC-45 only checks that nothing is deleted.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "test_ct5_refusals checks only that a ValueError is raised. It never checks the contract's \"writes and deletes nothing\" on a refusal. `ex` is assigned and never used. The mechanical hint \"no assertion\" is a false positive, since `raises` asserts, but the no-write half of CT-5 is unproven for the plan-jury refusal. TC-43 does cover it for the drill-down refusal.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py finish (steps 5 and 7)",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "Step 6 strips every `> ` line and image line, not only the ones an earlier finish wrote",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "elif not fenced and (l.startswith(\"![\") or l.startswith(\"> \")):"
+      ],
+      "fix": "remove only lines that match the exact forms finish writes (`> Images not rendered: ...`, `> Broken diagram: ...`, and `![<title>](<own name>.svg)` for names it rendered). Leave other lines alone.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "the skill, or the human, writes a blockquote in a walk-through (`> Note: refunds are capped`) or an `![](diagram.png)` link of its own. Finish drops it without telling anyone and writes the result with `os.replace`, so the content is lost. CT-5 step 6 says it removes \"the image links and `> ` notes an earlier finish wrote\". The same applies inside drill-down sections, where a `> ` line is dropped even when the section's image is kept.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "explain.py:212 drops every line that starts with `![` or `> ` outside code fences, not only the forms finish wrote, and :214 keeps only drill-down lines that match LINK and whose file exists. CT-5 step 6 limits removal to what an earlier finish wrote, so the user's own blockquotes and image links are lost.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-27",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py finish (step 6)",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "The path argument is never checked",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "p = (Path(path) if Path(path).is_absolute() else root / path).resolve()"
+      ],
+      "fix": "refuse a path outside root, a non-`.md` path and a missing file with a ValueError before any read.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "in topic mode there is no check that the file sits under the project root, is a `.md` file, or exists. `nio explain finish ~/notes.txt` or `/etc/hosts` reads the file, strips its `> ` and `![` lines, prepends record lines and replaces it, and renders SVGs next to it. A missing file raises FileNotFoundError, which cli.py doesn't catch (it only catches ValueError), so the user gets a traceback instead of `error: ...`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/explain.py finish (start); src/nio/cli.py explain branch",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Every finish run adds blank lines to explainer.md",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`_put(p, text[:i] + \"\\n\".join(recs) + \"\\n\\n\" + text[i:])`"
+      ],
+      "fix": "collapse runs of blank lines when rebuilding `new`, or drop the blank line that precedes a removed record, link or note. Add a test that runs `finish` twice and compares the bytes.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "finish removes the record lines but keeps the blank lines around them, then writes `text[:i]` (which already ends in a blank line) plus the records plus a blank line. Each run therefore adds one blank line above the first section. After each diagram, the old image link is removed but its blank line stays, and a new `\"\"` is added before the new link. The file grows by blank lines on every run. A re-run over unchanged input should leave the file as it was. No test compares the explainer text across two runs.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:finish (records placement and the `adds` insertion)",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "A missing path gives a traceback, not `error:`",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "CT-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`for l in p.read_text().splitlines():`"
+      ],
+      "fix": "in `finish`, raise `ValueError(f\"no such explainer: {path}\")` when `p.is_file()` is false, before any other step.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "`nio explain finish` is given a path that does not exist, or a directory. `read_text` raises `FileNotFoundError` (or `IsADirectoryError`). The cli catches only `ValueError`, so the user sees a Python traceback. CT-10 says each explain command turns failures into `error: <message>`, exit 1.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:finish and src/nio/cli.py explain branch",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "Notes in a kept drill-down are removed",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`elif not fenced and (l.startswith(\"![\") or l.startswith(\"> \")):`",
+        "which is left as it is"
+      ],
+      "fix": "once a drill-down has a kept image, keep all of its lines. Remove a `> ` line elsewhere only when it starts `> Broken diagram:` or `> Images not rendered:`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "step 6 says a drill-down whose image link names an existing file is left as it is. The code keeps only the image link line. Any `> ` line in that drill-down is hit by `continue`, because `LINK.match` fails on it. A note the skill put there is lost, and the drill-down is changed. The same branch also removes every `![` or `> ` line in the other sections, including blockquotes the skill wrote itself, not only the ones an earlier finish added.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py:finish (step 6, removal loop)",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "AC-33 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-33"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-33",
+      "gap": "missing",
+      "where": "src/nio/explain.py, tests/test_explain.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-33: no test didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-28",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "Image names do not follow the CT-6 naming rule",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "CT-6",
+        "FR-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "named by CT-6's rule without the 40-character cut",
+        "`re.sub(r\"[^a-z0-9]+\", \"-\", text.lower()).strip(\"-\")[:40]`"
+      ],
+      "fix": "use CT-6's expression, without `[:40]`, for the title slug in `finish`. The code currently builds it at `explain.py:233`: `base = p.stem + \"--\" + \"-\".join(re.sub(r\"[^a-z0-9 ]\", \"\", re.sub(r\"[-/_]\", \" \", title.lower())).split())`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "a section titled `Build order v1.2` is named by the code as `explainer--build-order-v12.svg`, because `re.sub(r\"[^a-z0-9 ]\", \"\", ...)` deletes the dot. CT-6's rule turns the dot into a dash and gives `explainer--build-order-v1-2.svg`. A title with an apostrophe has the same mismatch (`Walk's` gives `walks`, CT-6 gives `walk-s`). The spec's own words (\"every run of characters other than a-z and 0-9 turned into one dash\") are what the code departs from.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py (finish, the `base =` line, about line 233)",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "A section's first fenced block is not its first Mermaid block",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-1",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`fence` is the language of the section's first fenced block (`mermaid` for a Mermaid block)",
+        "Renders each other Mermaid section's block (CT-3)"
+      ],
+      "fix": "in the drawing loop, clear `first` when the first fenced block of a section closes, whatever its language, and draw only when that block was `mermaid`.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "a section has a `text` block first and then a `mermaid` block. CT-1 says its fence is `text`, so it is not a Mermaid section, and nothing should be drawn. The code's `first` flag is reset only when a Mermaid block closes (`first = False` inside the `lang == \"mermaid\"` branch), so the code draws the second block and adds an image to a section that CT-1 does not count as a diagram section. It is the same gap as the open J-4 in the E-2 ledger, now in the drawing code.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py (finish, drawing loop, the `elif first and title and lang == \"mermaid\":` branch, about line 229)",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "Old SVGs are deleted after rendering, not before",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "FR-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "all in memory until step 8",
+        "delete only SVGs that the previous run listed as its own, that sit in the explainer's own folder, whose names carry the `explainer-` prefix and that it no longer draws"
+      ],
+      "fix": "compute the deletion list from the names planned in the planning loop, unlink before the renders, and decide explicitly whether a name planned but not drawn is deleted or listed.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "the code renders the new set first (`r = render(block, d / name)`, about line 244), then unlinks the old files (`f.unlink()`, about line 267), then writes explainer.md (about line 270). FR-26 says the deletion comes \"before rendering the new set\", and CT-5 says every step before 8 is in memory. If the run stops during the renders, the old SVGs are still on disk and still listed, which is harmless but not what the spec orders. Separately, a planned name that is then not drawn (the Node-absent halt, or a `broken` result) stays in `used`, so its old SVG is neither deleted nor listed in the new images line. No later run will ever delete it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py (finish, the `dels` loop and the render loop, about lines 244 and 266-268)",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "Every `> ` line is removed, not only the notes an earlier finish wrote",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "removes the image links and `> ` notes an earlier finish wrote"
+      ],
+      "fix": "give finish's own notes a marker that the code can recognise (for example, match only the two note strings it writes), and leave other `> ` lines alone.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "the step-6 loop drops any line outside a fence that starts with `> `, using `elif not fenced and (l.startswith(\"![\") or l.startswith(\"> \")):` followed by `continue`. A `> ` line the skill writes into the walk-through is therefore removed on every finish. The E-2 ledger (J-3) already treats text in `> ` lines as walk-through text, so the skill can write such lines. The spec's wording limits the removal to lines an earlier finish wrote, and the code cannot tell the two apart.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "unrequested",
+      "where": "src/nio/explain.py (finish, the step-6 loop, about line 212)",
+      "tampering": false
+    },
+    {
+      "id": "J-14",
+      "title": "`nio explain finish` with no path, or a missing file, gives a traceback, not `error:`",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "turning a `ValueError` into `error: <message>` and exit 1"
+      ],
+      "fix": "refuse a missing target and a missing file with a ValueError in `finish`, so the CLI prints `error: ...` and exits 1.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "the parser declares `target` with `nargs=\"?\"`, so `nio explain finish` with no path gives `a.target` as None. `finish` then calls `Path(None)`, which raises TypeError. The CLI catches only ValueError (`except ValueError as e:` in cli.py), so the user sees a Python traceback and not `error: ...` with exit 1. A path that does not exist fails the same way at `p.read_text()`, which raises FileNotFoundError. I have not run either case.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/cli.py (the `explain` dispatch, about lines 349-355) and src/nio/explain.py (finish, first lines, about line 154)",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "c81e5f19c79521566fe97c05014690c92defc897"
+  },
+  "matched": {
+    "AC-33": []
+  },
+  "asked": {}
+}

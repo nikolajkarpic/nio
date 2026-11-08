@@ -148,6 +148,52 @@ retired: [T-24]                      # task IDs removed from this file; never re
 - Effort: med
 - Mode: split: four tests lead the code
 
+#### Fixes
+
+### T-25 Fix: A drill-down heading containing ", " locks finishing forever
+- From: J-1 (implementation-E-3, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-5, J-1
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-26 Fix: A quickstart with unusual front matter fails after explainer.md is already written and images deleted
+- From: J-2 (implementation-E-3, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-5, J-2
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-27 Fix: Step 6 strips every `> ` line and image line, not only the ones an earlier finish wrote
+- From: J-4 (implementation-E-3, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-5, J-4
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-28 Fix: AC-33 has no passing evidence
+- From: J-9 (implementation-E-3, round 1)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: AC-33
+- Test: TC-10
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Explain an approved plan (US-1)
 ### T-7 Make the plan gate ignore the quickstart `Read first` line (CT-9)
 - Files: `src/nio/jury.py`, `src/nio/flow.py`, `tests/test_explain.py`
