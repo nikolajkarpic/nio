@@ -10,7 +10,7 @@ outcome: human
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-5 | adversary | confirmed | open |  | unchanged, 1 |
+| J-1 | major | risk | CT-5 | adversary | confirmed | disposed | fix-task (human) | unchanged, 1 |
 | J-2 | major | risk | CT-5 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | gap | AC-33 | adversary, conformance | grounded | open |  | new, 0 |
 | J-4 | major | risk | CT-5 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
@@ -30,6 +30,7 @@ outcome: human
 - situation (adversary): the skill writes `## Drill-down: Retries, backoff`. The first finish records `(drill-downs: Drill-down: Retries, backoff)`. The next finish splits that on ", " into `Drill-down: Retries` and `backoff`. `backoff` matches no section, so it refuses with `drill-down sections missing: backoff; restore them before finishing`. No edit of the file can satisfy that, so every later finish is refused. Only hand-editing the record line clears it.
 - fix: store one heading per record line, or use a separator a heading can't hold. Add a test with a comma in a drill-down title.
 - validation: confirmed: implementation-E-3-adversary: the separator is now "; ", which a heading can still contain. A drill-down titled `## Drill-down: Retries; backoff` is written as one record and split into "Retries" and "backoff". Neither matches `plain`, so finish raises "drill-down sections missing" forever. That is the same lock J-1 reported. The ask was one heading per record line, or a separator a heading can't hold. The new test only covers a comma. Records written by earlier finishes with ", " are also split wrongly now, but that is a minor migration issue.
+- disposition: fix-task by human: Fix it (recommended; orchestrator under the human's standing approval of 2026-11-08): record drill-down headings so no heading text can break the record, e.g. one (drill-down: <heading>) line per section.
 
 ### J-2 A quickstart with unusual front matter fails after explainer.md is already written and images deleted
 - quote: "pre, fm, rest = q.read_text().split("---\n", 2) if q.read_text().startswith("---\n") else ("", "", q.read_text())"
