@@ -5,6 +5,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import selfcheck
 
 
@@ -111,6 +113,17 @@ def test_skip_needs_reason():
     assert not (root / ".nio/project/onboarding.json").exists()
 
 
+def test_project_templates_match_headings():
+    from nio import onboard
+    d = Path(__file__).parent.parent / "src/nio/templates/project"
+    for doc in onboard.DOCS:
+        f = d / f"{doc}.md"
+        assert f.exists(), f
+        text = f.read_text()
+        assert onboard.check_doc(doc, text) == [], (doc, onboard.check_doc(doc, text))
+        assert [l[3:] for l in text.splitlines() if l.startswith("## ")] == onboard.HEADINGS[doc], doc
+
+
 def test_empty_start_writes_blank_docs():
     root = repo({})
     r = nio(root, "start", "--empty")
@@ -193,6 +206,6 @@ def test_skip_stays_visible():
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
-                    test_skip_needs_reason, test_empty_start_writes_blank_docs,
+                    test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file,
                     test_skip_lets_spec_start, test_skip_stays_visible])
