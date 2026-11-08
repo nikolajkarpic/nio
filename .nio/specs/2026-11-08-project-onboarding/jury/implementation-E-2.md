@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-2
 subject: 2026-11-08-project-onboarding
-round: 5
-outcome: rejected
+round: 6
+outcome: human
 ---
 # Implementation-e-2 jury: 2026-11-08-project-onboarding
 
@@ -10,41 +10,41 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-30 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | AC-30 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | gap | AC-30 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | major | gap | AC-30 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-5 | major | gap | AC-30 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-6 | major | gap | AC-30 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-7 | blocker | risk | CT-4 | adversary, consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | AC-30 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | gap | AC-30 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-3 | major | gap | AC-30 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-4 | major | gap | AC-30 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-5 | major | gap | AC-30 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-6 | major | gap | AC-30 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-7 | blocker | risk | CT-4 | adversary, consistency, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-8 | major | contradiction | CT-4 | adversary, correctness, security | merged | merged |  | new, 0 |
 | J-9 | major | gap | CT-4 | adversary, correctness | merged | merged |  | new, 0 |
-| J-10 | major | gap | CT-4 | adversary, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-11 | major | risk | CT-3, CT-8 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-10 | major | gap | CT-4 | adversary, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-11 | major | risk | CT-3, CT-8 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-12 | blocker | gap | AC-17 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-13 | major | contradiction | CT-4 | correctness, security | merged | merged |  | new, 0 |
 | J-14 | major | contradiction | CT-4 | correctness | merged | merged |  | new, 0 |
 | J-15 | minor | risk | CT-3 | adversary, correctness | grounded | open |  | new, 0 |
 | J-16 | minor | inconsistency | CT-3 | security | grounded | open |  | new, 0 |
-| J-17 | blocker | contradiction | CT-4, CT-5 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-17 | blocker | contradiction | CT-4, CT-5 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-18 | blocker | contradiction | CT-4, CT-12 | consistency | merged | merged |  | new, 0 |
-| J-19 | major | contradiction | CT-4, AC-15 | adversary, consistency, correctness, security | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-20 | major | contradiction | CT-3, CT-4 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-19 | major | contradiction | CT-4, AC-15 | adversary, consistency, correctness, security | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-20 | major | contradiction | CT-3, CT-4 | consistency | confirmed | open |  | unchanged, 1 |
 | J-21 | minor | inconsistency | CT-4, CT-12 | consistency | grounded | open |  | new, 0 |
-| J-22 | blocker | contradiction | CT-4, CT-5, AC-15 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-23 | blocker | risk | CT-4, AC-30 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-24 | major | risk | CT-4, CT-5, AC-16 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-25 | major | contradiction | CT-4 | adversary, consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-22 | blocker | contradiction | CT-4, CT-5, AC-15 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-23 | blocker | risk | CT-4, AC-30 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-24 | major | risk | CT-4, CT-5, AC-16 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-25 | major | contradiction | CT-4 | adversary, consistency, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-26 | major | risk | CT-4, FR-12 | adversary | merged | merged |  | new, 0 |
 | J-27 | minor | gap | CT-4, CT-5, AC-16 | adversary | grounded | open |  | new, 0 |
-| J-28 | major | inconsistency | AC-16, AC-30, CT-4 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-29 | major | contradiction | CT-4 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-28 | major | inconsistency | AC-16, AC-30, CT-4 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-29 | major | contradiction | CT-4 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-30 | minor | gap | CT-3, AC-16 | correctness | grounded | open |  | new, 0 |
 | J-31 | major | inconsistency | CT-4, CT-5 | correctness | merged | merged |  | new, 0 |
 | J-32 | minor | gap | CT-3, CT-8 | correctness | grounded | open |  | new, 0 |
-| J-33 | blocker | contradiction | CT-4, FR-12 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-34 | major | inconsistency | CT-12, CT-3 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-35 | major | inconsistency | CT-4 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-33 | blocker | contradiction | CT-4, FR-12 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-34 | major | inconsistency | CT-12, CT-3 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-35 | major | inconsistency | CT-4 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-36 | minor | inconsistency | CT-4, CT-3 | consistency | grounded | open |  | new, 0 |
 
 ### J-1 T-2: src/nio/templates/project/product.md doesn't exist
@@ -206,8 +206,7 @@ outcome: rejected
 - quote: "f.write_text(json.dumps(st))"
 - situation (consistency): `nio onboard start --empty`, then confirm product, personas and principles. The third confirm prints "next: stack", and stack is not an expected doc in empty mode, so the run never reaches done. Separately, save() writes the progress file in place. A crash mid-write leaves a torn file, which progress() then refuses, and no test covers a write that fails partway.
 - fix: add `expected(p)` and `next_doc(p)` in onboard.py, and have start and confirm print from them. Write the progress file to a temp file and os.replace it.
-- validation: confirmed: There is no `expected()` in onboard.py. Line 101 walks all six DOCS, so after `--empty` the third confirm prints `next: stack` and never reaches done. `save` is non-atomic (line 74).
-- disposition: fix-task by agent: fix task T-42
+- validation: confirmed: implementation-E-2-consistency: `expected(st)` is added and used by start and confirm, and the progress save is atomic (`tmp.replace(f)`). But `next_doc(p)` is not in `onboard.py`: grep finds no `next_doc` in any Python file, and start and confirm still build the next doc inline. The ask was to add it and print from it.
 
 ### J-21 Names differ from the card
 - quote: "functions `start`, `confirm`, `pause` and `skip` in `onboard.py`"
@@ -334,16 +333,16 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-2-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-2-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
 | implementation-E-2-adversary-2 | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-2-adversary-3 | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-2-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-2-conformance-2 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |
 | implementation-E-2-conformance-3 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |
-| implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 2 | 1 |
+| implementation-E-2-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 6 |
 | implementation-E-2-consistency-2 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 4 |
 | implementation-E-2-consistency-3 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | no: F1: cites must hold an AC, FR or CT ID; F2: cites must hold an AC, FR or CT ID; F3: cites must hold an AC, FR or CT ID; F4: cites must hold an AC, FR or CT ID; F5: cites must hold an AC, FR or CT ID | 1 | 4 |
-| implementation-E-2-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-2-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
 | implementation-E-2-correctness-2 | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
 | implementation-E-2-correctness-3 | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
-| implementation-E-2-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-2-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
