@@ -88,6 +88,17 @@ def test_scan_keeps_non_ascii_paths():
     assert "docs/résumé.md" in out and "docs/a b.md" in out and "2 candidate files" in out, out
 
 
+def test_scan_contract_categories():
+    want = {"docs/x.md": "product-docs", "docs/adr/1.md": "implementation-docs", ".windsurfrules": "agent-docs",
+            ".cursor/rules/a.mdc": "agent-docs", "Jenkinsfile": "ci", "fly.toml": "iac", "README.rst": "product-docs",
+            "requirements-dev.txt": "manifests", "build.gradle.kts": "manifests", "docker-compose.prod.yml": "iac",
+            ".gitlab-ci.yml": "ci"}
+    root = repo(dict.fromkeys(want, "z"))
+    code, out = scan(root)
+    got = {l.split()[1]: l.split()[0] for l in out.strip().splitlines()[:-1]}
+    assert got == want, got
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
-                    test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths])
+                    test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories])
