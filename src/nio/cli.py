@@ -265,9 +265,7 @@ def main():
         print(text, end="")
     elif a.cmd == "pack":
         try:
-            text, ids = pack.build(root, a.text, a.path, a.ac, a.task, a.diff)
-            if a.reader:
-                text += "\n" + onboard.docs_for(root, a.reader, a.slug)
+            text, ids = pack.build(root, a.text, a.path, a.ac, a.task, a.diff, reader=a.reader or "", slug=a.slug)
             name = a.task or records.slug(a.text)
             if a.run:
                 print(f"saved {pack.save(root, a.run, name, text).relative_to(root)}", file=sys.stderr)
