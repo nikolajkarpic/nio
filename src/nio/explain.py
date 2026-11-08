@@ -137,7 +137,7 @@ def check(root, target, gate=False, base="HEAD"):
     return errors, notes
 
 
-REC = re.compile(r"^\((source|diagrams|images|drill-downs): (.*)\)$")
+REC = re.compile(r"^\((source|diagrams|images|drill-downs|drill-down): (.*)\)$")
 EARLIER = " (written for an earlier plan)"
 LINK = re.compile(r"^!\[[^\]]*\]\(([^)]+)\)$")
 
@@ -177,7 +177,7 @@ def finish(root, path):
             body.append(l)
     drill = [s["title"] for s in sections("\n".join(body)) if s["drill"]]
     plain = [t.removesuffix(EARLIER) for t in drill]
-    old_drills = [h for v in rec.get("drill-downs", []) for h in v.split("; ") if h]
+    old_drills = [h for v in rec.get("drill-downs", []) for h in v.split("; ") if h] + rec.get("drill-down", [])  # old joined line, then one-per-line
     if gone := [h for h in old_drills if h not in plain]:
         raise ValueError(f"drill-down sections missing: {', '.join(gone)}; restore them before finishing")
     out, stale = [], False
@@ -268,7 +268,7 @@ def finish(root, path):
             dels.append(f)
     text = "\n".join(new).rstrip() + "\n"
     recs = [f"({k}: {v})" for k in ("source", "diagrams") for v in rec.get(k, [])]
-    recs += [f"(images: {', '.join(drawn + keep)})", f"(drill-downs: {"; ".join(t.removesuffix(EARLIER) for t in drill)})"]
+    recs += [f"(images: {', '.join(drawn + keep)})"] + [f"(drill-down: {t.removesuffix(EARLIER)})" for t in drill]
     for f in dels:
         f.unlink()
         out.append(f"deleted: {f.name}")
