@@ -104,6 +104,250 @@ retired: [T-8]
 - Effort: low
 - Mode: direct: skill text, e2e test checks it after
 
+#### Fixes
+
+### T-30 Fix: T-2: src/nio/templates/project/product.md doesn't exist
+- From: J-1 (implementation-E-2, round 5)
+- Files: `CLAUDE.md`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/onboard.py`, `src/nio/spec.py`, `tests/test_onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_spec.py`
+- Serves: AC-30
+- Test: TC-28
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-31 Fix: T-2: src/nio/templates/project/personas.md doesn't exist
+- From: J-2 (implementation-E-2, round 5)
+- Files: `CLAUDE.md`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/onboard.py`, `src/nio/spec.py`, `tests/test_onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_spec.py`
+- Serves: AC-30
+- Test: TC-28
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-32 Fix: T-2: src/nio/templates/project/stack.md doesn't exist
+- From: J-3 (implementation-E-2, round 5)
+- Files: `CLAUDE.md`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/onboard.py`, `src/nio/spec.py`, `tests/test_onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_spec.py`
+- Serves: AC-30
+- Test: TC-28
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-33 Fix: T-2: src/nio/templates/project/architecture.md doesn't exist
+- From: J-4 (implementation-E-2, round 5)
+- Files: `CLAUDE.md`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/onboard.py`, `src/nio/spec.py`, `tests/test_onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_spec.py`
+- Serves: AC-30
+- Test: TC-28
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-34 Fix: T-2: src/nio/templates/project/infra.md doesn't exist
+- From: J-5 (implementation-E-2, round 5)
+- Files: `CLAUDE.md`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/onboard.py`, `src/nio/spec.py`, `tests/test_onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_spec.py`
+- Serves: AC-30
+- Test: TC-28
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-35 Fix: T-2: src/nio/templates/project/principles.md doesn't exist
+- From: J-6 (implementation-E-2, round 5)
+- Files: `CLAUDE.md`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/onboard.py`, `src/nio/spec.py`, `tests/test_onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_spec.py`
+- Serves: AC-30
+- Test: TC-28
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-36 Fix: `start --empty` overwrites docs the dev already wrote
+- From: J-7 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, J-7
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-37 Fix: `confirm` accepts any doc with no file and never reaches `done` for `--empty`
+- From: J-10 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, J-10
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-38 Fix: The progress file is written non-atomically, and one bad file crashes `nio status`
+- From: J-11 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`, `src/nio/cli.py`
+- Serves: CT-3, CT-8, J-11
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-39 Fix: AC-17 has no run result: its e2e test only runs under NIO_E2E
+- From: J-12 (implementation-E-2, round 5)
+- Files: `tests/test_onboard_e2e.py`
+- Serves: AC-17
+- Test: TC-17
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-40 Fix: Confirming the last doc never reaches done
+- From: J-17 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, CT-5, J-17
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-41 Fix: Pause, skip, start and confirm do not follow the state table
+- From: J-19 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, AC-15
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-42 Fix: Confirm walks all six docs, not the expected ones, and the progress save is not atomic
+- From: J-20 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-3, CT-4, J-20
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-43 Fix: Last confirm prints "done" but the state stays "in progress", so full and epic specs stay blocked
+- From: J-22 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, CT-5, AC-15
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-44 Fix: `start --empty` overwrites confirmed docs, and writes three docs more than the spec asks
+- From: J-23 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, AC-30
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-45 Fix: The CLI uses the current directory as the project root, so a subdirectory run records state in the wrong place
+- From: J-24 (implementation-E-2, round 5)
+- Files: `src/nio/cli.py`
+- Serves: CT-4, CT-5, AC-16
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-46 Fix: Pause is a dead end, and start and skip are accepted on a done onboarding
+- From: J-25 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, J-25
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-47 Fix: Start, confirm, pause and skip write under the current directory, not the repo root
+- From: J-28 (implementation-E-2, round 5)
+- Files: `src/nio/cli.py`
+- Serves: AC-16, AC-30, CT-4
+- Test: TC-27
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-48 Fix: `done` is not protected, and `ignore` cells are not honoured
+- From: J-29 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, J-29
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-49 Fix: `start --empty` overwrites edited docs and writes six docs, not three
+- From: J-33 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, FR-12, J-33
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-50 Fix: Code's section headings and constant name differ from the spec's `HEADINGS`
+- From: J-34 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-12, CT-3, J-34
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-51 Fix: Test asserts exit 1 for confirm while paused, which the spec says exits 0
+- From: J-35 (implementation-E-2, round 5)
+- Files: `tests/test_onboard.py`
+- Serves: CT-4, J-35
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-3 Stages read the project docs (US-5)
 
 ### T-6 `docs_for` and `nio pack --reader/--slug`: the project docs a reader gets, with state, stale, missing and size lines
