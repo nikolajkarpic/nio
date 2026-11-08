@@ -150,17 +150,6 @@ retired: [T-8]
 - Effort: med
 - Mode: single: a fix from a jury finding
 
-### T-39 Fix: AC-17 has no run result: its e2e test only runs under NIO_E2E
-- From: J-12 (implementation-E-2, round 5)
-- Files: `tests/test_onboard_e2e.py`
-- Serves: AC-17
-- Test: TC-17
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
 ### T-41 Fix: the state table's ignore and reject cells aren't followed (paused can't resume; start or skip work on done), and a test expects exit 1 where the table says 0 (J-19, J-25, J-29, J-35; also T-46, T-48, T-51)
 - From: J-19 (implementation-E-2, round 5)
 - Files: `src/nio/onboard.py`

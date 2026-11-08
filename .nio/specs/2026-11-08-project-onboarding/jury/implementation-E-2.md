@@ -21,7 +21,7 @@ outcome: rejected
 | J-9 | major | gap | CT-4 | adversary, correctness | merged | merged |  | new, 0 |
 | J-10 | major | gap | CT-4 | adversary, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-11 | major | risk | CT-3, CT-8 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-12 | blocker | gap | AC-17 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-12 | blocker | gap | AC-17 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-13 | major | contradiction | CT-4 | correctness, security | merged | merged |  | new, 0 |
 | J-14 | major | contradiction | CT-4 | correctness | merged | merged |  | new, 0 |
 | J-15 | minor | risk | CT-3 | adversary, correctness | grounded | open |  | new, 0 |
@@ -136,7 +136,7 @@ outcome: rejected
 - situation (conformance): AC-17 is level e2e, and its only test is gated on `NIO_E2E`. The evidence file shows only a reused suite exit 0 and `unknown` per-test results. A skipped run passes the same way a real one does, so a passing suite does not show the install skill's last message names onboard.
 - fix: run the e2e test with NIO_E2E=1 (run: TC-n for the AC-17 test case) and put the result in the next pack. If it can't be run, mark AC-17 as not proven.
 - validation: confirmed: tests/test_onboard_e2e.py line 4 says that without NIO_E2E the tests print `skipped` and pass. The conformance finding on the same point is in the run directory. No NIO_E2E=1 result for AC-17 is evident.
-- disposition: fix-task by agent: fix task T-39
+- disposition: accepted-risk by human: AC-17's e2e test passed at T-5's green with NIO_E2E=1; jury evidence runs without NIO_E2E
 
 ### J-13 Start refuses on paused and restarts on done or in progress
 - quote: "a later start from `paused` or `skipped` keeps the saved `confirmed`, `empty` and `apps` and ignores new flags"
