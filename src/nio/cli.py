@@ -169,7 +169,10 @@ def main():
     if a.cmd == "onboard":  # before repo_root: outside a git repo it says so instead of a traceback
         if records.git(".", "rev-parse", "--is-inside-work-tree", full=True)[0]:
             sys.exit("nio onboard scan needs a git repository")
-        onboard.scan()
+        found = onboard.scan()
+        for c, f, h in found:
+            print(c, f, h) if h else print(c, f)
+        print(f"{len(found)} candidate files" if found else "no candidate files found")
         return
     root = records.repo_root()
     if a.cmd == "new":

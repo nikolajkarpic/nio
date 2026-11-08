@@ -36,9 +36,19 @@ def test_scan_lists_each_category():
     assert lines and lines[-1] == "6 candidate files", out
     got = {l.split()[1]: l.split() for l in lines[:-1]}
     assert len(lines) == 7 and set(got) == set(want), out
+    assert [l.split()[:2] for l in lines[:-1]] == sorted([c, p] for p, c in want.items()), out
     for p, cat in want.items():
         h = hashlib.sha256((root / p).read_bytes()).hexdigest()[:12]
         assert got[p] == [cat, p, h], (p, got[p])
+
+
+def test_scan_secrets_path_only():
+    sys_path = str(Path(__file__).parent.parent / "src")
+    root = repo({".env": "K=1", "README.md": "r", "secret.pem": "x"}, ignore=".env\n")
+    r = subprocess.run(["python3", "-c", "import sys;sys.path.insert(0,%r);from nio import onboard;print(onboard.scan('.'))" % sys_path],
+                       cwd=root, capture_output=True, text=True)
+    assert ("'secrets', '.env', ''" in r.stdout and "'secrets', 'secret.pem', ''" in r.stdout
+            and "product-docs" in r.stdout), (r.stdout, r.stderr)
 
 
 def test_scan_prints_no_dependency():
@@ -79,5 +89,5 @@ def test_scan_keeps_non_ascii_paths():
 
 
 if __name__ == "__main__":
-    selfcheck.main([test_scan_lists_each_category, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
+    selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths])
