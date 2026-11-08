@@ -328,6 +328,18 @@ def test_ac31_t_12_is_added_under_e_2_s_fixes_heading():
     print("ok")
 
 
+def test_a_committed_fix_task_survives_a_later_retired_fix_id():
+    """A fix task committed before a higher fix ID was taken and retired keeps its ID (T-29 below retired T-30)."""
+    root = repo(chain(fix("T-4"), fix("T-5", src="J-5 (implementation-E-1, round 1)", serves="J-5", file="b.py")))
+    approve_commit(root)
+    text = tasks.path(root, SLUG).read_text()
+    head = text.index("### T-5 ")
+    tasks.path(root, SLUG).write_text(text[:head].rstrip("\n").replace("retired: []", "retired: [T-5]") + "\n")
+    assert errs(root) == [], errs(root)
+    has(errs(repo(chain(lambda t: t.replace("retired: []", "retired: [T-5]"), fix("T-4")))), "T-4: a fix task takes the next free ID, T-6")
+    print("ok")
+
+
 def test_ac32_the_planned_tasks_above_the_heading_are():
     root = repo()
     approve_commit(root)

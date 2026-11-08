@@ -284,8 +284,13 @@ def check_fixes(root, slug, parsed, retired, base="HEAD"):
     tasks, errs = parsed["tasks"], []
     planned = [t for t in tasks if not tasks[t]["fix"]]
     top = max([int(t[2:]) for t in planned] + [int(r[2:]) for r in retired if r.startswith("T-")] + [0])
+    rel = str(path(root, slug).relative_to(root))
+    shown = records.git(root, "show", f"{base}:{rel}")  # a fix task already committed took its ID before later retirements
+    taken = {t for t, x in parse("\n".join(shown))["tasks"].items() if x["fix"]} if shown else set()
     for t, task in sorted(tasks.items(), key=lambda x: int(x[0][2:])):  # IDs in the order they were taken: epics reopen out of file order
         if not task["fix"]:
+            continue
+        if t in taken:
             continue
         src = task["fields"].get("From", "")
         if not src:
@@ -295,7 +300,6 @@ def check_fixes(root, slug, parsed, retired, base="HEAD"):
         if int(t[2:]) <= top:
             errs.append(f"{t}: a fix task takes the next free ID, T-{top + 1}")
         top = max(top, int(t[2:]))
-    rel = str(path(root, slug).relative_to(root))
     sha = (records.git(root, "log", "-1", "--format=%H", "--grep=^nio: approve tasks$", base, "--", rel) or [""])[0]
     if sha:
         old = parse("\n".join(records.git(root, "show", f"{sha}:{rel}")))["tasks"]

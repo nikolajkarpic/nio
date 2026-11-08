@@ -53,9 +53,12 @@ def nodes(block):
             continue
         if m := re.match(r"(?:participant|actor|state)\s+(\w+)", line):
             found.add(m[1])
-        parts = ARROW.split(line)
-        if len(parts) > 1 or ID.fullmatch(line):
-            found.update(p.strip() for p in parts if ID.fullmatch(p.strip()))
+        for stmt in line.split(":")[0].split(";"):
+            parts = ARROW.split(stmt)
+            for piece in (q for p in parts for q in p.split("&")):
+                m = re.fullmatch(r"\s*([A-Za-z_]\w*)(?:\s+(?:--|==|-\.).*)?\s*", piece)
+                if m and (len(parts) > 1 or ID.fullmatch(stmt.strip())):
+                    found.add(m[1])
     return found
 
 
