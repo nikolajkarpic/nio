@@ -3,6 +3,8 @@ try:
     from nio import explain
 except ImportError:
     explain = None
+from pathlib import Path
+
 import selfcheck
 
 
@@ -37,5 +39,26 @@ def test_ac11_missing():
     assert "ERROR explainer missing: .nio/specs/checkout-refunds/explainer.md" in r.stdout, (r.stdout, r.stderr)
 
 
+def test_ac9_broken_block():
+    # TC-14 (render level; check's loop is a later task): a rejected diagram is broken, a fetch failure unreachable
+    import os
+    import stat
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        npx = Path(d) / "npx"
+        npx.write_text('#!/bin/sh\necho "$FAKE_ERR" >&2\nexit 1\n')
+        npx.chmod(npx.stat().st_mode | stat.S_IEXEC)
+        old = os.environ.copy()
+        os.environ["PATH"] = d + os.pathsep + old["PATH"]
+        try:
+            os.environ["FAKE_ERR"] = "UnknownDiagramError: No diagram type detected for flowchar"
+            assert explain.render("flowchar TD", Path(d) / "o.svg").startswith("broken: UnknownDiagramError"), "typo"
+            os.environ["FAKE_ERR"] = "npm ERR! code ENOTFOUND"
+            assert explain.render("flowchart TD", Path(d) / "o.svg") == "unreachable"
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_ac5_node_cap, test_ac11_missing])
+    selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block])
