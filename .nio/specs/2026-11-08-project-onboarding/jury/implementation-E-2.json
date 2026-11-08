@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-11-08-project-onboarding",
-  "round": 6,
+  "round": 7,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -28,7 +28,8 @@
     "R-261108-iqdu/implementation-E-2-adversary.md": "1ae23c70429b5cb3add29915ab634a33fb8eb6c9bd4faaf2ff951b6ebc26dce5",
     "R-261108-iqdu/implementation-E-2-consistency.md": "9bb37736e0e3d33c0e0dad73b4f0220dbd2af7f853c23fddb7fb314788d51439",
     "R-261108-iqdu/implementation-E-2-correctness.md": "4678ebb45bef9b4c206942dede8025bfbb2ca3e08219bba3789ae7b63962ca90",
-    "R-261108-iqdu/implementation-E-2-security.md": "3c0ed4f3705dc17ec77f3ab62b6aafb9b09bbd0dc18af9f200d5a0024aed8ef7"
+    "R-261108-iqdu/implementation-E-2-security.md": "3c0ed4f3705dc17ec77f3ab62b6aafb9b09bbd0dc18af9f200d5a0024aed8ef7",
+    "R-261108-4oho/implementation-E-2-consistency.md": "ed242fd3e52c594a573304c299078d3ff464b5be92c2eacf71b1d3df042851f4"
   },
   "jurors": {
     "implementation-E-2-adversary": {
@@ -56,13 +57,13 @@
     "implementation-E-2-consistency": {
       "attempts": 1,
       "lens": "consistency",
-      "by": "juror / claude-code / claude-haiku-5-5",
+      "by": "juror / claude-code / haiku-5.5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 6,
-      "version": "a10c757bb3f44d9f76a541094860c1548b5b53f3",
-      "judged": 6
+      "round": 7,
+      "version": "f142f112daac52b4648cb2965ece019d1761880f",
+      "judged": 7
     },
     "implementation-E-2-correctness": {
       "attempts": 1,
@@ -1039,17 +1040,18 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-2-consistency: `expected(st)` is added and used by start and confirm, and the progress save is atomic (`tmp.replace(f)`). But `next_doc(p)` is not in `onboard.py`: grep finds no `next_doc` in any Python file, and start and confirm still build the next doc inline. The ask was to add it and print from it.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "human",
       "note": "add next_doc(p) per CT-3/CT-4; start and confirm use it",
-      "baseline": "unchanged",
+      "baseline": "absent",
       "rounds": 1,
       "first_round": 1,
       "last_round": 6,
       "gap": "partial",
       "where": "src/nio/onboard.py:act",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 7
     },
     {
       "id": "J-21",
@@ -1711,7 +1713,7 @@
       "tampering": false
     }
   ],
-  "outcome": "rerun",
+  "outcome": "approved",
   "recorded": [
     [
       5,
@@ -1720,6 +1722,10 @@
     [
       6,
       "human"
+    ],
+    [
+      7,
+      "approved"
     ]
   ],
   "versions": {
@@ -1728,7 +1734,8 @@
     "3": "7b81c93c9534a0492952249e6342262604eed150",
     "4": "7b81c93c9534a0492952249e6342262604eed150",
     "5": "7b81c93c9534a0492952249e6342262604eed150",
-    "6": "a10c757bb3f44d9f76a541094860c1548b5b53f3"
+    "6": "a10c757bb3f44d9f76a541094860c1548b5b53f3",
+    "7": "f142f112daac52b4648cb2965ece019d1761880f"
   },
   "matched": {
     "AC-15": [
