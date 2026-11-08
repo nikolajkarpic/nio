@@ -19,7 +19,7 @@ outcome: rejected
 | J-7 | minor | inconsistency | CT-4 | consistency | grounded | open |  | new, 0 |
 | J-8 | major | gap | CT-4 | correctness | refuted | refuted |  | new, 0 |
 | J-9 | minor | risk | AC-7, CT-4 | correctness | grounded | open |  | new, 0 |
-| J-10 | blocker | gap | AC-5 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-10 | blocker | gap | AC-5 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 
 ### J-1 CT-1 counts as named when only CT-10 is in the map
 - quote: "not named in the component map's node labels"
@@ -78,7 +78,7 @@ outcome: rejected
 - situation (cli): no passing test proves AC-5: no test didn't run
 - fix: add or fix a test that proves AC-5
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-24
+- disposition: accepted-risk by human: Retire it, re-approve tasks: AC-5's check-level test (test_ac5_node_cap_check) exists and passes; the evidence step only knows tests.md names. Tooling gap, filed as an issue.
 
 ## Jurors
 

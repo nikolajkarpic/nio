@@ -1,7 +1,7 @@
 ---
 gate: tasks
 subject: 2026-11-08-explainer
-round: 2
+round: 3
 outcome: approved
 ---
 # Tasks jury: 2026-11-08-explainer
@@ -70,4 +70,4 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| tasks-executability | executability | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| tasks-executability | executability | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 3 |

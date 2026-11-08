@@ -1,7 +1,7 @@
 {
   "gate": "tasks",
   "subject": "2026-11-08-explainer",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "executability"
@@ -9,7 +9,8 @@
   "collected": {
     "R-261108-hgvz/tasks-executability.md": "90f65391601eadd4b6b99057306c13d5e0a53e4eed409e6f82956532f52f45c0",
     "R-261108-hgvz/tasks-refuter.md": "db6d806cd5f973f92ac63ca2c56bd4d99daf40e1dd76aa45284f4948c4de1865",
-    "R-261108-rct4/tasks-executability.md": "e1bc3d5ed7f6ac509b3c634bf691b7e7301568bfcd4a27a367c70046aa74402a"
+    "R-261108-rct4/tasks-executability.md": "e1bc3d5ed7f6ac509b3c634bf691b7e7301568bfcd4a27a367c70046aa74402a",
+    "R-261108-3pgr/tasks-executability.md": "89126f4d4ea8590d8c940308311bba6313288ed95303466327af3313e0a4e695"
   },
   "jurors": {
     "tasks-executability": {
@@ -19,9 +20,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "fb961077e5eee62fdfa3f34f2a98551f86208804",
-      "judged": 2
+      "round": 3,
+      "version": "f80d0331d16e871f4aab79cdb3230e53814183d8",
+      "judged": 3
     }
   },
   "findings": [
@@ -247,15 +248,29 @@
     [
       2,
       "approved"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "89bdf30ff50cf174fa9732de051b54f79597f584",
-    "2": "fb961077e5eee62fdfa3f34f2a98551f86208804"
+    "2": "fb961077e5eee62fdfa3f34f2a98551f86208804",
+    "3": "f80d0331d16e871f4aab79cdb3230e53814183d8"
   },
   "fixes": {
     "1": [],
-    "2": []
+    "2": [],
+    "3": [
+      "T-17",
+      "T-18",
+      "T-19",
+      "T-20",
+      "T-21",
+      "T-22",
+      "T-23"
+    ]
   },
   "asked": {},
   "list": {
