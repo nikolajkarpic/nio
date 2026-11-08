@@ -372,6 +372,23 @@ def test_ct5_bad_quickstart_writes_nothing():
         plan.approved = keep
 
 
+def test_ct5_keeps_author_lines():
+    # T-27: step 6 strips only what an earlier finish wrote
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, fin = fin_repo()
+        ex = root / ".nio/specs/checkout-refunds/explainer.md"
+        mine = ["> Note: refunds are capped", "![logo](logo.png)"]
+        ex.write_text(ex.read_text() + "\n" + "\n".join(mine) + "\n\n> Broken diagram: old\n![x](explainer--x.svg)\n> Images not rendered: gone.\n")
+        fin()
+        t = ex.read_text()
+        assert all(m in t for m in mine), t
+        assert "Broken diagram: old" not in t and "explainer--x.svg" not in t and "gone." not in t, t
+    finally:
+        plan.approved = keep
+
+
 def npx_bin():
     """A PATH dir with a fake npx: copies -i to -o; FAKE_NPX=hang sleeps 5 s first."""
     import stat
@@ -518,4 +535,4 @@ if __name__ == "__main__":
     selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
-                    test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing])
+                    test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines])
