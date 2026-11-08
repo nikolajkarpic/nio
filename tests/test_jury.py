@@ -2258,13 +2258,15 @@ def test_escalation_counts_jurors_since_the_blocker_was_raised():
     lines = step(root, run)
     assert any(l.startswith("next: escalate logic") for l in lines), lines
     out(root, run, "spec", "logic-2", LOGIC_FINDING.replace("major", "blocker"), lens_name="logic")
-    out(root, run, "spec", "logic-3", lens_name="logic")
-    for _ in range(3):
+    out(root, run, "spec", "logic-3", FINDING.replace("F1 One refund per order is not pinned down", "F1 A single refund is never checked for its amount")
+        .replace("EB-1", "AC-2").replace("create exactly one refund", "it is refunded in full").replace("major", "blocker"), lens_name="logic")
+    for _ in range(4):
         lines = step(root, run)
         if any("nio-refuter" in l for l in lines):
-            refuter_file(root, run, CONFIRM.format(n=1))
+            refuter_file(root, run, "".join(CONFIRM.format(n=n) for n in sorted(int(i[2:]) for i in batch_ids(root, run))))
             continue
         break
+    # a blocker an escalation juror raises doesn't escalate its lens again: the lens already had its three jurors
     assert not any(l.startswith("next: escalate") for l in lines), lines
 
 
