@@ -22,6 +22,8 @@ def test_ac5_node_cap():
     seq = "sequenceDiagram\n" + "".join(f"Client->>Svc{i}: call\n" for i in range(1, 26))
     assert len(explain.nodes(seq)) == 26
     assert explain.nodes("stateDiagram-v2\n[*] --> Idle\nIdle --> Busy: go\nstate Done") == {"Idle", "Busy", "Done"}
+    assert explain.nodes("sequenceDiagram\nClient->>Svc3: retry (see note\nClient->>Svc4: ok)") == {"Client", "Svc3", "Svc4"}
+    assert explain.nodes("flowchart TD\nA <--> B\nC --o D\nE --x F\nG ---> H\nI ==> J\nK -.-> L") == set("ABCDEFGHIJKL")
     assert explain.nodes("flowchart TD\nA --> B & C\nA -- retry --> D\nE --> F; F --> G") == set("ABCDEFG")
 
 
