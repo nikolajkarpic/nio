@@ -18,5 +18,20 @@ def test_ac5_node_cap():
     assert explain.nodes('flowchart TD\nA["x --> y"] --> B(z)\n%% c --> d\nsubgraph S\nB -.-> C\nend\n') == {"A", "B", "C"}
 
 
+def test_ac11_missing():
+    # TC-16: the approved refunds spec with no explainer.md; the CLI exits 1 and names the file
+    import subprocess
+    import sys
+    from test_records import repo
+    from test_spec import put
+
+    root = repo()
+    put(root, "spec.md")
+    code = "import sys; sys.argv = ['nio', 'check', 'explainer', 'checkout-refunds']; from nio.cli import main; main()"
+    r = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True)
+    assert r.returncode == 1, (r.returncode, r.stdout, r.stderr)
+    assert "ERROR explainer missing: .nio/specs/checkout-refunds/explainer.md" in r.stdout, (r.stdout, r.stderr)
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_ac5_node_cap])
+    selfcheck.main([test_ac5_node_cap, test_ac11_missing])
