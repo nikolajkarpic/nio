@@ -4,7 +4,7 @@ import re
 import sys
 from importlib import resources
 
-from nio import agents, evidence, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks, usage
+from nio import agents, evidence, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
 
 
 def report(errors, warnings, count):
@@ -34,6 +34,8 @@ def main():
     c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
     c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
+    ob = sub.add_parser("onboard", help="`onboard scan`: list the project's docs, manifests, IaC and CI files with a content hash")
+    ob.add_argument("action", choices=["scan"])
     t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
     t.add_argument("action", choices=["show"])
     t.add_argument("slug")
@@ -343,6 +345,8 @@ def main():
             sys.exit(f"error: {e}")
         print("\n".join(lines))
         sys.exit(code)
+    elif a.cmd == "onboard":
+        onboard.scan()
     elif a.cmd == "task":
         try:
             print("\n".join(tasks.show(root, a.slug, a.id)))
