@@ -121,8 +121,7 @@ def act(action, reason="", doc="", empty=False, root="."):
                 if not (d / f"{n}.md").exists():
                     (d / f"{n}.md").write_text((Path(__file__).parent / f"templates/project/{n}.md").read_text())
         save()
-        rest = [n for n in expected(st) if n not in st["confirmed"]]
-        return "next: " + (rest[0] if rest else DOCS[0])
+        return "next: " + (next_doc(st) or DOCS[0])
     if st["state"] != "in progress":
         return f"ignored: onboarding is {st['state']}"
     if doc not in expected(st):
@@ -136,17 +135,22 @@ def act(action, reason="", doc="", empty=False, root="."):
     if "NEEDS CLARIFICATION" in text:
         raise ValueError(f"{doc}.md still has NEEDS CLARIFICATION: answer it first")
     st["confirmed"] = sorted(set(st["confirmed"]) | {doc})
-    rest = [n for n in expected(st) if n not in st["confirmed"]]
-    if not rest:
+    nxt = next_doc(st)
+    if not nxt:
         st["state"] = "done"
         st["seen"] = [list(e) for e in scan(root)]
     save()
-    return "next: " + rest[0] if rest else "done"
+    return "next: " + nxt if nxt else "done"
 
 
 def expected(st):
     """The docs this onboarding walks: --empty leaves the three blank stubs out."""
     return [n for n in DOCS if not (st["empty"] and n in ("stack", "architecture", "infra"))]
+
+
+def next_doc(p):
+    """The first expected doc not yet confirmed, or None."""
+    return next((n for n in expected(p) if n not in p["confirmed"]), None)
 
 
 def status_lines(root="."):
