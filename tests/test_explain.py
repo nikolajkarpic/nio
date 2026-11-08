@@ -116,7 +116,31 @@ def good(walk_build="Order walk.", extra="", calls=None, contracts=("CT-1", "CT-
     def run():
         r = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True, env=env)
         return r.returncode, r.stdout + r.stderr
+    run.root = root
     return run
+
+
+def test_ac10_no_node():
+    # TC-15: no npx on PATH: render skipped with a note, the other checks still run
+    import os
+    import subprocess
+    import sys
+    import tempfile
+    root = good().root
+    ex = root / ".nio/specs/checkout-refunds/explainer.md"
+    bin = Path(tempfile.mkdtemp())
+    (bin / "git").symlink_to(__import__("shutil").which("git"))  # git only: no npx
+    env = dict(os.environ, PATH=str(bin))
+    code = "import sys; sys.argv = ['nio', 'check', 'explainer', 'checkout-refunds']; from nio.cli import main; main()"
+
+    def go():
+        r = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True, env=env)
+        return r.returncode, r.stdout + r.stderr
+    c, out = go()
+    assert c == 0 and "render skipped: Node is not installed" in out, (c, out)
+    ex.write_text(ex.read_text().replace("CT-2 ", ""))
+    c, out = go()
+    assert c == 1 and "ERROR component map misses CT-2" in out, (c, out)
 
 
 def test_ac5_node_cap_check():
@@ -163,4 +187,4 @@ def test_uj1_huge_diagram():
 
 if __name__ == "__main__":
     selfcheck.main([test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
-                    test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram])
+                    test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node])
