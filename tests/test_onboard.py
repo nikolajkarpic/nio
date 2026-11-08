@@ -316,10 +316,18 @@ def test_onboard_act_outside_git_repo():
     assert r.returncode == 1 and "needs a git repository" in r.stderr, (r.stdout, r.stderr)
 
 
+def test_next_doc_first_unconfirmed():
+    from nio import onboard
+    p = {"empty": True, "confirmed": ["product", "personas"]}
+    assert onboard.next_doc(p) == "principles", onboard.next_doc(p)
+    assert onboard.next_doc({"empty": False, "confirmed": ["product", "personas"]}) == "stack"
+    assert onboard.next_doc({"empty": True, "confirmed": ["product", "personas", "principles"]}) is None
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
                     test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes,
-                    test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo])
+                    test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed])
