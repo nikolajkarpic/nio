@@ -59,6 +59,28 @@ def test_ac9_broken_block():
         finally:
             os.environ.clear()
             os.environ.update(old)
+    # TC-14: the check names the broken block, and only it
+    import subprocess
+    import sys
+    from test_records import repo
+    from test_spec import put
+
+    root = repo()
+    put(root, "spec.md")
+    ex = root / ".nio/specs/checkout-refunds/explainer.md"
+    ex.write_text("## Component map\n\n```mermaid\nflowchart LR\nA --> B\n```\n\nwalk\n\n"
+                  "## Build order\n\n```mermaid\nflowchart LR\nA --> B\nBROKEN -->\n```\n\nwalk\n")
+    with tempfile.TemporaryDirectory() as d:
+        npx = Path(d) / "npx"
+        npx.write_text('#!/bin/sh\nwhile [ $# -gt 0 ]; do case $1 in -i) i=$2;; -o) o=$2;; esac; shift; done\n'
+                       'if grep -q BROKEN "$i"; then echo "Parse error on line 3" >&2; exit 1; fi\ntouch "$o"\n')
+        npx.chmod(npx.stat().st_mode | stat.S_IEXEC)
+        env = dict(os.environ, PATH=d + os.pathsep + os.environ["PATH"])
+        code = "import sys; sys.argv = ['nio', 'check', 'explainer', 'checkout-refunds']; from nio.cli import main; main()"
+        r = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True, env=env)
+    assert r.returncode == 1, (r.returncode, r.stdout, r.stderr)
+    assert "ERROR broken diagram: Build order" in r.stdout, (r.stdout, r.stderr)
+    assert "Component map" not in r.stdout, r.stdout
 
 
 if __name__ == "__main__":
