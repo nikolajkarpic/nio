@@ -1,0 +1,986 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-08-explainer",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261108-4lel/spec-adversary.md": "ab2fd02b65f370d9e391fb891e09d83e2aa8b65f44bb39dcf413c143c4cad7cf",
+    "R-261108-4lel/spec-consistency.md": "dbc95f043b102b3c2ef185f5b95812326280a658fac7a7e9dc85a359ccd76d33",
+    "R-261108-4lel/spec-logic.md": "f07b8580f987ee68f544b6f67feb79c5d5edad9a94b5d1afb949dc756d5a3ba2",
+    "R-261108-4lel/spec-scope.md": "3dab7f09d48350c5c48dc0129b76582719750bcfce9ddbefc46a2c9a1f862004",
+    "R-261108-4lel/spec-testability.md": "05f3f29798ebfe426428f578cab47f4ef98609ac0dfc2862e16e68c7fa8436c7",
+    "R-261108-4lel/spec-refuter.md": "3d2c0a92da5d8941f2c30bb64c2d2d1e1f925efb227f5b90afbeca6bd362e67c",
+    "R-261108-uk7a/spec-adversary.md": "d263eb809235175f8c420cbf2fc348c44c4479242078770bda149308a2bfcfa9",
+    "R-261108-uk7a/spec-consistency.md": "42f1421121ec2eac58db712de80bbeca7d6e4e18007574d46052944b7867ef25",
+    "R-261108-uk7a/spec-logic.md": "adfdc2332e017ecf0d0b7520fa4b3cb6794cb75c3f3293e6509e6899e3db0d36",
+    "R-261108-uk7a/spec-scope.md": "a1f545b705e9375ace1a06a80cb24205b80174d29b5d55ea11f429cce6f6a3ce",
+    "R-261108-uk7a/spec-testability.md": "961dd27e614a2789c92e70d297daac946dc21023296ec127663de95869252f0f",
+    "R-261108-675m/spec-adversary.md": "b1ac9e77e2a8d9961b69a76713603495d241583f7ec28c98f21e2b1c9c364375",
+    "R-261108-675m/spec-testability.md": "eea96970a054cdad95de909c5bf10d0af920939fdbbee0796cfef027e503dbff"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "2a37b7e14dec8ffde557aaee41ca6729def3cc21",
+      "judged": 3
+    },
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "363ee9ba700eac6a82a14136658480316e616363",
+      "judged": 2
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "363ee9ba700eac6a82a14136658480316e616363",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / haiku-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "363ee9ba700eac6a82a14136658480316e616363",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "2a37b7e14dec8ffde557aaee41ca6729def3cc21",
+      "judged": 3
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Deleting \"the SVGs the previous run listed\" trusts a file anyone can edit",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-26",
+        "AC-33"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "delete only the SVGs the previous run listed as its own and no longer draws"
+      ],
+      "fix": "say deletion is limited to `.svg` files directly inside the explainer's own folder; any other entry is ignored with a warning.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the list lives in explainer.md, which humans and agents edit and merge. A line like `../../src/logo.svg`, or an absolute path, makes the re-run delete a file outside the spec folder. A list lost in a merge leaves orphans, or lets a run delete nothing without saying so. AC-33 only covers a clean list and a sibling `notes.svg`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-26 limits deletion only to \"SVGs the previous run listed\", and the list sits in the editable explainer.md; no requirement bounds the path, and AC-33 tests only a clean list plus a sibling file.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q4: delete only own-prefixed listed SVGs in the explainer folder, never drill-down SVGs, warn on other paths (FR-26, AC-33)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Topic name goes straight into a file path",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-14",
+        "FR-27"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "write `.nio/research/<date>-<topic>-explainer.md`, with its SVGs beside it"
+      ],
+      "fix": "add an FR that turns the topic into a safe slug (charset, length cap, non-empty), always inside `.nio/research/`, and says what happens on a collision between different topics.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the human asks to explain \"../../.claude/settings\" or \"a/b\", or gives an empty, very long or non-ASCII topic. The spec has no slugging rule, so the write lands outside `.nio/research/` or fails with a half-written file. FR-27 \"continue that file\" then appends to whatever file that path matches, and two different topics can collide on one slug and merge silently.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-adversary: FR-14 now slugs the topic, caps it at 40 characters and refuses an empty result, which closes the path escape. The collision half of the fix asked is still open. Two different topics can reduce to the same 40-character slug on the same date, and FR-27 \"continue that file\" then merges them silently. No requirement says what happens then (for example, record the original topic in the file and refuse or suffix on mismatch).",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q10: topic text stored; a clash with a different topic writes -explainer-<n>.md and says so (FR-27, AC-35)",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-3",
+      "title": "A config value can make the check pass without checking anything",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-20",
+        "AC-27",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "skip rendering and the check's diagram checks with a note"
+      ],
+      "fix": "keep the core-diagram and contract-ID checks for every format (they need only the file's headings and labels). Skip only render and syntax checks.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "`explain.format` is set to any host skill name, or the skill name is mistyped but still present on the host. `nio check explainer` then skips \"the check's diagram checks\", so a plan explainer with no component map and no build order exits 0. AC-10 keeps core-diagram and contract-ID checks when only Node is missing, but FR-20 and AC-27 do not say they stay. The pass is silent apart from one note line.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-13",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "The 20-node cap is a rule nothing enforces",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "NFR-1",
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL keep every diagram at or under 20 nodes."
+      ],
+      "fix": "add \"a diagram block over 20 nodes\" to the FR-8 failures, or state that the cap is advisory.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the agent draws a 60-node diagram, or a drill-down section adds one. FR-8 fails only for a render failure, a missing core diagram or a missing contract ID, so `nio check explainer` passes. AC-5's observable counts nodes, but only in an e2e run on the agent's own output, and no check fails on it. The \"one huge diagram\" misuse in UJ-1 therefore goes unrejected.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-5's Observable only counts nodes, so \"answers one question\" is never tested. `nio check explainer` (FR-8) fails only on render, missing core diagram or missing contract ID, so a 25-node diagram passes the check and only the e2e agent run would catch it. How a \"node\" is counted (subgraph boxes? edge labels?) is not defined.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-7/NFR-1/AC-5 (Level: e2e) set the 20-node cap, but FR-8 (line 176) fails only on render, missing core diagram or absent contract ID. Nothing says the cap is advisory, and \"node\" counting is undefined.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q6: check fails a diagram over 20 distinct node IDs (FR-7, FR-8, NFR-1, AC-5)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "Rendering runs an unpinned fetched package on text derived from untrusted input",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "FR-11"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Rendering through `npx` fetches and runs a third-party package"
+      ],
+      "fix": "add an FR that pins the renderer version, sanitises labels or uses Mermaid strict mode, and separates \"network or fetch failed\" from \"no Node\", with a visible note for each.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the Risks section names this, but no requirement or AC limits it. An unpinned package, or a typosquatted or compromised one, runs on every machine that renders, and `nio check` runs the same path. Diagram text comes from spec and topic text. Mermaid labels or directives such as `click` and HTML labels end up in a committed SVG that humans open in a browser. Nothing pins the version, escapes labels, or says what happens when the network is down; the last case may be read as \"Node not available\" and quietly give text-only output.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Risks section names the npx fetch, but no FR or AC covers version, label handling, or a failed fetch; FR-11 only covers \"Node is not available\", so a network failure is unspecified.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q7: one exact mermaid-cli version; notes tell no Node from fetch failure; only a broken diagram fails (FR-9, FR-11, AC-14)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "Host-skill format may skip the contract-ID check that FR-8 requires",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-20",
+        "FR-8",
+        "AC-27"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "skip rendering and the check's diagram checks with a note",
+        "a plan contract ID is absent from the component map's node labels",
+        "check exit 0 with a note naming the format"
+      ],
+      "fix": "name the checks that a host-skill format skips (render only, or render plus core-diagram plus contract-ID) and state which one stays on. If the contract-ID check must still run, say how it reads labels from a non-Mermaid explainer.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "`explain.format` names a host skill and the plan's CT-3 is missing from the component map labels. FR-20 says the check skips \"the check's diagram checks\", and the contract-ID check is one of the FR-8 checks, so the check may pass with exit 0 even though FR-8 says it must fail naming CT-3. The spec does not say whether the contract-ID check is a \"diagram check\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-8 lists the contract-ID check as a failure, FR-20 skips \"diagram checks\" without defining them, and AC-27 expects exit 0 with only a note; the spec leaves the CT-3 outcome open.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q5: host skill skips rendering only; core, contract, node-cap and walk-through checks still run; FR-20/21 now human (FR-20, FR-21, AC-27, AC-28)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "Core-diagram check may fail every topic explainer",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "FR-15",
+        "FR-2",
+        "decision table \"what the explainer holds\" (topic row)"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a core diagram is missing",
+        "apply the component-map contract-ID check to plan explainers only",
+        "an overview diagram, then one per drill-down section",
+        "always include a component map and a build order diagram in a plan explainer"
+      ],
+      "fix": "state in FR-8 or FR-15 that the core-diagram check, like the contract-ID check, applies to plan explainers only, and say what topic explainers are checked for.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "a topic explainer has only an overview diagram and drill-down diagrams, with no component map or build order. FR-15 limits only the contract-ID check to plan explainers, so the other FR-8 checks read as applying to topic explainers too. Read that way, `nio check explainer` on a topic explainer fails with \"a core diagram is missing\" every time. AC-20 covers only the contract-ID check, so nothing says the core-diagram check is off for topics.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a topic explainer holds an overview diagram and drill-down diagrams (decision table row `topic`), with no component map or build order. FR-2 requires core diagrams only in a plan explainer. FR-8 fails any explainer with \"a core diagram missing\", and FR-15 excludes only the contract-ID check. AC-20 expects \"no contract finding\" and says nothing about the core check. The outcome for a topic explainer is therefore pass or fail depending on how FR-8 is read. The command is also `nio check explainer <slug>`, and a topic explainer has no slug, so how it is named to the check is unstated.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-8 fails on \"a core diagram is missing\" with no mode scope and FR-15 scopes only the contract-ID check; the Glossary says core diagrams are present in a plan explainer but never says the check skips topic explainers.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-15/AC-20 scope core-diagram and contract checks to plan explainers (FR-2 already scoped core diagrams to plan mode); a topic explainer is checked by path, render only",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "Staleness is said to follow the plan, but FR-16 also fires on spec.md and contracts.md",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "UJ-4",
+        "AC-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a changed plan flags it stale but",
+        "The plan changes after the explainer was written.",
+        "WHEN spec.md, plan.md or contracts.md changed or is gone since its explainer was written",
+        "print `stale: explainer.md (plan changed)`"
+      ],
+      "fix": "either change the trigger to the plan (and drop spec.md and contracts.md from FR-24 and FR-16, which AC-31 also relies on), or make the printed text name the source that changed.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "spec.md changes, and FR-16 says the explainer is stale. The fixed status text still reads \"(plan changed)\", which is not true when only spec.md changed. The Summary and UJ-4 speak only of the plan.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Stale line reworded to 'spec, plan or contracts changed' (FR-16, AC-21); spec.md as a source was an agent call in the delegated grill (OP-3), shown to the human",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "The drill-down marker is worded differently in Decisions and FR-25",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-25",
+        "AC-32",
+        "Decisions"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "marked for review",
+        "each marked as written for an earlier plan"
+      ],
+      "fix": "use the FR-25 wording in the Decisions line, or drop the Decisions line since FR-25 already holds the rule.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the Decisions line says drill-down sections are kept \"marked for review\". FR-25 and AC-32 say they are marked \"as written for an earlier plan\". An implementer who follows the Decisions line writes a different marker, and AC-32 would fail on it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Decisions line now matches FR-25's wording",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "Flow output \"same with and without the explainer\" conflicts with suggesting explain",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-23",
+        "FR-18",
+        "AC-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio flow next` output is the same with and without the explainer",
+        "WHEN the plan gate closes as approved THE SYSTEM SHALL suggest `@nio:explain` in `nio flow next`."
+      ],
+      "fix": "state that the suggestion shows only while no explainer exists, and reword AC-23 to compare only the blocking or gating parts of the output.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the plan gate is approved. Case 1: no explainer, so FR-18 and AC-24 require `nio flow next` to name `@nio:explain`. Case 2: explainer written, so AC-23 requires identical output, meaning it still suggests explain forever. If it stops suggesting, AC-23 fails. If it keeps suggesting, the flow nags after the step is done, and UJ-4's \"the stale line goes away\" has no matching \"suggestion goes away\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-23's Observable says `nio flow next` output is the same with and without the explainer, while FR-18 and AC-24 require it to name `@nio:explain` after approval; both cannot hold once an explainer exists unless the suggestion never goes away.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-23 Observable excepts FR-18's suggestion; no flow guard refuses for the explainer",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "Re-run keeps drill-down sections but deletes the SVGs they show",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-25",
+        "FR-26",
+        "AC-32",
+        "AC-33"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "keep every drill-down section below them, each marked as written for an earlier plan",
+        "delete only the SVGs the previous run listed as its own and no longer draws"
+      ],
+      "fix": "say whether drill-down diagrams and their SVGs count as the re-run's own. Either exempt SVGs referenced by kept sections from deletion, or say kept sections lose their images.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a plan explainer has a drill-down section on component CT-2 with its own diagram and `drill-ct-2.svg`, listed as the previous run's. The plan changes and explain re-runs. FR-25 keeps the section, which still references `drill-ct-2.svg`. The re-run redraws only the core and flow diagrams, so it \"no longer draws\" that SVG and FR-26 deletes it. The kept section then points at a missing image.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-25 keeps drill-down sections while FR-26 deletes SVGs the re-run \"no longer draws\"; the spec never says whether kept drill-down sections' SVGs count as still drawn, so images can be deleted from kept sections.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q4: delete only own-prefixed listed SVGs in the explainer folder, never drill-down SVGs, warn on other paths (FR-26, AC-33)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "Core-diagram check has no mode scope, so topic explainers must fail it",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "FR-15",
+        "FR-2",
+        "AC-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a core diagram is missing, or a plan contract ID is absent from the component map's node labels",
+        "THE SYSTEM SHALL apply the component-map contract-ID check to plan explainers only."
+      ],
+      "fix": "scope the core-diagram check to plan explainers in FR-8 and FR-15, and say how a topic explainer is addressed to the check.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a topic explainer holds an overview diagram and drill-down diagrams (decision table row `topic`), with no component map or build order. FR-2 requires core diagrams only in a plan explainer. FR-8 fails any explainer with \"a core diagram missing\", and FR-15 excludes only the contract-ID check. AC-20 expects \"no contract finding\" and says nothing about the core check. The outcome for a topic explainer is therefore pass or fail depending on how FR-8 is read. The command is also `nio check explainer <slug>`, and a topic explainer has no slug, so how it is named to the check is unstated.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-7",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "Host-skill row skips \"diagram checks\", which may include the core and contract checks",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-20",
+        "AC-27",
+        "AC-10",
+        "decision table `images and checks` row `host skill`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "skip rendering and the check's diagram checks with a note",
+        "it skips the render check with a note and still checks the core diagrams and contract IDs"
+      ],
+      "fix": "list which checks are skipped for a host skill (render only, or all) and whether the core and contract checks still run.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "`explain.format` names a host skill and the plan has CT-3 missing from the component map. With no Node (AC-10), the check still fails on the missing contract ID. With a host skill (FR-20), \"diagram checks\" may or may not cover core presence and contract IDs. The same missing-CT-3 input can exit 1 or 0.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "`explain.format` is set to any host skill name, or the skill name is mistyped but still present on the host. `nio check explainer` then skips \"the check's diagram checks\", so a plan explainer with no component map and no build order exits 0. AC-10 keeps core-diagram and contract-ID checks when only Node is missing, but FR-20 and AC-27 do not say they stay. The pass is silent apart from one note line.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-20 and AC-27 say a host skill skips \"the check's diagram checks\", and the decision table row says \"render and diagram checks skipped\". AC-10 keeps core and contract checks when only Node is missing, but no text says they stay for a host skill. FR-8's three checks could all be read as \"diagram checks\".",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q5: host skill skips rendering only; core, contract, node-cap and walk-through checks still run; FR-20/21 now human (FR-20, FR-21, AC-27, AC-28)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "Re-run marks drill-down sections \"earlier plan\" even when the plan did not change",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-25",
+        "AC-32",
+        "AC-22"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHEN a plan explainer is re-run THE SYSTEM SHALL redraw its diagrams and keep every drill-down section below them, each marked as written for an earlier plan."
+      ],
+      "fix": "apply the mark only when the recorded source hashes (FR-24) differ from the current ones, and say that an existing mark is not duplicated.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the plan did not change and the human re-runs explain. FR-25 has no change condition, so every drill-down section is marked \"earlier plan\" although it matches the current plan. The mark also cannot tell a section marked in run 2 from one written in run 1 after run 3, as nothing says whether the mark repeats or stays.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-25 marks sections only when a source hash differs from the recorded one; matches the human's Q1, which was about out-of-date re-runs",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "One spec bundles several separable features",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "FR-9",
+        "FR-14",
+        "FR-16",
+        "FR-19",
+        "US-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A new skill, `@nio:explain`, turns an approved plan into `explainer.md`",
+        "It can also explain a topic or an implementation",
+        "### US-8 Choose the diagram format (P3) [human]"
+      ],
+      "fix": "split into an epic with slices, for example plan explainer and check (P1), then render, then topic mode and drill-down, then stale flag and format switch. Or state in the spec why one spec is kept.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the plan explainer (US-1, US-2), the SVG render path (US-3), topic mode (US-5), the stale flag (US-6), the flow suggestion (US-7) and the format switch (US-8) are gated as one unit with 27 FRs. A slice that only writes a plan explainer and checks it cannot be approved, or can be built, without also waiting for the render, topic and format work. The spec names no epic and no slice order beyond the P1/P2/P3 tags.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Template permits a single spec (epic field is optional), and the stories already carry P1/P2/P3 priorities and an Independent test each, which is the slicing the spec uses; no rule or grill answer demands a split, so this is a preference, not a defect.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "The other-format branch is an unconfirmed agent default under a [human] story",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-20",
+        "FR-21",
+        "AC-27",
+        "AC-28",
+        "US-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "**FR-21** IF `explain.format` names a skill the host does not have THEN THE SYSTEM SHALL draw Mermaid and say so. [agent]",
+        "### US-8 Choose the diagram format (P3) [human]"
+      ],
+      "fix": "keep US-8 at P3, and label FR-20 and FR-21 as needing confirmation in the grill, or drop them until a host skill is actually wanted.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human's answer was \"configurable and being mermaid by defaulet\". The host-skill format and its missing-skill fallback were logged as \"[agent] defaults, below the grill bar (push back if wrong)\". The story header says [human], so a reader sees the whole US-8 as confirmed. If the human does not want host-skill drawing, FR-20, FR-21, AC-27 and AC-28 are unrequested work, and the fallback path is untested scope.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q5: host skill skips rendering only; core, contract, node-cap and walk-through checks still run; FR-20/21 now human (FR-20, FR-21, AC-27, AC-28)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-17",
+      "title": "FR-16 flags \"plan changed\" for a change to spec.md, which the human never confirmed",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "FR-24",
+        "AC-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN spec.md, plan.md or contracts.md changed or is gone since its explainer was written",
+        "print `stale: explainer.md (plan changed)`"
+      ],
+      "fix": "either drop spec.md from the trigger, or change the printed reason so it does not say \"plan changed\", and label the spec.md source [agent].",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "a spec.md edit that leaves the plan untouched makes `nio status` print \"stale: explainer.md (plan changed)\", which is false. FR-16 is labelled [human], but the human's answer covers only \"flag stale\" when the plan changes. Adding spec.md as a source is an [agent] choice, and FR-24 is also [agent], so the provenance on FR-16 is wrong for the spec.md part.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Stale line reworded to 'spec, plan or contracts changed' (FR-16, AC-21); spec.md as a source was an agent call in the delegated grill (OP-3), shown to the human",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-18",
+      "title": "The human's wish to pair with nio:research is dropped by a non-goal with no FR behind it",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "UJ-3",
+        "FR-14",
+        "US-5",
+        "non-goal \"Building `@nio:research`\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Building `@nio:research` or tying topic mode to it; topic mode stands on its own.",
+        "a topic explainer appears under `.nio/research/`"
+      ],
+      "fix": "add a line to Open points or to the non-goal saying pairing is deferred to a later issue, with its issue number, or add a FR for the pairing hand-off.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human's verbatim intake answer asks for the explainer to be \"callable in pair with nio:research\". The non-goal and AC-19 say topic mode works alone. The issue note says \"no @nio:research skill exists yet\". Nothing in the spec says what pairing would do when a research skill does exist, so the pairing wish has no FR to test against. If the human meant it as a later slice, that should be written down.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Non-goal reworded: pairing with research is served by topic mode (FR-14), callable from any research step; a research skill is a separate issue",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-19",
+      "title": "\"One question per diagram\" and the 20-node cap have no mechanical test",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "FR-7",
+        "NFR-1",
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "no diagram has more than 20 nodes and each diagram answers one question"
+      ],
+      "fix": "say how nodes are counted, add the cap to FR-8 so the check fails on it, and drop or reword \"one question\" into something observable (for example, a title that is a question).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-5's Observable only counts nodes, so \"answers one question\" is never tested. `nio check explainer` (FR-8) fails only on render, missing core diagram or missing contract ID, so a 25-node diagram passes the check and only the e2e agent run would catch it. How a \"node\" is counted (subgraph boxes? edge labels?) is not defined.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-4",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "\"Short\" walk-through has no number",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-1",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each followed by a short walk-through"
+      ],
+      "fix": "give a limit (for example, 1 to 8 lines or at most 120 words per walk-through) and state it in the Observable.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the Observable says \"each followed by prose\". A one-word line or a 2,000-word essay both pass, so the test cannot fail if FR-6 (\"short plain-language\") breaks.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-testability: FR-6 and AC-1's Then clause now give 1 to 120 words, but AC-1's Observable still says \"each followed by prose\". An e2e run with a 0-word or a 2,000-word walk-through still passes the Observable. The pack shows no AC with a fixture whose walk-through is over 120 words that the check must fail. Put the limit in the Observable, or add an integration AC like AC-5's.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q11: AC-36 proves a 121-word walk-through fails the check",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-21",
+      "title": "SC-1 depends on a reader's judgement",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "SC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a reader names the components and the build order from it without opening contracts.md"
+      ],
+      "fix": "define the test (for example, 3 readers each list all CT-n components and the build order correctly) or move it to a manual acceptance step.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "no reader count, no pass mark and no Level are given, so two reviewers can disagree on whether it passed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "SC-1 now mechanical: map names every contract, build order diagram names every plan build-order entry in order",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-22",
+      "title": "Host-skill skip: does the contract-ID check still run?",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-27",
+        "FR-20",
+        "state table row `host skill`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "skip rendering and the check's diagram checks with a note"
+      ],
+      "fix": "state which checks survive the skip (at least the missing-file and contract-ID checks?) and add a failing case.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "with `explain.format` set to a host skill, the explainer is not Mermaid. It is unclear whether the core-diagram and CT-n checks (AC-10 keeps them when Node is missing) still run. AC-27's Observable is \"check exit 0 with a note naming the format\", and it passes for an explainer that lacks CT-3 or the build order. A reader cannot tell if that is correct.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-27's Observable is only \"exit 0 with a note\", and FR-20's \"diagram checks\" is undefined, so it is unclear whether a missing CT-3 or build order should fail under a host skill.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Human Q5: host skill skips rendering only; core, contract, node-cap and walk-through checks still run; FR-20/21 now human (FR-20, FR-21, AC-27, AC-28)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-23",
+      "title": "\"Source gone\" and spec.md changes in FR-16 have no AC",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-16",
+        "AC-21",
+        "AC-31",
+        "FR-24"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN spec.md, plan.md or contracts.md changed or is gone since its explainer was written (FR-24)"
+      ],
+      "fix": "add an AC per source (spec.md, plan.md) and one for \"gone\", plus one for an explainer with no source lines.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-21 uses a generic \"the plan changed\" and AC-31 covers only quickstart, tests and contracts. No AC deletes a source file, edits spec.md or plan.md alone, or removes the source lines from explainer.md. A build that only hashes contracts.md would pass every AC.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-31 Observable adds the spec.md edit and the deleted contracts.md cases from FR-16/FR-24's existing text",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "a14f1bac086f1fc9889016d0b13ba153fb0af460",
+    "2": "363ee9ba700eac6a82a14136658480316e616363",
+    "3": "2a37b7e14dec8ffde557aaee41ca6729def3cc21"
+  },
+  "asked": {},
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-2",
+      "J-20"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}
