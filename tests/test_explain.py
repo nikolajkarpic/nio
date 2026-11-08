@@ -173,6 +173,12 @@ def test_ac7_missing_contract():
     # J-1: CT-10 in the map does not name CT-1
     c, out = good(contracts=("CT-1", "CT-10"), cmap_nodes='A["CT-10 Ledger"] --> B["CT-10 Again"]')()
     assert c == 1 and "ERROR component map misses CT-1" in out, (c, out)
+    # path spellings of the plan explainer still run the plan checks
+    run = good(contracts=("CT-1", "CT-2", "CT-3"))
+    ex = run.root / ".nio/specs/checkout-refunds/explainer.md"
+    for t in ("./.nio/specs/checkout-refunds/../checkout-refunds/explainer.md", str(ex)):
+        errs, _ = explain.check(run.root, t)
+        assert "component map misses CT-3" in errs, (t, errs)
 
 
 def test_ac8_missing_build_order():
