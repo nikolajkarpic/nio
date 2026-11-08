@@ -139,6 +139,19 @@ def test_empty_start_writes_blank_docs():
     assert r.returncode == 1, (r.stdout, r.stderr)
 
 
+def test_empty_start_keeps_existing_docs():
+    root = repo({})
+    d = root / ".nio/project"
+    d.mkdir(parents=True)
+    (d / "stack.md").write_text("confirmed stack\n")
+    (d / "product.md").write_text("mine\n")
+    assert nio(root, "start", "--empty").returncode == 0
+    assert (d / "stack.md").read_text() == "confirmed stack\n"
+    assert (d / "product.md").read_text() == "mine\n"
+    assert (d / "architecture.md").exists() and (d / "infra.md").exists()
+    assert not (d / "personas.md").exists() and not (d / "principles.md").exists()
+
+
 def newspec(root, route):
     return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "new", "spec", "x", "--route", route],
                           cwd=root, capture_output=True, text=True)
@@ -206,6 +219,6 @@ def test_skip_stays_visible():
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
-                    test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs,
+                    test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file,
                     test_skip_lets_spec_start, test_skip_stays_visible])
