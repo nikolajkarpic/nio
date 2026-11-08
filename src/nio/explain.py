@@ -95,10 +95,11 @@ def check(root, target, gate=False, base="HEAD"):
         if not spec.path(root, target).exists():
             raise ValueError(f"no effort {target} under .nio/specs/")
         p = spec.path(root, target).parent / "explainer.md"
+    p = p.resolve()
     if not p.exists():
         return [f"explainer missing: {p.relative_to(root)}"], []
     errors, secs = [], sections(p.read_text())
-    plan_mode = target in {p.parent.name} or p == spec.path(root, p.parent.name).parent / "explainer.md"
+    plan_mode = target in {p.parent.name} or p == (spec.path(root, p.parent.name).parent / "explainer.md").resolve()
     if plan_mode:
         from nio import records
         fmt = records.config(root).get("explain", {}).get("format", "mermaid")
