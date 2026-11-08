@@ -47,8 +47,19 @@ def scan(root="."):
 
 
 DOCS = ["product", "personas", "stack", "architecture", "infra", "principles"]
-SECTIONS = {"product": ["Purpose", "Users"], "personas": ["Personas"], "stack": ["Languages", "Frameworks"],
-            "architecture": ["Components", "Data flow"], "infra": ["Hosting", "CI"], "principles": ["Principles"]}
+HEADINGS = {'product': ['What it does', 'Users', 'Main flows', 'Non-goals', 'Glossary'], 'personas': [], 'stack': ['Languages', 'Dependencies', 'Commands', 'CI'], 'architecture': ['Modules', 'Boundaries', 'Data flow'], 'infra': ['Cloud provider', 'Deployables', 'Eventing and queues', 'Storage', 'Secrets', 'Environments', 'Deploys'], 'principles': ['Principles']}
+
+
+def check_doc(doc, text):
+    """What a project doc lacks against its template (CT-12)."""
+    import re
+    if doc == "personas":
+        parts = re.split(r"^### P-\d+.*$", text, flags=re.M)[1:]
+        if not parts:
+            return ["no persona entry"]
+        return [f"persona entry lacks {k}:" for p in parts for k in ("Who", "Wants", "Allowed to", "How often") if k + ":" not in p]
+    have = {l[3:].strip() for l in text.splitlines() if l.startswith("## ")}
+    return [h for h in HEADINGS[doc] if h not in have]
 
 
 def progress(root="."):
@@ -91,7 +102,7 @@ def act(action, reason="", doc="", empty=False, root="."):
         d.mkdir(parents=True, exist_ok=True)
         if empty:
             for n in DOCS:
-                (d / f"{n}.md").write_text(f"# {n.title()}\n" + "".join(f"\n## {s}\n\nNEEDS CLARIFICATION\n" for s in SECTIONS[n]))
+                (d / f"{n}.md").write_text((Path(__file__).parent / f"templates/project/{n}.md").read_text())
         save()
         return "next: " + DOCS[0]
     if doc not in DOCS:
