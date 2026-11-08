@@ -1,0 +1,625 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-08-explainer",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261108-c5hf/implementation-E-1-adversary.md": "776f3f7831f94ec806b7164742e2ae14210423ea973d3683398bc98acb583b2e",
+    "R-261108-c5hf/implementation-E-1-conformance.md": "bfb743ae71ecc9dd062e26cacbb761b8c247bfaa386c85c8e3fa2d4c144fb05e",
+    "R-261108-c5hf/implementation-E-1-consistency.md": "b8477a366a886de5d17d6587c6a5d2984bf49e16d9864d1ff490a19ffad4629a",
+    "R-261108-c5hf/implementation-E-1-correctness.md": "720a76869c3d059062b7f1d4a3376b4ebf3131735337f75b15a372ee1e379d1b",
+    "R-261108-c5hf/implementation-E-1-refuter.md": "15c7d373224f789dfeebbb7cdb53163b407aca67e4c1fc3cdb08274ad8e0c8d8"
+  },
+  "jurors": {
+    "implementation-E-1-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
+      "judged": 1
+    },
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "1d3b5aa566c53707a244aea5a03c7417d9877bac",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Node cap undercounts common Mermaid syntax, so oversized diagrams pass",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "An ID is a token `[A-Za-z_][\\w]*` that is an endpoint of an arrow"
+      ],
+      "fix": "parse the endpoints more strictly. Strip edge text and trailing `: ...`, split on `&` and `;`, and keep `DROP` within one line. Add tests for sequence, state, `&` and labelled-edge forms.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`nodes` splits each line on ARROW and keeps only parts that are a bare ID. Mermaid has several common forms whose parts are not bare IDs, so those nodes are never counted.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`Alice->>John: Hello` leaves `John: Hello` after the split, which is not an ID, so John is not counted. `A --> B & C` and `A -- text --> B` are also missed. A sequence or state diagram with more than 20 participants can pass the cap. The test covers only flowchart chains.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "a sequence diagram of 25 lines `Client->>Svc1: call` through `Client->>Svc25: call`. ARROW.split gives `Client` and `Svc1: call`; `Svc1: call` fails ID.fullmatch, so nodes() returns {Client}, one node, and the 20-node check passes a 26-node diagram. The same happens to `B` in `A -- retry --> B`, because `A -- retry` is not an ID.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "explain.py nodes() keeps only split parts that fully match ID, so `Alice->>John: Hello` gives `John: Hello` and John is never counted. CT-2 calls every arrow endpoint an ID, and the same applies to `A -- text --> B`.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-17",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:nodes",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Any non-parse render failure becomes \"unreachable\", which skips the check and hides every later block",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-4",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "after which no further block is rendered"
+      ],
+      "fix": "separate \"could not run\" (npx missing, fetch failure, timeout, spawn error) from \"ran and rejected the diagram\". Treat the second as `broken` with the first error line. Keep skipping for the first only.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`render` returns \"broken\" only when the output contains the text `Parse error`. Other genuine diagram failures fall to \"unreachable\", for example an unknown diagram type from a typo like `flowchar TD`, a text-only block, or a mermaid runtime error. CT-4 turns \"unreachable\" into the note `render skipped: the renderer could not be fetched`, exit 0, and stops rendering every later block. One bad block early in the file therefore hides all later broken diagrams, with a misleading reason. Failures to start Chromium or to download it within the 120 s timeout take the same path. AC-9 (\"fails naming that block as a broken diagram\") is met only for parse errors.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "render() returns \"unreachable\" for any non-zero exit without \"Parse error\", as CT-3 says (\"any other failure\"). A typo such as `flowchar TD` fails with an error other than Parse error. CT-4 then turns that into the \"could not be fetched\" note and stops rendering later blocks, so FR-11 and AC-9 are not met for it.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-18",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:render",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "`check explainer` passes any existing file",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-5",
+        "AC-9",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then it fails naming that block as a broken diagram"
+      ],
+      "fix": "make the partial state loud (a note such as `checks not built yet`), or keep `explainer` out of the CLI choices until T-3 lands.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`check` returns `[], []` for any `.md` file or slug that exists, including an empty file, a 21-node diagram or a broken diagram. `nio check explainer <slug>` exits 0 and prints no notes, so this is a silent pass. It is only safe if T-3 to T-5 land before anything relies on the command. The `explain.format` handling and the topic-mode distinction in CT-4 are also absent. Nothing marks the check as a stub. Unlike `explain finish`, it does not say \"not built yet\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:check",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "`sections` drops `> ` lines from the walk-through and handles fences loosely",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-1",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "lines starting `> ` and the record lines of the Data model"
+      ],
+      "fix": "match the closing fence to the opener, and drop `> ` only when it is the tool's own note. Implement or remove the Data model rule.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "any prose line starting `> ` is excluded from `walk`, not only the tool's own `> Broken diagram:` notes. A long walk-through written as a block quote passes the 120-word limit, and so does an empty one (which skips the \"walk-through missing\" rule). The Data model record-line exclusion is not implemented. Fences:",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:sections",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "`render` runs `npx` from the caller's working directory",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-3"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "running `npx -y MERMAID -i <temp .mmd> -o <out>`"
+      ],
+      "fix": "run with `cwd` set to the temp directory. Give the timeout case its own note.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`subprocess.run` has no `cwd`. `npx` prefers a matching package in the cwd's `node_modules/.bin`, so the target project's own copy of mermaid-cli would run instead of the pinned 11.4.2. If it is not pinned, the first run downloads and executes a package in a repo the tool does not control. A cold fetch of Chromium may exceed 120 s. The timeout then reports \"unreachable\" (see F2), and the `npx` child may leave Chromium running.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:render",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "AC-9 has no test and no check behind it",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "it fails naming that block as a broken diagram"
+      ],
+      "fix": "add the `broken diagram: <title>` error to `explain.check` and the test that asserts exit 1 and the block's title. If that is planned for a later epic, drop AC-9 from this epic's coverage.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "a diagram block with a syntax error goes through `nio check explainer`. `check` returns `[], []`, so it exits 0 and names no broken block. test_ac9_broken_block is listed at line 0 and is not in tests/test_explain.py.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tasks.md E-1 gives T-1 only TC-5's `nodes` assertion, and the broken-diagram check belongs to T-4 in E-2 (Serves AC-9, Test TC-14, TC-15). check() is stated as \"Only the missing-file error so far\". That the error and test are absent is by plan, not a defect in E-1.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/explain.py:check, tests/test_explain.py",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "AC-5 is proven only for the node count, not for the failing check",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "fails naming it"
+      ],
+      "fix": "add `too many nodes: <title> (<n> > 20)` to `check` and extend the test to run `nio check explainer` on a 21-node fixture, expecting exit 1 and the title. If the check part belongs to a later epic, say so in the epic's coverage.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "a fixture explainer with a 21-node diagram is checked. `explain.check` has no `too many nodes` error, so the CLI exits 0. test_ac5_node_cap only asserts `nodes()` on strings, and its own comment says \"the check part lands with T-3\".",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tasks.md T-1 says \"TC-5 (its `explain.nodes` assertion only; the check part is T-3's)\". The `too many nodes` error and its CLI test belong to T-3 in E-2, so E-1 does not need them.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:check, tests/test_explain.py:13",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "Message text after an arrow hides the endpoint node",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "FR-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "that is an endpoint of an arrow",
+        "found.update(p.strip() for p in parts if ID.fullmatch(p.strip()))"
+      ],
+      "fix": "take the leading ID of each arrow side (for example, match `^\\s*([A-Za-z_]\\w*)` on each part) and add a sequence-diagram case to tests/test_explain.py.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "a sequence diagram of 25 lines `Client->>Svc1: call` through `Client->>Svc25: call`. ARROW.split gives `Client` and `Svc1: call`; `Svc1: call` fails ID.fullmatch, so nodes() returns {Client}, one node, and the 20-node check passes a 26-node diagram. The same happens to `B` in `A -- retry --> B`, because `A -- retry` is not an ID.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py:nodes",
+      "tampering": false,
+      "right": "code"
+    },
+    {
+      "id": "J-9",
+      "title": "A node whose ID starts with `end` is skipped",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "FR-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "lines starting `%%`, `classDef`, `class `, `style `, `linkStyle`, `click `, `subgraph` or `end` are skipped",
+        "SKIP = (\"%%\", \"classDef\", \"class \", \"style \", \"linkStyle\", \"click \", \"subgraph\", \"end\")"
+      ],
+      "fix": "match the keyword `end` only as the whole word (the line equal to `end`, or `end` followed by a space), say so in CT-2, and add `endpoint --> api` to the self-check.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "the flowchart line `endpoint --> api` starts with `end`, so `line.startswith(SKIP)` is true and both `endpoint` and `api` are dropped. A 25-node flowchart whose nodes are named `endpoint1 --> endpoint2` and so on counts zero nodes and passes the cap.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SKIP contains the bare prefix \"end\" and the code uses `line.startswith(SKIP)`. `endpoint --> api` is therefore skipped whole, and no other text in CT-2 or FR-7 limits `end` to the whole word.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-19",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py:nodes",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-10",
+      "title": "Broken-diagram reason is read from both streams, not stderr",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-3",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "first stderr line holding Parse error",
+        "both = r.stdout + r.stderr"
+      ],
+      "fix": "take the line from `r.stderr` only, as CT-3 says, or change CT-3 to say stdout or stderr and make the code and spec match.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "when mermaid-cli writes its `Parse error` line to stdout, `render` returns that line as the reason, but CT-3 says the reason is the first stderr line. The same failing run gets a different reason from the one the spec names.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py:render",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "`sections()` returns a `diagram` key that CT-1 does not list",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "{\"title\": str, \"fence\": str | None, \"block\": str | None, \"walk\": str, \"drill\": bool}",
+        "s[\"diagram\"] = s.pop(\"img\") or s[\"block\"] is not None"
+      ],
+      "fix": "add `\"diagram\": bool` to CT-1's Shape, or drop the key and let callers test `block` and `img` through the spec's rule.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "a consumer written from CT-1's Shape never learns that `diagram` exists, so the CT-4 \"diagram section\" check would recompute it from `fence` and `block` and could disagree with `sections()` on a section that has only a `![` line.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "unrequested",
+      "where": "src/nio/explain.py:sections",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "SKIP prefix \"end\" drops any line starting with an ID like endpoint",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`SKIP = (\"%%\", \"classDef\", \"class \", \"style \", \"linkStyle\", \"click \", \"subgraph\", \"end\")`"
+      ],
+      "fix": "match `end` only as the whole line, and `subgraph` only when followed by whitespace",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`endpoint --> db` starts with \"end\" and is skipped entirely, so both IDs go uncounted. The same holds for `ending`, `endUser` and similar names.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:SKIP",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "sections leaves the Data model record lines in walk",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the record lines of the Data model"
+      ],
+      "fix": "exclude the record lines in `sections`, or state in the contract that the Data model is exempt from the walk check",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "the contract says `walk` excludes the Data model's record lines. The code strips only fenced blocks, `![` lines and `> ` lines. A long Data model section would count its records toward the 120-word walk limit that T-3 enforces, and could fail a good explainer.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/explain.py:sections",
+      "tampering": false
+    },
+    {
+      "id": "J-14",
+      "title": "AC-9 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-9",
+      "gap": "missing",
+      "where": "src/nio/explain.py, tests/test_explain.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-9: no test no match",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-20",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "1d3b5aa566c53707a244aea5a03c7417d9877bac"
+  },
+  "matched": {
+    "AC-5": [
+      [
+        "tests/test_explain.py",
+        "test_ac5_node_cap"
+      ]
+    ],
+    "AC-9": [],
+    "AC-11": [
+      [
+        "tests/test_explain.py",
+        "test_ac11_missing"
+      ]
+    ]
+  },
+  "asked": {}
+}
