@@ -65,6 +65,13 @@ def test_scan_empty_repo():
     assert code == 0 and out.strip() == "no candidate files found", (code, out)
 
 
+def test_scan_outside_git_repo():
+    root = Path(tempfile.mkdtemp())
+    r = subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "onboard", "scan"],
+                       cwd=root, capture_output=True, text=True)
+    assert r.returncode == 1 and "nio onboard scan needs a git repository" in r.stderr, (r.returncode, r.stdout, r.stderr)
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
-                    test_scan_empty_repo])
+                    test_scan_empty_repo, test_scan_outside_git_repo])
