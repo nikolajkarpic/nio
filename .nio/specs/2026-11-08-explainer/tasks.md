@@ -183,6 +183,17 @@ retired: [T-24, T-28]                      # task IDs removed from this file; ne
 - Effort: med
 - Mode: single: a fix from a jury finding
 
+### T-29 Fix: A drill-down heading containing "; " still locks finishing
+- From: J-1 (implementation-E-3, round 2)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: CT-5, AC-33
+- Test: TC-43
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Explain an approved plan (US-1)
 ### T-7 Make the plan gate ignore the quickstart `Read first` line (CT-9)
 - Files: `src/nio/jury.py`, `src/nio/flow.py`, `tests/test_explain.py`
