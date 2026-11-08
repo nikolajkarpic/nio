@@ -44,3 +44,48 @@ def scan(root="."):
         elif (cat := category(f)) and f in ls("-co"):
             out.append((cat, f, hashlib.sha256(p.read_bytes()).hexdigest()[:12]))
     return sorted(out, key=lambda e: e[:2])
+
+
+DOCS = ["product", "personas", "stack", "architecture", "infra", "principles"]
+SECTIONS = {"product": ["Purpose", "Users"], "personas": ["Personas"], "stack": ["Languages", "Frameworks"],
+            "architecture": ["Components", "Data flow"], "infra": ["Hosting", "CI"], "principles": ["Principles"]}
+
+
+def act(action, reason="", doc="", empty=False, root="."):
+    """start/confirm/pause/skip; returns the line to print, raises ValueError on refusal."""
+    import json
+    d = Path(root) / ".nio/project"
+    f = d / "onboarding.json"
+    st = json.loads(f.read_text()) if f.exists() else {"state": "new", "confirmed": []}
+
+    def save():
+        d.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps(st))
+    if action == "skip":
+        if not reason.strip():
+            raise ValueError("skip needs a reason: nio onboard skip <reason>")
+        st.update(state="skipped", reason=reason.strip())
+        save()
+        return "skipped"
+    if action == "pause":
+        if st["state"] == "paused":
+            return "ignored: onboarding is paused"
+        st["state"] = "paused"
+        save()
+        return "paused"
+    if st["state"] == "paused":
+        raise ValueError("onboarding is paused")
+    if action == "start":
+        st["state"] = "started"
+        d.mkdir(parents=True, exist_ok=True)
+        if empty:
+            for n in DOCS:
+                (d / f"{n}.md").write_text(f"# {n.title()}\n" + "".join(f"\n## {s}\n\nNEEDS CLARIFICATION\n" for s in SECTIONS[n]))
+        save()
+        return "next: " + DOCS[0]
+    if doc not in DOCS:
+        raise ValueError(f"confirm needs a doc: {', '.join(DOCS)}")
+    st["confirmed"] = sorted(set(st["confirmed"]) | {doc})
+    save()
+    rest = [n for n in DOCS if n not in st["confirmed"]]
+    return "next: " + rest[0] if rest else "done"
