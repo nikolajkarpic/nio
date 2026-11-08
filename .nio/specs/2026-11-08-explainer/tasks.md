@@ -120,7 +120,7 @@ retired: [T-24]                      # task IDs removed from this file; never re
 - From: J-2 (implementation-E-2, round 1)
 - Files: `src/nio/explain.py`
 - Serves: CT-4, AC-7
-- Test: new: tests/test_explain.py:test_path_spelling_is_plan_mode
+- Test: TC-12
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
