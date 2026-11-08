@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-2",
   "subject": "2026-11-08-project-onboarding",
-  "round": 5,
+  "round": 6,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -24,7 +24,11 @@
     "R-261108-sqj3/implementation-E-2-consistency-2.md": "437f42f49307bda9a95f3888abea9c449625ddd0b1e5a5a621015dbfc2bdc9cf",
     "R-261108-sqj3/implementation-E-2-consistency-3.md": "a2328770abf057d821a12d5d9bc359a0fc0123635e5840ed6071032c9185aee3",
     "R-261108-sqj3/implementation-E-2-conformance-2.md": "ed1abfbccd78525ddf9176c136a4243d2d8482342e8310bc05e15e58bf257de4",
-    "R-261108-sqj3/implementation-E-2-conformance-3.md": "c62d50092b4d77901ec409279615041191b0f74f14360c93c0c65a2aedf86d97"
+    "R-261108-sqj3/implementation-E-2-conformance-3.md": "c62d50092b4d77901ec409279615041191b0f74f14360c93c0c65a2aedf86d97",
+    "R-261108-iqdu/implementation-E-2-adversary.md": "1ae23c70429b5cb3add29915ab634a33fb8eb6c9bd4faaf2ff951b6ebc26dce5",
+    "R-261108-iqdu/implementation-E-2-consistency.md": "9bb37736e0e3d33c0e0dad73b4f0220dbd2af7f853c23fddb7fb314788d51439",
+    "R-261108-iqdu/implementation-E-2-correctness.md": "4678ebb45bef9b4c206942dede8025bfbb2ca3e08219bba3789ae7b63962ca90",
+    "R-261108-iqdu/implementation-E-2-security.md": "3c0ed4f3705dc17ec77f3ab62b6aafb9b09bbd0dc18af9f200d5a0024aed8ef7"
   },
   "jurors": {
     "implementation-E-2-adversary": {
@@ -34,9 +38,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "7b81c93c9534a0492952249e6342262604eed150",
-      "judged": 1
+      "round": 6,
+      "version": "a10c757bb3f44d9f76a541094860c1548b5b53f3",
+      "judged": 6
     },
     "implementation-E-2-conformance": {
       "attempts": 1,
@@ -50,15 +54,15 @@
       "judged": 1
     },
     "implementation-E-2-consistency": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "consistency",
       "by": "juror / claude-code / claude-haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "7b81c93c9534a0492952249e6342262604eed150",
-      "judged": 1
+      "round": 6,
+      "version": "a10c757bb3f44d9f76a541094860c1548b5b53f3",
+      "judged": 6
     },
     "implementation-E-2-correctness": {
       "attempts": 1,
@@ -67,9 +71,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "7b81c93c9534a0492952249e6342262604eed150",
-      "judged": 1
+      "round": 6,
+      "version": "a10c757bb3f44d9f76a541094860c1548b5b53f3",
+      "judged": 6
     },
     "implementation-E-2-security": {
       "attempts": 1,
@@ -78,9 +82,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "7b81c93c9534a0492952249e6342262604eed150",
-      "judged": 1
+      "round": 6,
+      "version": "a10c757bb3f44d9f76a541094860c1548b5b53f3",
+      "judged": 6
     },
     "implementation-E-2-adversary-2": {
       "attempts": 1,
@@ -203,14 +207,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-30",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 5
     },
     {
       "id": "J-2",
@@ -238,14 +243,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-31",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 5
     },
     {
       "id": "J-3",
@@ -273,14 +279,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-32",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 5
     },
     {
       "id": "J-4",
@@ -308,14 +315,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-33",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 5
     },
     {
       "id": "J-5",
@@ -343,14 +351,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-34",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 5
     },
     {
       "id": "J-6",
@@ -378,14 +387,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-35",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 0,
+      "fixed_in": 5
     },
     {
       "id": "J-7",
@@ -426,17 +436,18 @@
       ],
       "validation": "confirmed",
       "reason": "onboard.py line 93-94 loops over all six DOCS and calls write_text with no exists check. CT-4 and FR-12 limit this to stack, architecture and infra, and only when they don't exist.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-36",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:act (start branch)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-8",
@@ -572,17 +583,18 @@
       ],
       "validation": "confirmed",
       "reason": "Confirm (lines 97-102) only checks `doc in DOCS`, never the file or CT-12. `rest` walks all six DOCS, so `--empty` never ends in `done`. `done` is never saved. cli.py passes no `--app`.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-37",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 3,
       "gap": "missing",
       "where": "src/nio/onboard.py:act (confirm branch)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-11",
@@ -617,17 +629,18 @@
       ],
       "validation": "confirmed",
       "reason": "`save` is `f.write_text(json.dumps(st))` (line 74), not temp plus os.replace as CT-3 requires. cli.py line 370 calls `onboard.status_lines` with no try, and `progress` raises ValueError on bad JSON.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-38",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 2,
       "gap": "partial",
       "where": "src/nio/onboard.py:act save, src/nio/cli.py status",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-12",
@@ -868,17 +881,18 @@
       ],
       "validation": "confirmed",
       "reason": "Line 102 returns \"done\" when `rest` is empty but never sets `st[\"state\"] = \"done\"` or saves `seen`. The table's in-progress row says confirm moves to done. `spec.new` then keeps refusing on `in progress`.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-40",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:act",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-18",
@@ -984,17 +998,18 @@
       ],
       "validation": "confirmed",
       "reason": "Pause from `not started` sets `paused`. Start and confirm on `paused` raise. Skip on `done` or `skipped` overwrites the state. All of this contradicts spec table lines 231-235 and CT-4's ignore rule.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-41",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 3,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:act",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-20",
@@ -1023,15 +1038,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "There is no `expected()` in onboard.py. Line 101 walks all six DOCS, so after `--empty` the third confirm prints `next: stack` and never reaches done. `save` is non-atomic (line 74).",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-42",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "implementation-E-2-consistency: `expected(st)` is added and used by start and confirm, and the progress save is atomic (`tmp.replace(f)`). But `next_doc(p)` is not in `onboard.py`: grep finds no `next_doc` in any Python file, and start and confirm still build the next doc inline. The ask was to add it and print from it.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 6,
       "gap": "partial",
       "where": "src/nio/onboard.py:act",
       "tampering": false
@@ -1102,17 +1117,18 @@
       ],
       "validation": "confirmed",
       "reason": "`act` ends with `return \"next: \" + rest[0] if rest else \"done\"`. When no doc is left, it never sets `st[\"state\"] = \"done\"` and never saves `seen`, although CT-4 says `confirm` \"moves to `done`\" and saves `seen`. The state therefore stays `in progress`, and CT-5 (and `spec.new`) would refuse a full or epic spec.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-43",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 2,
       "last_round": 2,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:act",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-23",
@@ -1147,17 +1163,18 @@
       ],
       "validation": "confirmed",
       "reason": "With `empty` set, `act` runs `for n in DOCS: (d / f\"{n}.md\").write_text(...)`. That loop has no exists check, no state guard and no backup. It writes all six docs, where CT-4 says only `stack`, `architecture` and `infra`, \"when they don't exist\". A repeated `start --empty` therefore replaces confirmed docs with blank templates.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-44",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 2,
       "last_round": 2,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:act (start branch)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-24",
@@ -1186,17 +1203,18 @@
       ],
       "validation": "confirmed",
       "reason": "The `cli.py` branch `if a.cmd == \"onboard\" and a.action != \"scan\"` calls `onboard.act(...)` without a `root`, so `root` is `\".\"`. It also runs before `repo_root`. The scan branch checks for a git work tree, and `nio status` uses the resolved root (`onboard.status_lines(root)`). A run from a subdirectory writes `.nio/project/onboarding.json` there, and the real root never sees it.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-45",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 2,
       "last_round": 2,
       "gap": "missing",
       "where": "src/nio/cli.py:main",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-25",
@@ -1244,17 +1262,18 @@
       ],
       "validation": "confirmed",
       "reason": "The finding's situation text is empty, but the code supports it. `act` raises \"onboarding is paused\" for any `start` or `confirm` while paused, so a paused onboarding has no way back, where CT-4 says a later start from `paused` resumes. `start` and `skip` have no check for `done`: they overwrite the state, where CT-4 says exit 1. `start` on `in progress` and `skip` on `skipped` are not turned into `ignored:` either.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-46",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 2,
       "last_round": 4,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:act",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-26",
@@ -1366,17 +1385,18 @@
       ],
       "validation": "confirmed",
       "reason": "`cli.py:173` calls `onboard.act(...)` without `root`, so `act(..., root=\".\")` writes `.nio/project/onboarding.json` under the cwd. That branch sits before `records.repo_root()` at line 185, and `nio status` at line 370 reads the repo root, so a skip from a subdirectory is never seen.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-47",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 3,
       "last_round": 3,
       "gap": "partial",
       "where": "src/nio/cli.py:main (onboard branch)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-29",
@@ -1409,17 +1429,18 @@
       ],
       "validation": "confirmed",
       "reason": "`act` has no state guard. `skip` always sets `skipped`, including over `done`. `start` always sets `in progress`, including over `done` and over `in progress`. CT-4 requires `start` on `in progress` and `skip` on `skipped` to print `ignored: onboarding is <state>` and change nothing, and the code does not. `start --empty` rewrites all six `DOCS` files unconditionally, including `product`, `personas` and `principles`, with the code's own `SECTIONS` headings.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-48",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 3,
       "last_round": 3,
       "gap": "partial",
       "where": "src/nio/onboard.py:act",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-30",
@@ -1559,17 +1580,18 @@
       ],
       "validation": "confirmed",
       "reason": "CT-4 limits `--empty` to writing `stack.md`, `architecture.md` and `infra.md`, and only when they don't exist. `act()` runs `for n in DOCS: (d / f\"{n}.md\").write_text(...)` with no existence check, so it overwrites edited docs and also writes product, personas and principles. `act()` also has no guard for `start` on `in progress`, which CT-4 makes an ignore cell, so a second `start --empty` reaches the overwrite. The bodies are built inline instead of coming from the CT-12 templates.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-49",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 4,
       "last_round": 4,
       "gap": "contradicts",
       "where": "src/nio/onboard.py `act()`, start branch",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-34",
@@ -1597,17 +1619,18 @@
       ],
       "validation": "confirmed",
       "reason": "CT-12 binds the constant `HEADINGS` and lists headings such as product `What it does` and stack `Dependencies`/`Commands`/`CI`. The code defines `SECTIONS` with different headings (`Purpose`, `Languages`/`Frameworks`, `Components`, `Hosting`/`CI`). The docs `start --empty` writes therefore don't carry the CT-12 headings. `check_doc` isn't in the code yet, but once it is, `confirm` will read it, and `confirm` is supposed to refuse a doc whose CT-12 headings are missing. On a blank doc written by `start --empty` that would block the dev on headings the code wrote itself.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-50",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 4,
       "last_round": 4,
       "gap": "partial",
       "where": "src/nio/onboard.py `SECTIONS`",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-35",
@@ -1634,17 +1657,18 @@
       ],
       "validation": "confirmed",
       "reason": "CT-4's State line makes confirm outside `in progress` an `ignore` cell: exit 0, print `ignored: onboarding is <state>`, change nothing. `act()` raises `ValueError(\"onboarding is paused\")`, which exits 1. `test_empty_start_writes_blank_docs` asserts `returncode == 1` after `confirm stack` while paused, so the test encodes the wrong behaviour.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-51",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 4,
       "last_round": 4,
       "gap": "contradicts",
       "where": "tests/test_onboard.py `test_empty_start_writes_blank_docs`",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-36",
@@ -1687,11 +1711,15 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       5,
       "rejected"
+    ],
+    [
+      6,
+      "human"
     ]
   ],
   "versions": {
@@ -1699,7 +1727,8 @@
     "2": "7b81c93c9534a0492952249e6342262604eed150",
     "3": "7b81c93c9534a0492952249e6342262604eed150",
     "4": "7b81c93c9534a0492952249e6342262604eed150",
-    "5": "7b81c93c9534a0492952249e6342262604eed150"
+    "5": "7b81c93c9534a0492952249e6342262604eed150",
+    "6": "a10c757bb3f44d9f76a541094860c1548b5b53f3"
   },
   "matched": {
     "AC-15": [
