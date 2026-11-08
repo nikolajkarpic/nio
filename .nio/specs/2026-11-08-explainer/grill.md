@@ -168,3 +168,146 @@ Refs: J-20, FR-6, AC-1
 Facet: verification
 Answer: 1. Fix: add the failing test: an explainer with a 121-word walk-through makes the check fail naming that diagram. [human]
 Patched: AC-36
+
+Session 3 (2026-11-08): plan stage, architecture choices nothing upstream settled. Asked of the human.
+
+## Asked · Q12 · architecture; contradiction FR-5 vs FR-17 · 2026-11-08
+Question: How does the explainer link from quickstart without reopening the approved plan?
+Context: The plan jury judges quickstart.md; any edit after approval withdraws the approval and stalls tasks, which breaks "never block".
+Options: 1. Gate ignores the one "Read first" line (recommended). 2. Template writes the line up front. 3. Drop the quickstart edit (spec change).
+Refs: FR-5, FR-17, RF-9, RF-10, jury.py:182
+
+## Asked · Q13 · architecture · 2026-11-08
+Question: Which mechanics run in nio rather than in the skill's instructions?
+Options: 1. One nio explain command for hashes, rendering, safe deletes, topic names (recommended). 2. Instructions only. 3. nio prints hashes only.
+Refs: FR-9, FR-14, FR-24, FR-26, FR-27, RF-12, RF-13, RF-17
+
+## Asked · Q14 · architecture · 2026-11-08
+Question: When should nio flow next suggest @nio:explain?
+Options: 1. After plan approval, only while explainer.md is missing (recommended). 2. Always after plan approval. 3. Every later stage while missing.
+Refs: FR-18, AC-23, AC-24, RF-8
+
+## Q12 · architecture; contradiction FR-5 vs FR-17 · 2026-11-08
+Answer: 1. Gate ignores that one line: the plan gate reads quickstart without the single 'Read first: explainer.md' line, as it already ignores tasks' Fixes sections. Approval holds; a second special case in the gate code. [human]
+Patched: architecture.md
+
+## Q13 · architecture · 2026-11-08
+Answer: 1. One nio explain command: hashes, pinned rendering, safe deletes of its own old images, topic file names; the skill writes diagrams and prose and calls it. [human]
+Patched: architecture.md
+
+## Q14 · architecture · 2026-11-08
+Answer: 1. Only while it's missing: after plan approval, one extra line in nio flow next suggests the explainer until explainer.md exists. [human]
+Patched: architecture.md
+
+Session 4 (2026-11-08): plan stage, contracts and tests. Calls below the grill's bar, made by the planning agent.
+
+## Call · CT-1, CT-11, Data model · 2026-11-08
+Explainer layout: one `## ` section per diagram (`Component map`, `Build order`, `Flow: UJ-n …`, `State: <table>`, `Drill-down: <item>`, a topic's `Overview`); the walk-through is the section's prose; source, images and topic lines written as `(source: …)`, `(images: …)`, `(topic: …)`, the source form matching the onboarding plan's. The spec names these things but not their markdown; one fixed shape is what lets the check find them.
+Changes what a user sees: yes, the explainer's headings and three record lines. Data kept: the lines FR-24, FR-26 and FR-27 already ask for, nothing more.
+Patched: CT-1, CT-11, Data model
+
+## Call · CT-2 · 2026-11-08
+Node IDs are counted by a fixed rule: labels in quotes and brackets dropped, then arrow endpoints and `participant`/`actor`/`state` names. FR-7 defines a node as a distinct node ID but not how to find one; the rule covers the flowchart, sequence and state diagrams the skill draws. A gantt build order counts 0.
+Changes what a user sees: no (FR-7's cap is the visible effect). Data kept: none.
+Patched: CT-2
+
+## Call · CT-3, CT-4 · 2026-11-08
+A failed render with `Parse error` in its output is a broken block; any other failure is the renderer that couldn't be fetched (RF-3 measured both). Under a host-skill format the check still renders any Mermaid block in the file, because after a fallback (FR-21) the config still names the missing skill and only the blocks show what was drawn; a host skill's own blocks aren't Mermaid, so their rendering is skipped, with the note naming the format.
+Changes what a user sees: the check's messages and notes, worded in CT-4. Data kept: none.
+Patched: CT-3, CT-4
+
+## Call · CT-5 · 2026-11-08
+`nio explain finish` also refuses plan mode while the plan gate is open (the skill refuses first, FR-23); names images `<stem>-<section title>.svg`, the drill-down marker left out so an image keeps its name; never counts an image a drill-down section links as a deletion candidate, rendered or not, so FR-26's "never delete a drill-down section's SVG" holds even without Node.
+Changes what a user sees: image file names. Data kept: only the images FR-26 already allows; none of a drill-down's is ever deleted.
+Patched: CT-5
+
+## Call · CT-6 · 2026-11-08
+`nio explain topic` continues any of a day's files for a topic (`-explainer.md`, `-2`, …) whose stored topic text equals the new one, else names the first free one. FR-27 says to continue on an equal stored topic and otherwise take the next free name; checking the numbered files too keeps a repeated clashing topic from opening a third file.
+Changes what a user sees: which file a repeated topic continues. Data kept: no change.
+Patched: CT-6
+
+## Call · CT-7, CT-8 · 2026-11-08
+`nio status` prints FR-16's line, then `  in .nio/specs/<slug>/: re-run @nio:explain`, since several specs may each have an explainer. `nio flow next`'s suggestion appears at the tasks, tasks jury and implementing stages while working, as `suggest: run … for <slug> (no explainer.md yet)`; not while the effort waits on the human, where the talk shape owns the message.
+Changes what a user sees: yes, these two lines. Data kept: none.
+Patched: CT-7, CT-8
+
+## Call · CT-11, CT-12, CT-13 · 2026-11-08
+The skill is one file with three contracts (its steps, its Drill-down section, its Format section), so each user story delivers its own part.
+Changes what a user sees: no. Data kept: none.
+Patched: CT-11, CT-12, CT-13
+
+## Call · TC-1 to TC-42 · 2026-11-08
+Integration tests use a fake `npx` on PATH (an SVG, a parse error, a network failure), so they run offline and fast; the real renderer runs only in the e2e tests (NIO_E2E=1), like the other model-run tests. Two journey misuses get no test: "draws components the plan does not have" (no requirement makes the check refuse an extra component) and "the stale line is ignored for weeks" (FR-17 means nothing should act on it).
+Changes what a user sees: no. Data kept: none.
+Patched: tests.md
+
+Session 5 (2026-11-08): plan jury round 1 findings that change behaviour or need the human, asked of the human.
+
+## Asked · Q15 · J-6 · 2026-11-08
+Question: What protects a drill-down section the agent drops when it rewrites the explainer?
+Options: 1. finish refuses if a kept section went missing (recommended). 2. finish restores it from the previous version. 3. Accept as risk (git history only).
+Refs: J-6, FR-25, FR-26, CT-5, CT-11
+
+## Asked · Q16 · J-7 · 2026-11-08
+Question: Should running only the finishing step be able to clear the stale flag?
+Options: 1. finish keeps the old hashes unless a diagram changed (recommended). 2. Accept as risk. 3. Separate --refresh flag.
+Refs: J-7, FR-16, FR-24, CT-5, TC-29, QS-4
+
+## Asked · Q17 · J-8 · 2026-11-08
+Question: What about a clone still on an older nio, which reads the "Read first" line as an edit to the approved plan?
+Options: 1. Accept as risk (recommended). 2. Write the line only when the plan gate code is new enough. 3. Never write the line.
+Refs: J-8, CT-9, FR-5
+
+## Q15 · J-6 · 2026-11-08
+Facet: data
+Answer: 1. Refuse if one went missing: the finishing step compares the drill-down headings with the previous version and refuses, naming the missing ones, before deleting anything. Nothing lost; the agent redoes the rewrite. [human]
+
+## Q16 · J-7 · 2026-11-08
+Facet: data
+Answer: 1. Only after a diagram changed: the finishing step updates the hashes only if some diagram block changed since the last run; otherwise it keeps them and says the explainer is still stale. [human]
+
+## Q17 · J-8 · 2026-11-08
+Facet: failure
+Answer: 1. Accept as risk: single user, nio ships with the repo, mixed versions unlikely; if it happens the effort goes back to the plan jury once. [human]
+
+Session 5 (2026-11-08): plan jury round 1 fixes. Calls by the planning agent; J-6, J-7 and J-8 are the human's (Q15 to Q17).
+
+## Call · J-1 · 2026-11-08
+`nio flow next` suggests the explainer only when plan.md exists, and the skill's guard also requires plan.md: a lite effort has no plan, so FR-18's "after the plan gate closes" never applies to it.
+Patched: CT-8, CT-11
+
+## Call · J-2, J-12 · 2026-11-08
+TC-17 to TC-19 run the skill, so they move to US-1's entry, and TC-26 moves to US-4's. TC-10 moves to US-3, which delivers finish. The order is unchanged, and every test can run once its entry is built.
+Patched: plan.md build order
+
+## Call · J-4 · 2026-11-08
+The status function is `explain.stale`, the name architecture.md uses.
+Patched: CT-7, CT-10
+
+## Call · J-5 · 2026-11-08
+QS-1 passes only when the component map names every contract, CT-1 to CT-13.
+Patched: QS-1
+
+## Call · J-6, J-7 · 2026-11-08
+How the human's answers are stored: a `(drill-downs: …)` line and a `(diagrams: <12 hex>)` line in the explainer, so no git is needed. Finish checks the drill-downs before anything else that writes. The diagrams hash covers every section's fenced block except the drill-downs. Without a redraw, finish prints `still stale: …` and keeps the old hashes. TC-29 now redraws before finish, TC-43 and TC-44 test the two refusals, and QS-4 shows finish alone keeping the stale line. QS-4 is now manual, because only a run of the skill redraws.
+Patched: CT-5, Data model, TC-29, TC-43, TC-44, QS-4
+
+## Call · J-9 · 2026-11-08
+Finish does all its work in memory and writes explainer.md once, through a temporary file and `os.replace`. A listed image that is already gone is skipped silently. `npx` gets a 120 s timeout, which counts as unreachable. TC-45 covers a stopped run followed by a re-run.
+Patched: CT-3, CT-5, TC-45
+
+## Call · J-10 · 2026-11-08
+Images are named `<stem>--<title slug>.svg`, with `-2`, `-3` on a clash within one run. A slug never starts with a dash, so one file's prefix can't match another's. In topic mode, deletion requires the `<stem>--` prefix. TC-46 covers both clashes.
+Patched: CT-5, Data model, TC-46
+
+## Call · J-11 · 2026-11-08
+A drill-down section whose linked image exists is left as it is and keeps its image on the images line. TC-10 now asserts that the drill-down image is byte-unchanged and that a listed in-folder `other.svg` without the prefix survives with a warning.
+Patched: CT-5, TC-10
+
+## Call · J-13 · 2026-11-08
+TC-47 runs finish with no change (no marker), then twice after a change (exactly one marker). It is filed as the UJ-4 misuse, repeated finishes on a stale explainer, because AC-32 is e2e and this is an integration test.
+Patched: TC-47
+
+## Call · J-14, J-15 · 2026-11-08
+TC-12's walk-through names `CT-3` in prose, so the check must read node labels. TC-42's topic explainer carries a source line that never matches, so only the exclusion of topic explainers keeps `nio status` quiet. Also, from the test-proof notes: TC-5 names the `Calls` block, and TC-19 removes only the folders that hold `npx` from PATH.
+Patched: TC-12, TC-42, TC-5, TC-19
