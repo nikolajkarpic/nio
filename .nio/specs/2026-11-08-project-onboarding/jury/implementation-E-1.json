@@ -1,0 +1,759 @@
+{
+  "gate": "implementation-E-1",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "security"
+  ],
+  "collected": {
+    "R-261108-vtn4/implementation-E-1-adversary.md": "1416f1ee6329abdfeacea926edfd6a3e650c5f39a0e04bbf09cb492e683c6ce0",
+    "R-261108-vtn4/implementation-E-1-conformance.md": "29d0bb9d76664ea44f0c2facf2e9cc5532f9bc7b32bf4437ea66b8a664452a0c",
+    "R-261108-vtn4/implementation-E-1-consistency.md": "e337701db61433ac464666186dcb80f136621b7616b8a8c27f8114d5da80591a",
+    "R-261108-vtn4/implementation-E-1-correctness.md": "782ff264e1176aef8c4456544144dae1105c1476b63500a79366b444b2f01f39",
+    "R-261108-vtn4/implementation-E-1-security.md": "ddd1d159b1b7e3883ba5e2c6e478f0d5130702e2143b96568aed4385ce2a074c",
+    "R-261108-vtn4/implementation-E-1-refuter.md": "ad3217edb10f3346144087a9188629a62dccc279cbcb5cb251754f792adce894"
+  },
+  "jurors": {
+    "implementation-E-1-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
+      "judged": 1
+    },
+    "implementation-E-1-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
+      "judged": 1
+    },
+    "implementation-E-1-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
+      "judged": 1
+    },
+    "implementation-E-1-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
+      "judged": 1
+    },
+    "implementation-E-1-security": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Symlink is followed and its target hashed",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a symlink is never listed or followed"
+      ],
+      "fix": "skip any entry where `is_symlink()` is true before `is_file()`, and test it.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "a tracked or untracked `README.md` that is a symlink to a file outside the repo, such as `~/.ssh/id_rsa`. `scan` checks `(Path(root) / f).is_file()`, which follows symlinks, then calls `read_bytes()` on the target. It lists the symlink under `product-docs` with a hash of the outside file. That reads data from outside the repo, and the hash lets someone confirm a guess at that file's contents. A symlink to a directory or a missing target is dropped silently.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "A tracked symlink named `README.md` that points outside the repo passes `(Path(root) / f).is_file()`, because `is_file()` follows links. It is listed, and `read_bytes()` hashes the target, which can be outside the repo. CT-1 and FR-3 say a symlink is never listed or followed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-6",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py:scan",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "Outside a git repo the scan reports success with \"nothing found\"",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "not inside a git work tree → exit 1, `nio onboard scan needs a git repository`"
+      ],
+      "fix": "call `records.git(..., full=True)`, and on a non-zero code exit 1 with the contract message.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`nio onboard scan` runs in a plain directory. `records.git` calls `subprocess.run` without checking the return code and returns the stdout lines, which are empty on failure. `scan` prints `no candidate files found` and exits 0. The dev, or the onboard skill, concludes the project has no docs or manifests when the scan never ran. The skill may then treat the project as empty and start the `--empty` path, with no error shown.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "`records.git` returns `r.stdout.splitlines()` and ignores the exit code, so a failed `git ls-files` gives an empty list. `scan` then prints `no candidate files found` and exits 0. The dev gets a false \"empty project\" answer, and no test covers the failure.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`records.git` returns `r.stdout.splitlines()`, which is `[]` when git fails. In a non-git directory the scan therefore prints \"no candidate files found\" and exits 0. This hides a real failure and is indistinguishable from AC-4's empty repo. No test covers it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`records.git` returns `r.stdout.splitlines()` and ignores the exit code unless `full=True`. `onboard.scan` calls it without `full`, so a non-git directory prints \"no candidate files found\" and exits 0, not the CT-2 exit 1. No task in the plan defers this.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-26",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:scan, src/nio/cli.py",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "Non-ASCII or quoted paths are dropped silently",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Candidates are `git ls-files --cached --others --exclude-standard` (tracked and untracked, not ignored)"
+      ],
+      "fix": "use `ls-files -z` and split on NUL. The output line also needs unambiguous handling of paths with spaces, since the output is `<category> <path> <hash>`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "the call omits `-z` and does not turn off `core.quotePath`. A path such as `docs/résumé.md`, or any path with a tab, comes back from git as a quoted, escaped string (`\"docs/r\\303\\251sum\\303\\251.md\"`). The `is_file()` check fails on that string, so the file is left out with no warning. The final count is still \"N candidate files\", so the dev sees a plausible but incomplete list. A newline in a name would split one path into two lines the same way.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`scan` runs `ls-files -co --exclude-standard` without `-z` and without `core.quotepath=off`. Git then returns quoted, escaped paths for non-ASCII names, `(Path(root)/f).is_file()` fails on them, and the files are dropped silently.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-27",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:scan",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "No secrets handling, and the category lists are well short of the contract",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`SECRETS` is the list FR-24 quotes, matched against the base name."
+      ],
+      "fix": "build the contract's `CATEGORIES` and `SECRETS` with `fnmatch`, and add the `--others --ignored` pass for secrets only.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "there is no `SECRETS` list and no `secrets` category. A secrets-named file that also matches a category, or a git-ignored `.env`, gets no path-only entry. A matching file is hashed and listed under the other category: the contract says it must show only as `(\"secrets\", path, \"\")`, and it would instead carry a content hash. `CATS` lacks `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`, `.kiro/steering/*`, `Pulumi.yaml`, `cdk.json`, `Chart.yaml`, `fly.toml`, `Jenkinsfile`, `.gitlab-ci.yml`, `.circleci/config.yml`, `build.gradle*`, `requirements*.txt` and `docs/adr/*`. It also treats every file under `.github/workflows/` as CI, and every `docs/**/*.md` as implementation-docs where CT-1 says product-docs. Files like these are skipped with no output, and a hash of a secret file leaks.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-7",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:CATS, category",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "Output order and the CLI shape don't match the contract, and the contract tests are missing",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "sorted by category then path"
+      ],
+      "fix": "return the sorted tuples from `scan` and print them in the CLI layer. Land the remaining CT items, or mark them out of this epic's scope.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "`scan` sorts by path only and prints directly. It does not return the `list[tuple]` that CT-1 and the later `stale` and `to_reconcile` functions need. Consumers such as CT-11 `to_reconcile` cannot reuse it, so each would reparse stdout. `test_scan_skips_symlink`, `test_scan_secrets_path_only` and `test_scan_more_secret_names` are listed in the results but absent from tests/test_onboard.py. The journey `nio pack ... --reader worker` fails with `unrecognized arguments: --reader worker`, so the reader packs, status lines, `start`/`confirm`/`pause`/`skip`, `backup` and `changed` are not in the diff at all.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "with `ARCHITECTURE.md`, `CLAUDE.md` and `README.md`, the output is `implementation-docs ARCHITECTURE.md`, then `agent-docs CLAUDE.md`, then `product-docs README.md`, which is path order, not category then path. The `scan` function also prints and returns `None`, so a later caller that expects the list in CT-1 (CT-3, CT-7, CT-11) gets nothing to iterate. The table is called `CATS` in the diff and `CATEGORIES` in CT-1.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "`scan` only prints and returns nothing. CT-1 wants it to return a sorted `list[tuple]` that CT-3, CT-9 and CT-11 can reuse. The `SECRETS` list and the git-ignored-file pass are also absent. If the CT-4 and CT-11 tasks need this return value, they will have to rework `scan`.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-security",
+          "lens": "security",
+          "situation": "`CATS` has no secrets category and `scan` has no `SECRETS` list. `scan` only lists files in the existing categories and only through `git ls-files --exclude-standard`. Files FR-24 lists, such as `.env`, are therefore never reported as path-only entries, and git-ignored ones are never seen. Any secret-named file whose name also matches a category would be hashed with its content-derived hash instead of `(\"secrets\", path, \"\")`. The dev never learns that onboarding found a secrets file and kept it out. CT-11's `seen` and `to_reconcile` logic also depends on this category existing.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`onboard.scan` sorts by path only (`sorted(set(...))`), where CT-1 says category then path. It also prints and returns `None`, where CT-1 says it returns a sorted `list[tuple]`, and CT-2 puts the printing in the CLI layer. The claims about missing `--reader` and `backup`, and the missing secrets handling and tests, belong to later tasks (T-2, T-6, T-12, T-13) and don't count against T-1.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-28",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:scan, tests/test_onboard.py, src/nio/cli.py",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "A symlink is listed and its target is read",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A path under `.nio/`, a symlink, or anything that is not a regular file is left out."
+      ],
+      "fix": "also require `not is_symlink()`, and test it. The evidence list already names `test_scan_skips_symlink`, but the diff has no such test.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "`scan` checks `(Path(root) / f).is_file()`, which follows symlinks. A symlinked `README.md` that points outside the repo is listed and hashed, so the scan reads a file outside the repo. FR-3 says a symlink is never listed or followed.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "a tracked symlink `CLAUDE.md -> ../private/notes.md` passes `git ls-files`, `category` returns `agent-docs`, and `Path.is_file()` follows the link, so the scan prints `agent-docs CLAUDE.md <hash of the followed file>`. The spec says a symlink is never listed or followed.",
+          "severity": "major",
+          "round": 1,
+          "run": "TC-48"
+        },
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "a tracked or untracked `README.md` that is a symlink to a file outside the repo, such as `~/.ssh/id_rsa`. `scan` checks `(Path(root) / f).is_file()`, which follows symlinks, then calls `read_bytes()` on the target. It lists the symlink under `product-docs` with a hash of the outside file. That reads data from outside the repo, and the hash lets someone confirm a guess at that file's contents. A symlink to a directory or a missing target is dropped silently.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "A tracked symlink named `README.md` that points outside the repo passes `(Path(root) / f).is_file()`, because `is_file()` follows links. It is listed, and `read_bytes()` hashes the target, which can be outside the repo. CT-1 and FR-3 say a symlink is never listed or followed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Symlink skipping is T-13's work (AC-48), and T-13 depends on T-1, so T-1 not yet skipping symlinks is planned sequencing. T-1 serves only AC-1..4.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py:scan",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "The category table is narrower than CT-1, and `docs/*.md` is in the wrong category",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "FR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "product-docs `README*`, `docs/*.md`"
+      ],
+      "fix": "rebuild the table as `CATEGORIES` with `fnmatch` patterns as CT-1 lists them (code is wrong, spec is right). Add a test for `docs/x.md`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "`category` puts `docs/*.md` under `implementation-docs`, but CT-1 puts it under `product-docs`. It also matches by exact lowercase name only. Several patterns CT-1 requires are missing, so those files are never listed. Examples are `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.gitlab-ci.yml`, `Jenkinsfile`, `Chart.yaml`, `fly.toml`, `README*` variants, `requirements*.txt`, `docker-compose*.yml`, `build.gradle*`. Some names in the code (`design.md`, `changelog.md`) are not in the contract at all.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "`docs/guide.md` is printed as `implementation-docs docs/guide.md`. CT-1 maps `docs/*.md` to product-docs, so the file lands in the wrong category for the reader packs that CT-9 later builds from these categories.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-adversary",
+          "lens": "adversary",
+          "situation": "there is no `SECRETS` list and no `secrets` category. A secrets-named file that also matches a category, or a git-ignored `.env`, gets no path-only entry. A matching file is hashed and listed under the other category: the contract says it must show only as `(\"secrets\", path, \"\")`, and it would instead carry a content hash. `CATS` lacks `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`, `.kiro/steering/*`, `Pulumi.yaml`, `cdk.json`, `Chart.yaml`, `fly.toml`, `Jenkinsfile`, `.gitlab-ci.yml`, `.circleci/config.yml`, `build.gradle*`, `requirements*.txt` and `docs/adr/*`. It also treats every file under `.github/workflows/` as CI, and every `docs/**/*.md` as implementation-docs where CT-1 says product-docs. Files like these are skipped with no output, and a hash of a secret file leaks.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "The code compares exact lowercase names, not `fnmatch` patterns.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`category()` sends `docs/*.md` to `implementation-docs`, but CT-1 says product-docs. It also matches exact lowercase names only, so the patterns CT-1 names (`README*` variants, `requirements*.txt`, `docker-compose*.yml` and others) are missed. Nothing in T-1 defers this.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-29",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:CATS, category",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-8",
+      "title": "There is no secrets category, and the `scan` signature differs from CT-1",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a name matching `SECRETS` gets only `(\"secrets\", path, \"\")`, whatever else it matches."
+      ],
+      "fix": "split a pure `scan(root) -> list` from the printing, as CT-1 and CT-2 describe, or record that T-1 deliberately defers secrets.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-conformance",
+          "lens": "conformance",
+          "situation": "`scan` only prints and returns nothing. CT-1 wants it to return a sorted `list[tuple]` that CT-3, CT-9 and CT-11 can reuse. The `SECRETS` list and the git-ignored-file pass are also absent. If the CT-4 and CT-11 tasks need this return value, they will have to rework `scan`.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-1-security",
+          "lens": "security",
+          "situation": "`CATS` has no secrets category and `scan` has no `SECRETS` list. `scan` only lists files in the existing categories and only through `git ls-files --exclude-standard`. Files FR-24 lists, such as `.env`, are therefore never reported as path-only entries, and git-ignored ones are never seen. Any secret-named file whose name also matches a category would be hashed with its content-derived hash instead of `(\"secrets\", path, \"\")`. The dev never learns that onboarding found a secrets file and kept it out. CT-11's `seen` and `to_reconcile` logic also depends on this category existing.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:scan",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "Many file names from RF-5 and RF-6 are not recognised",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "recognising at least the file names in RF-5 and RF-6",
+        "`.windsurfrules`, `.clinerules`",
+        "(\"agent-docs\", {\"claude.md\", \"agents.md\", \"gemini.md\", \".cursorrules\"}),"
+      ],
+      "fix": "add the CT-1 patterns with `fnmatch` against the path and the base name, not exact-name sets, and cover all of RF-5 and RF-6.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "a repo whose only candidates are `.clinerules` and `Jenkinsfile` makes `scan` print `no candidate files found`, which is false. The same happens for `.gitlab-ci.yml`, `Pulumi.yaml` and `build.gradle`. `README.rst` is not listed, and `requirements-dev.txt` is not listed because only the exact name `requirements.txt` matches.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-7",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py, CATS and category()",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "The exit-code assertion in the ignored-files test is never enforced",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-3",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert code == 0 and \"candidate files\" in out or \"no candidate\" in out, out"
+      ],
+      "fix": "write `assert code == 0 and (\"candidate files\" in out or \"no candidate\" in out), out`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-consistency",
+          "lens": "consistency",
+          "situation": "`and` binds tighter than `or`, so the test passes whenever the output contains \"no candidate\", whatever the exit code. A scan that exits 1 with that text in its output passes the check.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard.py, test_scan_skips_ignored_and_nio",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "Category matching is narrower than CT-1 and misroutes `docs/*.md`",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "product-docs `README*`, `docs/*.md`; implementation-docs `ARCHITECTURE*`, `CONTRIBUTING*`, `docs/adr/*`"
+      ],
+      "fix": "implement `CATEGORIES` as `fnmatch` patterns matched against the path and the base name, as CT-1 specifies.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "The code compares exact lowercase names, not `fnmatch` patterns.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-7",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:CATS, category",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "The skip test's assertion passes whatever the scan prints",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert code == 0 and \"candidate files\" in out or \"no candidate\" in out, out"
+      ],
+      "fix": "parenthesise the condition, assert `code == 0`, and add a legitimate `README.md` that must still be listed.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`and` binds tighter than `or`, so this reads `(code == 0 and A) or B`. It passes on a non-zero exit as long as the output contains \"no candidate\". The path assertion on the next line is what actually checks AC-3. The test also never creates a listable file next to the ignored ones, so it cannot show that the scan still lists real files while skipping the ignored ones.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard.py:test_scan_skips_ignored_and_nio",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "Output is sorted by path only and git's quoting is not undone",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "sorted by category then path"
+      ],
+      "fix": "use `ls-files -z`, or `-c core.quotepath=off`, and sort the entries by `(category, path)`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-correctness",
+          "lens": "correctness",
+          "situation": "`sorted(set(...))` orders by path only. For the quoting, git without `-z` and with the default `core.quotepath` returns paths containing non-ASCII or special characters wrapped in quotes and escaped. `Path(root)/f` then does not exist, so those files are silently dropped.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:scan",
+      "tampering": false
+    },
+    {
+      "id": "J-14",
+      "title": "Symlinks are followed and hashed",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "anything that is not a regular file inside the repo (a symlink is never listed or followed)"
+      ],
+      "fix": "skip any path where `(Path(root)/f).is_symlink()` is true, or whose resolved path is not inside the repo root. Add a symlink test (CT-1 expects `test_scan_skips_symlink`, which is not in this diff).",
+      "sources": [
+        {
+          "juror": "implementation-E-1-security",
+          "lens": "security",
+          "situation": "a repo has a tracked or untracked symlink named `README.md` (or `Dockerfile`, `CLAUDE.md`) that points to a file outside the repo, such as `~/.ssh/id_rsa`. `Path.is_file()` follows the link and returns true. `scan` then runs `read_bytes()` on the target and prints `product-docs README.md <hash>`. The scan lists the link and reads a file outside the repo. A hash of a low-entropy outside file is a guessing oracle for its content.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Symlink skipping belongs to T-13 (AC-48), which depends on T-1, and T-1 serves only AC-1..4, so T-1 following symlinks is sequenced and not a defect of T-1.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py:scan",
+      "tampering": false
+    },
+    {
+      "id": "J-15",
+      "title": "No secrets category, so a secret file's hash can be printed",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-24",
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "under a secrets category by path only and under no other category"
+      ],
+      "fix": "add `SECRETS` matched on base name before the category check. Emit `secrets <path>` with no hash. Include git-ignored files for that check only (`--others --ignored --exclude-standard`). Add `test_scan_secrets_path_only` and `test_scan_more_secret_names`.",
+      "sources": [
+        {
+          "juror": "implementation-E-1-security",
+          "lens": "security",
+          "situation": "`CATS` has no secrets category and `scan` has no `SECRETS` list. `scan` only lists files in the existing categories and only through `git ls-files --exclude-standard`. Files FR-24 lists, such as `.env`, are therefore never reported as path-only entries, and git-ignored ones are never seen. Any secret-named file whose name also matches a category would be hashed with its content-derived hash instead of `(\"secrets\", path, \"\")`. The dev never learns that onboarding found a secrets file and kept it out. CT-11's `seen` and `to_reconcile` logic also depends on this category existing.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:scan, CATS",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "89c58ec2f782bbf4a27fc3c2b4a96343666612b2"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_onboard.py",
+        "test_scan_lists_each_category"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_onboard.py",
+        "test_scan_prints_no_dependency"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_onboard.py",
+        "test_scan_skips_ignored_and_nio"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_onboard.py",
+        "test_scan_empty_repo"
+      ]
+    ]
+  },
+  "asked": {}
+}

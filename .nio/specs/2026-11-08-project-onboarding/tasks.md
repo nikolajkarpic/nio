@@ -16,6 +16,52 @@ retired: [T-8]
 - Effort: med
 - Mode: split: new logic with clear tests
 
+#### Fixes
+
+### T-26 Fix: Outside a git repo the scan reports success with "nothing found"
+- From: J-2 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`, `src/nio/cli.py`
+- Serves: CT-2, J-2
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-27 Fix: Non-ASCII or quoted paths are dropped silently
+- From: J-3 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`
+- Serves: CT-1, J-3
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-28 Fix: Output order and the CLI shape don't match the contract, and the contract tests are missing
+- From: J-5 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`, `src/nio/cli.py`
+- Serves: CT-1, CT-2, J-5
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-29 Fix: The category table is narrower than CT-1, and `docs/*.md` is in the wrong category
+- From: J-7 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`
+- Serves: CT-1, FR-1, J-7
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-2 Spec waits for onboarding (US-4)
 
 ### T-2 Onboarding progress, `start|confirm|pause|skip` and the six doc templates
