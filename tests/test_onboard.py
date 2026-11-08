@@ -161,8 +161,38 @@ def test_torn_progress_file():
     assert f.read_bytes() == before
 
 
+def status(root):
+    return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "status"],
+                          cwd=root, capture_output=True, text=True)
+
+
+def test_skip_lets_spec_start():
+    root = repo({})
+    assert nio(root, "skip", "prototype").returncode == 0
+    import json
+    got = json.loads((root / ".nio/project/onboarding.json").read_text())
+    assert got["state"] == "skipped" and got["reason"] == "prototype", got
+    r = newspec(root, "full")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert list((root / ".nio/specs").glob("*/spec.md"))
+    r = status(root)
+    assert "onboarding: skipped: prototype" in r.stdout, (r.stdout, r.stderr)
+
+
+def test_skip_stays_visible():
+    root = repo({})
+    assert nio(root, "skip", "prototype").returncode == 0
+    assert newspec(root, "full").returncode == 0
+    r = status(root)
+    assert "onboarding: skipped: prototype" in r.stdout, (r.stdout, r.stderr)
+    r = nio(root, "start")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert "onboarding: in progress" in status(root).stdout
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_empty_start_writes_blank_docs,
-                    test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file])
+                    test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file,
+                    test_skip_lets_spec_start, test_skip_stays_visible])

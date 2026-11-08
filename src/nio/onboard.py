@@ -87,7 +87,7 @@ def act(action, reason="", doc="", empty=False, root="."):
     if st["state"] == "paused":
         raise ValueError("onboarding is paused")
     if action == "start":
-        st["state"] = "started"
+        st["state"] = "in progress"
         d.mkdir(parents=True, exist_ok=True)
         if empty:
             for n in DOCS:
@@ -100,3 +100,8 @@ def act(action, reason="", doc="", empty=False, root="."):
     save()
     rest = [n for n in DOCS if n not in st["confirmed"]]
     return "next: " + rest[0] if rest else "done"
+
+
+def status_lines(root="."):
+    st = progress(root)
+    return ["onboarding: " + st["state"] + (": " + st["reason"] if st["state"] == "skipped" else "")]
