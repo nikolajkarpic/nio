@@ -156,3 +156,39 @@ def next_doc(p):
 def status_lines(root="."):
     st = progress(root)
     return ["onboarding: " + st["state"] + (": " + st["reason"] if st["state"] == "skipped" else "")]
+
+
+READERS = {"spec": ["product", "personas"], "scope": ["product", "personas"], "plan": ["stack", "architecture", "infra", "principles"],
+           "architecture-fit": ["stack", "architecture", "infra", "principles"], "worker": ["stack", "principles"]}
+LIMIT = 16384
+
+
+def doc_paths(root, reader, slug=""):
+    """(label, path) per mapped doc; an app's doc is `api/stack.md`, kept in .nio/project/api/stack.md."""
+    import re
+    root, apps = Path(root), list(progress(root).get("apps") or {})
+    spec = root / f".nio/specs/{slug}/spec.md"
+    if slug and apps and spec.is_file():
+        m = re.search(r"^apps:\s*\[?([^\n\]]*)", spec.read_text(), re.M)
+        named = [a.strip().strip("'\"") for a in m.group(1).split(",")] if m else []
+        apps = [a for a in apps if a in named] or apps
+    return [(f"{a}/{d}.md" if a else f"{d}.md", root / ".nio/project" / a / f"{d}.md") for a in (apps or [""]) for d in READERS[reader]]
+
+
+def docs_for(root, reader, slug=""):
+    """## Project docs for a reader: the mapped docs that exist, then size, missing and state lines (CT-9).
+    ponytail: no stale line yet, it needs the docs' source records (CT-7)."""
+    st = progress(root)
+    pairs = doc_paths(root, reader, slug)
+    have = [(n, p) for n, p in pairs if p.is_file()]
+    if st["state"] == "not started" and not have:
+        return ""
+    out = ["## Project docs", ""]
+    for n, p in have:
+        out += [f"### {n}", ""] + ["##" + l if l.startswith("#") else l for l in p.read_text().splitlines()] + [""]
+    out += [f"over 16 KB: {n} ({-(-p.stat().st_size // 1024)} KB)" for n, p in have if p.stat().st_size > LIMIT]
+    if st["state"] == "done":
+        out += [f"missing: {n}" for n, p in pairs if not p.is_file()]
+    else:
+        out.append("onboarding: " + st["state"] + (": " + st["reason"] if st["state"] == "skipped" else ""))
+    return "\n".join(out) + "\n"

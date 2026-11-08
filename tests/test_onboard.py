@@ -324,10 +324,55 @@ def test_next_doc_first_unconfirmed():
     assert onboard.next_doc({"empty": True, "confirmed": ["product", "personas", "principles"]}) is None
 
 
+def pack_reader(root, reader):
+    return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "pack", "x", "--reader", reader],
+                          cwd=root, capture_output=True, text=True)
+
+
+def setup_project(root, state, docs, reason=""):
+    import json
+    d = root / ".nio/project"
+    d.mkdir(parents=True, exist_ok=True)
+    for n, t in docs.items():
+        (d / f"{n}.md").write_text(t)
+    (d / "onboarding.json").write_text(json.dumps({"state": state, "reason": reason, "empty": False, "apps": {},
+                                                    "confirmed": list(docs), "seen": []}))
+
+
+def test_missing_doc_named():
+    root = repo({})
+    setup_project(root, "done", {n: f"## H\n{n} text\n" for n in ("product", "personas", "stack", "architecture", "principles")})
+    r = pack_reader(root, "plan")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert "missing: infra.md" in r.stdout, r.stdout
+
+
+def test_skipped_pack():
+    root = repo({})
+    setup_project(root, "skipped", {"product": "## H\nproduct text\n"}, "prototype")
+    r = pack_reader(root, "spec")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    heads = [l for l in r.stdout.splitlines() if l.startswith("### ") and l.endswith(".md")]
+    assert heads == ["### product.md"], heads
+    assert "onboarding: skipped: prototype" in r.stdout, r.stdout
+    assert "missing:" not in r.stdout, r.stdout
+
+
+def test_oversized_doc_flagged():
+    root = repo({})
+    body = "## Stack\n" + "x" * 19 + "\n" + ("y" * 99 + "\n") * 200 + "THE LAST LINE\n"
+    setup_project(root, "done", {"stack": body, "principles": "## P\np\n"})
+    r = pack_reader(root, "worker")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert "THE LAST LINE" in r.stdout, r.stdout[-300:]
+    assert "over 16 KB: stack.md (20 KB)" in r.stdout, r.stdout
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
                     test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes,
-                    test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed])
+                    test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed,
+                    test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged])
