@@ -170,6 +170,9 @@ def test_ac7_missing_contract():
     c, out = good(contracts=("CT-1", "CT-2", "CT-3"), cmap_walk="CT-3 comes later.")()
     assert c == 1 and "ERROR component map misses CT-3" in out, (c, out)
     assert "CT-1" not in out and "CT-2" not in out, out
+    # J-1: CT-10 in the map does not name CT-1
+    c, out = good(contracts=("CT-1", "CT-10"), cmap_nodes='A["CT-10 Ledger"] --> B["CT-10 Again"]')()
+    assert c == 1 and "ERROR component map misses CT-1" in out, (c, out)
 
 
 def test_ac8_missing_build_order():
