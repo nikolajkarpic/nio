@@ -961,25 +961,6 @@ def test_green_retry_reruns_review():
 
 # --- T-14: the review (CT-8, decision table Review) ---
 
-def test_ac16_new_failure_only():
-    root = impl(alone=True)
-    failing(root, "test_a")
-    commit_all(root, "test_a fails")
-    assert flow(root, "claim", S)[0] == 0
-    write_test(root)
-    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
-    code_with(root)
-    failing(root, "test_b")
-    code, out = flow(root, "green", S, "T-1")
-    assert code == 1 and "review: failed" in out, out
-    ev = lines(root)[-1]["evidence"]
-    assert lines(root)[-1]["kind"] == "review" and not ev["passed"], ev
-    assert any("test_b" in f for f in ev["failing"]) and not any("test_a" in f for f in ev["failing"]), ev
-    assert "test_b" in out and "test_a" not in out, out
-    assert st(root) == "red" and state(root)["attempts"]["T-1"] == 1
-    print("ok")
-
-
 def test_ac17_outside_files():
     root = red_one()
     code_with(root, "from helpers import half\n\n\ndef refund(x):\n    return x\n")
@@ -1003,64 +984,37 @@ def test_ac18_spec_edited():
     print("ok")
 
 
-def test_ac35_unknown_runner_review():
-    root = impl(cfg={"tests": {"suite": "python check.py"}}, alone=True)
-    (root / "check.py").write_text("import sys\nsys.exit(0)\n")
-    commit_all(root, "check")
+def closing_breaks(mode):
+    """T-1 done; T-2, closing E-1 in `mode`, has its own test pass but breaks T-1's: its review re-runs T-1's own test
+    (2026-11-14-effort-jury FR-1). Returns (root, T-2's own command)."""
+    text = with_modes(modes={"T-1": "direct", "T-2": mode, "T-3": "direct"}).replace("### T-3", "## E-2 Load (US-2)\n\n### T-3")
+    root = impl(tasks=text)
+    finish(root, "T-1")
     assert flow(root, "claim", S)[0] == 0
-    write_test(root)
-    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
-    code_with(root)
-    (root / "check.py").write_text("import sys\nsys.exit(1)\n")
-    code, out = flow(root, "green", S, "T-1")
-    assert code == 1 and "new failure" in out and not lines(root)[-1]["evidence"]["passed"], out
-    print("ok")
+    (root / "tests/test_refunds.py").write_text("import unittest\n\nimport app\n\n\nclass T(unittest.TestCase):\n"
+                                                "    def test_second_refund(self):\n        self.assertTrue(hasattr(app, 'second'))\n")
+    own = "python -m unittest tests/test_refunds.py"
+    if mode != "direct":
+        assert flow(root, "red", S, "T-2", "--run", own)[0] == 0
+    code_with(root, "def refund(x):\n    return 0\n\n\ndef second():\n    pass\n")
+    return root, own
 
 
 def test_ac37_review_fail_to_red():
-    root = red_one(alone=True)
-    frozen = of(root, "red")[-1]["evidence"]["frozen"]
-    code_with(root)
-    failing(root, "test_c")
-    code, out = flow(root, "green", S, "T-1")
-    assert code == 1 and "test_c" in out, out
-    assert st(root) == "red" and state(root)["attempts"] == {"T-1": 1}
-    assert of(root, "red")[-1]["evidence"]["frozen"] == frozen == {TEST: sha_of(root)}
-    print("ok")
-
-
-def test_ac44_broken_or_fewer():
-    many = "import unittest\n\n\nclass M(unittest.TestCase):\n" + "".join(
-        f"    def test_{i}(self):\n        pass\n\n" for i in range(40))
-    for case in ("import", "fewer"):
-        root = impl(alone=True)
-        (root / "tests/test_base.py").unlink()
-        (root / "tests/test_many.py").write_text(many)
-        commit_all(root, "40 tests")
-        assert flow(root, "claim", S)[0] == 0
-        assert lines(root)[-2]["evidence"]["collected"] == 40, lines(root)[-2]
-        write_test(root)
-        assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
-        code_with(root)
-        if case == "import":
-            (root / "tests/test_many.py").write_text("import nosuchmodule\n" + many)
-        else:  # three gone, with T-1's own test added: 38
-            (root / "tests/test_many.py").write_text(many.replace("    def test_0(", "    def _0(")
-                                                     .replace("    def test_1(", "    def _1(").replace("    def test_2(", "    def _2("))
-        code, out = flow(root, "green", S, "T-1")
-        want = "the suite is broken: collection, import or syntax error" if case == "import" else "38 tests collected against the baseline's 40"
-        assert code == 1 and want in out, (case, out)
+    root, _ = closing_breaks("split")
+    frozen = of(root, "red", "T-2")[-1]["evidence"]["frozen"]
+    code, out = flow(root, "green", S, "T-2")
+    assert code == 1 and "test_refund" in out, out
+    assert st(root, "T-2") == "red" and state(root)["attempts"] == {"T-2": 1}
+    assert of(root, "red", "T-2")[-1]["evidence"]["frozen"] == frozen == {"tests/test_refunds.py": sha_of(root, "tests/test_refunds.py")}
     print("ok")
 
 
 def test_ac50_direct_review_fail():
-    root = claimed(modes={"T-1": "direct"}, alone=True)
-    write_test(root)
-    code_with(root)
-    failing(root, "test_c")
-    code, out = flow(root, "green", S, "T-1", "--run", RUN)
+    root, own = closing_breaks("direct")
+    code, out = flow(root, "green", S, "T-2", "--run", own)
     assert code == 1 and "review: failed" in out, out
-    assert st(root) == "claimed" and state(root)["attempts"] == {"T-1": 1} and not of(root, "red")
+    assert st(root, "T-2") == "claimed" and state(root)["attempts"] == {"T-2": 1} and not of(root, "red", "T-2")
     print("ok")
 
 
@@ -1409,9 +1363,9 @@ def test_ac29_epic_waits_on_its_gate():
     root = impl(tasks=TWO)
     finish(root, "T-1")
     assert not epics(root)
+    in_jury(root, "E-1")  # in its old implementation jury when the pr gate came in (2026-11-14 FR-12)
     out = finish(root, "T-2")
     assert not epics(root) and "skipped: not built" not in out and "merge:" not in out, (epics(root), out)
-    assert any(x.startswith("next:") and "implementation-E-1" in x for x in out.splitlines()), out
     assert lines(root)[-1]["to"] == "implementing", out
     assert "@nio:jury" in flow(root, "next", S)[1], flow(root, "next", S)
     code, out = flow(root, "claim", S)
@@ -1420,6 +1374,11 @@ def test_ac29_epic_waits_on_its_gate():
     code, out = flow(root, "claim", S)
     assert code == 0 and "task: T-3 " in out, out
     print("ok")
+
+
+def in_jury(root, eid):
+    from nio import jury
+    jury.save(root, {**jury.load(root, S, f"implementation-{eid}"), "round": 1})
 
 
 def test_ac29_epic_skipped():
@@ -1439,56 +1398,13 @@ def test_ac29_last_epic_merge_names_never_reviewed():
     finish(root, "T-1")
     finish(root, "T-2")
     close(root, "E-1", "skipped: not built")
+    in_jury(root, "E-2")
     finish(root, "T-3")
-    close(root, "E-2")  # closed but the pass line is missing: done writes it and prints the merge
+    close(root, "E-2")  # closed but the pass line is missing: done writes it and names the pr gate
     code, out = flow(root, "done", "implementation-E-2", S, "--by", "human")
     rows = out.splitlines()
-    assert code == 0 and any(x.startswith("merge:") for x in rows) and "never reviewed: E-1" in rows, (code, out)
-    print("ok")
-
-
-def test_full_suite_waits_for_the_epic_to_close():
-    """#66: T-1 breaks another test and still passes its review; the task closing the epic answers for it."""
-    root = impl(tasks=TWO)
-    assert flow(root, "claim", S)[0] == 0
-    write_test(root)
-    code_with(root)
-    failing(root, "test_b")
-    code, out = flow(root, "green", S, "T-1", "--run", RUN)
-    assert code == 0 and "review: passed" in out, out
-    assert flow(root, "claim", S)[0] == 0
-    code, out = flow(root, "green", S, "T-2", "--run", RUN)
-    assert code == 1 and "review: failed" in out and "test_b" in out, out
-    assert not epics(root), epics(root)
-    (root / "tests/test_b.py").unlink()
-    code, out = flow(root, "green", S, "T-2", "--run", RUN)
-    assert code == 0 and "review: passed" in out and "epic: E-1 finished" in out, out
-    print("ok")
-
-
-def test_tests_epic_replaces_the_suite_until_the_last_epic():
-    """#66: `tests.epic` closes E-1 past a break only the full suite sees; the last epic's close still catches it."""
-    root = impl(tasks=TWO, cfg={"tests": {"epic": "python -m unittest tests/test_base.py"}})
-    assert flow(root, "claim", S)[0] == 0
-    write_test(root)
-    code_with(root)
-    failing(root, "test_b")
-    assert flow(root, "green", S, "T-1", "--run", RUN)[0] == 0
-    finish(root, "T-2")
-    close(root, "E-1")  # E-1 closed: fewer tests collected than the baseline is no failure here
-    while True:
-        code, out = flow(root, "claim", S)
-        assert code == 0, out
-        tid = re.search(r"task: (T-\d+)", out)[1]
-        write_test(root)
-        code_with(root)
-        code, out = flow(root, "green", S, tid, "--run", RUN)
-        if code:
-            break
-    assert "review: failed" in out and "test_b" in out and len(epics(root)) == 1, out
-    (root / "tests/test_b.py").unlink()
-    code, out = flow(root, "green", S, tid, "--run", RUN)
-    assert code == 0 and "epic: E-2 finished" in out, out
+    assert code == 0 and any(x.startswith("next: the pr gate") for x in rows) and "never reviewed: E-1" in rows, (code, out)
+    assert lines(root)[-1]["to"] == "pr", lines(root)[-1]
     print("ok")
 
 
@@ -1505,7 +1421,6 @@ def test_ac30_epic_report():
     sha = git(root, "rev-parse", "HEAD").strip()
     rows = out.splitlines()
     assert any(f"T-1 {sha}" in x for x in rows), out
-    assert any("baseline" in x and "test_a" in x for x in rows), out
     assert any("helpers.py" in x and "T-1" in x for x in rows), out
     print("ok")
 
@@ -1555,8 +1470,8 @@ def test_ac28_no_merge():
 def test_ac31_effort_done():
     root, _, _ = one_done()
     out = flow(root, "next", S)[1]
-    assert "state: implementing" in out and "@nio:jury" in out, out  # done only after `flow done implementation-E-1`
-    assert lines(root)[-1]["kind"] != "pass", lines(root)[-1]
+    assert "state: pr" in out and "@nio:jury" in out, out  # done only once the human approves the pr gate
+    assert (lines(root)[-1]["kind"], lines(root)[-1]["to"]) == ("pass", "pr"), lines(root)[-1]
     folder = f".nio/specs/{S}"
     assert git(root, "status", "--porcelain", "--", f"{folder}/history.jsonl", f"{folder}/state.json") == ""  # in T-1's commit
     print("ok")
@@ -1664,7 +1579,8 @@ def test_ac5_red_deferred_file_only_misuse():
 
 
 def test_closing_review_records_its_suite():
-    """TC-20: only the review of the task that closes its epic carries the suite command and exit code it ran."""
+    """TC-20, as 2026-11-14 FR-1 changed it: only the review of the task closing its epic re-runs the epic's tasks' own
+    tests, never the suite, and carries each command and exit code."""
     root = impl(tasks=TWO)
     for tid in ("T-1", "T-2"):
         assert flow(root, "claim", S)[0] == 0
@@ -1673,8 +1589,8 @@ def test_closing_review_records_its_suite():
         code, out = flow(root, "green", S, tid, "--run", RUN)
         assert code == 0 and "review: passed" in out, out
     reviews = [x for x in lines(root) if x["kind"] == "review"]
-    assert len(reviews) == 2 and "suite" not in reviews[0]["evidence"], reviews
-    assert reviews[1]["evidence"].get("suite") == {"command": SUITE, "code": 0}, reviews[1]
+    assert len(reviews) == 2 and "epic_tests" not in reviews[0]["evidence"] and "suite" not in reviews[1]["evidence"], reviews
+    assert reviews[1]["evidence"].get("epic_tests") == [{"command": RUN, "code": 0}], reviews[1]
     print("ok")
 
 def script(root, body, code):
@@ -1744,41 +1660,8 @@ def test_ac6_green_runs_only_the_scoped_command():
     print("ok")
 
 
-def test_review_fails_a_crashed_self_check_suite():
-    suite = "python suite.py"
-    root = impl(cfg={"tests": {"suite": suite}}, alone=True)
-    (root / "suite.py").write_text("import sys\nif 'def refund' in open('app.py').read():\n"
-                                   "    print('ok tests/test_b.py::test_one\\nran 1 tests, 0 failed')\n"
-                                   "    print('Traceback (most recent call last):')\n    sys.exit(1)\n")
-    commit_all(root, "suite")
-    code, out = flow(root, "claim", S)
-    assert code == 0, out
-    scripted(root)
-    code, out = flow(root, "red", S, "T-1", "--run", SCOPED)
-    assert code == 0, out
-    code_with(root)
-    code, out = flow(root, "green", S, "T-1")
-    assert code == 1 and "review: failed" in out and "the suite exits 1 and names no failing test" in out, out
-    assert of(root, "review")[-1]["evidence"]["passed"] is False
-    print("ok")
 
 
-def test_review_fails_a_crash_beside_a_baseline_failure():
-    root = impl(cfg={"tests": {"suite": "python suite.py"}}, alone=True)
-    (root / "suite.py").write_text(
-        "import sys\nprint('Traceback (most recent call last):\\nFAIL tests/test_b.py::test_old\\nran 1 tests, 1 failed')\n"
-        "if 'def refund' in open('app.py').read():\n    print('Traceback (most recent call last):')\n"
-        "sys.exit(1)\n")
-    commit_all(root, "suite")
-    code, out = flow(root, "claim", S)
-    assert code == 0, out
-    scripted(root)
-    code, out = flow(root, "red", S, "T-1", "--run", SCOPED)
-    assert code == 0, out
-    code_with(root)
-    code, out = flow(root, "green", S, "T-1")
-    assert code == 1 and "a file crashed before its result lines" in out, out
-    print("ok")
 
 
 REPO_SUITE = json.loads((Path(__file__).parent.parent / ".nio/config.json").read_text())["tests"]["suite"]
@@ -1882,20 +1765,6 @@ def test_ac14_review_strips_nio_perf():
     print("ok")
 
 
-def test_ac15_review_still_fails():
-    root = impl(alone=True)
-    perf_suite(root, "self.assertEqual(1, 1)")
-    commit_all(root, "sum test")
-    os.environ.pop("NIO_PERF", None)
-    assert flow(root, "claim", S)[0] == 0
-    write_test(root)
-    assert flow(root, "red", S, "T-1", "--run", RUN)[0] == 0
-    code_with(root)
-    perf_suite(root, "assert 1 == 2")
-    code, out = flow(root, "green", S, "T-1")
-    assert code == 1 and "test_sum" in out, out
-    assert state(root)["attempts"] == {"T-1": 1}, state(root)["attempts"]
-    print("ok")
 
 
 def test_ac14_review_strips_nio_perf_misuse():

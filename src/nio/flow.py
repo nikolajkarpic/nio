@@ -16,14 +16,14 @@ STAGES = {  # the state table "Flow": stage -> (where a passing guard goes, wher
     "intake": ("drafting", None), "drafting": ("researching", None), "researching": ("advocate_walking", None),
     "advocate_walking": ("grilling", None), "grilling": ("spec_jury", None), "spec_jury": ("arch_grilling", "grilling"),
     "arch_grilling": ("planning", None), "planning": ("plan_jury", None), "plan_jury": ("tasking", "planning"),
-    "tasking": ("tasks_jury", None), "tasks_jury": ("implementing", "tasking"), "implementing": ("done", None),
-    "done": (None, None)}
+    "tasking": ("tasks_jury", None), "tasks_jury": ("implementing", "tasking"), "implementing": ("pr", None),
+    "pr": ("done", None), "done": (None, None)}
 EPIC_GATE = re.compile(r"implementation-E-\d+")
 NOT_BUILT = {"researching", "advocate_walking", "arch_grilling"}  # skipped on the record (FR-21)
 ROUTE_SKIPS = {"lite": {"spec_jury", "planning", "plan_jury"}}  # stages a route skips on the record (FR-2)
 # each gate stage's jury gate and approval commit message: CT-6's search, CT-7's judged versions and CT-11's commit
 GATES = {"spec_jury": ("spec", "nio: approve spec"), "plan_jury": ("plan", "nio: approve plan"),
-         "tasks_jury": ("tasks", "nio: approve tasks")}
+         "tasks_jury": ("tasks", "nio: approve tasks"), "pr": ("pr", "nio: approve pr")}
 STATE_KEYS = ("auto", "pause", "abandon", "waiting", "claims", "attempts", "run")  # FR-3, and nothing else
 
 
@@ -362,6 +362,23 @@ def guard(root, slug, stage, evidence=True):
             from nio import implement
             paths = rel("tasks.md")
             output = implement.left(root, slug, load(root, slug)[1])
+        elif stage == "pr":  # FR-9: approved with no finding unruled and a verdict that isn't stale, or closed by the human
+            paths = rel("spec.md", "tasks.md", "jury/pr.json")
+            led = jury.load(root, slug, "pr")
+            now = jury.standing(root, slug, "pr") if led["round"] else "not run"
+            if now == "closed":
+                result, output = "closed", [led["closed"][2]]
+                vid = verdict(root, slug, "pr", led["round"], "human") if evidence else ""
+            else:
+                unruled = [f["id"] for f in led["findings"] if f["status"] == "open" or f["id"] in jury.batch_open(led)
+                           or f["status"] == "noted" and f["severity"] == "major" and f["by"] != "human"]
+                judged = jury.version(led, led["round"]) or ""
+                head = jury.version_now(root, slug, "pr") if judged else ""
+                output = [f"unruled: {', '.join(unruled)}"] * bool(unruled) + \
+                    [f"the verdict is stale: it judged {judged[:8]}, the branch is at {head[:8]}; a round must judge it"] * bool(judged and head != judged) + \
+                    [f"the pr jury's outcome is {now}"] * (now != "approved")
+                if not output and evidence:
+                    vid = verdict(root, slug, "pr", led["round"], "approved")
         else:
             gate = GATES[stage][0]
             paths = rel(*jury.GATES[gate], f"jury/{gate}.json")
@@ -443,7 +460,7 @@ def pick(root, slug=None):
 
 SKILL = {"intake": "@nio:spec", "drafting": "@nio:spec", "grilling": "@nio:grill", "spec_jury": "@nio:jury",
          "planning": "@nio:plan", "plan_jury": "@nio:jury", "tasking": "@nio:tasks", "tasks_jury": "@nio:jury",
-         "implementing": "@nio:implement"}
+         "implementing": "@nio:implement", "pr": "@nio:jury"}
 INPUTS = {"intake": [], "drafting": ["intake.md"], "grilling": ["spec.md", "research.md", "grill.md"],
           "planning": ["spec.md", "architecture.md", "research.md", "grill.md"],
           "tasking": ["spec.md", "architecture.md", "plan.md", "contracts.md", "tests.md", "quickstart.md"],
@@ -457,7 +474,9 @@ EXIT = {  # the decision table "Guards", word for word
     "plan_jury": "`nio check plan --approved` exits 0",
     "tasking": "`nio check tasks` passes: every AC has a task and every task an AC",
     "tasks_jury": "`nio check tasks --approved` exits 0 (the tasks ledger approved, or the human closed it with a reason)",
-    "implementing": "every task is done and every epic has its `epic` line"}
+    "implementing": "every task is done, and an epic already in its old implementation jury has its `epic` line",
+    "pr": "the pr jury approved the whole effort diff with no finding unruled and a verdict that isn't stale (or the "
+          "human closed it), and the human approved it at a terminal with `nio flow approve`"}
 ASKED = re.compile(r"^## Asked · (Q\d+)\b", re.M)
 ANSWERED = re.compile(r"^## (Q\d+)\b", re.M)
 
@@ -680,10 +699,12 @@ def where(root, slug, state=None, lines=None):
     for s in STAGES:
         if s == "done" or s in off:
             continue
+        if s == "pr" and any(x["kind"] in ("pass", "override") and (x["from"], x["to"]) == ("implementing", "done") for x in lines):
+            continue  # done before the pr gate existed (2026-11-14-effort-jury FR-12)
         if s in GATES:
             gate, led = GATES[s][0], ledger(s)
             judged = jury.version(led, led["round"])
-            if led.get("outcome") == "rejected" and judged and jury.blob(root, jury.artefact(root, slug, gate)) == judged:
+            if STAGES[s][1] and led.get("outcome") == "rejected" and judged and jury.blob(root, jury.artefact(root, slug, gate)) == judged:
                 stage, why, sent_by = STAGES[s][1], f"the {gate} jury rejected round {led['round']}", s
                 break
             if cleared(s):
@@ -734,8 +755,10 @@ def where(root, slug, state=None, lines=None):
         status, command = f"waiting_for_human: {pending[0]['change']} pending", ""
     elif asked:
         status, command = f"waiting_for_human: {asked}", ""
-    elif ready == "pass":
+    elif ready == "pass" or stage == "pr" and ready == "closed":
         status, command = f"waiting_for_human: approve {GATES[stage][0]}", f"nio flow done {stage} --commit {slug} --by human"
+        if stage == "pr":
+            command = f"nio flow approve {slug}"  # FR-9: the human, at a terminal
     elif stage == "implementing":  # implement CT-14: the claimed task, else the next ready one
         from nio import implement
         tid = state["claims"].get("task")
@@ -753,6 +776,7 @@ def where(root, slug, state=None, lines=None):
         status, command = "done", ""
     else:
         status = "working"
+        command = "" if stage == "pr" else command  # its driver runs `nio jury next <slug> pr`; `done` never passes it
     return {"stage": stage, "status": status, "why": why, "skill": skill or SKILL.get(stage, ""),
             "inputs": [rel(n) for n in names if (folder / n).exists()], "exit": EXIT.get(stage, ""),
             "command": command, "skipped": skipped, "changes": entries, "overrides": unseen(lines),
@@ -762,7 +786,7 @@ def where(root, slug, state=None, lines=None):
 
 def jury_files(stage):
     from nio import jury
-    return jury.GATES[GATES[stage][0]]
+    return ["spec.md", "tasks.md"] if stage == "pr" else jury.GATES[GATES[stage][0]]
 
 
 def refuse(root, slug):
@@ -1044,7 +1068,7 @@ def stage_arg(name):
     raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(STAGES)}, implementation-E-n)")
 
 
-def done(root, stage, slug=None, commit=False, human=None, by=None):
+def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=False):
     """`nio flow done` (CT-11, FR-12 to FR-27, FR-48, FR-62): run the stage's guard and, when it passes (or the human
     overrides a failing one), record the move and the skips after it; at a gate, `--commit` (or the auto flag on a
     spec without a risky flag) also makes the approval commit, rolled back when git fails. Returns (code, lines)."""
@@ -1055,6 +1079,8 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
         raise ValueError(f"unknown stage {stage}")
     slug = pick(root, slug)
     refuse(root, slug)
+    if stage == "pr" and not terminal:  # FR-9: whatever --by, --commit, the auto flag or the jury's verdict
+        return 1, [f"only the human approves the pr gate, at a terminal: nio flow approve {slug}"]
     if human is not None and stage in GATES:  # FR-62: the jury closes its own gates
         gate = GATES[stage][0]
         return 1, [f"--human can't pass a jury gate; the human closes it through the jury:",
@@ -1112,7 +1138,7 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
     if result == "closed":  # FR-27: the human closed the jury gate; the ledger's reason is the override's
         gate = GATES[stage][0]
         led = jury.load(root, slug, gate)
-        files = [n for n in jury.GATES[gate] if (root / ".nio/specs" / slug / n).exists()]
+        files = [n for n in jury_files(stage) if (root / ".nio/specs" / slug / n).exists()]
         line.update(kind="override", reason=output[0], evidence={
             **ev, "blobs": {n: judged_blob(root, slug, n) for n in files},
             "round": led["round"]})
@@ -1139,6 +1165,28 @@ def done(root, stage, slug=None, commit=False, human=None, by=None):
                 out += usage.finish(root, slug)
             return 0, out
         return commit_gate(root, slug, stage, entries, state, w, out)
+
+
+def at_terminal(slug):
+    """The human typed the effort's slug back at the controlling terminal, which an agent's shell doesn't have (FR-9).
+    ponytail: a terminal, not an identity; a human-run agent session with a pty could still type it."""
+    try:
+        with open("/dev/tty", "r+") as tty:
+            tty.write(f"Approve the pr gate of {slug}? Type its slug to approve: ")
+            tty.flush()
+            return tty.readline().strip() == slug
+    except OSError:
+        return False
+
+
+def approve(root, slug=None):
+    """`nio flow approve`: the human-only command that records the pr gate's approval (FR-9, FR-10): the human types the
+    slug back at a terminal, then `done` runs the gate's guard (approved or closed, no finding unruled, the verdict not
+    stale) and makes the `nio: approve pr` commit. A merge of the pull request records nothing. Returns (code, lines)."""
+    slug = pick(root, slug)
+    if not at_terminal(slug):
+        return 1, [f"the pr gate of {slug} is approved only by the human at a terminal, typing its slug back"]
+    return done(root, "pr", slug, commit=True, by="human", terminal=True)
 
 
 def epic_done(root, gate, slug=None, by=None):
@@ -1177,7 +1225,7 @@ def epic_done(root, gate, slug=None, by=None):
             not records.git(root, "log", "-1", "--format=%H", f"--grep=^{message}$", "--", f".nio/specs/{slug}")
         if not entries and not crashed:
             return 0, [f"{gate} is closed already ({reason}); nothing to do"]
-        out = [f"closed {gate}: {reason}"] + [f"merge: {implement.branch(slug)}"] * last
+        out = [f"closed {gate}: {reason}"] + [f"next: the pr gate, in a fresh driver from `nio flow brief {slug}`"] * last
         if last:
             out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines + entries)]
         return commit_gate(root, slug, "implementing", entries, state, w, out, gate, message)

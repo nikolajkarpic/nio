@@ -455,9 +455,10 @@ def append_fix(root, slug, epic, finding):
 def one_fix(root, slug, epic, finding):
     """Append one fix task for a finding the decision table routes to a task, under the epic's `#### Fixes`, and dispose of
     the finding as `fix-task` (CT-14, FR-26, FR-27, FR-29). The new ID, or None when the finding already has a task. Every
-    byte already in the file stays; the decision table's routing is the caller's (`jury.to_task`)."""
-    from nio import jury
-    gate, fid = f"implementation-{epic}", finding["id"]
+    byte already in the file stays; the decision table's routing is the caller's (`jury.to_task`). `epic` `pr`: the pr
+    gate's fix tasks go under the closing `## E-<n> PR fixes` epic, added at the end on the first one (2026-11-14 FR-15)."""
+    from nio import evidence, jury
+    gate, fid = evidence.gate_of(epic), finding["id"]
     led = jury.load(root, slug, gate)
     src = f"{fid} ({gate}, round {led['round']})"
     now = next((f for f in led["findings"] if f["id"] == fid), None)
@@ -478,14 +479,17 @@ def one_fix(root, slug, epic, finding):
         tracked = set(records.git(root, "ls-files"))
         named = list(dict.fromkeys(f for f in map(file_of, files(finding["where"])) if f in tracked))
         if not named:  # as `evidence.check_finding`: the epic's changed files
-            from nio import evidence
-            commits = evidence.commits_of(root, slug, epic)
-            named = evidence.code_diff(root, evidence.parent_of(root, commits[-1]), commits[0], "--name-only", "--diff-filter=d") if commits else []
+            named = evidence.code_diff(root, *evidence.span(root, slug, epic), "--name-only", "--diff-filter=d")
         where = ", ".join(f"`{f}`" for f in named)
         ask = "Justify or remove" if finding.get("gap") == "unrequested" else "Fix"
         block = [f"### {tid} {ask}: {finding['title']}", f"- From: {src}", f"- Files: {where}", f"- Serves: {', '.join(serves)}",
                  f"- Test: {fix_test(root, slug, finding, cites)}", "- Depends on: none", "- Parallel: no",
                  "- Tier: strong: a fix from a jury finding", "- Effort: med", "- Mode: single: a fix from a jury finding", ""]
+        if epic == "pr":
+            epic = evidence.pr_fixes(root, slug)
+            if not epic:
+                epic = f"E-{max([int(e['id'][2:]) for e in parsed['epics']] + [0]) + 1}"
+                text = text.rstrip("\r\n") + f"{nl}{nl}## {epic} PR fixes{nl}"
         # headings inside a comment aren't headings, as in `parse`; an opening mark in a title would hide the tasks after it
         mask = re.sub(r"<!--.*?-->", lambda m: re.sub(r"[^\r\n]", " ", m[0]), text, flags=re.S)
         start = re.search(rf"^## {epic}\b", mask, re.M)

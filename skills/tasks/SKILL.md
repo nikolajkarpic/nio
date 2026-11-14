@@ -65,10 +65,11 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Tasks added later
 
-After approval, never edit or renumber a planned task. New work (an implementation-jury finding, a "justify or remove"
-task, or a change request) goes under its epic's `#### Fixes` heading, with the next free `T-n` (one above the highest
-ID ever used, live or retired), a `From:` line naming its source (`J-n (implementation-E-n, round n)` or the change
-record's ID) and the seven lines. Appending a fix task keeps the tasks gate approved; editing an existing fix task, or
+After approval, never edit or renumber a planned task. New work (a pr-gate finding, a "justify or remove" task, or a
+change request) goes under an epic's `#### Fixes` heading, with the next free `T-n` (one above the highest ID ever
+used, live or retired), a `From:` line naming its source (`J-n (pr, round n)`, `J-n (implementation-E-n, round n)` for
+an epic's old jury, or the change record's ID) and the seven lines. The pr gate's fix tasks go under the closing
+`## E-<n> PR fixes` epic, which `nio jury` adds after the last epic on the first one; it doesn't reopen the gate either. Appending a fix task keeps the tasks gate approved; editing an existing fix task, or
 adding a task outside `#### Fixes`, reopens it. A planned task made pointless is removed and its ID listed in `retired:`
 (this reopens the gate). A fix task made pointless is retired only with
 `nio task retire <slug> T-n --reason "<why>" --by <human|agent>`: the gate stays approved and its finding closes as accepted
