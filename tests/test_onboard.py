@@ -921,6 +921,20 @@ def test_reconciled_records_only_given_paths():
     assert nio(root, "changed").stdout.strip() == "docs/B.md new"
 
 
+def test_changed_keeps_non_ascii_path():
+    """CT-11: a recorded source with a non-ASCII path that changed since a ref is listed, not dropped by git's quoting."""
+    from nio import onboard
+    root = repo({"docs/café.md": "v1\n"})
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "v1"], cwd=root, check=True)
+    h = next(l.split()[2] for l in scan(root)[1].splitlines() if l.split()[1:2] == ["docs/café.md"])
+    d = root / ".nio/project"
+    d.mkdir(parents=True)
+    (d / "product.md").write_text(f"# Product\n\n## What it does\n- A shop (source: docs/café.md@{h})\n")
+    (root / "docs/café.md").write_text("v2\n")
+    assert onboard.changed(root, "HEAD") == [("docs/café.md", ["product.md"])], onboard.changed(root, "HEAD")
+
+
 if __name__ == "__main__":
     selfcheck.main([test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -933,4 +947,4 @@ if __name__ == "__main__":
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
                     test_backup_keeps_first_copy, test_backup_failed_copy_leaves_no_partial, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
                     test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded, test_skill_inline_secret_rule, test_confirm_refuses_value_from_secrets_file, test_grill_blank_fields_secret_rule,
-                    test_status_flags_changed_source, test_worker_pack_marks_stale, test_status_flags_deleted_source, test_no_stale_after_rehash, test_status_speed, test_stale_reaches_every_reader, test_reconciled_records_only_given_paths])
+                    test_status_flags_changed_source, test_worker_pack_marks_stale, test_status_flags_deleted_source, test_no_stale_after_rehash, test_status_speed, test_stale_reaches_every_reader, test_reconciled_records_only_given_paths, test_changed_keeps_non_ascii_path])
