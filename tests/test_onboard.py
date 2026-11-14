@@ -50,8 +50,9 @@ def test_scan_secrets_path_only():
     code, out = scan(root)
     lines = out.strip().splitlines()
     assert code == 0, out
-    assert [l for l in lines if l.startswith("secrets")] == ["secrets .env", "secrets prod.tfvars"], out
-    assert not [l for l in lines if not l.startswith("secrets") and (".env" in l or "prod.tfvars" in l)], out
+    assert [l for l in lines if l.startswith("secrets")] == ["secrets prod.tfvars"], out  # ignored files: never listed
+    assert ".env" not in out, out
+    assert not [l for l in lines if not l.startswith("secrets") and "prod.tfvars" in l], out
 
 
 def test_scan_more_secret_names():
@@ -778,7 +779,7 @@ def test_confirm_refuses_value_from_secrets_file():
     """J-3: a value copied from a file the scan lists as secrets is refused at confirm, without printing it."""
     pw = "hunter2" + "hunter2"
     root = repo({"README.md": "hi\n", ".env": f"DB_PASSWORD={pw}\nDEBUG=on\nNODE_ENV=production\n"
-                                              "DATABASE_URL=postgres://localhost:5432/app\n"}, ignore=".env\n")
+                                              "DATABASE_URL=postgres://localhost:5432/app\n"})  # a tracked .env: listed
     d = root / ".nio/project"
     assert nio(root, "start", "--empty").returncode == 0
     tpl = Path(__file__).parent.parent / "src/nio/templates/project"
@@ -829,7 +830,7 @@ def test_nothing_to_reconcile_with_secrets():
     assert r.returncode == 0, (r.stdout, r.stderr)
     assert changed() == "nothing to reconcile"
     out = scan(root)[1]
-    assert "secrets node_modules/pkg/key.pem" in out.splitlines(), out
+    assert "key.pem" not in out, out  # ignored: the scan never walks node_modules
     assert "key.pem" not in changed()
 
 
@@ -1058,8 +1059,32 @@ def test_changed_lists_renamed_source():
     assert ("pyproject.toml", ["stack.md"]) in onboard.changed(root, "main"), onboard.changed(root, "main")
 
 
+def test_scan_never_walks_ignored_files():
+    """Git-ignored files (dependencies, build output, an ignored .env) are never listed by the scan."""
+    root = repo({"README.md": "hi\n", ".env": "K=v\n", "node_modules/pkg/package.json": "{}", "node_modules/pkg/.npmrc": "x",
+                 "dist/app.js": "x"}, ignore=".env\nnode_modules/\ndist/\n")
+    code, out = scan(root)
+    assert code == 0 and "README.md" in out, out
+    assert not any(w in out for w in (".env", "node_modules", "dist/")), out
+
+
+def test_stale_never_reads_outside_the_repo():
+    """A source record pointing outside the repo, or through a symlink, is never read: it reads as deleted."""
+    from nio import onboard
+    outside = Path(tempfile.mkdtemp()) / "secret.txt"
+    outside.write_text("s\n")
+    h = hashlib.sha256(b"s\n").hexdigest()[:12]
+    root = repo({"README.md": "hi\n"})
+    (root / "link.txt").symlink_to(outside)
+    d = root / ".nio/project"
+    d.mkdir(parents=True)
+    (d / "stack.md").write_text(f"# Stack\n\n## Languages\n- a (source: {outside}@{h})\n- b (source: ../x@{h})\n"
+                                f"- c (source: link.txt@{h})\n")
+    assert sorted(w for _, _, w in onboard.stale(root)) == ["deleted"] * 3, onboard.stale(root)
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_changed_sources_listed, test_no_source_changed, test_close_lines_trunk_and_unchecked, test_changed_lists_renamed_source, test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
+    selfcheck.main([test_scan_never_walks_ignored_files, test_stale_never_reads_outside_the_repo, test_changed_sources_listed, test_no_source_changed, test_close_lines_trunk_and_unchecked, test_changed_lists_renamed_source, test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
