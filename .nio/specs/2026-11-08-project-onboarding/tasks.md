@@ -528,9 +528,9 @@ retired: [T-8, T-11, T-17, T-20, T-24]
 
 ### T-71 Fix: A partly reconciled session marks every new file as seen, so unreached new files never come back
 - From: J-1 (implementation-E-6, round 1)
-- Files: `src/nio/onboard.py`, `skills/reconcile-onboarding/SKILL.md`
+- Files: `src/nio/onboard.py`, `skills/reconcile-onboarding/SKILL.md`, `tests/test_onboard.py`
 - Serves: CT-14, FR-21, J-1
-- Test: TC-22
+- Test: new: `nio onboard reconciled <path>...` records only the given paths in `seen`; a new file not passed stays listed by `nio onboard changed` (FR-21, CT-11)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -539,9 +539,9 @@ retired: [T-8, T-11, T-17, T-20, T-24]
 
 ### T-72 Fix: Quoted or non-ASCII paths are silently dropped from the changed-files list
 - From: J-2 (implementation-E-6, round 1)
-- Files: `src/nio/onboard.py`
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
 - Serves: CT-11, FR-23, J-2
-- Test: TC-44
+- Test: new: a source path with non-ASCII characters (e.g. `docs/café.md`) that changed since a ref is listed by `onboard.changed(root, ref)` (CT-11)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -550,20 +550,9 @@ retired: [T-8, T-11, T-17, T-20, T-24]
 
 ### T-73 Fix: The ref goes to git unguarded, so a leading dash becomes a git option
 - From: J-3 (implementation-E-6, round 1)
-- Files: `src/nio/onboard.py`, `src/nio/cli.py`
+- Files: `src/nio/onboard.py`, `src/nio/cli.py`, `tests/test_onboard.py`
 - Serves: CT-11, J-3
-- Test: TC-44
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-74 Fix: Four AC proofs are e2e tests that only skip-pass without NIO_E2E
-- From: J-5 (implementation-E-6, round 1)
-- Files: `tests/test_onboard_e2e.py`
-- Serves: AC-23, AC-25, AC-42, AC-44
-- Test: TC-38
+- Test: new: `nio onboard changed --output=CLAUDE.md` (a ref starting with `-`) exits 1 naming the ref and writes no file (CT-11)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
