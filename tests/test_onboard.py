@@ -769,6 +769,13 @@ def test_check_spec_apps_only_onboarded():
         assert f"app {val[1:-1]} has no project docs" in r.stdout + r.stderr, (val, r.stdout, r.stderr)
 
 
+def test_skill_inline_secret_rule():
+    """FR-30, AC-39: a secret value found inline in any file the agent reads is never written, quoted or shown."""
+    text = " ".join((Path(__file__).resolve().parent.parent / "skills/onboard/SKILL.md").read_text().split())
+    assert "secret value found inline in any file you read" in text, "inline-secret rule missing"
+    assert "never write, quote or show the value" in text, "inline-secret rule missing"
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -780,4 +787,4 @@ if __name__ == "__main__":
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
                     test_backup_keeps_first_copy, test_backup_failed_copy_leaves_no_partial, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
-                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded])
+                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded, test_skill_inline_secret_rule])
