@@ -332,7 +332,9 @@ def test_ac14_first_spec_fills_stack():
     (root / f".nio/specs/{slug}").mkdir(parents=True)
     (root / f".nio/specs/{slug}/spec.md").write_text((ROOT / "tests/fixtures/spec/spec.md").read_text())
     ask = ("Run @nio:grill on the spec `" + slug + "`. The CLI here is `" + " ".join(NIO) + "`. You play both roles: the dev's "
-           "scripted answers are: the language is Python 3.12; accept every recommendation for anything else; choose finish. "
+           "scripted answers are: the language is Python 3.12; the modules are a single Django app called shop; the cloud "
+           "provider is AWS; answer `don't know` to every other tech field; accept every recommendation for anything "
+           "else; choose finish. "
            "Do not stop early. Your final reply is the only transcript kept: put in it, in order, every question you ask, "
            "the full text of every doc you show and every command you run.")
     run_skill(root, "grill", ask)
@@ -340,6 +342,14 @@ def test_ac14_first_spec_fills_stack():
     langs = stack.split("## Languages", 1)[1].split("\n## ", 1)[0]
     assert "Python 3.12" in langs, stack
     assert re.search(r"\(source: dev, " + slug + r" grill Q\d+\)", langs) and not re.search(r"@[0-9a-f]{12}", langs), langs
+    for doc, head, want in (("stack", "Languages", "Python 3.12"), ("architecture", "Modules", "shop"),
+                            ("infra", "Cloud provider", "AWS")):
+        text = (root / f".nio/project/{doc}.md").read_text()
+        body = text.split(f"## {head}", 1)[1].split("\n## ", 1)[0]
+        assert want in body and "NEEDS CLARIFICATION" not in body, (doc, body)
+        assert re.search(r"\(source: dev, " + slug + r" grill Q\d+\)", body) and not re.search(r"@[0-9a-f]{12}", body), (doc, body)
+    infra = (root / ".nio/project/infra.md").read_text()
+    assert "NEEDS CLARIFICATION" in infra.split("## Storage", 1)[1].split("\n## ", 1)[0], infra  # not answered: stays blank
 
 
 @e2e
