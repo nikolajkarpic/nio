@@ -183,7 +183,10 @@ def doc_paths(root, reader, slug=""):
 def docs_for(root, reader, slug=""):
     """## Project docs for a reader: the mapped docs that exist, then size, missing and state lines (CT-9).
     ponytail: no stale line yet, it needs the docs' source records (CT-7)."""
-    st = progress(root)
+    try:
+        st = progress(root)
+    except ValueError:  # docs only help a reader; a damaged file must not block the stage
+        return "## Project docs\n\nonboarding: unreadable: fix .nio/project/onboarding.json\n"
     pairs = _pairs(root, reader, slug)
     have = [(n, p) for n, p in pairs if p.is_file()]
     if st["state"] == "not started" and not have:
