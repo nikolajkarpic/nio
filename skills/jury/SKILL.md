@@ -238,7 +238,8 @@ order:
 3. Each recorded outcome edits the pull request's one verdict comment (posted the first time), whose first word is
    `APPROVED` or `REQUEST_CHANGES`, then the head commit judged, the verdict and the findings: fixed, open, ruled by
    the human, closed by the system. Show the human that outcome in one message. A push, pull request or comment that
-   fails stops the step with a message naming it; tell the human, the gate stays open.
+   fails stops the step with a message naming it; tell the human, the gate stays open. A verdict comment that failed
+   waits: the gate can't be approved until it is posted, and the next `nio jury next <slug> pr` posts it again.
 4. **rejected:** the confirmed findings' fix tasks go into the closing `PR fixes` epic, made on the first one. End the
    unit: they are built through @nio:implement, and once they are done the next `nio jury next <slug> pr` (a fresh
    driver again) pushes, which updates the pull request, and runs the gate's fix check. The round cap applies as above.

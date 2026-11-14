@@ -12,6 +12,7 @@ from nio import evidence, flow as nio_flow, implement, jury, tasks
 from nio import records
 
 HUB = []  # every (git|gh) call the gate made, in order
+AT_TERMINAL = nio_flow.at_terminal  # the real one: `approve` below swaps in a fake
 
 
 def fake_hub(fail=None, prs=None, comments=None):
@@ -125,6 +126,18 @@ def test_effort_ac16_failing_own_test_keeps_the_epic_open():
     print("ok")
 
 
+def test_effort_ac16_epic_close_reruns_only_each_tasks_latest_green():
+    root = impl(tasks=TWO)
+    gone = "python -m unittest tests/test_gone.py"  # an earlier claim's green command, its test since removed
+    for kind, ev in (("claim", {}), ("green", {"command": gone}), ("review", {"passed": False}), ("unblock", {})):
+        test_flow.history(root, S, implement.entry(kind, "T-1", **ev))  # that claim failed and was unblocked
+    finish(root, "T-1")
+    out = finish(root, "T-2")
+    review = [x for x in lines(root) if x["kind"] == "review" and x["evidence"]["task"] == "T-2"][-1]["evidence"]
+    assert review["passed"] and review["epic_tests"] == [{"command": RUN, "code": 0}], (review, out)
+    print("ok")
+
+
 def test_effort_ac2_last_task_moves_to_the_pr_gate_and_the_suite_runs_once_there():
     root = built()
     assert lines(root)[-1]["to"] == "pr" and stage(root) == "pr", lines(root)[-1]
@@ -229,6 +242,35 @@ def test_effort_ac17_over_the_limit_one_pack_per_epic_plus_rest_and_integration_
     print("ok")
 
 
+def test_effort_ac17_earlier_efforts_task_commit_goes_to_rest():
+    root = split_root(1501)
+    branch = test_flow.git(root, "branch", "--show-current").strip()
+    init = test_flow.git(root, "rev-list", "--max-parents=0", "HEAD").strip()
+    test_flow.git(root, "branch", "-f", evidence.default_branch(root), init)  # the effort's own tasks.md is in its diff
+    test_flow.git(root, "checkout", "-q", "-b", "earlier", init)  # the branch was cut from an unmerged earlier effort
+    (root / "earlier.py").write_text("EARLIER = 1\n")
+    commit_all(root, "T-1: an earlier effort's own T-1")
+    old = test_flow.git(root, "rev-parse", "HEAD").strip()
+    test_flow.git(root, "checkout", "-q", branch)
+    test_flow.git(root, "rebase", "-q", "earlier")
+    parts = evidence.split(root, S)
+    assert list(parts) == ["E1", "E2", "rest"] and old in parts["rest"] and old not in parts["E1"], parts
+    print("ok")
+
+
+def test_effort_ac3_base_without_main_is_the_upstream_else_a_clear_error():
+    root = built()
+    test_flow.git(root, "branch", "-m", "master", "trunk")
+    fake_hub()
+    code, out, err = test_flow.run_main(root, "jury", "next", S, "pr")
+    assert code == 1 and err.startswith("error: the pr gate has no default branch") and "Traceback" not in err, (out, err)
+    assert nio_flow.guard(root, S, "pr")[0] == "fail" and stage(root) == "pr"
+    test_flow.git(root, "branch", "--set-upstream-to=trunk")
+    assert evidence.default_branch(root) == "trunk" and evidence.changed_lines(root, S) > 0
+    assert test_flow.run_main(root, "jury", "next", S, "pr")[0] == 0
+    print("ok")
+
+
 def test_effort_ac17_exactly_at_the_limit_is_not_split():
     root = split_root(1500)
     assert evidence.changed_lines(root, S) == 1500 and evidence.split(root, S) == {}
@@ -321,6 +363,43 @@ def test_effort_ac21_agent_done_refused_auto_off():
     refused_done(root, auto=False)
     code, out = approve(root, typed=False)  # the approve command too, without the human at a terminal
     assert code == 1 and stage(root) == "pr", out
+    print("ok")
+
+
+def typed_at_tty(text):
+    """Run the real `at_terminal` in a child whose controlling terminal is a fresh pty, type `text` at the prompt; returns
+    whether it approved, or None where the platform has no pty."""
+    import os
+    try:
+        import pty
+        pid, fd = pty.fork()
+    except (ImportError, OSError, AttributeError):
+        return None
+    if pid == 0:
+        os._exit(0 if AT_TERMINAL(S) else 3)
+    seen = b""
+    try:
+        while b"Type its slug" not in seen:
+            chunk = os.read(fd, 1024)
+            if not chunk:
+                break
+            seen += chunk
+        os.write(fd, text.encode() + b"\n")
+        while os.read(fd, 1024):
+            pass
+    except OSError:  # Linux: EIO once the child is gone
+        pass
+    code = os.waitstatus_to_exitcode(os.waitpid(pid, 0)[1])
+    assert code in (0, 3), (code, seen)
+    return code == 0
+
+
+def test_effort_ac9_slug_typed_at_a_real_terminal():
+    ok, wrong = typed_at_tty(S), typed_at_tty(S + "-not")
+    if ok is None:
+        print("skipped: no pty on this platform, at_terminal is untested here")
+        return
+    assert ok is True and wrong is False, (ok, wrong)
     print("ok")
 
 
@@ -431,7 +510,15 @@ def test_effort_ac25_failed_step_stops_naming_it():
         except ValueError as e:
             assert str(e).startswith(f"{fail} failed"), e
         code, out, err = test_flow.run_main(root, "jury", "next", S, "pr")
-        assert (fail == "comment" or code == 1 and f"{fail} failed" in err) and stage(root) == "pr", (fail, out, err)
+        assert code == 1 and f"{fail} failed" in err and stage(root) == "pr", (fail, out, err)
+    # the comment step failed after the jury approved: no approval until the comment is on the pull request
+    assert nio_flow.guard(root, S, "pr")[0] == "fail" and "nio flow approve" not in nio_flow.where(root, S)["command"]
+    assert approve(root)[0] == 1 and stage(root) == "pr"
+    st = fake_hub()
+    code, out, err = test_flow.run_main(root, "jury", "next", S, "pr")
+    assert code == 0 and len(st["comments"]) == 1 and st["comments"][1].startswith("APPROVED "), (out, err, st)
+    assert f"nio flow approve {S}" in out and nio_flow.guard(root, S, "pr")[0] == "pass", out
+    assert nio_flow.where(root, S)["command"] == f"nio flow approve {S}"
     print("ok")
 
 
@@ -513,6 +600,8 @@ def test_effort_done_before_the_pr_gate_stays_done():
     finish(root, "T-1")
     test_flow.history(root, S, {"kind": "pass", "from": "implementing", "to": "done"})
     assert stage(root) == "done"
+    test_flow.history(root, S, {"kind": "back", "from": "done", "to": "implementing", "change": "C-1"})  # sent back later
+    assert stage(root) == "pr", stage(root)
     print("ok")
 
 
