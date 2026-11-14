@@ -188,15 +188,18 @@ def docs_for(root, reader, slug=""):
     except ValueError:  # docs only help a reader; a damaged file must not block the stage
         return "## Project docs\n\nonboarding: unreadable: fix .nio/project/onboarding.json\n"
     pairs = _pairs(root, reader, slug)
-    have = [(n, p) for n, p in pairs if p.is_file()]
+    r = Path(root).resolve()
+    bad = {n for n, p in pairs if p.is_symlink() or not p.resolve().is_relative_to(r)}  # never follow a link (CT-1)
+    have = [(n, p) for n, p in pairs if p.is_file() and n not in bad]
     if st["state"] == "not started" and not have:
         return ""
     out = ["## Project docs", ""]
     for n, p in have:
         out += [f"### {n}", ""] + ["##" + l if l.startswith("#") else l for l in p.read_text().splitlines()] + [""]
     out += [f"over 16 KB: {n} ({-(-p.stat().st_size // 1024)} KB)" for n, p in have if p.stat().st_size > LIMIT]
+    out += [f"missing: {n} (symlink or outside the repo, not read)" for n in sorted(bad)]
     if st["state"] == "done":
-        out += [f"missing: {n}" for n, p in pairs if not p.is_file()]
+        out += [f"missing: {n}" for n, p in pairs if not p.is_file() and n not in bad]
     else:
         out.append("onboarding: " + st["state"] + (": " + st["reason"] if st["state"] == "skipped" else ""))
     return "\n".join(out) + "\n"
