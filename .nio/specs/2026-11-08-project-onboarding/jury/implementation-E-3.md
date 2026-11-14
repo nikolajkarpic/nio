@@ -14,7 +14,7 @@ outcome: rejected
 | J-2 | major | risk | CT-9, CT-22, CT-1 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-3 | major | gap | CT-9, CT-16 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-4 | minor | risk | CT-19 | adversary | grounded | open |  | new, 0 |
-| J-5 | blocker | gap | AC-32 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | blocker | gap | AC-32 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-6 | major | gap | CT-9, C-261108-mk6n | consistency | refuted | refuted |  | new, 0 |
 | J-7 | minor | inconsistency | CT-16 | consistency | grounded | open |  | new, 0 |
 | J-8 | major | gap | CT-22 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
@@ -52,7 +52,7 @@ outcome: rejected
 - situation (conformance): AC-32 (Level: e2e) is covered only by `test_ac32_actor_names_persona`. That test is gated by `NIO_E2E`, and the suite command sets no such variable. The test therefore printed `skipped` and passed without drafting a spec, so nothing shows that the drafter names P-1 or "no persona". The result in the pack is `unknown`.
 - fix: run the e2e test with NIO_E2E=1 and put its pass in the evidence, or have the CLI run it as a TC. Until then AC-32 has no passing test.
 - validation: confirmed: tests/test_onboard_e2e.py:3-4 says the test prints `skipped` and passes without NIO_E2E, and `test_ac32_actor_names_persona` is the only test serving AC-32 (tasks.md T-9). A normal suite pass therefore gives no evidence for AC-32.
-- disposition: fix-task by agent: fix task T-56
+- disposition: accepted-risk by human: AC-32's e2e test passed at T-9's green with NIO_E2E=1 (run R-261108-7dt6); jury evidence runs without NIO_E2E. Approved by the human 2026-11-14.
 
 ### J-6 Packs carry no stale line, though CT-9 and the accepted change require one
 - quote: "stale: <doc> (<path> <changed|deleted>)"
