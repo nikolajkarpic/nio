@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-project-onboarding
-retired: [T-8, T-11, T-17]
+retired: [T-8, T-11, T-17, T-20]
 ---
 # Tasks: project onboarding
 
@@ -446,15 +446,18 @@ retired: [T-8, T-11, T-17]
 - Effort: low
 - Mode: single: e2e test and skill fix together
 
-### T-20 An empty repo grills three docs and is done
-- Files: `skills/onboard/SKILL.md`, `tests/test_onboard_e2e.py`
+#### Fixes
+
+### T-67 Fix: land T-20's tests as regression guards (T-20 retired, already delivered)
+- From: C-261114-47ju
+- Files: `tests/test_onboard_e2e.py`
 - Serves: AC-13
 - Test: TC-23
-- Depends on: T-15
+- Depends on: none
 - Parallel: no
-- Tier: strong: skill branch checked by one e2e
+- Tier: cheap: tests over existing behaviour
 - Effort: low
-- Mode: single: e2e test and skill fix together
+- Mode: direct: the behaviour exists; the tests guard it
 
 ## E-6 Flag stale docs and reconcile them (US-6)
 
