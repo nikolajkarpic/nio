@@ -45,12 +45,33 @@ def test_scan_lists_each_category():
 
 
 def test_scan_secrets_path_only():
-    sys_path = str(Path(__file__).parent.parent / "src")
-    root = repo({".env": "K=1", "README.md": "r", "secret.pem": "x"}, ignore=".env\n")
-    r = subprocess.run(["python3", "-c", "import sys;sys.path.insert(0,%r);from nio import onboard;print(onboard.scan('.'))" % sys_path],
-                       cwd=root, capture_output=True, text=True)
-    assert ("'secrets', '.env', ''" in r.stdout and "'secrets', 'secret.pem', ''" in r.stdout
-            and "product-docs" in r.stdout), (r.stdout, r.stderr)
+    root = repo({".env": "K=1", "prod.tfvars": "pw = 1"}, ignore=".env\n")
+    subprocess.run(["git", "add", "prod.tfvars"], cwd=root, check=True)
+    code, out = scan(root)
+    lines = out.strip().splitlines()
+    assert code == 0, out
+    assert [l for l in lines if l.startswith("secrets")] == ["secrets .env", "secrets prod.tfvars"], out
+    assert not [l for l in lines if not l.startswith("secrets") and (".env" in l or "prod.tfvars" in l)], out
+
+
+def test_scan_more_secret_names():
+    names = ["credentials.json", "deploy.pem", ".npmrc", "terraform.tfstate"]
+    root = repo(dict.fromkeys(names, "s"))
+    subprocess.run(["git", "add", *names], cwd=root, check=True)
+    code, out = scan(root)
+    lines = out.strip().splitlines()
+    assert sorted(l for l in lines if l.startswith("secrets")) == sorted(f"secrets {n}" for n in names), out
+    assert not [l for l in lines if not l.startswith("secrets") and any(n in l for n in names)], out
+
+
+def test_scan_skips_symlink():
+    outside = Path(tempfile.mkdtemp()) / "README.md"
+    outside.write_text("outside")
+    root = repo({"CLAUDE.md": "a"})
+    (root / "README.md").symlink_to(outside)
+    code, out = scan(root)
+    assert code == 0 and "CLAUDE.md" in out, out
+    assert "README.md" not in out, out
 
 
 def test_scan_prints_no_dependency():
@@ -505,7 +526,7 @@ def test_backup_keeps_first_copy():
 
 
 if __name__ == "__main__":
-    selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
+    selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
