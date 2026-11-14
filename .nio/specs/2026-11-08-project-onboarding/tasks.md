@@ -219,9 +219,9 @@ retired: [T-8]
 
 ### T-53 Fix: A damaged onboarding.json stops every pack, but the docs must never block the stage
 - From: J-1 (implementation-E-3, round 2)
-- Files: `src/nio/onboard.py`, `src/nio/pack.py`, `src/nio/implement.py`
+- Files: `src/nio/onboard.py`, `src/nio/pack.py`, `src/nio/implement.py`, `tests/test_onboard.py`
 - Serves: CT-9, CT-10, CT-19, J-1
-- Test: TC-15
+- Test: new: with a corrupt `.nio/project/onboarding.json`, `docs_for` (and so `nio pack --reader worker` and the worker pack) does not raise; it emits a line `onboarding: unreadable: fix .nio/project/onboarding.json` and no docs (CT-9)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -230,9 +230,9 @@ retired: [T-8]
 
 ### T-54 Fix: A symlinked project doc is read and sent to the model
 - From: J-2 (implementation-E-3, round 2)
-- Files: `src/nio/onboard.py`
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
 - Serves: CT-9, CT-22, CT-1, J-2
-- Test: TC-15
+- Test: new: a `.nio/project/stack.md` that is a symlink (to a file inside or outside the repo) is not read into the pack; `docs_for` names it on a `missing:` line instead (CT-9, CT-1)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -241,9 +241,9 @@ retired: [T-8]
 
 ### T-55 Fix: The apps line is read from anywhere in the spec, in one form only, and a wrong read drops docs silently
 - From: J-3 (implementation-E-3, round 2)
-- Files: `src/nio/onboard.py`
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
 - Serves: CT-9, CT-16, J-3
-- Test: TC-15
+- Test: new: `_pairs` reads `apps` only from the spec's front matter, accepts both `apps: [a, b]` and the block list form, ignores an `apps:` line in the body, and an app named but not onboarded gets a `not onboarded: <app>` line (CT-9, CT-16)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -263,9 +263,9 @@ retired: [T-8]
 
 ### T-57 Fix: Quotes from project docs never ground
 - From: J-8 (implementation-E-3, round 2)
-- Files: `src/nio/jury.py`
+- Files: `src/nio/jury.py`, `tests/test_onboard.py`
 - Serves: CT-22, J-8
-- Test: TC-55
+- Test: new: at the plan gate a finding by the architecture-fit lens that quotes `.nio/project/principles.md` is grounded (`grounding`/`grounded` given the lens's sources), while the same quote from a lens with no docs is not (CT-22)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
