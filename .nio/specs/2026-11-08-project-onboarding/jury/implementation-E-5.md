@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-5
 subject: 2026-11-08-project-onboarding
-round: 5
-outcome: rejected
+round: 6
+outcome: approved
 ---
 # Implementation-e-5 jury: 2026-11-08-project-onboarding
 
@@ -10,9 +10,9 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | blocker | gap | AC-14, CT-21 | adversary, conformance, correctness, security | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | blocker | gap | AC-14, CT-21 | adversary, conformance, correctness, security | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-2 | minor | risk | CT-21 | adversary, correctness | grounded | open |  | new, 0 |
-| J-3 | blocker | gap | AC-14 | adversary, conformance, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-3 | blocker | gap | AC-14 | adversary, conformance, correctness | refuted | refuted |  | unchanged, 1 |
 | J-4 | blocker | gap | AC-13 | conformance | refuted | refuted |  | new, 0 |
 | J-5 | minor | inconsistency | CT-21, AC-14 | consistency | grounded | open |  | new, 0 |
 | J-6 | minor | inconsistency | CT-21, AC-14 | consistency | grounded | open |  | new, 0 |
@@ -50,9 +50,9 @@ outcome: rejected
 - situation (adversary): the step tells the grill to fill fields from the repo first, but the only suffix it defines is `source: dev ... grill Q<n>`. A field answered from `pyproject.toml` has no question number and was not told by the dev. The agent either writes a false `source: dev` with an invented Q<n>, or writes no source at all. Either way AC-14's "each names the spec grill question it was answered in" fails silently, and a later reconcile cannot tell guessed provenance from real.
 - situation (conformance): test_ac14_first_spec_fills_stack has result "unknown". The suite's exit 0 is consistent with the e2e test having been skipped, so there is no proof it ran and passed.
 - situation (correctness): the grill could fill stack.md but skip architecture.md and infra.md, or write them without the `(source: dev, <slug> grill Q<n>)` form, and the test would still pass. AC-14 requires all three docs.
+- situation (conformance): a lite spec's grill could fill the tech docs and no test would catch it
 - fix: script one answer each for architecture and infra, and assert that each doc's field changed and has no hash. Add a lite-spec case that must leave the docs blank.
-- validation: confirmed: AC-14's Observable says the answered fields "no longer read `NEEDS CLARIFICATION`", but test_ac14_first_spec_fills_stack (tests/test_onboard_e2e.py:328-342) only checks that "Python 3.12" and the source suffix appear in stack.md's `## Languages`. It never checks that `NEEDS CLARIFICATION` is gone, so a grill that leaves the placeholder next to the answer still passes. AC-14 and its Observable cover stack.md, architecture.md and infra.md, and nothing else in the artefact tests those two docs. The skill's repo-first lookup (grill/SKILL.md:71-75) defines only the `source: dev ... grill Q<n>` suffix, so provenance for repo-answered fields is undefined.
-- disposition: fix-task by agent: fix task T-69
+- validation: refuted: The finding describes a test that no longer exists. tests/test_onboard_e2e.py:328-352 scripts one answer each for stack (Python 3.12), architecture (shop) and infra (AWS). For each doc it asserts the answer is present, `NEEDS CLARIFICATION` is gone from that body, the `(source: dev, <slug> grill Q<n>)` form is present and no `@<hash>` appears. It also asserts the unanswered Storage field stays blank. skills/grill/SKILL.md:73-75 now defines the repo-found form `(source: <path>@<hash>)`, so the provenance gap is closed. The "result unknown" point is the same one J-4 raised, and the ledger refutes it with a recorded NIO_E2E run. A lite-spec negative case is still untested, but AC-14 does not require one.
 
 ### J-4 AC-13 test has no recorded passing run
 - quote: "Without NIO_E2E they print `skipped` and pass."
@@ -114,16 +114,16 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-5-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-5-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
 | implementation-E-5-adversary-2 | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-5-adversary-3 | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| implementation-E-5-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-5-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
 | implementation-E-5-conformance-2 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
 | implementation-E-5-conformance-3 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
 | implementation-E-5-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-5-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-5-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 2 | 6 |
 | implementation-E-5-correctness-2 | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |
 | implementation-E-5-correctness-3 | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 5 |
-| implementation-E-5-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-5-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
 | implementation-E-5-security-2 | security | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
 | implementation-E-5-security-3 | security | juror / claude-code / sonnet | sufficient | yes | 1 | 4 |
