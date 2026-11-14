@@ -207,7 +207,7 @@ def grounded(finding, text, human="", quotes=True):
     return not undefined(finding, text) and (not quotes or all(" ".join(q.split()) in flat for q in finding["quotes"]))
 
 
-def planned(name, text, keep=()):
+def planned(name, text, keep=(), legacy=False):
     """A file as its gate judges it: tasks.md without its `#### Fixes` sections, except the fix tasks in `keep`, and
     without retired fix-task IDs; any other file as it is. Work added under Fixes after approval, or a fix task retired,
     doesn't withdraw it (#42 FR-27, FR-50; #126)."""
@@ -226,14 +226,15 @@ def planned(name, text, keep=()):
         ids = [x.strip() for x in m[2].split(",") if x.strip()]
         left = [x for x in ids if not (re.fullmatch(r"T-\d+", x) and int(x[2:]) > top)]
         return m[0] if left == ids else f"{m[1]}{', '.join(left)}]"
-    text = re.sub(r"^(retired:\s*\[)([^\]\n]*)\]", unfix, text, count=1, flags=re.M)
+    if not legacy:  # legacy: as ledgers judged before #126, with retired fix-task IDs left in
+        text = re.sub(r"^(retired:\s*\[)([^\]\n]*)\]", unfix, text, count=1, flags=re.M)
     return re.sub(r"\n\s*\n+", "\n\n", "\n".join([text, *kept])).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
 
 
-def artefact(root, slug, gate):
+def artefact(root, slug, gate, legacy=False):
     """The gate's artefacts as one text, in a fixed order; empty when none exists. At the tasks gate, tasks.md as
     `planned` reads it."""
-    text = lambda p: planned(p.name, p.read_text()) if gate == "tasks" else p.read_text()
+    text = lambda p: planned(p.name, p.read_text(), legacy=legacy) if gate == "tasks" else p.read_text()
     return "\n".join(text(p) for p in (root / ".nio/specs" / slug / n for n in GATES[gate]) if p.exists())
 
 
@@ -1146,7 +1147,12 @@ def version_now(root, slug, gate):
     """The version the gate would judge now: the epic's last commit, as `collect` judges, or the artefact's blob."""
     if impl_gate(gate):
         return evidence.span(root, slug, gate.removeprefix("implementation-"))[1]
-    return blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
+    now = blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
+    if gate == "tasks":  # a ledger judged before #126 hashed tasks.md with its retired fix-task IDs: still the same version
+        old = blob(root, artefact(root, slug, gate, legacy=True))
+        if old != now and old in load(root, slug, gate).get("versions", {}).values():
+            return old
+    return now
 
 
 def composed(root, slug, gate, led, current, rejected=()):
