@@ -1,7 +1,7 @@
 {
   "gate": "tasks",
   "subject": "2026-11-08-project-onboarding",
-  "round": 3,
+  "round": 4,
   "tier": "medium",
   "expect": [
     "executability"
@@ -10,19 +10,20 @@
     "R-261108-xcqp/tasks-executability.md": "5aadda1393e704e6ee89489e002661b646547723ef1dfcd51e32be2fde400df6",
     "R-261108-xcqp/tasks-refuter.md": "a5d3c44ba54cd6cba1275c9a8662fe6ec3365290f116bf10011f1df35ba9f21b",
     "R-261108-rzti/tasks-executability.md": "ef6e9f1d790aa363e1db112988b12987c45d03767ac42809268eb345a8522c4e",
-    "R-261114-e6j5/tasks-executability.md": "372670957019748db3a3db6b16f0cf38872dd40097463b463617539efb313690"
+    "R-261114-e6j5/tasks-executability.md": "372670957019748db3a3db6b16f0cf38872dd40097463b463617539efb313690",
+    "R-261114-pahm/tasks-executability.md": "550c36ac406321ee6e165e9e713fbbc377a7fe3e24c2f350fb236a47a24a153e"
   },
   "jurors": {
     "tasks-executability": {
       "attempts": 1,
       "lens": "executability",
-      "by": "juror / claude-code / haiku",
+      "by": "juror / claude-code / claude-haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "8c1595c412174d76b987e8d294d159ca52430cd2",
-      "judged": 3
+      "round": 4,
+      "version": "04caa9db4e92c9b3e56fc8e9074dec9b825f48f0",
+      "judged": 4
     }
   },
   "findings": [
@@ -240,12 +241,17 @@
     [
       3,
       "approved"
+    ],
+    [
+      4,
+      "approved"
     ]
   ],
   "versions": {
     "1": "1bd80182bbc3060f0bbd1432059dd634bde187ad",
     "2": "706305b2234307a098b02bd81532e184a383e552",
-    "3": "8c1595c412174d76b987e8d294d159ca52430cd2"
+    "3": "8c1595c412174d76b987e8d294d159ca52430cd2",
+    "4": "04caa9db4e92c9b3e56fc8e9074dec9b825f48f0"
   },
   "fixes": {
     "1": [],
@@ -267,6 +273,25 @@
       "T-55",
       "T-57",
       "T-58"
+    ],
+    "4": [
+      "T-26",
+      "T-27",
+      "T-28",
+      "T-29",
+      "T-30",
+      "T-36",
+      "T-37",
+      "T-38",
+      "T-41",
+      "T-45",
+      "T-52",
+      "T-53",
+      "T-54",
+      "T-55",
+      "T-57",
+      "T-58",
+      "T-59"
     ]
   },
   "asked": {}
