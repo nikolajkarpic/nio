@@ -224,22 +224,24 @@ LIMIT = 16384
 
 
 def _named(root, slug):
-    """The apps the spec's front matter names, in `[a, b]` or block-list form."""
-    import re
+    """The apps the spec's front matter names (records.parse, so comments and both list forms work)."""
+    from . import records
     spec = Path(root) / f".nio/specs/{slug}/spec.md"
-    if not (slug and spec.is_file()):
+    try:
+        named = records.parse(spec)[0].get("apps") if slug and spec.is_file() else None
+    except ValueError:
         return []
-    fm = re.match(r"---\n(.*?)\n---", spec.read_text(), re.S)
-    m = fm and re.search(r"^apps:[ \t]*(.*(?:\n[ \t]+-.*)*)", fm.group(1), re.M)
-    return [a for a in (x.strip(" -'\"") for x in re.split(r"[,\n]", m.group(1).strip("[] \n"))) if a] if m else []
+    return [str(a) for a in named] if isinstance(named, list) else []
 
 
 def _pairs(root, reader, slug=""):
     """(label, path) per mapped doc; an app's doc is `api/stack.md`, kept in .nio/project/api/stack.md."""
     root, apps = Path(root), list(progress(root).get("apps") or {})
     named = _named(root, slug)
-    apps = [a for a in apps if a in named] or apps
-    return [(f"{a}/{d}.md" if a else f"{d}.md", root / ".nio/project" / a / f"{d}.md") for a in (apps or [""]) for d in READERS[reader]]
+    apps = [a for a in apps if a in named] if named else apps
+    if not apps:
+        return [] if named else [(f"{d}.md", root / ".nio/project" / f"{d}.md") for d in READERS[reader]]
+    return [(f"{a}/{d}.md" if a else f"{d}.md", root / ".nio/project" / a / f"{d}.md") for a in apps for d in READERS[reader]]
 
 
 def doc_paths(root, reader, slug=""):
