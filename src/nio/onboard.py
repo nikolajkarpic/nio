@@ -76,6 +76,21 @@ SECRET = re.compile(r"ghp_|github_pat_|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVAT
 DEV_SOURCE = re.compile(r"\(source: dev, [^()]+\)")
 
 
+def secret_values(root="."):
+    """Values (8+ chars) of `KEY=value` lines in the files the scan lists as secrets; read only to refuse them (J-3)."""
+    vals = set()
+    for cat, f, _ in scan(root):
+        p = Path(root) / f
+        if cat != "secrets" or p.is_symlink() or not p.is_file():
+            continue
+        for l in p.read_text(errors="ignore").splitlines():
+            k, sep, v = l.partition("=")
+            v = v.strip().strip("'\"")
+            if sep and len(v) >= 8:
+                vals.add(v)
+    return vals
+
+
 def check_facts(text):
     """The first secret-looking line, or fact line without a source record (CT-4); never prints a value."""
     note, miss = "", ""
@@ -191,6 +206,9 @@ def act(action, reason="", doc="", empty=False, root=".", apps=None, app=""):
         raise ValueError(f"{full}.md lacks: {', '.join(lack)}")
     if bad := check_facts(text):
         raise ValueError(f"{full}.md: {bad}")
+    vals = secret_values(root)
+    if n := next((n for n, l in enumerate(text.splitlines(), 1) if any(v in l for v in vals)), 0):
+        raise ValueError(f"{full}.md: line {n} holds a secret value from a secrets file: remove it")
     if "NEEDS CLARIFICATION" in text:
         raise ValueError(f"{full}.md still has NEEDS CLARIFICATION: answer it first")
     st["confirmed"] = sorted(set(st["confirmed"]) | {full})
