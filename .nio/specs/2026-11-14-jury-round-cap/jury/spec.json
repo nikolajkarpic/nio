@@ -1,0 +1,488 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-14-jury-round-cap",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261114-6vso/spec-logic.md": "17e20beefc5ef7a5f6a04d128a9e23a569e48dd839510025d1dca6399b5b260c",
+    "R-261114-6vso/spec-scope.md": "b249ca1ccd72b9fefce3b63dda6fa024af75930bf38c1b005554d81ecbd8e857",
+    "R-261114-6vso/spec-testability.md": "5643f0acbc44e18f201ebd69a22a510df3ea96bdd2a9741e2b7d8da06e973a34",
+    "R-261114-6vso/spec-refuter.md": "2e0ee8307455c7978a5a46531940fbe4e2a8c2655f14bce4fcc37e454190006b",
+    "R-261114-vvrk/spec-logic.md": "d4238072a4ed4707e9690135df8c38e2e3dda7c6bc7bf3d390b165a184c2e083",
+    "R-261114-vvrk/spec-scope.md": "d6d373d5a4a7a4c99930838ef6acc4e3a47b38b935b2170538b6ffcab8910cfd",
+    "R-261114-vvrk/spec-testability.md": "f2237e7517e2006e6fb5747eb49a1afc142207398d637899cd0af841a0d84b75"
+  },
+  "jurors": {
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "d5981d043fcf78067e579519bfbaae125584556d",
+      "judged": 2
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "d5981d043fcf78067e579519bfbaae125584556d",
+      "judged": 2
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "d5981d043fcf78067e579519bfbaae125584556d",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Gate capped with only minors open has no way to close",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "FR-15",
+        "FR-14",
+        "state table row `capped`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "round ends at or over cap, other findings open",
+        "print every still-open major and blocker of that gate in one batch",
+        "| capped | ignore | ignore | ignore | ignore | ignore | → closed | → extra round | [human] |"
+      ],
+      "fix": "add a rule that a capped gate whose batch is empty closes at once, or add a state-table column or row that sends \"capped with nothing left to rule\" to closed.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "Round 2 ends with only open minors. Every minor is closed as skipped at the cap (FR-15), so the batch of majors and blockers is empty. The table sends this case to `capped`, and `capped` only leaves through \"human rules every finding\" or \"human asks one more round\". With no finding to rule on, neither can happen, so the gate sits in `capped` forever. The same happens when the auto round ends with only minors open (FR-14). AC-7 only covers \"no findings open\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-15 closes every open minor at the cap, so a gate with only minors open has an empty batch. The state table still sends \"other findings open\" to `capped`, and the only exits from `capped` are \"human rules every finding\" and \"human asks one more round\". Nothing in AC-7 or FR-14 covers an empty batch.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-18 + AC-22, empty capped batch closes the gate (Q8)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Mixed rulings on one batch have no transition",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-4",
+        "AC-5",
+        "FR-5",
+        "FR-6",
+        "state table row `capped`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the human rules some findings \"one more round\"",
+        "| human rules every finding | human asks one more round |",
+        "that finding leaves the open list and the gate can close once none remain open"
+      ],
+      "fix": "state that rulings apply per finding and that one-more-round findings stay open. Say the gate goes to `extra round` if any finding is sent back and to `closed` only when none is left open. Add this as a table row or a rule.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The batch holds blocker B1 and major M1. The human rules M1 \"accept as risk\" and B1 \"one more round\". The table has two separate columns: \"every finding ruled\" goes to closed, and \"asks one more round\" goes to extra round. This case matches both columns, or neither, since B1 is not \"ruled\" in the closing sense. It is unclear whether M1 is dispositioned now or only after the extra round. It is also unclear whether M1's lens is re-checked, because AC-4 says only the lenses of the findings sent back are re-checked. The gate can end up closed with B1 still open, or in an extra round that ignores M1's ruling.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "AC-5 says a ruled finding \"leaves the open list and the gate can close once none remain open\", and AC-4 re-checks only the lenses of the findings sent back. Together these settle that rulings are per finding. M1 is dispositioned at once, B1 stays open for the extra round, and the gate closes only when none remain open. The table columns are loosely worded, but the ACs resolve the mixed case.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "Gate summary is listed at the wrong moment",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-16",
+        "AC-12",
+        "FR-15",
+        "FR-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "**Gate summary**: the list shown when a gate closes, naming the findings the system closed itself",
+        "when the batch is printed, then the minor is closed `accepted-risk` by the system with note \"minor, skipped at the round cap\", is not in the batch, and is listed in the gate summary"
+      ],
+      "fix": "decide when the summary is shown. Either define it as shown with the batch and again at close, or reword AC-16 and FR-15 to say \"listed in the gate summary when the gate closes\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A gate stops at the cap with a minor and a major. The batch is printed, the minor is skipped, and AC-16 requires the minor to be in the gate summary. By the Key entities definition the summary exists only when the gate closes. The gate is still in `capped`, waiting on the human, and may go to `extra round` instead. The AC cannot be checked at the moment it names. If the summary is printed with the batch, the Key entity definition is wrong. If it is printed at close, AC-16's observable is wrong.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-16 now says the skipped minor is listed in the gate summary when the gate closes, matching the Key entities definition",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "Retired fix task: finding closes at retirement or at the next round",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN a fix task is retired THE SYSTEM SHALL close the finding it served as `accepted-risk`",
+        "when the next implementation round runs, then the finding it served is closed `accepted-risk`"
+      ],
+      "fix": "pick one trigger. Say the finding is closed at retirement. Change AC-11 to say \"when a fix task is retired, then ... and the next implementation round creates no new fix task for it\".",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A fix task is retired with a reason. FR-11 says the finding closes at retirement. AC-11 checks the disposition only after the next round runs. If the finding is closed at retirement, the next round's step is a no-op. If it is closed only at the next round, there is a window where the finding is open and a round could re-create a task. FR-11 and SC-3 then fail. The two texts also differ on who closes it: FR-11 says the retirer, while AC-11 describes a system action by the next round.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a test retires a fix task and then reads the finding. FR-11 says it is already `accepted-risk`. AC-11 only requires that after the next round. An implementation that closes it only at the next round passes AC-11 and breaks FR-11. If the retirer isn't recorded at retirement, \"credited to whoever retired\" can't be checked either. SC-3 can't be tested without knowing which moment holds.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-11 closes the finding when the fix task is retired, while AC-11 is phrased \"when the next implementation round runs, then the finding ... is closed\". The two texts give different trigger moments, and the decision-table row \"fix retired\" says the finding closes at retirement. A test cannot tell which moment holds.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-11 now triggers at retirement, as FR-11 and the decision table say; checks no new fix task after the next round",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "Glob expansion is in the spec but missing from the Summary",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "US-3",
+        "FR-17",
+        "AC-19",
+        "AC-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "of four agreed fixes: every jury gate stops after a configurable number of rounds (default 2)",
+        "US-3 Glob patterns in a task's Files list reach packs as real paths (P2)"
+      ],
+      "fix": "name the glob expansion in the Summary, or split US-3 into its own spec or epic slice. The human's Q5 answer already confirms its inclusion, so the decision is only about how it is presented.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "a reader of the Summary expects two changes, the round cap (#129) and the fix-task append and retirement (#126). The spec also carries US-3 and FR-17, a third and separable change, which the Summary does not mention. If the glob work slips or is split off, the Summary is wrong and the spec is not sliced. The question \"one feature, or several that should be an epic with slices\" applies: the three changes can ship independently.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Summary now names glob expansion in task Files lists (confirmed by the human in Q5)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "Escalation-juror count clause is research-only, not a human ask",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-4",
+        "AC-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the escalation count includes every juror of that lens since the blocker was raised"
+      ],
+      "fix": "either get the human's confirmation for the since-raised counting rule, or drop the clause and keep only \"join their round and do not count as a new round\".",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "intake line 30 says \"Escalation jurors (#105) join their round and don't count as a new one\", and the human confirmed the cap itself. Nothing the human asked for requires that the escalation count spans rounds back to when the blocker was raised. The clause is labelled [research: RF-2] and the Decisions line gives \"research RF-2 to RF-4\" with no human ruling. Without it, the cap still holds (SC-1), so the clause is a scope extension the human has not confirmed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "human: keep the rule; it stops the endless escalation loop seen on onboarding",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "Stop rule in the Decisions section conflicts with the reviewing row",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "state table row `reviewing`",
+        "Decisions bullet 1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "The cap keeps the existing stop rule (only confirmed blockers start rounds after the first review, plus one final fix check)",
+        "round ends below cap, findings open"
+      ],
+      "fix": "state in the reviewing row whether a non-blocker open finding below the cap starts a round, and make it agree with the Decisions line or change the Decisions line.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "round 1 finishes below the cap with one open major and no blocker. The reviewing row (\"round ends below cap, findings open → reviewing\") starts another round. The Decisions line says that after the first review only confirmed blockers start rounds, so no round should start. The human confirmed the closed row and the planned-task row in Q7, not the reviewing row, so the spec does not say which rule the human approved.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-19 + reviewing column: below the cap only a confirmed blocker starts a round; AC-23 (Q8)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "AC-3's Observable names undefined files and an undefined behaviour",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-3",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the gate ledger's `round` after collecting `<gate>-<lens>-2.md` and `-3.md` is 2; `nio jury next` asks for no further escalation of that blocker"
+      ],
+      "fix": "say what the suffixes mean. Give the exact `nio jury next` output or ledger field that shows no escalation is requested. Add an AC where a blocker raised in round 1 already has N escalation jurors and round 2 collects one more.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the escalation outputs are named `<lens>-2.md` and `-3.md`, which look like round numbers. The spec never says what those suffixes are, so a test can't tell the escalation juror files from round-3 outputs. \"Asks for no further escalation\" has no threshold. It could mean the output has no escalation line, or that some count limit is hit. FR-4's second clause is \"the escalation count includes every juror of that lens since the blocker was raised\". That clause has no AC at all. A bug that resets the count each round would pass AC-3.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-3 names `<gate>-<lens>-2.md` and `-3.md` without saying what the suffixes mean, and \"asks for no further escalation\" has no observable form. The second clause of FR-4, that the escalation count spans every juror of that lens since the blocker was raised, has no AC. A bug that resets the count each round would pass AC-3.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-3 explains the -2/-3 suffixes as escalation jurors and names the next: line as the observable; AC-21 added for FR-4's cross-round escalation count",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "FR-12 doesn't say how a finding is tied to an AC or to a \"built\" task",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "FR-12",
+        "AC-12",
+        "AC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF tasks.md shows that the AC a finding concerns is served by a task in a later epic not yet built"
+      ],
+      "fix": "state how a finding's AC is read, for example its cited AC ID only. State how \"built\" is read from tasks.md. Add an AC for the mixed case (AC served in both a later and the current epic stays as today) and one for a finding that cites no AC (stays as today).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "findings carry no AC field that the spec names. A finding cites an FR, an AC, or free text. A finding citing FR-5 where AC-4 is served in epic 3 and AC-5 in epic 1 can be routed either way, and neither AC-12 nor AC-13 says which. The same applies when the AC is served by tasks in both a later and the current epic. \"Not yet built\" has no stated source, such as task status, a check mark, or the effort's current epic. A test can't set that fixture up without guessing. The system sets `out-of-scope` without the human, so a wrong guess silently drops a real finding.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-12 and AC-12 never say how a finding's AC is determined. They also don't say how \"not yet built\" is read from tasks.md. AC-13 covers only the current-or-earlier-epic case, not an AC served in both a later and the current epic. The system acts without the human on this, so the ambiguity matters.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-12 matches only the cited AC ID, built = implementation gate closed; AC-26 (Q8)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "Fix-versus-planned classification leaves mixed and edited-fix changes untested",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-8",
+        "FR-9",
+        "FR-10",
+        "AC-8",
+        "AC-9",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN a fix task is appended under an epic's `#### Fixes` THE SYSTEM SHALL keep the tasks gate approved.",
+        "WHEN a planned task of an approved tasks.md changes THE SYSTEM SHALL reopen the tasks gate."
+      ],
+      "fix": "add ACs: (a) mixed change reopens; (b) editing an existing fix task has a defined result; (c) a fix task outside `#### Fixes` is treated as planned; (d) a retirement with no reason is rejected or given a default note.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "one tasks.md change both appends a fix task and edits a planned task's Files. FR-8 says stay approved and FR-10 says reopen, and no AC says which wins. A test passes either way. Other changes in the same position: editing the text of an existing fix task (neither appended nor retired); a fix appended outside `#### Fixes`; and a retirement without a reason, which FR-11 needs as the note. AC-10 lists \"edited, added or retired\" for planned tasks only, so none of these is a failure case. The \"misuse\" line in UJ-2 mentions the planned-task edit, but no AC checks it in combination.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-8 and FR-10 both match a single change that appends a fix task and edits a planned task, and the decision table has no row for a combined change. No AC covers editing an existing fix task, a fix placed outside `#### Fixes`, or a retirement with no reason. AC-10 lists planned-task changes only.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-10/FR-11 + tasks decision rows mixed/fix edited/outside Fixes/no reason; AC-27, AC-28 (Q8)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "Rejected-input cells of the state table have no AC",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "state table row `reviewing`",
+        "state table row `auto round`",
+        "state table row `extra round`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "reject: no batch yet",
+        "reject: round running"
+      ],
+      "fix": "add one AC for a ruling during a running round (non-zero exit, no disposition written). Add one for a partial ruling (gate stays capped, unruled findings remain listed).",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the human gives \"one more round\" or rules every finding while a round runs, or before the cap. The table says reject, but no AC checks the rejection. It doesn't say what the output or exit code is, or that the disposition is not recorded. An implementation that accepts the ruling passes every AC. Also, FR-5 and FR-6 never say what happens when the human rules only some findings of the batch. For example, one finding gets \"accept as risk\" and another stays unruled: does the gate stay `capped`?",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-20 + FR-6 per-finding rulings; AC-24, AC-25 (Q8)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "e847983ddbfc7b6054c9f3a2f7147ae1c155cfae",
+    "2": "d5981d043fcf78067e579519bfbaae125584556d"
+  },
+  "asked": {}
+}

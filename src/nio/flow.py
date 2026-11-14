@@ -193,16 +193,49 @@ def alive(pid):
     return True
 
 
+def ignore(folder):
+    """The effort folder's .gitignore names the files nio writes there that are never committed."""
+    path = folder / ".gitignore"
+    have = path.read_text().splitlines() if path.exists() else []
+    if missing := [x for x in ("flow.lock*", "state.json.new", "running.json") if x not in have]:
+        path.write_text("".join(f"{x}\n" for x in have + missing))
+
+
+@contextlib.contextmanager
+def running(root, slug, command):
+    """While the body runs, `.nio/specs/<slug>/running.json` names `command`, its start time and process, so `nio flow
+    brief` shows it and a later driver waits on it instead of starting it again (#128 FR-17). Removed on exit while it
+    is still this process's; a record of another live run is left as it is."""
+    folder = root / ".nio/specs" / slug
+    path, mine = folder / "running.json", None
+    if folder.is_dir() and not live_run(path):
+        ignore(folder)
+        mine = {"command": command, "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "pid": os.getpid(), "host": socket.gethostname()}
+        path.write_text(json.dumps(mine) + "\n")
+    try:
+        yield
+    finally:
+        if mine and live_run(path) == mine:
+            path.unlink()
+
+
+def live_run(path):
+    """The running record at `path`, or None when there is none or its process on this host is gone (killed)."""
+    try:
+        rec = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    return rec if isinstance(rec, dict) and (rec.get("host") != socket.gethostname() or alive(rec.get("pid"))) else None
+
+
 @contextlib.contextmanager
 def lock(root, slug):
     """Hold `.nio/specs/<slug>/flow.lock` for the body (CT-3, FR-45, FR-54): created atomically, naming this process
     and host; a lock older than a minute whose process on this host is gone, or whose host is another one, is taken
     over. Raises Busy otherwise. Removed on exit only while it is still this caller's."""
     folder = root / ".nio/specs" / slug
-    ignore = folder / ".gitignore"
-    have = ignore.read_text().splitlines() if ignore.exists() else []
-    if missing := [x for x in ("flow.lock*", "state.json.new") if x not in have]:
-        ignore.write_text("".join(f"{x}\n" for x in have + missing))
+    ignore(folder)
     path, host = folder / "flow.lock", socket.gethostname()
     mine = (os.getpid(), host, datetime.datetime.now(datetime.timezone.utc).isoformat())
 
@@ -511,10 +544,10 @@ JUDGED_BY = {"spec.md": "spec_jury", **{f: "plan_jury" for f in plan_files()},
              "tasks.md": "tasks_jury"}
 
 
-def planned(name, text):
+def planned(name, text, keep=()):
     """A file as its gate judges it (RF-9): jury.planned, which jury.artefact uses too."""
     from nio import jury
-    return jury.planned(name, text)
+    return jury.planned(name, text, keep)
 
 
 def judged_blob(root, slug, name):
@@ -585,11 +618,16 @@ def scan(root, slug, lines, found=None):
             names = [n for n in JUDGED_BY if (folder / n).exists()]
             raw = dict(zip(names, records.git(root, "hash-object", *[f"{rel}/{n}" for n in names])))
         current = raw.get(name)
-        if name == "tasks.md" and current != judged:  # compare the planned part only: a fix task doesn't count
+        if name == "tasks.md" and current != judged:  # compare the planned part only: a fix task appended or retired doesn't count
+            now, keep = (folder / name).read_text(), ()
             if h:
                 code, text, _ = records.git(root, "show", f"{h}:{rel}/{name}", full=True)
-                judged = jury.blob(root, planned(name, text)) if code == 0 else judged
-            current = jury.blob(root, planned(name, (folder / name).read_text()))
+                if code == 0:  # ...but a fix task approved with the list, then edited, does (#126 FR-10)
+                    from nio import tasks
+                    fixed = lambda t: {i for i, x in tasks.parse(t)["tasks"].items() if x["fix"]}
+                    keep = sorted(fixed(text) & fixed(now))
+                    judged = jury.blob(root, planned(name, text, keep))
+            current = jury.blob(root, planned(name, now, keep))
         if current != judged:
             out.append({"change": name, "target": OWNING[name][1], "judged": judged, "current": current,
                         "pending": False, "file": name})
@@ -870,6 +908,51 @@ def next_step(root, slug=None, by=None):
     if owed and by is None:
         out.append(f"would record: {', '.join(dict.fromkeys(owed))} (run with --by to record)")
     return 0, out
+
+
+BRIEF = 80  # NFR-2: a brief's most lines
+
+
+def brief(root, slug, everything=False):
+    """`nio flow brief` (#128 FR-14): what a fresh driver starts from, read from saved state alone: `nio flow next`'s
+    lines, a running long command, the open tasks and the current gate's open findings. Over BRIEF lines it gives the
+    counts, the first items that fit and the command for the rest; `everything` lists them all. Returns (code, lines)."""
+    from nio import implement, jury
+    if not (root / ".nio/specs" / slug).is_dir():
+        raise ValueError(f"no effort {slug}")
+    _, out = next_step(root, slug)
+    if rec := live_run(root / ".nio/specs" / slug / "running.json"):  # another host's run can't be checked from here
+        host = "" if rec.get("host") == socket.gethostname() else f" on {rec.get('host')}, can't check"
+        out.append(f"running{host}: {rec['command']}, started {stamp(rec['at'])} UTC")
+    if kind(root, slug) != "effort":
+        return 0, cut(out, slug, everything)
+    state, lines = load(root, slug)
+    here = where(root, slug, state, lines)
+    heads, items = [], []
+    if here["stage"] == "implementing":
+        st = implement.status(root, slug, lines)
+        todo = [t for t in implement.tasks_of(root, slug) if st[t["id"]] != "done"]
+        heads.append(f"open tasks: {len(todo)}")
+        items += [f"  {t['id']} {t['title']} ({st[t['id']]})" for t in todo]
+        epic = implement.open_gate(root, slug, lines)
+        gate = f"implementation-{epic}" if epic else None
+    else:
+        gate = GATES[here["gate"]][0] if here["gate"] in GATES else None
+    if gate:
+        found = [f for f in jury.load(root, slug, gate)["findings"] if f.get("status") == "open"]
+        heads.append(f"open findings ({gate}): {len(found)}")
+        items += [f"  {f['id']} {f['severity']}: {f['title']}" for f in found]
+        if owed := jury.owed_fixes(root, slug, gate, jury.load(root, slug, gate)):  # the driver's edit, ruled by the human
+            heads.append(f"owed fixes ({gate}): edit the {gate} for {', '.join(owed)} (ruled fix by the human)")
+    room = BRIEF - len(out) - len(heads) - 1
+    if not everything and len(items) > room:
+        items = items[:max(room, 0)] + [f"rest: nio flow brief {slug} --all"]
+    return 0, cut(out + heads + items, slug, everything)
+
+
+def cut(lines, slug, everything):
+    """A brief at most BRIEF lines, however long `nio flow next`'s part is; the last line then names the rest."""
+    return lines if everything or len(lines) <= BRIEF else lines[:BRIEF - 1] + [f"rest: nio flow brief {slug} --all"]
 
 
 def never_reviewed(root, slug, lines):

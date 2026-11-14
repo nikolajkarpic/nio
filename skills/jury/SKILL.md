@@ -41,6 +41,56 @@ Every message to the human (question, report, error or hand-off):
    last line, and each option's description says what happens.
 Before sending, ask: could they act on this without opening a file? If not, rewrite it.
 
+## Drivers and waiting
+
+An effort runs one unit of work at a time: one gate (spec, plan or tasks), or one epic with its tasks and its
+implementation jury. Each unit runs in a **driver**, a fresh agent that runs that one unit and then ends. The main
+session, the one the human talks to, only routes.
+
+**The main session** does only this:
+1. Run `nio flow next <slug>` to see the next unit.
+2. Start a fresh driver for it whose first input is what `nio flow brief <slug>` prints, and nothing else: no note
+   from an earlier driver, nothing from an earlier unit. One epic may take several drivers one after another; a unit
+   resumed after a hand-back gets a new one.
+3. Start a driver only once the previous one for this effort has ended; never two at once. A driver that ended
+   without a summary counts as ended: go on from `nio flow brief <slug>` alone.
+4. Relay the driver's summary: what needs the human goes to them from the summary alone, in the shape above. When
+   it holds nothing for the human (a gate approved, an epic done), start the next unit's fresh driver from
+   `nio flow brief <slug>`.
+5. When the human answers, record their ruling yourself with the command the summary names (`nio jury rule`,
+   `nio jury dispose ... --by human`, `nio flow unblock ... --human` and the like), their words as the note: that
+   counts as routing. Then start a fresh driver from `nio flow brief <slug>`.
+Read nothing else yourself: what lies past the brief and the summaries is the driver's.
+
+On a host without subagents, the main session runs the unit itself from `nio flow brief <slug>`, following the
+driver's rules below, and goes on without stopping for the human. Optional, on Claude Code: run each driver as a
+subagent (general-purpose) in the background.
+
+**The driver** runs every step under Steps below, and only for its unit:
+- Start from the brief. If it shows `running: <command>, started <time>`, that command is still running from an
+  earlier driver: wait on that run (below), never start it again. If it shows `running on <host>, can't check:
+  <command>, ...`, the run is on another machine: end with the summary asking the human whether that run is still
+  alive, and start the command again only once they say it is gone.
+- Where a step says to show or ask the human (a human-only disposition, a ruling at the round cap, a blocked task, a
+  change request, a refusal it can't settle), end there with the summary naming that item and the command to
+  continue. Never make the human's decision yourself.
+- End once the unit is closed or handed back; never go on into the next unit.
+- Your last message is the summary, at most 15 lines, in three parts: `closed:` what closed, `open:` what is open
+  (each item for the human), `next:` the command to run next.
+
+**Waiting for long work.** A long command is one that can outlast the host's foreground limit: `nio flow green`,
+`nio jury evidence`, a suite run, and any subagent (a juror, a worker, a driver). The main session and the driver
+wait for it like this:
+- **The host sends completion notices:** start it in the background, then act on its notice when it arrives. Nothing
+  in between: no sleep, no loop, no status check.
+- **No notices, or it is not known whether it has them, but a blocking wait with a timeout:** wait blocking, with a
+  10-minute timeout. If the wait times out, check once whether the command finished; if not, wait again. At most
+  three waits: after the third that times out, end with the summary naming the command as still running and how to
+  continue. Never check at an interval.
+- **Neither:** don't run the long command; end with the summary naming it as open and how to continue, for the main
+  session to take to the human.
+`nio flow green` and `nio jury evidence` record themselves as running while they run, so the next brief shows them.
+
 ## Steps
 
 1. **Plan.** Run `nio jury plan <slug> spec`. It checks the gate, lists the lenses with the reason each runs, sets
@@ -76,9 +126,11 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
      that neither copy names `<gate>-<lens>.md`, the first review's file. After the first review the copies are
      of the blocker's pack, `nio jury fixcheck <slug> spec --lens <lens> --blocker J-<n>` plus the lens output format
      (the step never writes these). Two of three decide. Majors and refuted blockers never escalate. Don't edit the
-     artefact until the escalation is collected;
+     artefact until the escalation is collected. Escalation jurors join the round they were asked in, and count for
+     their blocker in every later round, so the step never asks for them twice;
    - **dispose of findings** (step 4), then edit the artefact and call the step again;
-   - **show the human** the listed findings and wait.
+   - **show the human** the listed findings and wait;
+   - **show the human the capped batch** (see "At the round cap") and record their rulings.
 3. **Decide.** When the step prints `outcome:`, act on it:
 
    | Outcome | What you do |
@@ -112,8 +164,29 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    `nio jury dispose` refuses the spec-fix while the line is still there.
    The same applies when a change request edits a gate that was approved or closed: every lens that judged it
    re-checks the change, which the step arranges as a fix check.
-5. **Optional: a gate driver.** A host may run steps 2 to 4 in a fresh, cheaper subagent that returns the outcome and
-   the list for the human, so the main context doesn't grow. Dispositions that need the human stay with you.
+
+## At the round cap
+
+Every gate stops after `jury.max_rounds` rounds (in `.nio/config.json`, default 2; anything but a whole number of at
+least 1 stops the step with an error). The implementation gate counts per epic. Below the cap nothing changes: only a
+confirmed blocker starts another round. When a round at or over the cap ends with findings open, the step decides:
+- **two or more confirmed blockers, the first time:** one automatic round, on those blockers' lenses only. The outcome
+  is `rejected`: dispose and fix as usual, then call the step again; it starts that round by itself. Never a second one;
+- **minors:** closed as accepted risk by the system ("minor, skipped at the round cap"); the gate summary
+  (`closed by the system:`) lists them. If only minors were open, the gate closes with no batch;
+- **majors and any blocker otherwise:** the step prints `capped:` and the batch, and starts no round. Never rule on it
+  yourself, and never call the step again hoping for another round: show the human every finding of the batch in one
+  message, each with three options: accept as risk; fix (no juror checks the fix); one more round (the reviewers that
+  raised it check the fix once). Record each answer, one call per ruling, with their words as the note:
+  `nio jury rule <slug> <gate> J-a,J-b accept|fix|again --note "<their words>"`. It is refused while a round runs or
+  before the cap. For `fix` and `again`, the driver makes the fix, never the main session: it edits the spec, plan or
+  tasks (at the implementation gate the ruling appends the fix task; run it through the implement stage: the gate
+  waits until it is done). Until the artefact differs from the version the capped round judged, the step prints
+  `waiting: edit the <gate> for J-a (ruled fix by the human)` and `nio flow brief` lists the owed fixes, and the gate
+  doesn't close. Then call the step again: while a finding of
+  the batch is unruled it prints the batch again; once all are ruled, `again` starts one round on those findings'
+  lenses, after which the step prints a new batch if anything is still open (the human may ask again), and otherwise
+  the gate closes on the human's rulings with no re-check. Tell the human, then run the `next:` line.
 
 ## At the plan gate
 
@@ -142,7 +215,8 @@ passes, and plans executability alone. Each pack holds `tasks.md`, the spec and,
 the `nio check tasks` output with its estimate. A finding is fixed in `tasks.md` (`plan-fix` doesn't apply here: dispose
 it as a `spec-fix` on the tasks, as you would at the spec gate). When the outcome is `approved` and the human approves
 the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approve tasks` commit; `nio check tasks <slug>
---approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later don't withdraw it.
+--approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later, and fix tasks retired with
+`nio task retire <slug> T-n --reason "<why>" --by <human|agent>`, don't withdraw it; the retired task's finding closes as accepted risk.
 
 ## At the implementation gate
 
@@ -159,7 +233,9 @@ test results, not the spec text alone. In order:
 
 Other outcomes:
 - **rejected:** the epic goes back to the implement stage. Its fix tasks are appended under `#### Fixes`; run
-  `nio flow next <slug>` and show the human its `next:` line.
+  `nio flow next <slug>` and show the human its `next:` line. A finding whose ACs `tasks.md` serves only in a later
+  epic not built yet gets no fix task: the system closes it out of scope, naming the serving task, and the gate summary
+  (`closed by the system:`) lists it. Show it to the human as one line.
 - **waiting on a change request:** the epic waits. Show the human each change request and wait for their ruling on
   each one before you call the step again.
 - **a noted major:** a major the jury raised after the first review is a note, not a blocker. Show it to the human, who
