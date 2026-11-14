@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-4",
   "subject": "2026-11-08-project-onboarding",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -20,7 +20,8 @@
     "R-261114-sxwg/implementation-E-4-adversary.md": "f7abb9558b23691923257b3fc63c603d6fa41250e2f25a596a6a3c07b4c4f8a4",
     "R-261114-sxwg/implementation-E-4-conformance.md": "17293c30edc51585d7dc6b960df88c587fed8d86142dd0d08ffc7f38b80638d6",
     "R-261114-sxwg/implementation-E-4-consistency.md": "0f6f5aa9a4ff1dcd76131265c0e609d76c0f5c614abfe2676044fecc8b53f42d",
-    "R-261114-sxwg/implementation-E-4-correctness.md": "82d532be17d8c3cf78acf7b3fb8375b2e48c95ef6bb83407fe9f03124495b1fe"
+    "R-261114-sxwg/implementation-E-4-correctness.md": "82d532be17d8c3cf78acf7b3fb8375b2e48c95ef6bb83407fe9f03124495b1fe",
+    "R-261114-zomi/implementation-E-4-adversary.md": "9d5857606f7e98257bdca369030f9e7f44462f78c4522ab6b1c9fb1a9b17618c"
   },
   "jurors": {
     "implementation-E-4-adversary": {
@@ -30,9 +31,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce",
-      "judged": 2
+      "round": 3,
+      "version": "7e5847ed18fe5ebe6ceb13dcc695c6a2c61da252",
+      "judged": 3
     },
     "implementation-E-4-conformance": {
       "attempts": 1,
@@ -181,17 +182,18 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-4-adversary: the source-record half is done (`check_facts` refuses a fact line without `(source: ...)` and names the line). The secret half is only a regex for known token shapes (`ghp_`, `AKIA`, `-----BEGIN`, `xox`, `sk-`). A plain password or connection string copied from a `.env` passes `confirm` unchecked. Nothing compares a doc against values from the scan's secrets files. The asked-for change to show skipped e2e tests as skipped is not in the diff.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "human",
       "note": "Human 2026-11-14: fix it: confirm also refuses a doc containing a value from a file the scan marks as secrets (KEY=value, 8+ chars), never printing it",
-      "baseline": "unchanged",
+      "baseline": "absent",
       "rounds": 1,
       "first_round": 1,
       "last_round": 2,
       "gap": "missing",
       "where": "src/nio/onboard.py:act (confirm), tests/test_onboard_e2e.py",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 3
     },
     {
       "id": "J-4",
@@ -773,7 +775,7 @@
       "tampering": false
     }
   ],
-  "outcome": "rerun",
+  "outcome": "approved",
   "recorded": [
     [
       1,
@@ -782,11 +784,16 @@
     [
       2,
       "human"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
-    "2": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce"
+    "2": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce",
+    "3": "7e5847ed18fe5ebe6ceb13dcc695c6a2c61da252"
   },
   "matched": {
     "AC-5": [
@@ -929,7 +936,7 @@
       "J-3",
       "J-6"
     ],
-    "final": null,
+    "final": 3,
     "flagged": []
   }
 }
