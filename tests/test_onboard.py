@@ -615,6 +615,50 @@ def test_app_slug_not_a_doc_name():
     root = repo({"README.md": "hi\n"})
     assert nio(root, "start", "--app", "stack=x/").returncode == 1
     assert not (root / ".nio/project/onboarding.json").exists()
+def two_apps(root, apps_line):
+    import json
+    d = root / ".nio/project"
+    for a in ("web", "api"):
+        (d / a).mkdir(parents=True, exist_ok=True)
+        for n, t in SIX.items():
+            (d / a / f"{n}.md").write_text(t)
+    (d / "onboarding.json").write_text(json.dumps({"state": "done", "reason": "", "empty": False, "apps": {"web": {}, "api": {}},
+                                                    "confirmed": list(SIX), "seen": []}))
+    s = root / ".nio/specs/two"
+    s.mkdir(parents=True, exist_ok=True)
+    (s / "spec.md").write_text(f"---\ntitle: two\n{apps_line}\n---\n# Two\n")
+
+
+def pack_slug(root, text, reader, *slug):
+    return subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "pack", text, "--reader", reader,
+                           *(["--slug", slug[0]] if slug else [])], cwd=root, capture_output=True, text=True)
+
+
+def test_plan_pack_two_apps():
+    root = repo({})
+    two_apps(root, "apps: [web, api]")
+    r = pack_slug(root, "plan", "plan", "two")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    want = [f"{a}/{d}" for a in ("web", "api") for d in ROWS["plan"]]
+    assert sorted(headings(r.stdout)) == sorted(want), headings(r.stdout)
+
+
+def test_worker_pack_one_app():
+    root = repo({})
+    two_apps(root, "apps: [api]")
+    r = pack_slug(root, "task", "worker", "two")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert not [l for l in r.stdout.splitlines() if "web/" in l], r.stdout
+    assert "### api/stack.md" in r.stdout and "### api/principles.md" in r.stdout, r.stdout
+
+
+def test_drafting_pack_all_apps():
+    root = repo({})
+    two_apps(root, "apps: []")
+    r = pack_slug(root, "draft", "spec")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    want = [f"{a}/{d}.md" for a in ("web", "api") for d in ("product", "personas")]
+    assert sorted(headings(r.stdout)) == sorted(want), headings(r.stdout)
 
 
 if __name__ == "__main__":
@@ -627,4 +671,5 @@ if __name__ == "__main__":
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
-                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name])
+                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
+                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps])
