@@ -293,10 +293,11 @@ def test_ac10_suite_runs_for_the_last_task_only():
     work(root, out, "T-1")
     work(root, out, "T-2")
     ends = lambda: log.read_text().splitlines().count("END")
-    assert land(root, "T-1")[0] == 0 and ends() == 1, log.read_text()
-    assert land(root, "T-2")[0] == 0 and ends() == 2, log.read_text()
-    block = log.read_text().split("END\n")[1].splitlines()
-    assert any(x.startswith("T-1: ") for x in block) and "m2_new.py" in block, block
+    assert land(root, "T-1")[0] == 0 and ends() == 1, log.read_text()  # the baseline's only
+    assert land(root, "T-2")[0] == 0 and ends() == 1, log.read_text()  # 2026-11-14 FR-1: never at an epic's close
+    review = [x for x in lines(root) if x["kind"] == "review"][-1]["evidence"]
+    greens = {x["evidence"]["command"] for x in lines(root) if x["kind"] == "green"}
+    assert {r["command"] for r in review["epic_tests"]} == greens and all(r["code"] == 0 for r in review["epic_tests"]), review
     print("ok")
 
 

@@ -120,7 +120,7 @@ def main():
     jr.add_argument("--note", required=True, help="the human's words")
     je = jsub.add_parser("evidence", help="run an epic's tests, checks, attacks and journeys in a throwaway copy and write the run's results.json")
     je.add_argument("slug")
-    je.add_argument("epic", metavar="E-n")
+    je.add_argument("epic", metavar="E-n|pr", help="an epic, or pr: the whole effort diff")
     je.add_argument("--run", required=True)
     jl = jsub.add_parser("files", help="the files a juror at this gate reads, and the only files its quotes may come from")
     jpk = jsub.add_parser("pack", help="print one lens's pack at an implementation gate: the epic's diff, its ACs and the run's results")
@@ -149,6 +149,8 @@ def main():
     fbr.add_argument("slug")
     fbr.add_argument("--all", action="store_true", help="list every open task and finding, past the 80-line cap")
     fsub.add_parser("status", help="one line per effort, newest activity first")
+    fap = fsub.add_parser("approve", help="the human approves the pr gate at a terminal, typing the effort's slug back")
+    fap.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
     fp = fsub.add_parser("park", help="park an effort, with the reason")
     fa = fsub.add_parser("abandon", help="abandon an effort until `nio flow start` resumes it, with the reason")
     for s in (fp, fa):
@@ -302,7 +304,7 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "jury":
         try:
-            if getattr(a, "gate", "").startswith("implementation"):  # a ruling needn't wait for the fix tasks; a round does
+            if jury.impl_gate(getattr(a, "gate", "")):  # a ruling needn't wait for the fix tasks; a round does
                 jury.epic_gate(root, a.slug, a.gate, finished=a.jury_cmd in ("plan", "collect", "next"))
             if a.jury_cmd == "evidence":
                 print("\n".join(long(lambda: evidence.collect(root, a.slug, a.epic, a.run))))
@@ -349,6 +351,7 @@ def main():
                 "start": lambda: flow.start(root, a.slug, by=a.by),
                 "done": lambda: flow.done(root, a.stage, a.slug, commit=a.commit, human=a.human, by=a.by),
                 "status": lambda: flow.status(root),
+                "approve": lambda: flow.approve(root, a.slug),
                 "park": lambda: flow.park(root, a.slug, a.why, by=a.by),
                 "abandon": lambda: flow.abandon(root, a.slug, a.why, by=a.by),
                 "seen": lambda: flow.seen(root, a.slug, by=a.by),

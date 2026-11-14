@@ -19,7 +19,7 @@ A worker runs no `nio flow` command, except in single mode `nio flow red` and `n
 ## Inputs and outputs
 
 - **Input:** the slug of an effort at implementing (`nio flow next` names this skill), with a `nio: approve tasks`
-  commit and `tests.suite` set in `.nio/config.json` (the command that runs the whole test suite, which runs at the baseline and for the task closing each epic; other tasks run only their own test). For a slow suite, set `tests.epic` to a faster command: it replaces the suite at each epic's end, and the full suite then runs only when the last epic closes.
+  commit and `tests.suite` set in `.nio/config.json` (the command that runs the whole test suite: it runs at the baseline and once at the pr gate; each task runs only its own test, and the task closing an epic re-runs its epic's tasks' own tests).
 - **Outputs:** one `T-n: <title>` commit per done task on `nio/<slug>`, never merged; the task lines `nio flow` keeps;
   a change request for each spec problem a worker finds; the epic reports and notices passed on to the human.
 
@@ -42,8 +42,8 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Drivers and waiting
 
-An effort runs one unit of work at a time: one gate (spec, plan or tasks), or one epic with its tasks and its
-implementation jury. Each unit runs in a **driver**, a fresh agent that runs that one unit and then ends. The main
+An effort runs one unit of work at a time: one gate (spec, plan, tasks or pr), or one epic with its tasks; the
+pr gate, on the whole effort diff, is always its own unit, so its driver built none of the effort. Each unit runs in a **driver**, a fresh agent that runs that one unit and then ends. The main
 session, the one the human talks to, only routes.
 
 **The main session** does only this:
@@ -115,14 +115,16 @@ wait for it like this:
    `nio flow block <slug> T-n --handoff <file> --by`. It files the change request and the effort waits for the human.
    Never edit the spec, plan or tasks yourself. On a bug fix, when the handoff names a new dependency, a change to an interface used outside the bug's folder or to stored data, or a fix task whose non-test files sit in a second folder, also offer the full flow (`@nio:spec`, "Escalating a bug fix") alongside the change request.
 5. **Pass everything on.** After green, the CLI prints the review, `done: T-n <commit>`, and when an epic ends its
-   report and a `notify:` line; when the last epic ends, `merge: nio/<slug>`. Tell the human each `notify:` and every
-   `waiting_for_human` in the shape above, with the command that clears it. Never merge the branch: the human does.
+   report: the epic closed on its tasks' own tests, with no jury. When the last task is done, the report says the pr
+   gate is next and prints a `notify:` line: end your unit there; the pr gate runs in a fresh driver (@nio:jury). Tell
+   the human each `notify:` and every `waiting_for_human` in the shape above, with the command that clears it. Never
+   merge the branch: the human does. The pr gate's fix tasks, in the closing `PR fixes` epic, are built like any other.
 6. **Next task.** Go back to step 1 until the claim refuses, the effort waits for the human, or it is done.
 
 ## When to stop
 
-Stop when `nio flow next <slug>` says `done` (tell the human to merge `nio/<slug>`), when it says `waiting_for_human`,
-or when a claim is refused, and show the human what it prints.
+Stop when `nio flow next <slug>` names the pr gate (every task is done: the next unit is @nio:jury's), when it says
+`waiting_for_human`, or when a claim is refused, and show the human what it prints.
 
 ## When `nio` is missing or fails
 

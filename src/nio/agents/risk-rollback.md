@@ -33,7 +33,7 @@ The context pack from the jury skill, and nothing else:
 
 ## At implementation
 
-- Read the epic's diff for each migration, schema change, deletion or overwrite it actually makes. Is it rolled back or the data recovered, as the plan said?
+- Read the diff in your pack (the whole effort's, or on a large one your epic's part) for each migration, schema change, deletion or overwrite it actually makes. Is it rolled back or the data recovered, as the plan said?
 - Can it run twice, or stop halfway, without corrupting data? Does a test in the diff prove the rollback, not only the forward change?
 - Does the code delete or overwrite anything the plan did not name (files, records, state)?
 - Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding), `run` and `tampering: yes`.

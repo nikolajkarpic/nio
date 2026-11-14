@@ -2956,8 +2956,15 @@ def test_an_approved_outcome_is_committed_by_flow_done_not_by_the_check():
     print("ok")
 
 
+def old_jury(root, epic="E-2"):
+    """`epic` was in its old implementation jury when the pr gate came in (2026-11-14-effort-jury FR-12)."""
+    from nio import jury
+    jury.save(root, {**jury.load(root, "s", f"implementation-{epic}"), "round": 1})
+
+
 def test_flow_done_writes_the_epic_line_with_the_outcome_as_its_reason():
     root, _ = approved_with_minors()
+    old_jury(root)
     assert not flow_lines(root, "epic")
     done = epic_done(root)
     assert done.returncode == 0, done.stdout + done.stderr
@@ -2996,7 +3003,9 @@ def test_flow_done_refuses_while_the_gate_is_not_approved_or_closed():
 
 
 def test_flow_done_on_the_last_epic_writes_the_pass_line_and_prints_merge():
+    """As 2026-11-14 changed it: the last epic's old jury moves the effort to the pr gate, not to done."""
     root, _ = approved_with_minors()
+    old_jury(root)
     assert epic_done(root).returncode == 0
     fix_gate(root, epic="E-2")
     code, out = recorded(root, "implementation-E-2")
@@ -3005,8 +3014,8 @@ def test_flow_done_on_the_last_epic_writes_the_pass_line_and_prints_merge():
     assert done.returncode == 0, done.stdout + done.stderr
     assert [(x["evidence"]["epic"], x["reason"]) for x in flow_lines(root, "epic")] == [("E-1", "approved"), ("E-2", "approved")]
     (line,) = flow_lines(root, "pass")
-    assert (line["from"], line["to"]) == ("implementing", "done"), line
-    assert "merge:" in done.stdout, done.stdout
+    assert (line["from"], line["to"]) == ("implementing", "pr"), line
+    assert "next: the pr gate" in done.stdout, done.stdout
     print("ok")
 
 
@@ -3014,20 +3023,20 @@ def test_the_last_epics_gate_ends_the_effort():
     """TC-69. ponytail: one approving round; the reject-and-fix round is covered by the T-26 tests."""
     from nio import flow, implement
     root, _ = approved_with_minors()
+    old_jury(root)
     assert epic_done(root).returncode == 0
     task = next(t for t in implement.tasks_of(root, "s") if t["id"] == "T-4")
     entries, report = implement.epic_end(root, "s", task, {})
     assert not [e for e in entries if e["kind"] in ("epic", "pass")], entries
-    assert not any(x.startswith("merge:") for x in report) and any("implementation-E-2" in x for x in report), report
     fix_gate(root, epic="E-2")
     code, out = recorded(root, "implementation-E-2")
     assert code == 0 and "outcome: approved" in out and "merge:" not in out, (code, out)
     assert not [x for x in flow_lines(root, "epic") if x["evidence"]["epic"] == "E-2"] and not flow_lines(root, "pass")
     done = epic_done(root, "implementation-E-2")
-    assert done.returncode == 0 and "merge:" in done.stdout, done.stdout + done.stderr
+    assert done.returncode == 0 and "next: the pr gate" in done.stdout, done.stdout + done.stderr
     (e2,) = [x for x in flow_lines(root, "epic") if x["evidence"]["epic"] == "E-2"]
     assert e2["reason"] == "approved" and len(flow_lines(root, "pass")) == 1
-    assert flow_lines(root, "pass")[0]["to"] == "done", flow_lines(root, "pass")
+    assert flow_lines(root, "pass")[0]["to"] == "pr", flow_lines(root, "pass")
     print("ok")
 
 
@@ -3074,9 +3083,10 @@ def demo(which):
 def test_a_later_open_gate_doesnt_hold_a_fix_in_an_earlier_epic():
     """C-261030-gk3z: an earlier epic with work left comes first, whatever a later epic's gate says."""
     from nio import implement
-    status, tasks_of = implement.status, implement.tasks_of
+    status, tasks_of, in_jury = implement.status, implement.tasks_of, implement.in_jury
     ts = [{"id": "T-1", "epic": "E-1"}, {"id": "T-2", "epic": "E-2"}]
     implement.tasks_of = lambda root, slug: ts
+    implement.in_jury = lambda root, slug, epic: True  # both epics in their old juries
     try:
         implement.status = lambda root, slug, lines: {"T-1": "ready", "T-2": "done"}
         assert implement.open_gate(None, "s", []) is None
@@ -3084,7 +3094,7 @@ def test_a_later_open_gate_doesnt_hold_a_fix_in_an_earlier_epic():
         assert implement.open_gate(None, "s", []) == "E-1"
         assert implement.open_gate(None, "s", [{"kind": "epic", "evidence": {"epic": "E-1"}}]) == "E-2"
     finally:
-        implement.status, implement.tasks_of = status, tasks_of
+        implement.status, implement.tasks_of, implement.in_jury = status, tasks_of, in_jury
     print("ok")
 
 

@@ -23,7 +23,7 @@ S = "2026-10-20-refunds"
 BY = "orchestrator / test / test"
 FIXTURES = Path(__file__).parent / "fixtures"
 ORDER = ["intake", "drafting", "researching", "advocate_walking", "grilling", "spec_jury", "arch_grilling", "planning",
-         "plan_jury", "tasking", "tasks_jury", "implementing", "done"]
+         "plan_jury", "tasking", "tasks_jury", "implementing", "pr", "done"]
 LENS = {"spec": "logic", "plan": "test-proof", "tasks": "executability"}
 
 
@@ -449,7 +449,8 @@ def task_line(kind, task, **ev):
 
 def test_guards_pass_and_implementing_waits_for_its_tasks():
     """Every guard before implementing passes on an effort past them, a gate naming its approval verdict; implementing
-    passes only once every task is done and every epic has its `epic` line (implement CT-14)."""
+    passes once every task is done, and an epic already in its old implementation jury has its `epic` line (implement
+    CT-14, 2026-11-14-effort-jury FR-12)."""
     root = effort("implementing")
     for stage in GUARDED:
         result, output, ev = flow.guard(root, S, stage)
@@ -458,6 +459,9 @@ def test_guards_pass_and_implementing_waits_for_its_tasks():
     result, output, ev = flow.guard(root, S, "implementing")
     assert result == "fail" and any(x.startswith("T-1 is ready") for x in output) and "isn't built" not in str(output), output
     history(root, S, *[task_line("task_done", t) for t in ("T-1", "T-2", "T-3")])
+    assert flow.guard(root, S, "implementing")[:2] == ("pass", [])
+    led = jury.load(root, S, "implementation-E-1")
+    jury.save(root, {**led, "round": 1})  # E-1 was in its old jury when the pr gate came in
     result, output, ev = flow.guard(root, S, "implementing")
     assert result == "fail" and output == ["E-1 has no epic line"], output
     history(root, S, {"kind": "epic", "from": "implementing", "to": "implementing", "reason": "skipped: not built",
@@ -469,6 +473,8 @@ def test_guards_pass_and_implementing_waits_for_its_tasks():
 def test_closed_gate_is_an_override():
     """CT-5 (FR-27): a jury gate the human closed with a reason is `closed`, carrying the reason, at every gate."""
     for stage, (gate, _) in flow.GATES.items():
+        if stage == "pr":  # tests/test_effort.py: test_effort_ac13_capped_gate_closes_on_the_human_rulings
+            continue
         root = effort(stage)
         assert jury.check(root, S, gate, record=True, human="ship it, I accept the risk")[0] == "human"
         result, output, ev = flow.guard(root, S, stage)
@@ -866,7 +872,7 @@ def test_ac11_no_hand_edit_instruction():
     command, and none tells an agent to edit, write, append to or change one."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 26, paths
+    assert len(paths) == 27, paths
     for path in paths:
         lines = path.read_text().splitlines()
         assert lines.count(RULE) == 1, path
@@ -1435,7 +1441,7 @@ def test_lite_route_stages():
 
 
 def test_lite_epic_gate():
-    """TC-5: the implementation jury reviews a lite fix: implementing waits for the epic's gate, then passes."""
+    """TC-5, as 2026-11-14-effort-jury FR-14 changed it: a lite fix's epics get no jury; it goes to the pr gate."""
     from nio import evidence, tasks
     root = repo()
     git(root, "config", "user.name", "t")
@@ -1462,25 +1468,9 @@ def test_lite_epic_gate():
     gate = "implementation-E-1"
     plan, ok = jury.plan(root, S, gate)
     assert ok and "conformance" in plan[1] and "correctness" in plan[1], plan
-    code, out = flow.done(root, "implementing", S, by=BY)
-    assert code == 1 and "E-1 has no epic line" in "\n".join(out) and "is not done" not in "\n".join(out), out
-    assert not any(x["to"] == "done" for x in lines_of(root)), lines_of(root)
-    run = f"R-{gate}"
-    for lens in ("conformance", "correctness", "consistency"):
-        path = root / ".nio/runs" / run / "jury" / f"{gate}-{lens}.md"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(f"---\nlens: {lens}\ngate: {gate}\nsubject: {S}\nby: \"juror / claude-code / opus\"\n"
-                        "context: sufficient\n---\n## Reasoning\nChecked the diff.\n\n## Findings\nnone\n"
-                        + "\n## Matches\nAC-1 -> `tests/test_fix.py:1`\nAC-2 -> `tests/test_fix.py:1`\n" * (lens == "conformance"))
-    evidence.save(root, run, {**evidence.load(root, run), "slug": S, "epic": "E-1",
-                              "tests": [{"name": "test_fix", "file": "tests/test_fix.py", "line": 1, "result": "passed"}],
-                              "commit": evidence.commits_of(root, S, "E-1")[0]})
-    jury.collect(root, S, gate, run)
-    assert jury.check(root, S, gate, record=True)[0] == "approved"
-    code, out = flow.done(root, gate, S, by=BY)
-    assert code == 0, out
-    last = lines_of(root)[-1]
-    assert (last["kind"], last["from"], last["to"]) == ("pass", "implementing", "done"), last
+    code, out = flow.done(root, "implementing", S, by=BY)  # no epic jury: a lite effort goes to the pr gate
+    assert code == 0 and out[0] == f"moved {S}: implementing → pr", out
+    assert flow.where(root, S)["stage"] == "pr" and not (folder / "jury/implementation-E-1.json").exists()
     print("ok")
 
 
@@ -1747,6 +1737,11 @@ def test_ac34_next_resumes():
     print("ok")
 
 
+def shipped(root, slug):
+    """An effort the human passed to done before the pr gate existed."""
+    history(root, slug, {"kind": "override", "from": "implementing", "to": "done", "reason": "shipped by hand"})
+
+
 def test_ac35_park_refusals():
     """TC-35: park refuses an empty reason and a done effort, recording nothing."""
     root = effort("planning")
@@ -1754,7 +1749,7 @@ def test_ac35_park_refusals():
     other = "2026-10-21-refunds"
     effort("implementing", slug=other, root=root)
     flow.start(root, other, by=BY)
-    assert flow.done(root, "implementing", other, human="shipped by hand", by="human")[0] == 0
+    shipped(root, other)
     assert " · done · " in line_for(root, other)
     counts = count(root), count(root, other)
     for slug, why in ((S, ""), (other, "x")):
@@ -1837,7 +1832,7 @@ def test_ac62_abandon_refusals():
     finished = "2026-10-22-refunds"
     effort("implementing", slug=finished, root=root)
     flow.start(root, finished, by=BY)
-    flow.done(root, "implementing", finished, human="shipped by hand", by="human")
+    shipped(root, finished)
     slugs = [S, "grilling", "2026-10-21-fix", finished]
     before = {s: snap(root, s) for s in slugs}
     for slug, why in zip(slugs, ["", "x", "x", "x"]):
