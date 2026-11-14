@@ -181,10 +181,10 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-4-adversary: the source-record half is done (`check_facts` refuses a fact line without `(source: ...)` and names the line). The secret half is only a regex for known token shapes (`ghp_`, `AKIA`, `-----BEGIN`, `xox`, `sk-`). A plain password or connection string copied from a `.env` passes `confirm` unchecked. Nothing compares a doc against values from the scan's secrets files. The asked-for change to show skipped e2e tests as skipped is not in the diff.",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "Human 2026-11-14: fix it: confirm also refuses a doc containing a value from a file the scan marks as secrets (KEY=value, 8+ chars), never printing it",
       "baseline": "unchanged",
       "rounds": 1,
       "first_round": 1,
@@ -309,10 +309,10 @@
       ],
       "validation": "confirmed",
       "reason": "implementation-E-4-conformance: the pack's evidence list is empty and every e2e test result is `unknown`. No NIO_E2E=1 run results are recorded for AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40 or AC-43. The diff holds no human waiver. T-63 is only a task entry; the diff to tests/test_onboard_e2e.py edits test inputs and does not record a run.",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Standing ruling 2026-11-14: all 12 E-4 e2e tests passed with NIO_E2E=1 at T-63's recorded green (commit 0e5473f); jury evidence runs without NIO_E2E",
       "baseline": "unchanged",
       "rounds": 1,
       "first_round": 1,
@@ -773,7 +773,7 @@
       "tampering": false
     }
   ],
-  "outcome": "human",
+  "outcome": "rerun",
   "recorded": [
     [
       1,
