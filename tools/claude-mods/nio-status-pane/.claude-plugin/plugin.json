@@ -1,0 +1,6 @@
+{
+  "name": "nio-status-pane",
+  "version": "0.1.0",
+  "description": "A side pane, a status line and a /nio command showing where every NIO effort in this repo's worktrees stands, with no model turn.",
+  "types": "./types/index.d.ts"
+}
