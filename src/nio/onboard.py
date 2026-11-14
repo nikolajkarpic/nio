@@ -76,17 +76,26 @@ SECRET = re.compile(r"ghp_|github_pat_|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVAT
 DEV_SOURCE = re.compile(r"\(source: dev, [^()]+\)")
 
 
+def _secretish(v):
+    """A value that could be a credential: 12+ chars mixing letters with digits or symbols, not a plain word or a URL
+    without credentials (`production`, `postgres://localhost:5432/app`).
+    ponytail: a heuristic; a real secret shaped like a plain word passes, the skill's never-write rule still holds."""
+    if len(v) < 12 or " " in v or ("://" in v and "@" not in v):
+        return False
+    return bool(re.search(r"[A-Za-z]", v)) and bool(re.search(r"[\d\W_]", v))
+
+
 def secret_values(root="."):
     """Values (8+ chars) of `KEY=value` lines in the files the scan lists as secrets; read only to refuse them (J-3)."""
     vals = set()
     for cat, f, _ in scan(root):
         p = Path(root) / f
-        if cat != "secrets" or p.is_symlink() or not p.is_file():
+        if cat != "secrets" or p.is_symlink() or not p.is_file() or re.search(r"\.(example|sample|template)$", f):
             continue
         for l in p.read_text(errors="ignore").splitlines():
             k, sep, v = l.partition("=")
             v = v.strip().strip("'\"")
-            if sep and len(v) >= 8:
+            if sep and _secretish(v):
                 vals.add(v)
     return vals
 
@@ -317,7 +326,10 @@ def _pairs(root, reader, slug=""):
 
 def doc_paths(root, reader, slug=""):
     """The files `docs_for` carries (CT-22)."""
-    return [p for _, p in _pairs(root, reader, slug)]
+    try:
+        return [p for _, p in _pairs(root, reader, slug)]
+    except ValueError:  # a damaged onboarding.json must not block a jury pack, as in docs_for
+        return []
 
 
 def docs_for(root, reader, slug=""):
@@ -354,7 +366,7 @@ def backup(file, root="."):
     import shutil
     r = Path(root).resolve()
     src = Path(os.path.abspath(file)) if file else Path()  # the path as given: a symlink keeps its own name
-    if not file or not src.resolve().is_file() or not src.is_relative_to(r) or not src.resolve().is_relative_to(r) or is_secret(src.name):
+    if not file or not src.resolve().is_file() or not src.is_relative_to(r) or not src.resolve().is_relative_to(r) or is_secret(src.name) or is_secret(src.resolve().name):
         raise ValueError(f"{file or '(no file)'}: not a file inside the repo, or a secret")
     dst = r / ".nio" / "backup" / datetime.date.today().isoformat() / src.relative_to(r)
     if not dst.exists():
