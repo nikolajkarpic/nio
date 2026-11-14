@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-3
 subject: 2026-11-08-project-onboarding
-round: 2
-outcome: rejected
+round: 3
+outcome: approved
 ---
 # Implementation-e-3 jury: 2026-11-08-project-onboarding
 
@@ -10,14 +10,14 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | contradiction | CT-9, CT-10, CT-19 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | risk | CT-9, CT-22, CT-1 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | gap | CT-9, CT-16 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | contradiction | CT-9, CT-10, CT-19 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | risk | CT-9, CT-22, CT-1 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-3 | major | gap | CT-9, CT-16 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-4 | minor | risk | CT-19 | adversary | grounded | open |  | new, 0 |
 | J-5 | blocker | gap | AC-32 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-6 | major | gap | CT-9, C-261108-mk6n | consistency | refuted | refuted |  | new, 0 |
 | J-7 | minor | inconsistency | CT-16 | consistency | grounded | open |  | new, 0 |
-| J-8 | major | gap | CT-22 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-8 | major | gap | CT-22 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 
 ### J-1 A damaged onboarding.json stops every pack, but the docs must never block the stage
 - quote: "SHALL NOT block the stage"
@@ -79,10 +79,10 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-3-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-3-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
 | implementation-E-3-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-3-conformance-2 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-3-conformance-3 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-3-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-3-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-3-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 3 |
 | implementation-E-3-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |

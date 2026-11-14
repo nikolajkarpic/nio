@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-3",
   "subject": "2026-11-08-project-onboarding",
-  "round": 2,
+  "round": 3,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -18,7 +18,9 @@
     "R-261108-vmdw/implementation-E-3-security.md": "b6d83575ef4214f395f2310d6bb83f48fdb547ba73a47e6bb52cf5608ad92d58",
     "R-261108-vmdw/implementation-E-3-refuter.md": "224772213183424b75f2ccdaa4db6bfe36a46a61abd07e32b2e04c913151ae2b",
     "R-261108-vmdw/implementation-E-3-conformance-2.md": "301c9c158d68cabce9c7409589dbadd304e5999fee907ec127a04fd029669af3",
-    "R-261108-vmdw/implementation-E-3-conformance-3.md": "90e424ede3eb3d3e26a7b401e37200c3e30c168b52c3283a7520f3de4f27b623"
+    "R-261108-vmdw/implementation-E-3-conformance-3.md": "90e424ede3eb3d3e26a7b401e37200c3e30c168b52c3283a7520f3de4f27b623",
+    "R-261114-yqpa/implementation-E-3-adversary.md": "edde9ea05f3fd1a21fa3467fd109306386e4b8be3f6060d1b8162c82012f948b",
+    "R-261114-yqpa/implementation-E-3-correctness.md": "c9f1d55b959dad53806911594708be6881ba54465e7de2ecb32c74e8c8f113fe"
   },
   "jurors": {
     "implementation-E-3-adversary": {
@@ -28,9 +30,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f635227d433ad50d15f1e7973f543fa36b042935",
-      "judged": 1
+      "round": 3,
+      "version": "4e6777abe4ebe84d79fecfd769d166b499ad30f6",
+      "judged": 3
     },
     "implementation-E-3-conformance": {
       "attempts": 1,
@@ -61,9 +63,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f635227d433ad50d15f1e7973f543fa36b042935",
-      "judged": 1
+      "round": 3,
+      "version": "4e6777abe4ebe84d79fecfd769d166b499ad30f6",
+      "judged": 3
     },
     "implementation-E-3-security": {
       "attempts": 1,
@@ -126,18 +128,19 @@
       ],
       "validation": "confirmed",
       "reason": "`onboard.progress` (onboard.py:65-77) raises ValueError on a bad onboarding.json, and `docs_for` (onboard.py:186) and `_pairs` call it with no catch, so pack.py:82 and jury.py:1362 fail for every reader. Nothing in the artefact says a damaged state file is allowed to stop a pack.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-53",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:docs_for, src/nio/pack.py:build, src/nio/implement.py:worker_pack",
       "tampering": false,
-      "right": "spec"
+      "right": "spec",
+      "fixed_in": 3
     },
     {
       "id": "J-2",
@@ -165,17 +168,18 @@
       ],
       "validation": "confirmed",
       "reason": "`docs_for` (onboard.py:188-193) uses `p.is_file()` and `p.read_text()`, which follow symlinks, and has no root check. The `resolve().is_relative_to` check exists only in `jury.sources` (jury.py:218). The worker and plan packs read the link target unchecked.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-54",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/onboard.py:docs_for",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 3
     },
     {
       "id": "J-3",
@@ -202,17 +206,18 @@
       ],
       "validation": "confirmed",
       "reason": "`_pairs` (onboard.py:172) runs `^apps:` with re.M over the whole spec, not just the front matter. The block form is read as the text `- api`, which matches no app, and `or apps` falls back to all apps without a word. Both the typo case and the block-form case narrow nothing and say nothing.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-55",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/onboard.py:_pairs",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 3
     },
     {
       "id": "J-4",
@@ -401,29 +406,35 @@
       ],
       "validation": "confirmed",
       "reason": "`grounding(root, slug, gate)` (jury.py:221-223) calls `sources` with no lens, so `reader` stays None (jury.py:214) and no project docs are added. jury.py:620 passes that text as the ground for `add`/`grounded` (jury.py:811), so a quote from principles.md or personas.md is dropped as ungrounded.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-57",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/jury.py (grounding, line 620 caller)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 3
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       2,
       "rejected"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "f635227d433ad50d15f1e7973f543fa36b042935",
-    "2": "f635227d433ad50d15f1e7973f543fa36b042935"
+    "2": "f635227d433ad50d15f1e7973f543fa36b042935",
+    "3": "4e6777abe4ebe84d79fecfd769d166b499ad30f6"
   },
   "matched": {
     "AC-18": [
