@@ -61,7 +61,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    Give 3 options or fewer, the recommended one first.
 4. **Write.** Write the doc from the template with only confirmed content. Each fact ends in its source record,
    `(source: <path>@<12-hex hash>)` using the hash `nio onboard scan` prints for that file, or
-   `(source: dev, <date>)` for the dev's own words; what is still unknown stays `NEEDS CLARIFICATION`. Keep every
+   `(source: dev, <date>)` for the dev's own words; what is still unknown stays `NEEDS CLARIFICATION`: a field the files don't state and the dev doesn't know has the body exactly `NEEDS CLARIFICATION`, with no reason, source or other text beside it. Each fact line holds one fact and ends with its one source. When the dev corrects a fact, write only the corrected fact; when a file states it (the manifest names Flask), that file is its one source and you add no second line for the dev's confirmation, and the dev is the source only for a fact no file states; never write the wrong value or the stale file's claim, not even as a note. Keep every
    `## ` heading of the template.
 5. **Confirm.** Show the dev the doc's full text and ask for a yes. Only on their yes in this session run
    `nio onboard confirm <doc>`. It prints `next: <doc>`; go back to step 2, or `done` ends onboarding.

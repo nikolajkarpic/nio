@@ -3,6 +3,7 @@ git repo. They cost a model run each, so they run only when asked:
     NIO_E2E=1 uv run python tests/test_onboard_e2e.py
 Without NIO_E2E they print `skipped` and pass."""
 import datetime
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -96,6 +97,75 @@ def test_ac5_mismatch_asked():
     stack = (root / ".nio/project/stack.md").read_text()
     assert "Flask" in stack and "Django" not in stack, stack
     assert all(f"(source: pyproject.toml@{h})" in l for l in stack.splitlines() if "Flask" in l), stack
+
+
+NIO = ["uv", "run", "--project", str(ROOT), "nio"]
+DOCS = {"product": ["What it does", "Users", "Main flows", "Non-goals", "Glossary"], "principles": ["Principles"]}
+PERSONA = "# Personas\n\n### P-1 Owner\nWho: shop owner\nWants: orders\nAllowed to: manage stock\nHow often: daily\n"
+
+
+def nio(root, *args):
+    return subprocess.run(NIO + ["onboard", *args], cwd=root, capture_output=True, text=True, check=True).stdout
+
+
+def write_docs(root, names):
+    d = root / ".nio/project"
+    d.mkdir(parents=True, exist_ok=True)
+    for n in names:
+        body = PERSONA if n == "personas" else f"# {n}\n\n" + "".join(f"## {h}\n\nA shop.\n\n" for h in DOCS[n])
+        (d / f"{n}.md").write_text(body)
+
+
+def project_bytes(root):
+    return {str(f): f.read_bytes() for f in sorted((root / ".nio/project").rglob("*")) if f.is_file()}
+
+
+@e2e
+def test_ac7_cloud_unknown():
+    root = fresh_repo()
+    (root / "pyproject.toml").write_text("[project]\nname = 'shop'\ndependencies = ['flask']\n")
+    (root / "Dockerfile").write_text("FROM python:3.12\n")
+    ask = ("Run @nio:onboard. The CLI here is `" + " ".join(NIO) + "`. You play both roles: the dev's scripted answers "
+           "are: confirm every doc as written; to where it is deployed answer `I don't know`. Do not stop early.")
+    run_skill(root, "onboard", ask)
+    infra = (root / ".nio/project/infra.md").read_text()
+    body = infra.split("## Cloud provider", 1)[1].split("\n## ", 1)[0]
+    body = "\n".join(l for l in body.splitlines() if not l.strip().startswith("<!--")).strip()
+    assert body == "NEEDS CLARIFICATION", infra
+
+
+@e2e
+def test_ac10_resume():
+    root = fresh_repo()
+    (root / "pyproject.toml").write_text("[project]\nname = 'shop'\ndependencies = ['flask']\n")
+    nio(root, "start")
+    write_docs(root, ["product", "personas"])
+    nio(root, "confirm", "product")
+    nio(root, "confirm", "personas")
+    nio(root, "pause")
+    before = project_bytes(root)
+    ask = ("Run @nio:onboard. The CLI here is `" + " ".join(NIO) + "`. You play both roles: confirm every doc as "
+           "written. Print every question you ask the dev and every command you run.")
+    out = run_skill(root, "onboard", ask)
+    first = re.search(r"onboard confirm (\w+)", out)
+    assert first and first.group(1) == "stack", out
+    assert "product.md" not in out.split("onboard confirm", 1)[0].lower().split("?")[0], out
+    for f, b in before.items():
+        if f.endswith(("product.md", "personas.md")):
+            assert Path(f).read_bytes() == b, f
+
+
+@e2e
+def test_ac11_done_points_to_reconcile():
+    root = fresh_repo()
+    nio(root, "start", "--empty")
+    write_docs(root, ["product", "personas", "principles"])
+    for d in ("product", "personas", "principles"):
+        nio(root, "confirm", d)
+    before = project_bytes(root)
+    out = run_skill(root, "onboard", "Run @nio:onboard. The CLI here is `" + " ".join(NIO) + "`.")
+    assert project_bytes(root) == before
+    assert "reconcile" in out.lower(), out
 
 
 if __name__ == "__main__":
