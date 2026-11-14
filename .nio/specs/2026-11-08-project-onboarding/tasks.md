@@ -359,9 +359,9 @@ retired: [T-8, T-11, T-17]
 
 ### T-60 Fix: A failed copy leaves a truncated backup that the next call reports as the kept original
 - From: J-1 (implementation-E-4, round 1)
-- Files: `src/nio/onboard.py`
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
 - Serves: CT-17, J-1
-- Test: TC-18
+- Test: new: a backup whose copy fails part-way (simulated) leaves no file at the backup path, so the next backup writes a full copy; an OSError becomes `error:` with exit 1, not a traceback (CT-17)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -370,9 +370,9 @@ retired: [T-8, T-11, T-17]
 
 ### T-61 Fix: SECRETS hides secret-named IaC from the iac category, and the pattern list has gaps
 - From: J-2 (implementation-E-4, round 1)
-- Files: `src/nio/onboard.py`
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
 - Serves: AC-38
-- Test: TC-19
+- Test: new: `id_ecdsa`, `id_dsa`, `*.keystore`, `*.jks`, `.htpasswd`, `service-account*.json`, `Credentials.json` and `.ENV` (case-insensitive) are listed as secrets by path only (FR-24, AC-38)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -381,9 +381,9 @@ retired: [T-8, T-11, T-17]
 
 ### T-62 Fix: Nothing in the CLI checks that a confirmed doc has source records or is free of secret values
 - From: J-3 (implementation-E-4, round 1)
-- Files: `src/nio/onboard.py`, `tests/test_onboard_e2e.py`
+- Files: `src/nio/onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_onboard.py`
 - Serves: CT-4, AC-8
-- Test: TC-6
+- Test: new: `nio onboard confirm <doc>` refuses (exit 1, naming the line) a doc whose fact lines carry no `(source: ...)` record, and a doc holding a value that looks like a secret (e.g. `ghp_`/`AKIA`/`-----BEGIN` patterns) (CT-4, AC-8)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -394,18 +394,18 @@ retired: [T-8, T-11, T-17]
 - From: J-6 (implementation-E-4, round 1)
 - Files: `tests/test_onboard_e2e.py`
 - Serves: AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40, AC-43
-- Test: TC-5
+- Test: TC-5, TC-7, TC-9, TC-10, TC-11, TC-12, TC-14, TC-17, TC-18, TC-20, TC-21, TC-42 (run with NIO_E2E=1)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
 - Effort: med
-- Mode: single: a fix from a jury finding
+- Mode: direct: run every E-4 e2e test with NIO_E2E=1 as the recorded run evidence
 
 ### T-64 Fix: A spec's apps line that keeps the template comment names the wrong apps, so a one-app worker pack gets every app's docs
 - From: J-8 (implementation-E-4, round 1)
-- Files: `src/nio/onboard.py`, `src/nio/templates/spec.md`
+- Files: `src/nio/onboard.py`, `src/nio/templates/spec.md`, `tests/test_onboard.py`
 - Serves: CT-9, AC-35, CT-6
-- Test: TC-15
+- Test: new: a spec whose front matter keeps the template's trailing comment (`apps: []  # ...` and `apps: [api]  # ...`) names no app / only `api`; a one-app worker pack then holds no `web/` doc, and no `not onboarded:` line names a comment phrase (CT-9, AC-35)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -414,9 +414,9 @@ retired: [T-8, T-11, T-17]
 
 ### T-65 Fix: Skill rule for an inline secret only covers files the agent never opens
 - From: J-12 (implementation-E-4, round 1)
-- Files: `skills/onboard/SKILL.md`
+- Files: `skills/onboard/SKILL.md`, `tests/test_onboard.py`
 - Serves: AC-39, CT-13
-- Test: TC-20
+- Test: new: a form check in tests/test_onboard.py that skills/onboard/SKILL.md says a secret value found inline in any file the agent reads is never written, quoted or shown (doc, question or patch preview), only where it is kept (FR-30, AC-39)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
