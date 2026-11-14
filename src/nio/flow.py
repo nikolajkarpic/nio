@@ -511,10 +511,10 @@ JUDGED_BY = {"spec.md": "spec_jury", **{f: "plan_jury" for f in plan_files()},
              "tasks.md": "tasks_jury"}
 
 
-def planned(name, text):
+def planned(name, text, keep=()):
     """A file as its gate judges it (RF-9): jury.planned, which jury.artefact uses too."""
     from nio import jury
-    return jury.planned(name, text)
+    return jury.planned(name, text, keep)
 
 
 def judged_blob(root, slug, name):
@@ -585,11 +585,16 @@ def scan(root, slug, lines, found=None):
             names = [n for n in JUDGED_BY if (folder / n).exists()]
             raw = dict(zip(names, records.git(root, "hash-object", *[f"{rel}/{n}" for n in names])))
         current = raw.get(name)
-        if name == "tasks.md" and current != judged:  # compare the planned part only: a fix task doesn't count
+        if name == "tasks.md" and current != judged:  # compare the planned part only: a fix task appended or retired doesn't count
+            now, keep = (folder / name).read_text(), ()
             if h:
                 code, text, _ = records.git(root, "show", f"{h}:{rel}/{name}", full=True)
-                judged = jury.blob(root, planned(name, text)) if code == 0 else judged
-            current = jury.blob(root, planned(name, (folder / name).read_text()))
+                if code == 0:  # ...but a fix task approved with the list, then edited, does (#126 FR-10)
+                    from nio import tasks
+                    fixed = lambda t: {i for i, x in tasks.parse(t)["tasks"].items() if x["fix"]}
+                    keep = sorted(fixed(text) & fixed(now))
+                    judged = jury.blob(root, planned(name, text, keep))
+            current = jury.blob(root, planned(name, now, keep))
         if current != judged:
             out.append({"change": name, "target": OWNING[name][1], "judged": judged, "current": current,
                         "pending": False, "file": name})

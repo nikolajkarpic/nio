@@ -76,9 +76,11 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
      that neither copy names `<gate>-<lens>.md`, the first review's file. After the first review the copies are
      of the blocker's pack, `nio jury fixcheck <slug> spec --lens <lens> --blocker J-<n>` plus the lens output format
      (the step never writes these). Two of three decide. Majors and refuted blockers never escalate. Don't edit the
-     artefact until the escalation is collected;
+     artefact until the escalation is collected. Escalation jurors join the round they were asked in, and count for
+     their blocker in every later round, so the step never asks for them twice;
    - **dispose of findings** (step 4), then edit the artefact and call the step again;
-   - **show the human** the listed findings and wait.
+   - **show the human** the listed findings and wait;
+   - **show the human the capped batch** (see "At the round cap") and record their rulings.
 3. **Decide.** When the step prints `outcome:`, act on it:
 
    | Outcome | What you do |
@@ -115,6 +117,26 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 5. **Optional: a gate driver.** A host may run steps 2 to 4 in a fresh, cheaper subagent that returns the outcome and
    the list for the human, so the main context doesn't grow. Dispositions that need the human stay with you.
 
+## At the round cap
+
+Every gate stops after `jury.max_rounds` rounds (in `.nio/config.json`, default 2; anything but a whole number of at
+least 1 stops the step with an error). The implementation gate counts per epic. Below the cap nothing changes: only a
+confirmed blocker starts another round. When a round at or over the cap ends with findings open, the step decides:
+- **two or more confirmed blockers, the first time:** one automatic round, on those blockers' lenses only. The outcome
+  is `rejected`: dispose and fix as usual, then call the step again; it starts that round by itself. Never a second one;
+- **minors:** closed as accepted risk by the system ("minor, skipped at the round cap"); the gate summary
+  (`closed by the system:`) lists them. If only minors were open, the gate closes with no batch;
+- **majors and any blocker otherwise:** the step prints `capped:` and the batch, and starts no round. Never rule on it
+  yourself, and never call the step again hoping for another round: show the human every finding of the batch in one
+  message, each with three options: accept as risk; fix (no juror checks the fix); one more round (the reviewers that
+  raised it check the fix once). Record each answer, one call per ruling, with their words as the note:
+  `nio jury rule <slug> <gate> J-a,J-b accept|fix|again --note "<their words>"`. It is refused while a round runs or
+  before the cap. For `fix` and `again`, make the fix first: edit the spec, plan or tasks (at the implementation gate
+  the ruling appends the fix task; run it through the implement stage). Then call the step again: while a finding of
+  the batch is unruled it prints the batch again; once all are ruled, `again` starts one round on those findings'
+  lenses, after which the step prints a new batch if anything is still open (the human may ask again), and otherwise
+  the gate closes on the human's rulings with no re-check. Tell the human, then run the `next:` line.
+
 ## At the plan gate
 
 Run the steps above with `plan` in place of `spec` (`nio jury plan <slug> plan`, then `nio jury next <slug> plan`, the ledger `jury/plan.md`), with these differences:
@@ -142,7 +164,8 @@ passes, and plans executability alone. Each pack holds `tasks.md`, the spec and,
 the `nio check tasks` output with its estimate. A finding is fixed in `tasks.md` (`plan-fix` doesn't apply here: dispose
 it as a `spec-fix` on the tasks, as you would at the spec gate). When the outcome is `approved` and the human approves
 the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approve tasks` commit; `nio check tasks <slug>
---approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later don't withdraw it.
+--approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later, and fix tasks retired with
+`nio task retire <slug> T-n --reason "<why>"`, don't withdraw it; the retired task's finding closes as accepted risk.
 
 ## At the implementation gate
 
@@ -159,7 +182,9 @@ test results, not the spec text alone. In order:
 
 Other outcomes:
 - **rejected:** the epic goes back to the implement stage. Its fix tasks are appended under `#### Fixes`; run
-  `nio flow next <slug>` and show the human its `next:` line.
+  `nio flow next <slug>` and show the human its `next:` line. A finding whose ACs `tasks.md` serves only in a later
+  epic not built yet gets no fix task: the system closes it out of scope, naming the serving task, and the gate summary
+  (`closed by the system:`) lists it. Show it to the human as one line.
 - **waiting on a change request:** the epic waits. Show the human each change request and wait for their ruling on
   each one before you call the step again.
 - **a noted major:** a major the jury raised after the first review is a note, not a blocker. Show it to the human, who

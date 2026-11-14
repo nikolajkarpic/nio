@@ -35,9 +35,11 @@ def main():
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
     c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
     t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
-    t.add_argument("action", choices=["show"])
+    t.add_argument("action", choices=["show", "retire"])
     t.add_argument("slug")
     t.add_argument("id")
+    t.add_argument("--reason", default="", help="retire: why the fix task is dropped; its finding closes as accepted risk with it")
+    t.add_argument("--by", default="human", choices=sorted(jury.BY), help="retire: who retires the fix task")
     c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
@@ -109,6 +111,12 @@ def main():
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
     jd.add_argument("--note", required=True, action="append")
     jd.add_argument("--change", default="", metavar="C-ID", help="spec-change only: the change record the finding waits on")
+    jr = jsub.add_parser("rule", help="the human's ruling on findings of a capped batch: accept (as risk), fix (no re-check) or again (one more round)")
+    jr.add_argument("slug")
+    jr.add_argument("gate", type=jury.gate_arg, metavar="GATE")
+    jr.add_argument("id")
+    jr.add_argument("ruling", choices=jury.RULINGS)
+    jr.add_argument("--note", required=True, help="the human's words")
     je = jsub.add_parser("evidence", help="run an epic's tests, checks, attacks and journeys in a throwaway copy and write the run's results.json")
     je.add_argument("slug")
     je.add_argument("epic", metavar="E-n")
@@ -314,6 +322,9 @@ def main():
                 print("\n".join(jury.step(root, a.slug, a.gate, a.run, a.add, a.pick)))
             elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
+            elif a.jury_cmd == "rule":
+                for i in jury.rule(root, a.slug, a.gate, a.id, a.ruling, a.note):
+                    print(f"{i}: {a.ruling} by human")
             elif a.jury_cmd == "dispose":
                 for i in jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note, a.change):
                     print(f"{i}: {a.disposition} by {a.by}")
@@ -345,7 +356,7 @@ def main():
         sys.exit(code)
     elif a.cmd == "task":
         try:
-            print("\n".join(tasks.show(root, a.slug, a.id)))
+            print(tasks.retire(root, a.slug, a.id, a.reason, a.by) if a.action == "retire" else "\n".join(tasks.show(root, a.slug, a.id)))
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":

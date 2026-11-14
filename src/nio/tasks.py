@@ -350,7 +350,24 @@ def show(root, slug, tid):
         raise ValueError(f"no {tid} in tasks.md")
     task = parsed["tasks"][tid]
     head = next(e["head"] for e in parsed["epics"] if e["id"] == task["epic"])
-    return [head, ""] + (["#### Fixes", ""] if task["fix"] else []) + task["block"]
+    return [head, ""] + (["#### Fixes", ""] if task["fix"] else []) + [globbed(root, x) for x in task["block"]]
+
+
+def globbed(root, line):
+    """A `- Files:` line with each glob pattern as the paths it matches, or marked as matching none (#126 FR-17)."""
+    if not line.startswith("- Files:") or not any(c in line for c in "*?["):
+        return line
+    out = []
+    for f in files(line[len("- Files:"):]):
+        if not any(c in f for c in "*?["):
+            out.append(f"`{f}`")
+            continue
+        try:
+            hits = sorted(str(p.relative_to(root)) for p in root.glob(f) if p.is_file() and p.resolve().is_relative_to(root.resolve()))
+        except (ValueError, NotImplementedError):  # an absolute or empty pattern matches nothing here
+            hits = []
+        out += [f"`{h}`" for h in hits] or [f"`{f}` (pattern: matches no file)"]
+    return "- Files: " + ", ".join(out)
 
 
 def approved(root, slug):
@@ -378,6 +395,32 @@ def fixes_of(root, slug, gate, fid):
     """The tasks whose `From:` names this finding of this gate; another epic's ledger counts from J-1 too."""
     tasks = parse("\n".join(records.parse(path(root, slug))[1]))["tasks"]
     return [t for t, x in tasks.items() if (m := FINDING.match(x["fields"].get("From", ""))) and (m[1], m[2]) == (fid, gate)]
+
+
+def retire(root, slug, tid, reason, by):
+    """Retire a fix task (#126 FR-9, FR-11): its block leaves tasks.md, its ID joins `retired:`, and the finding it served
+    closes as `accepted-risk` credited to `by`, the reason its note, so no later round makes it a task again. The tasks
+    gate stays approved. Refused, changing nothing, without a reason."""
+    from nio import jury
+    if not reason.strip():
+        raise ValueError(f"retiring {tid} needs a reason (--reason)")
+    p = path(root, slug)
+    task = parse("\n".join(records.parse(p)[1]))["tasks"].get(tid)
+    if not task or not task["fix"]:
+        raise ValueError(f"{tid} is not a fix task in tasks.md; retire a planned task by hand (it reopens the tasks gate)")
+    text = re.sub(rf"^### {tid}\b.*?(?=^#{{1,4}} |\Z)", "", p.read_text(), count=1, flags=re.M | re.S)
+    text, n = re.subn(r"^(retired:\s*\[)([^\]\n]*)\]", lambda m: f"{m[1]}{m[2].strip() + ', ' if m[2].strip() else ''}{tid}]",
+                      text, count=1, flags=re.M)
+    if not n:
+        raise ValueError("tasks.md has no `retired: [...]` line")
+    p.write_text(text)
+    m = FINDING.match(task["fields"].get("From", ""))
+    led = jury.load(root, slug, m[2]) if m else None
+    f = next((g for g in led["findings"] if g["id"] == m[1] and g["status"] in ("open", "disposed")), None) if m else None
+    if f:
+        f.update(status="disposed", disposition="accepted-risk", by=by, note=reason)
+        jury.save(root, led)
+    return f"retired {tid}" + (f"; {f['id']} closed as accepted-risk by {by}" if f else "")
 
 
 def fix_test(root, slug, finding, cites):
