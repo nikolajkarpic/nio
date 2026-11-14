@@ -2763,6 +2763,25 @@ def test_ac9_retired_fix_task_keeps_implementing():
     print("ok")
 
 
+def test_tasks_ledger_judged_before_126_stays_approved():
+    """A tasks ledger recorded before #126 hashed tasks.md with retired fix-task IDs left in: still approved."""
+    root, tasks_md = with_fix()
+    text = tasks_md.read_text().replace(FIX_T4, "\n")
+    text = re.sub(r"^retired:.*$", "retired: [T-4]", text, flags=re.M) if re.search(r"^retired:", text, re.M) else "retired: [T-4]\n" + text
+    tasks_md.write_text(text)
+    led = jury.load(root, S, "tasks")
+    legacy = jury.artefact(root, S, "tasks").replace("retired: []", "retired: [T-4]", 1)  # tasks.md comes first
+    assert "retired: [T-4]" in legacy and legacy != jury.artefact(root, S, "tasks")
+    led["versions"][str(led["round"])] = jury.blob(root, legacy, write=True)
+    jury.save(root, led)
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    tasks_md.write_text(tasks_md.read_text().replace("retired: [T-4]", "retired: [T-4, T-5]"))  # another fix task retired
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    tasks_md.write_text(tasks_md.read_text() + "\nA real edit.\n")
+    assert approved_exit(root) != 0
+    print("ok")
+
+
 def test_ac11_retired_fix_task_closes_its_finding():
     root, _ = with_fix(finding=True)
     assert run_main(root, "task", "retire", S, "T-4", "--reason", "not worth it", "--by", "human")[0] == 0

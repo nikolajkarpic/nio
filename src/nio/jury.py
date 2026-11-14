@@ -220,14 +220,18 @@ def planned(name, text, keep=()):
         kept = [line for t in keep for line in found[t]["block"]]
     text = re.sub(r"^#### Fixes$.*?(?=^## |\Z)", "", text, flags=re.M | re.S)
     text = re.sub(r"^## E-\d+ PR fixes\s*$", "", text, flags=re.M)  # the pr gate's closing epic holds only fix tasks
+    return re.sub(r"\n\s*\n+", "\n\n", "\n".join([unretire(text), *kept])).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+
+
+def unretire(text):
+    """`text` without retired fix-task IDs: an ID above every planned task's; retiring one doesn't count (#126 FR-9)."""
     top = max(map(int, re.findall(r"^### T-(\d+)\b", re.sub(r"<!--.*?-->", "", text, flags=re.S), re.M)), default=0)
 
-    def unfix(m):  # a retired fix task: its ID is above every planned one, and retiring it doesn't count (#126 FR-9)
+    def unfix(m):
         ids = [x.strip() for x in m[2].split(",") if x.strip()]
         left = [x for x in ids if not (re.fullmatch(r"T-\d+", x) and int(x[2:]) > top)]
         return m[0] if left == ids else f"{m[1]}{', '.join(left)}]"
-    text = re.sub(r"^(retired:\s*\[)([^\]\n]*)\]", unfix, text, count=1, flags=re.M)
-    return re.sub(r"\n\s*\n+", "\n\n", "\n".join([text, *kept])).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+    return re.sub(r"^(retired:\s*\[)([^\]\n]*)\]", unfix, text, count=1, flags=re.M)
 
 
 def artefact(root, slug, gate):
@@ -1151,7 +1155,16 @@ def version_now(root, slug, gate):
     """The version the gate would judge now: the epic's last commit, as `collect` judges, or the artefact's blob."""
     if impl_gate(gate):
         return evidence.span(root, slug, gate.removeprefix("implementation-"))[1]
-    return blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
+    text = artefact(root, slug, gate)
+    now = blob(root, text)  # an emptied or deleted artefact is a version too
+    if gate == "tasks":  # a ledger judged before #126 kept retired fix-task IDs in its text: the same tasks, so its version
+        led = load(root, slug, gate)
+        last = version(led, led["round"])
+        if last and last != now:
+            code, old, _ = records.git(root, "cat-file", "-p", last, full=True)
+            if code == 0 and unretire(old).rstrip() == text.rstrip():
+                return last
+    return now
 
 
 def composed(root, slug, gate, led, current, rejected=()):
