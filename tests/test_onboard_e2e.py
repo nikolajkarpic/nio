@@ -368,5 +368,91 @@ def test_ac13_empty_repo():
     assert json.loads((root / ".nio/project/onboarding.json").read_text())["state"] == "done", out
 
 
+HEADS = {"stack": ["Languages", "Dependencies", "Commands", "CI"], "architecture": ["Modules", "Boundaries", "Data flow"],
+         "infra": ["Cloud provider", "Deployables", "Eventing and queues", "Storage", "Secrets", "Environments", "Deploys"]}
+
+
+def onboarded_repo(arch=False):
+    """An onboarded project: stack.md fed by pyproject.toml, infra.md by README.md, architecture.md by ARCHITECTURE.md."""
+    root = fresh_repo()
+    (root / "pyproject.toml").write_text("[project]\nname = 'shop'\ndependencies = ['flask']\n")
+    (root / "README.md").write_text("# Shop\n\nA small online shop on AWS.\n")
+    if arch:
+        (root / "ARCHITECTURE.md").write_text("# Architecture\n\nOne module: shop.\n")
+    nio(root, "start")
+    write_docs(root, ["product", "personas", "principles"])
+    feeds = {"stack": "pyproject.toml", "infra": "README.md", "architecture": "ARCHITECTURE.md"}
+    for d, f in feeds.items():
+        if f == "ARCHITECTURE.md" and not arch:
+            f = "README.md"
+        src = f" (source: {f}@{scan_hash(root, f)})"
+        (root / f".nio/project/{d}.md").write_text(f"# {d}\n\n" + "".join(
+            f"## {h}\n\n" + (f"Python 3.12{src}" if (d, h) == ("stack", "Languages") else f"A shop{src}" if h == HEADS[d][0] else f"A shop.{SRC}") + "\n\n"
+            for h in HEADS[d]))
+    for d in ("product", "personas", "stack", "architecture", "infra", "principles"):
+        nio(root, "confirm", d)
+    return root
+
+
+REC = ("Run @nio:reconcile-onboarding. The CLI here is `" + " ".join(NIO) + "`. You play the dev: {script}. Do not stop early. "
+       "Your final reply is the only transcript kept: put in it, in order, every question you ask (each on its own line "
+       "starting `Q<n>:`), the full text of every doc edit you show and every command you run.")
+
+
+def stale_lines(root):
+    return [l for l in subprocess.run(NIO + ["status"], cwd=root, capture_output=True, text=True).stdout.splitlines() if "stale:" in l]
+
+
+@e2e
+def test_ac23_reconcile_only_changed():
+    root = onboarded_repo(arch=True)
+    (root / "pyproject.toml").write_text("[project]\nname = 'shop'\ndependencies = ['flask', 'httpx']\n")
+    (root / "docs").mkdir()
+    (root / "docs/DEPLOY.md").write_text("# Deploy\n\nWe deploy with fly deploy.\n")
+    out = run_skill(root, "reconcile-onboarding", REC.format(script="approve the stack.md edit (add httpx); "
+                    "decline the infra.md edit; the project docs are otherwise right"))
+    qs = [l for l in out.splitlines() if re.match(r"\W*Q\d+:", l.strip())]
+    assert qs and not [l for l in qs if re.search(r"README|ARCHITECTURE", l)], out
+    stack = (root / ".nio/project/stack.md").read_text()
+    assert "httpx" in stack, stack
+    assert "fly deploy" not in (root / ".nio/project/infra.md").read_text()
+    assert f"(source: pyproject.toml@{scan_hash(root, 'pyproject.toml')})" in stack, stack
+
+
+def strip_src(text):
+    return re.sub(r" \(source: [^)]*\)", "", text)
+
+
+@e2e
+def test_ac25_nothing_to_reconcile():
+    root = onboarded_repo()
+    before = project_bytes(root)
+    out = run_skill(root, "reconcile-onboarding", REC.format(script="answer anything with a short plausible answer"))
+    assert project_bytes(root) == before
+    assert "nothing to reconcile" in out.lower(), out
+
+
+@e2e
+def test_ac42_decline_records_hash():
+    root = onboarded_repo()
+    before = strip_src((root / ".nio/project/stack.md").read_text())
+    (root / "pyproject.toml").write_text("[project]\nname = 'shop'\ndependencies = ['flask', 'httpx']\n")
+    run_skill(root, "reconcile-onboarding", REC.format(script="decline the stack.md edit; the doc is still right"))
+    stack = (root / ".nio/project/stack.md").read_text()
+    assert strip_src(stack) == before, stack
+    assert f"(source: pyproject.toml@{scan_hash(root, 'pyproject.toml')})" in stack, stack
+    assert not stale_lines(root)
+
+
+@e2e
+def test_ac44_deleted_source():
+    root = onboarded_repo(arch=True)
+    (root / "ARCHITECTURE.md").unlink()
+    out = run_skill(root, "reconcile-onboarding", REC.format(script="confirm the architecture.md edit"))
+    assert "nothing to reconcile" not in out.lower().split("onboard reconciled")[0], out  # the check after finishing may say it
+    assert "(source: ARCHITECTURE.md@" not in (root / ".nio/project/architecture.md").read_text()
+    assert not stale_lines(root)
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_ac") and callable(f)])
