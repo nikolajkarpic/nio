@@ -570,3 +570,27 @@ retired: [T-8, T-11, T-17, T-20, T-24]
 - Tier: strong: touches flow close, clear tests
 - Effort: low
 - Mode: split: clear tests
+
+#### Fixes
+
+### T-74 Fix: A failed merge-base is reported as "no source changed"
+- From: J-1 (implementation-E-7, round 1)
+- Files: `src/nio/flow.py`
+- Serves: CT-20, AC-26
+- Test: TC-44
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-75 Fix: A renamed source is not caught
+- From: J-2 (implementation-E-7, round 1)
+- Files: `src/nio/onboard.py`
+- Serves: AC-26, CT-20
+- Test: TC-44
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
