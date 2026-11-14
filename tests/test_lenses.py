@@ -203,5 +203,62 @@ def test_ac50_it_raises_a_finding_naming_the_existing():
     assert any("parsers.py" in f["title"] + f["situation"] + f["fix"] and "Like: none: first parser" in " ".join(f["quotes"]) for f in hits), hits
 
 
+# --- 2026-11-14-effort-jury: the integration lens at the pr gate (AC-7 to AC-9; pass rule: 2 of 3 runs) ---
+
+SAME = {"billing/money.py": "def to_cents(amount):\n    return int(round(amount * 100))\n",  # E-1
+        "refunds/amounts.py": "def cents_of(value):\n    return int(round(value * 100))\n"}  # E-2: the same helper
+CALLERS = {"app.py": "from billing.money import to_cents\nfrom refunds.amounts import cents_of\n\n\ndef charge(x):\n    return to_cents(x)\n\n\n"
+                     "def refund(x):\n    return cents_of(x)\n"}
+
+
+def run_integration(files):
+    """The integration card on a fixed effort diff of `files` (all new), as the pr gate's pack shows it. Its findings."""
+    root = plan_repo()
+    diff = []
+    for name, text in files.items():
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text(text)
+        diff += [f"diff --git a/{name} b/{name}", "new file", f"+++ b/{name}", *[f"+{x}" for x in text.splitlines()]]
+    meta, body, _ = agents.load(root)["integration"]
+    template = resources.files("nio").joinpath("templates/lens-output.md").read_text()
+    pack = (f"Gate: pr. Slug: {PSLUG}. The spec is .nio/specs/{PSLUG}/spec.md; cite its FRs and ACs.\n\n## Diff\n\n"
+            + "\n".join(diff) + f"\n\nAnswer in this format, with lens: integration, gate: pr, subject: {PSLUG}, "
+            f'by: "juror / claude-code / sonnet":\n\n{template}')
+    r = subprocess.run(["claude", "-p", "--model", agents.DEFAULT_TIERS["claude"][meta["tier"]], "--system-prompt", body,
+                        "--allowedTools", TOOLS["read"]], input=pack, cwd=root, capture_output=True, text=True, timeout=900)
+    path = root / ".nio/runs/R-E2E/jury/pr-integration.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(r.stdout[r.stdout.index("---"):] if "---" in r.stdout else r.stdout)
+    _, findings, errs = jury.parse_lens(path, "pr", PSLUG)
+    assert not errs, (errs, r.stdout)
+    return findings
+
+
+def two_of_three(holds, files):
+    assert sum(holds(run_integration(files)) for _ in range(3)) >= 2
+
+
+def said(f):
+    return " ".join([f["title"], f["situation"], f["where"], f["fix"], *f["quotes"]])
+
+
+@e2e
+def test_effort_ac7_duplicated_helper_names_both_files():
+    two_of_three(lambda fs: any("billing/money.py" in said(f) and "refunds/amounts.py" in said(f) for f in fs), {**SAME, **CALLERS})
+
+
+@e2e
+def test_effort_ac8_uncalled_function_is_dead_code():
+    files = {**CALLERS, "billing/money.py": SAME["billing/money.py"] + "\n\ndef legacy_rate(x):\n    return x * 0.97\n",
+             "refunds/amounts.py": "from billing.money import to_cents as cents_of\n"}
+    two_of_three(lambda fs: any("legacy_rate" in f["title"] for f in fs), files)
+
+
+@e2e
+def test_effort_ac9_clean_diff_has_no_integration_finding():
+    files = {"billing/money.py": SAME["billing/money.py"], "app.py": "from billing.money import to_cents\n\n\ndef charge(x):\n    return to_cents(x)\n"}
+    two_of_three(lambda fs: not fs, files)
+
+
 if __name__ == "__main__":
-    selfcheck.main([f for n, f in list(globals().items()) if re.match(r"test_ac\d+", n) and callable(f)])
+    selfcheck.main([f for n, f in list(globals().items()) if re.match(r"test_(effort_)?ac\d+", n) and callable(f)])

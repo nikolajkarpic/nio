@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import re
+import shlex
 import sys
 from importlib import resources
 
@@ -40,9 +41,11 @@ def main():
     ob.add_argument("--empty", action="store_true", help="start: write blank docs")
     ob.add_argument("--app", action="append", default=[], help="start: <slug>=<path>[,<path>...], repeatable; confirm: the app's slug")
     t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
-    t.add_argument("action", choices=["show"])
+    t.add_argument("action", choices=["show", "retire"])
     t.add_argument("slug")
     t.add_argument("id")
+    t.add_argument("--reason", default="", help="retire: why the fix task is dropped; its finding closes as accepted risk with it")
+    t.add_argument("--by", choices=sorted(jury.BY), help="retire (required): who retires the fix task")
     c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")
@@ -116,9 +119,15 @@ def main():
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
     jd.add_argument("--note", required=True, action="append")
     jd.add_argument("--change", default="", metavar="C-ID", help="spec-change only: the change record the finding waits on")
+    jr = jsub.add_parser("rule", help="the human's ruling on findings of a capped batch: accept (as risk), fix (no re-check) or again (one more round)")
+    jr.add_argument("slug")
+    jr.add_argument("gate", type=jury.gate_arg, metavar="GATE")
+    jr.add_argument("id")
+    jr.add_argument("ruling", choices=jury.RULINGS)
+    jr.add_argument("--note", required=True, help="the human's words")
     je = jsub.add_parser("evidence", help="run an epic's tests, checks, attacks and journeys in a throwaway copy and write the run's results.json")
     je.add_argument("slug")
-    je.add_argument("epic", metavar="E-n")
+    je.add_argument("epic", metavar="E-n|pr", help="an epic, or pr: the whole effort diff")
     je.add_argument("--run", required=True)
     jl = jsub.add_parser("files", help="the files a juror at this gate reads, and the only files its quotes may come from")
     jpk = jsub.add_parser("pack", help="print one lens's pack at an implementation gate: the epic's diff, its ACs and the run's results")
@@ -143,7 +152,12 @@ def main():
     fd.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
     fd.add_argument("--commit", action="store_true", help="at a gate: make the `nio: approve <gate>` commit")
     fd.add_argument("--human", metavar="REASON", help="the human passes a failing check, with their reason")
+    fbr = fsub.add_parser("brief", help="what a fresh driver starts from: the state, the next command, a running long command, open tasks and findings")
+    fbr.add_argument("slug")
+    fbr.add_argument("--all", action="store_true", help="list every open task and finding, past the 80-line cap")
     fsub.add_parser("status", help="one line per effort, newest activity first")
+    fap = fsub.add_parser("approve", help="the human approves the pr gate at a terminal, typing the effort's slug back")
+    fap.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
     fp = fsub.add_parser("park", help="park an effort, with the reason")
     fa = fsub.add_parser("abandon", help="abandon an effort until `nio flow start` resumes it, with the reason")
     for s in (fp, fa):
@@ -207,6 +221,10 @@ def main():
         print(f"{len(found)} candidate files" if found else "no candidate files found")
         return
     root = records.repo_root()
+
+    def long(call):  # a long command is recorded as running while it runs (#128 FR-17)
+        with flow.running(root, a.slug, shlex.join(["nio", *sys.argv[1:]])):
+            return call()
     if a.cmd == "new":
         try:
             if a.type == "spec":
@@ -328,10 +346,10 @@ def main():
             sys.exit(f"error: {e}")
     elif a.cmd == "jury":
         try:
-            if getattr(a, "gate", "").startswith("implementation"):  # a ruling needn't wait for the fix tasks; a round does
+            if jury.impl_gate(getattr(a, "gate", "")):  # a ruling needn't wait for the fix tasks; a round does
                 jury.epic_gate(root, a.slug, a.gate, finished=a.jury_cmd in ("plan", "collect", "next"))
             if a.jury_cmd == "evidence":
-                print("\n".join(evidence.collect(root, a.slug, a.epic, a.run)))
+                print("\n".join(long(lambda: evidence.collect(root, a.slug, a.epic, a.run))))
             elif a.jury_cmd == "answers":
                 print("\n".join(jury.answers(root, a.slug)))
             elif a.jury_cmd == "template":
@@ -356,6 +374,9 @@ def main():
                 print("\n".join(jury.step(root, a.slug, a.gate, a.run, a.add, a.pick)))
             elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
+            elif a.jury_cmd == "rule":
+                for i in jury.rule(root, a.slug, a.gate, a.id, a.ruling, a.note):
+                    print(f"{i}: {a.ruling} by human")
             elif a.jury_cmd == "dispose":
                 for i in jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note, a.change):
                     print(f"{i}: {a.disposition} by {a.by}")
@@ -372,12 +393,14 @@ def main():
                 "start": lambda: flow.start(root, a.slug, by=a.by),
                 "done": lambda: flow.done(root, a.stage, a.slug, commit=a.commit, human=a.human, by=a.by),
                 "status": lambda: flow.status(root),
+                "approve": lambda: flow.approve(root, a.slug),
                 "park": lambda: flow.park(root, a.slug, a.why, by=a.by),
                 "abandon": lambda: flow.abandon(root, a.slug, a.why, by=a.by),
                 "seen": lambda: flow.seen(root, a.slug, by=a.by),
                 "claim": lambda: implement.claim(root, a.slug, by=a.by),
                 "red": lambda: implement.red(root, a.slug, a.task, a.run, by=a.by),
-                "green": lambda: implement.green(root, a.slug, a.task, a.run, by=a.by),
+                "brief": lambda: flow.brief(root, a.slug, a.all),
+                "green": lambda: long(lambda: implement.green(root, a.slug, a.task, a.run, by=a.by)),
                 "block": lambda: implement.block(root, a.slug, a.task, a.handoff, by=a.by),
                 "unblock": lambda: implement.unblock(root, a.slug, a.task, a.human, by=a.by),
             }[a.flow_cmd]()
@@ -387,7 +410,7 @@ def main():
         sys.exit(code)
     elif a.cmd == "task":
         try:
-            print("\n".join(tasks.show(root, a.slug, a.id)))
+            print(tasks.retire(root, a.slug, a.id, a.reason, a.by) if a.action == "retire" else "\n".join(tasks.show(root, a.slug, a.id)))
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":

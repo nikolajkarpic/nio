@@ -17,7 +17,7 @@ onboard → spec → research → contracts → bindings → personas → plan
         → effort/epics/tasks → evaluate → implement (per epic) → test
 ```
 Every stage is **grilled** and uses a **template**. A jury reviews at the end of spec,
-plan and tasks, and after each implemented epic.
+plan and tasks, and once on the whole effort diff, on its pull request (the pr gate).
 
 ### Entry: full or lite
 An evaluator reads what the user asked for and routes it:
@@ -82,8 +82,8 @@ NIO has its own workers:
 - adversarial tester
 - swarm: one orchestrator and several workers, sized by effort and model
 
-Work runs in parallel or in sequence. After each epic, a jury reviews the diff against
-the tasks, and then tests run.
+Work runs in parallel or in sequence. An epic closes when its tasks' own tests pass; after the
+last one, a jury reviews the whole effort diff against the spec, and the whole suite runs once.
 
 ## Jury (Byzantine review)
 
@@ -97,7 +97,7 @@ the tasks, and then tests run.
   criteria), never the whole conversation. Model and effort are chosen by what is being
   judged.
 - **When the jury runs:**
-  - Stage gates: end of spec, end of plan, end of tasks, end of each epic.
+  - Stage gates: end of spec, end of plan, end of tasks, end of the effort (the pr gate).
   - Any of these, whenever they happen:
     - work outside the task's scope
     - a new dependency

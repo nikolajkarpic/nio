@@ -1,0 +1,1067 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-14-short-lived-drivers",
+  "round": 3,
+  "tier": "low",
+  "expect": [
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261114-ok7u/spec-consistency.md": "4e6f0b2ee9e90cd0f6eda82cb1340ff93f352418ee7394e0e91c66d8c806f7c6",
+    "R-261114-ok7u/spec-logic.md": "2e5c40b8c59662ff8666dfaa82f69de3b1f965adda9dd109510b31ae7234ddea",
+    "R-261114-ok7u/spec-scope.md": "22197bd7a2e2bdc8cdcfbc072d28ee5c4a12e4685afcdec4a25834b8a0c7aa76",
+    "R-261114-ok7u/spec-testability.md": "383089e7d0c647daf7293acfc3b9b2d5e256007fb5817c98eec64b7ba94d92b6",
+    "R-261114-ok7u/spec-refuter.md": "bf1bde6a622e5ce36d3340b00eeb2bf2471ea61440fb175b1b1c959a65014775",
+    "R-261114-ok7u/spec-consistency-2.md": "9d6909544c59d2a0e4c9f6ef89c8502c4f9ccaccfe1bc5497e8e692dda382075",
+    "R-261114-ok7u/spec-consistency-3.md": "f7295c495871a84f155735caa4c8e0b9dbed619f8350ff1ac8aaf6e48260b565",
+    "R-261114-ak5x/spec-consistency.md": "3d37dbf591ae9352a8a0f14ce6d564f2b1719fba011c5e29be7978e7fd2715ec",
+    "R-261114-ak5x/spec-logic.md": "c0e20e175461309e1bc5d4349dfee4bbad40a0d45da488445234eddff8b9e26e",
+    "R-261114-ak5x/spec-scope.md": "ccf91aefef7eb9f98c4c761c9194875ac2e9da8dec5ee5ba36eec6bfba9aed0a",
+    "R-261114-ak5x/spec-testability.md": "7f04389d56129f665f5abe3973212ac8ee34c53ba9a1214ed83b72e39f66bb0e"
+  },
+  "jurors": {
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "87b021ef7a490fb06e6233bb611f6c939446657e",
+      "judged": 3
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "87b021ef7a490fb06e6233bb611f6c939446657e",
+      "judged": 3
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "87b021ef7a490fb06e6233bb611f6c939446657e",
+      "judged": 3
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / claude-sonnet-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "87b021ef7a490fb06e6233bb611f6c939446657e",
+      "judged": 3
+    },
+    "spec-consistency-2": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fee14ce3e09564601a0d00fd7152992de21757a5",
+      "judged": 2
+    },
+    "spec-consistency-3": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "fee14ce3e09564601a0d00fd7152992de21757a5",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Drivers must write juror output, against D-261107-pdq4",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "FR-15; Decisions entry for D-261107-pdq4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "do each step that reads or writes a juror output",
+        "jurors write their own output, so a driver need not read juror outputs"
+      ],
+      "fix": "either drop the juror-output save from FR-15 and keep the driver to the pack and escalation steps, or write a change request against D-261107-pdq4 and cite it.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-15 gives the driver the step of saving a juror's reply, and the spec's own Decisions entry says jurors write their own output. The current decision D-261107-pdq4 is in force and nothing in the spec is a change request against it, so the driver would save output that the jury design says jurors already wrote.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "D-261107-pdq4 (current) says jurors write their own output and a driver need not read juror outputs. FR-15 gives the driver the step of saving a juror's reply, and also disposing of findings, which reads juror output. An implementer cannot satisfy both. The spec's own Decisions line cites D-261107-pdq4 as the reason the driver does not read juror output, so the stated basis and FR-15 disagree.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "the Decisions section justifies the driver's lighter role by saying jurors write their own output. FR-15 still gives the driver the step of saving a juror's reply. If the juror has already written its output file, there is no reply left for the driver to save, so the step either repeats the juror's write or depends on a reply path the decision removed. This is inferred from the text. The spec does not say how the reply reaches the driver.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-15 makes the driver do each step that reads or writes a juror output, including \"saving a juror's reply\". The Decisions entry for D-261107-pdq4 says \"jurors write their own output\". Nothing else in the spec explains which jurors' replies a driver would save, and no change request is cited.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "dropped saving a juror's reply from FR-15 (grill Q4)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "FR-1 and FR-2 apply to every host, but FR-13 says no-subagent hosts run the unit in the main session",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "FR-2",
+        "FR-13",
+        "AC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN an effort reaches the spec, plan or tasks gate THE SYSTEM SHALL have that gate run by a newly started driver.",
+        "IF the host has no subagents THEN THE SYSTEM SHALL have the main session run the unit itself from the same brief, without stopping for the human.",
+        "then the gate is run by a newly started driver, and that driver ends once the gate is closed or handed back."
+      ],
+      "fix": "add \"WHERE the host has subagents\" to FR-1 and FR-2 and to AC-1 and AC-2, or state how a driver-less host runs them.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "on a host with no subagents, FR-1 and AC-1 still require a newly started driver for the spec gate, while FR-13 requires the main session to run that same unit itself. The spec gives no rule for which applies. FR-2 has the same gap for the epic unit. FR-5 and FR-15 are qualified with WHERE, and FR-1 and FR-2 are not.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "On a host with no subagents, an effort reaches the spec gate. FR-1 and AC-1 require a newly started driver, with no host condition. FR-13 and AC-14 require the main session to run the unit itself, with no driver. The same input has two outcomes, and AC-1's e2e check cannot pass on that host. FR-5 and FR-15 do carry \"WHERE the host has subagents\", so only FR-1, FR-2, FR-6 and their ACs are unqualified.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-1, FR-2 and AC-1 carry no host condition. FR-13 sends a host with no subagents to the main session running the unit itself, and FR-5 and FR-15 are the only lifecycle FRs qualified with WHERE. The spec doesn't say which rule wins on a driver-less host.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-1, FR-2, FR-6, AC-1, AC-2 scoped to hosts with subagents (grill Q4)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "The spec calls C-261108-mplt pending while the record says it is accepted",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-12",
+        "AC-6; Decisions entry on the one-driver rule"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the full-auto driver claim (unmerged, C-261108-mplt pending) is left to its own branch"
+      ],
+      "fix": "state the standing of C-261108-mplt as the record has it, and say whether FR-12 relies on it or not.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "the record says C-261108-mplt is \"change accepted\" (claim goes stale on refresh time alone). The spec says it is pending and unmerged, and it leaves the claim to another branch. FR-12 and AC-6 depend on one driver at a time, and the spec has no mechanism for that beyond the main session's rule. A reader can't tell whether the accepted change is in force for this effort.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "the pack records C-261108-mplt as a change accepted on 2026-11-08 (driver claim goes stale on its refresh time alone). The spec's Decisions line calls the same change pending. A reader cannot tell whether the claim rule is already in force or still open, which matters for how FR-12's one-driver rule is read.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Decisions: C-261108-mplt accepted, branch unmerged; FR-12 does not rely on it",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-4",
+      "title": "A \"blocked handoff\" saved by the driver may be the note that grill Q2 rules out",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-15",
+        "FR-3; Decisions entry for grill Q2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "saving a blocked handoff",
+        "the outgoing driver writes no note"
+      ],
+      "fix": "say what a blocked handoff holds and who writes it, or say it is nio state and not a note.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "if the saved blocked handoff is free text the next driver reads, it is the note that Q2 rules out and that FR-3 forbids. If it is structured state written by nio, the spec should say so. The spec does not say which.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "The wait table has a foreground row that FR-9 does not allow",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "FR-10; decision table",
+        "row \"no | no\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THEN THE SYSTEM SHALL wait for a long command with a blocking wait with a 10-minute timeout, never a poll.",
+        "run in the foreground until it returns"
+      ],
+      "fix": "add the no-timeout case to FR-9, or remove the row and say the host is out of scope.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "FR-9 has no fallback for a host with no completion notices and no timeout-capable wait. The table sends that host to a foreground run, which FR-9 does not mention. The row is tagged [agent] and has no FR behind it.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A host has no completion notices and no blocking wait with a timeout, and `nio jury evidence` runs longer than the host's foreground limit. Decision table row `no | no` says to run it in the foreground until it returns, which by definition cannot return, so it is killed or hangs. FR-9 and AC-10 cover every host without notices and allow only the 10-minute blocking wait. No requirement or AC covers the `no | no` row, and the foreground run also has no hand-back or timeout.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "a host has no completion notices and cannot time out a blocking wait. FR-9 says the driver waits with a 10-minute timeout on any such host. The decision table's \"no | no\" row says to run in the foreground until it returns, with no timeout. A long command, which the glossary defines as one that can outlast the host's foreground limit, can then run past the limit with no hand-back, and the driver cannot tell which rule governs.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-9 sends every host without completion notices to a 10-minute blocking wait, and AC-10 repeats this. The decision table's `no | no` row (tagged [agent]) instead says \"run in the foreground until it returns\". No FR or AC covers that row, and nothing else in the spec says which of the two wins.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "no notices and no timed wait: FR-16 + AC-19 hand back with the command open; table row replaced (grill Q4)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-6",
+      "title": "A host without blocking waits is told to run a long command in the foreground",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "run in the foreground until it returns",
+        "**Long command**: a `nio` command or suite run that can outlast the host's foreground limit",
+        "wait for a long command with a blocking wait with a 10-minute timeout, never a poll"
+      ],
+      "fix": "Define the `no | no` outcome so it fits a long command (for example, hand back as open), or drop the row and the FR-9 gap.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A host has no completion notices and no blocking wait with a timeout, and `nio jury evidence` runs longer than the host's foreground limit. Decision table row `no | no` says to run it in the foreground until it returns, which by definition cannot return, so it is killed or hangs. FR-9 and AC-10 cover every host without notices and allow only the 10-minute blocking wait. No requirement or AC covers the `no | no` row, and the foreground run also has no hand-back or timeout.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-5",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "Fresh driver per gate or epic is unconditional, but FR-13 removes drivers on hosts without subagents",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "FR-2",
+        "AC-1",
+        "AC-2",
+        "FR-13",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL have that gate run by a newly started driver",
+        "then the gate is run by a newly started driver, and that driver ends once the gate is closed or handed back",
+        "THE SYSTEM SHALL have the main session run the unit itself from the same brief"
+      ],
+      "fix": "Add \"WHERE the host has subagents\" to FR-1, FR-2 and FR-6 and to AC-1 and AC-2, or state that FR-13 is an explicit exception.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "On a host with no subagents, an effort reaches the spec gate. FR-1 and AC-1 require a newly started driver, with no host condition. FR-13 and AC-14 require the main session to run the unit itself, with no driver. The same input has two outcomes, and AC-1's e2e check cannot pass on that host. FR-5 and FR-15 do carry \"WHERE the host has subagents\", so only FR-1, FR-2, FR-6 and their ACs are unqualified.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-2",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "One driver per epic conflicts with a mid-unit hand-back that starts another driver for the same unit",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-2",
+        "AC-2",
+        "FR-6",
+        "FR-11",
+        "UJ-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL have one newly started driver run that epic's tasks and its implementation jury",
+        "then starts a fresh driver for the rest of the unit",
+        "the next unit SHALL get a new one"
+      ],
+      "fix": "Say that a unit may have several drivers in sequence, one after each hand-back. Reword FR-2 and AC-2 to \"at least one\", and give the `ended` row a way to start a driver for a resumed unit.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "Epic E-1 has a blocked task, so the driver ends under FR-11. The human answers, and the main session starts a fresh driver for the rest of E-1, as UJ-2 step 3 says. E-1 now has two drivers. FR-2 and AC-2 say one driver per epic (\"two epics have two drivers\"). FR-6 gives a new driver only to the next unit. The state table's `ended` row rejects a brief and says a new unit gets a new driver. It never says that a resumed unit may get one, and a new brief on the same unit is exactly what UJ-2 needs.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-2 and AC-2 say one driver per epic (\"two epics have two drivers\"). UJ-2 step 3 starts a fresh driver \"for the rest of the unit\" after a hand-back. FR-6 and the `ended` row of the state table only give a new driver to a new unit and reject a brief otherwise, so a resumed unit has no rule.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-2, FR-6, AC-2, state table: drivers one after another per unit, a resumed unit gets a new one (grill Q4)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "The brief must list all open tasks and findings but is capped at 80 lines",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-14",
+        "NFR-2",
+        "AC-15"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "its stage, its open tasks and the open findings of its current gate, the next command and the skill to follow",
+        "THE SYSTEM SHALL keep a brief to at most 80 lines."
+      ],
+      "fix": "Say what is dropped or summarised past the limit (counts plus the first N, and a command to list the rest), or drop the cap.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "The tasks gate or an implementing epic has 90 open tasks, or a gate round has 30 open findings. FR-14 says the brief prints all of them. NFR-2 and AC-15 say at most 80 lines. Only one can hold. AC-15's fixture has just two items, so it never shows this.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "an effort at a gate has 60 open findings, or `nio flow brief` gets a slug with no saved state. The fixture holds only two findings and two tasks. The spec doesn't say whether the brief truncates, summarises or errors. A test cannot pass or fail on 80 lines when nothing says what is dropped, so a brief that silently omits findings passes. Nothing says what a driver gets for an unknown slug either.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-14 prints the effort's open tasks and the open findings of its current gate, with no limit stated. NFR-2 and AC-15 cap the brief at 80 lines. AC-15's fixture has two items, and nothing in the spec says what happens past the cap. That means the spec doesn't say whether the brief truncates, summarises or errors, so it doesn't settle which of the two requirements wins. The unknown-slug part of the finding is also unaddressed, because FR-14 and AC-15 only cover an effort at some stage.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-14 overflow (counts, first items, command for the rest) + AC-17; unknown slug AC-18, exit 1 (grill Q4)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "A driver ended on a third timed-out wait can leave the command running, with nothing stopping a second copy",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-10",
+        "FR-12",
+        "AC-11"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "end the driver with a summary naming the unfinished command as open and how to continue",
+        "start no second driver for that effort: the main session starts a unit's driver only once the previous one has ended"
+      ],
+      "fix": "Say whether the ended driver stops the command or the next driver waits for it, and what \"how to continue\" means for a command still running.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "A driver's `nio jury evidence` is still running after the third 10-minute wait, so the driver ends (state table, `running`, `wait timed out`, to `ended`). FR-12 is then satisfied and the main session starts a fresh driver. That driver's brief gives \"the next command\", which is probably the same command, so it starts a second `nio jury evidence` while the first is still running. FR-12 stops two drivers at once but not two runs of the same command. Nothing says whether the first run is stopped or waited on.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-10, AC-11: the summary names the command as still running; the next driver waits on that run",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "Three-wait cap added beyond the human's one blocking wait",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-10",
+        "FR-9",
+        "decision table row \"no | yes\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and after the third wait that times out end the driver",
+        "a blocking wait with a 10-minute timeout, at most three",
+        "Where a host has no notifications, one blocking wait with a timeout, never a poll."
+      ],
+      "fix": "either drop the three-wait cap and keep the single blocking wait the human named, or move the cap to an explicit grill question and tag it [default] until the human confirms it.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human asked for one blocking wait with a timeout on a host without notifications. FR-10 adds a check-and-retry loop with a third-timeout hand-back, tagged [agent] and never confirmed. A driver on a slow `nio jury evidence` run ends after about 30 minutes of waiting, a behaviour the human never saw.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-10, with its check-and-retry loop and end after the third timed-out wait, is tagged [agent]. The grill answers Q1 to Q3 say nothing about waits or a cap, so the cap of three was never confirmed by the human.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "10 min, 3 waits confirmed; FR-10 and table row tagged [human] (grill Q5)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "The 10-minute timeout and the \"at most three\" cap carry a [human] tag they do not have",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "decision table row \"no | yes\"",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with a blocking wait with a 10-minute timeout, never a poll. [human]",
+        "a blocking wait with a 10-minute timeout, at most three | [human]"
+      ],
+      "fix": "retag the timeout length and the cap as [default] (or [agent]) and ask the human to confirm the number, or drop it from the spec and let the skill text carry it after the grill.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake (line 46) gives \"one blocking wait with a timeout\" and no duration. The number 10 and the cap of three are not in any human words. The [human] tag tells the reviewer the human confirmed them, which is false. The row also relies on FR-10, which is tagged [agent], so one row carries two provenance claims.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The decision table row `no | yes` is tagged [human] but includes \"at most three\", which comes from FR-10, tagged [agent]. The grill answers Q1 to Q3 contain no 10-minute figure or cap, so the [human] tag overstates the provenance.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "10 min, 3 waits confirmed by the human (grill Q5)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "Length limits NFR-1 and NFR-2 are unconfirmed numbers",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "NFR-1",
+        "NFR-2",
+        "AC-15"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL keep a brief to at most 80 lines.",
+        "THE SYSTEM SHALL keep a driver's end summary to at most 15 lines."
+      ],
+      "fix": "keep the limits but tag them [default] so the grill confirms them, or state them as \"short\" until the human sets a number.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human said \"short\" for the brief and the summary. The 80-line and 15-line caps are [agent] and were not asked for. AC-15 turns the 80-line cap into a test, so a reviewer who accepts the spec as human-confirmed also accepts a limit nobody chose.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "NFR-1, NFR-2 tagged [human] per grill Q4",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "FR-12 is tagged [agent] but cites a grill call that the intake does not show",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-12",
+        "Decisions"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "start no second driver for that effort",
+        "grill call on FR-12 (2026-11-14)"
+      ],
+      "fix": "either attach the grill answer to the intake or retag FR-12 as [default] until the human's answer is written into the intake.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the Decisions line says the grill decided FR-12, but FR-12 still carries [agent], and the intake's Q&A holds only Q1 to Q3. A reviewer cannot tell whether the human confirmed the rule, so the one-driver-at-a-time rule may be a scope extension that looks confirmed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Decisions: FR-12 named as an agent call in the grill log",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "Two separable features in one spec",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-1 to FR-7",
+        "FR-13 to FR-15 (driver lifecycle); FR-8 to FR-10 and the wait decision table (wait rules); Summary"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "this spec covers two of the four fixes, #128 and #85"
+      ],
+      "fix": "keep the bundle if the human still wants it; otherwise split #85 into its own spec and leave FR-8 to FR-10 there.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the driver lifecycle (#128) and the wait rules (#85) can ship without each other, since the #85 proposal stands alone in the intake. Bundled, a problem in the wait rules holds back the driver change, and the 15 FRs and 16 ACs make the review heavier than either part needs. The bundle was agreed in conversation, so this is a note rather than a defect.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "human: keep the wait rules in this spec",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "AC-10 forbids a check between waits that AC-11 requires",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "AC-10",
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the skill text holds no instruction to check between waits",
+        "one check after each timeout, at most three waits in all, then the hand-back"
+      ],
+      "fix": "reword AC-10 so only polling at an interval is forbidden. Say the single check after a timeout (AC-11) is the one allowed exception, so the two Observables can both be true.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a skill follows AC-11 and says \"check once after each timeout, then wait again\". A test for AC-10 that greps for any instruction to check between waits then fails. If the skill is edited to satisfy AC-10, the AC-11 test fails. Both tests cannot pass on the same skill text.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "a host with no completion notices runs `nio jury evidence` in a blocking wait. The wait times out. AC-10's observable says the skill text must hold no instruction to check between waits, and it also says the driver does not poll. AC-11's observable and FR-10 require one check after each timeout before the next wait. The skill text cannot pass both. Either the skill has the check, which fails AC-10, or it does not, which fails AC-11 and FR-10.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-10's Observable says \"the skill text holds no instruction to check between waits\". AC-11 requires \"one check after each timeout\" and then another wait. A check after a timeout is a check between waits, so the two Observables can't both hold on the same skill text.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-10 bans only interval polling; the one check after a timeout is allowed (grill Q4)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "AC-15 has no behaviour past the 80-line limit or for a missing slug",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-15",
+        "FR-14",
+        "NFR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "in at most 80 lines"
+      ],
+      "fix": "add an AC for the overflow case. Say which items are kept or counted and what the last line says. Add an AC for an unknown slug that says what is printed and what the exit code is.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "an effort at a gate has 60 open findings, or `nio flow brief` gets a slug with no saved state. The fixture holds only two findings and two tasks. The spec doesn't say whether the brief truncates, summarises or errors. A test cannot pass or fail on 80 lines when nothing says what is dropped, so a brief that silently omits findings passes. Nothing says what a driver gets for an unknown slug either.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-9",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "AC-12 compares against \"the skill already says\" with no named failure",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-12",
+        "FR-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the skill's existing refusal and failure steps are unchanged and still reached after a background run"
+      ],
+      "fix": "name at least one failing command, such as `nio flow green` returning a refusal. State the exact observable that must hold, for example that the driver reaches the existing \"handle refusal\" step with the same text. Cite the skill step.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "\"unchanged\" is checked against a baseline that is not named. \"Still reached\" gives no failing command and no expected branch. The Observable also doesn't say whether a failed subagent counts. An e2e test would need a command that fails in the background, and the spec names none. A background run that drops the exit status or the refusal text still passes any test written from this wording.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-12's Observable is \"existing refusal and failure steps are unchanged and still reached after a background run\". It names no failing command, no skill step and no expected text. A background run that drops the exit status could still pass a test written from it.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "AC-12 names a refused background nio flow green and the implement skill's On a refusal step (grill Q4)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-19",
+      "title": "The 15-line summary limit is tested by no AC, and AC-4 refers to it without a number",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-4",
+        "NFR-1",
+        "FR-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "within the summary's length limit",
+        "at most 15 lines"
+      ],
+      "fix": "cite NFR-1 in AC-4 and state \"at most 15 lines\" in the AC and its Observable. Also say how a line is counted, for example non-empty lines.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-4 does not cite NFR-1 and gives no number. Its Observable only requires \"a message holding all three\" parts. A driver summary of 200 lines passes AC-4 and the 15-line requirement is never checked. NFR-2 at least has AC-15 with a number.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-4 states at most 15 non-empty lines (NFR-1)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "No case for a driver that ends without a summary",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-4",
+        "FR-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "WHEN a driver finishes its unit THE SYSTEM SHALL end it with a summary of what closed, what is open and the next command."
+      ],
+      "fix": "add an FR and AC for a driver that ends without a valid summary. The main session recovers from `nio flow brief` alone and starts a new driver. Add a table column or row for this event.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a driver crashes, hits a context or turn limit, or returns an empty or partial message. The state table's three events (`unit closed`, `human item or blocked task`, `wait timed out`) all assume a summary is given. The main session then has no summary to route from. FR-12 also says it starts a new driver only once the previous one has ended. The spec says nothing on whether a dead driver counts as ended, or what the main session may read to recover. Its only way to read state (without breaking FR-5) is `nio flow next` and `nio flow brief`, and that is not stated.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-12, AC-6: a driver that ended without a summary counts as ended; main session goes on from nio flow brief",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-21",
+      "title": "The driver saves juror replies, against the decision that jurors write their own output",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-15",
+        "D-261107-pdq4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "saving a juror's reply",
+        "jurors write their own output, so a driver need not read juror outputs"
+      ],
+      "fix": "either keep jurors writing their own output and remove \"saving a juror's reply\" and the juror-output reading from FR-15, or raise a change request against D-261107-pdq4 and say so in the spec.",
+      "sources": [
+        {
+          "juror": "spec-consistency-2",
+          "lens": "consistency",
+          "situation": "D-261107-pdq4 (current) says jurors write their own output and a driver need not read juror outputs. FR-15 gives the driver the step of saving a juror's reply, and also disposing of findings, which reads juror output. An implementer cannot satisfy both. The spec's own Decisions line cites D-261107-pdq4 as the reason the driver does not read juror output, so the stated basis and FR-15 disagree.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-22",
+      "title": "The poll rule conflicts with itself: no check between waits, and a check after each timeout",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "AC-10",
+        "AC-11",
+        "FR-9",
+        "FR-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the skill text holds no instruction to check between waits",
+        "one check after each timeout",
+        "never a poll",
+        "check once whether it finished and, if not, wait again"
+      ],
+      "fix": "decide whether the check after a timeout is a poll. If it is allowed, rewrite AC-10's observable to say no check except the one after each timeout, and align FR-9's \"never a poll\" with it. If it is not allowed, remove the check from FR-10 and AC-11 and let the driver go straight to the next wait.",
+      "sources": [
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "a host with no completion notices runs `nio jury evidence` in a blocking wait. The wait times out. AC-10's observable says the skill text must hold no instruction to check between waits, and it also says the driver does not poll. AC-11's observable and FR-10 require one check after each timeout before the next wait. The skill text cannot pass both. Either the skill has the check, which fails AC-10, or it does not, which fails AC-11 and FR-10.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-16",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-23",
+      "title": "FR-15 has the driver save juror replies, which the cited decision says is not needed",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-15",
+        "and the spec's Decisions line for D-261107-pdq4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "saving a juror's reply",
+        "jurors write their own output, so a driver need not read juror outputs"
+      ],
+      "fix": "either drop \"saving a juror's reply\" from FR-15, or write a change request against D-261107-pdq4 and say why the driver must save replies.",
+      "sources": [
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "the Decisions section justifies the driver's lighter role by saying jurors write their own output. FR-15 still gives the driver the step of saving a juror's reply. If the juror has already written its output file, there is no reply left for the driver to save, so the step either repeats the juror's write or depends on a reply path the decision removed. This is inferred from the text. The spec does not say how the reply reaches the driver.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-24",
+      "title": "The C-261108-mplt status is called pending in the spec, but the pack records it as accepted",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "the spec's Decisions line for \"One driver at a time is a main-session rule\""
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "C-261108-mplt pending"
+      ],
+      "fix": "write the status as the record gives it, for example \"accepted, unmerged\".",
+      "sources": [
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "the spec says the full-auto driver claim is \"unmerged, C-261108-mplt pending\". The pack's record for C-261108-mplt says the change is accepted. Both can be true (accepted but not yet merged), but the spec does not say so, so a reader cannot tell whether the change still needs approval.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "Decisions: C-261108-mplt accepted, branch unmerged",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-25",
+      "title": "FR-8 covers a long `nio` command, but the glossary's long command also covers suite runs",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "FR-9",
+        "and the Glossary entry for Long command"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "starts a long `nio` command or a subagent",
+        "a `nio` command or suite run that can outlast"
+      ],
+      "fix": "have FR-8 use the glossary's term \"long command\", or state that suite runs are included.",
+      "sources": [
+        {
+          "juror": "spec-consistency-3",
+          "lens": "consistency",
+          "situation": "a driver starts a test suite run in the background on a host with completion notices. FR-8 covers only a long `nio` command or a subagent, so the rule for a suite run is missing from FR-8. The decision table and FR-9 use \"long command\", which the glossary defines to include suite runs. A reader cannot tell whether FR-8 applies to suite runs.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "FR-8, AC-9 say long command (Glossary), which covers suite runs",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      3,
+      "approved"
+    ],
+    [
+      3,
+      "closed"
+    ]
+  ],
+  "versions": {
+    "1": "fee14ce3e09564601a0d00fd7152992de21757a5",
+    "2": "fee14ce3e09564601a0d00fd7152992de21757a5",
+    "3": "87b021ef7a490fb06e6233bb611f6c939446657e"
+  },
+  "asked": {},
+  "closed": [
+    3,
+    "8f50032bb6fc1a8774c3b0f48e7a4ef21e83dae2",
+    "fix ruled by the human (J-10); spec-gate fixes close without re-check per the jury-round-cap spec"
+  ]
+}

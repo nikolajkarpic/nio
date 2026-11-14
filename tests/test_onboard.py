@@ -1021,8 +1021,9 @@ def test_changed_sources_listed():
     assert jury.check(root, tf.S, gate, record=True)[0] == "approved"
     code, out = flow.done(root, gate, tf.S, by=tf.BY)
     assert code == 0, out
-    i = next(n for n, l in enumerate(out) if l.startswith("merge:"))
-    assert out[i + 1:i + 2] == want, ("CT-20: close_lines must follow merge:", out)
+    # the last epic's close line (`merge:` before main's pr gate, `next: the pr gate` after it) is followed by the docs line
+    i = next(n for n, l in enumerate(out) if l.startswith(("merge:", "next: the pr gate")))
+    assert out[i + 1:i + 2] == want, ("CT-20: close_lines must follow the close line", out)
 
 
 def test_no_source_changed():

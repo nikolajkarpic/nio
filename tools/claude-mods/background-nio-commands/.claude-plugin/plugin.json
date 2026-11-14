@@ -1,0 +1,5 @@
+{
+  "name": "background-nio-commands",
+  "version": "0.1.0",
+  "description": "Runs long nio commands (nio jury run, nio flow green, the configured test suite) in the background so the harness wakes the agent when they exit."
+}

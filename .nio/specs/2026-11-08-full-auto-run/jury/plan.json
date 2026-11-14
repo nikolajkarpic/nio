@@ -1,0 +1,1142 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-08-full-auto-run",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "architecture-fit",
+    "logic",
+    "risk-rollback",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261108-r4vm/plan-architecture-fit.md": "66bed60a93cb2a051fdbd976923aed17268b07b42fa1cb7333bccd9ed11bd769",
+    "R-261108-r4vm/plan-logic.md": "8c005cf4d4cf789f5717ce79956cb8373d0dc0f914e1cdd4c60384e11534c5df",
+    "R-261108-r4vm/plan-risk-rollback.md": "2300c2018fb3ed7bf1d04d6d5e6bdeaf28d71deec9a59d01fa87f24ab02a782f",
+    "R-261108-r4vm/plan-test-proof.md": "a51c99e9937e3017fc9b7ca3b3eb843334392d07cd2ef004b26f4989d6ac417b",
+    "R-261108-r4vm/plan-refuter.md": "687fcf4acff893821420d5c30c66bdb92dab90aa1bb13faa89b138474f102436",
+    "R-261108-r4vm/plan-risk-rollback-2.md": "a13c5499aa41e47a065e7936e55b0ebab294ff2d11a9a770e37c025a16845199",
+    "R-261108-r4vm/plan-risk-rollback-3.md": "84573688f8435ba3e52456dc8bc358c429cd10b8c87d0433ddca4f889f61633b",
+    "R-261108-7i5c/plan-architecture-fit.md": "3ab25964b470b8cfe1960cae361fcafdeeb22a0a1e8aa52c169e9a48eda8cb39",
+    "R-261108-7i5c/plan-logic.md": "72fd1157bad007361cb5130b0b48664aa79256aff8a0aca459b3a4d5fab19d0a",
+    "R-261108-7i5c/plan-risk-rollback.md": "701c5dca515e6c740f6ef04ea02d657443afe7089a67cb00b8a4a4b9706909f9",
+    "R-261108-7i5c/plan-test-proof.md": "2aeb9b061159782c4d0c26664b1b1636d4bfe212bee47aed20ad6b4c64d1922a"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 2,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "c577539d03e338428603c93cf230573aea940f3f",
+      "judged": 3
+    },
+    "plan-logic": {
+      "attempts": 2,
+      "lens": "logic",
+      "by": "",
+      "context": "",
+      "valid": false,
+      "errors": [
+        "missing `by`",
+        "missing `context`",
+        "gate/subject must be plan/2026-11-08-full-auto-run"
+      ],
+      "round": 3,
+      "version": "c577539d03e338428603c93cf230573aea940f3f",
+      "judged": 1
+    },
+    "plan-risk-rollback": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / opus-5.5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "c577539d03e338428603c93cf230573aea940f3f",
+      "judged": 3
+    },
+    "plan-test-proof": {
+      "attempts": 1,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "c577539d03e338428603c93cf230573aea940f3f",
+      "judged": 3
+    },
+    "plan-risk-rollback-2": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a023e832c6002c7a32bacdc34759936f189f4694",
+      "judged": 2
+    },
+    "plan-risk-rollback-3": {
+      "attempts": 1,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a023e832c6002c7a32bacdc34759936f189f4694",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Under auto, an approved gate still reads as waiting for the human, so the driver stops there",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-16",
+        "CT-6",
+        "NFR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "status, command = f\"waiting_for_human: approve {GATES[stage][0]}\", f\"nio flow done {stage} --commit {slug} --by human\"",
+        "Stop on any `waiting_for_human`, `suspended`, or a printed `--commit` command"
+      ],
+      "fix": "add a contract on `flow.py:where`: under auto, with no risky flag, a passing gate shows `working` with its `done` command, not `waiting_for_human: approve`. Add a TC that resumes a driver after the jury approved.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`where` sets this status when `ready == \"pass\"`, whatever `state[\"auto\"]` is. A driver that takes over or resumes after a jury approved runs `nio flow next`, sees `waiting_for_human: approve spec` and a `--commit ... --by human` command, and stops (CT-16 step 4). Yet `done` would commit on its own under auto for a spec with no risky flag. No contract changes `where`, so a non-risky auto run stops at every gate it re-enters after approval. That breaks NFR-2 and AC-11.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "flow.py:700 sets `waiting_for_human: approve` whenever `ready == \"pass\"`, whatever `auto` is, and no contract changes `where`. CT-16 step 4 stops on that status. TC-11 only calls `done` directly, so no test resumes a driver after the jury approved.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-20 where shows working under auto; TC-49",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "The jury skill is not changed for auto: it still fixes `rejected` itself and sends behaviour changes to the human",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-16",
+        "CT-17",
+        "CT-19",
+        "FR-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "At a gate the jury skill runs with `nio-fixer` (CT-17) in place of the human for `rejected` outcomes.",
+        "| `rejected` | dispose of each open finding (step 4), fix the artefact, then call the step again |",
+        "`spec-fix` that changes behaviour | the human, through @nio:grill"
+      ],
+      "fix": "add a contract on `skills/jury/SKILL.md` for a `## Under auto` section. When `nio flow status` shows `auto`, `rejected` goes to `nio-fixer` and the session never disposes `--by agent` and never grills the human. Add a test that the skill holds it, as TC-16 does for the grill.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "the driver runs the jury skill in a subagent (FR-6). That skill follows its own Decide table: it disposes and fixes `--by agent`, and grills the human on a behaviour change. Nothing in it says to hand `rejected` to `nio-fixer` or to use `--by auto`/`held`. CT-19 changes only the skill's flow-state line, while CT-18 gives the grill a `## Under auto` section. Under auto, the fixer card and the `held` path would never run, and the run would go back to the human or fix as `agent`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "skills/jury/SKILL.md step 4 (lines 101-106) still disposes `--by agent` and grills the human on behaviour changes. CT-19 touches only its flow-state line, and plan.md has no contract for a jury-skill `## Under auto`. CT-16's one sentence is a driver instruction, not a change to the skill the subagent follows.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-21 jury skill Under auto section; TC-50",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "The driver claim identifies its holder by the `--by` string, which two sessions share",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "FR-29",
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a claim whose `by` equals the caller's is refreshed (`at` rewritten)",
+        "mine = (os.getpid(), host, datetime.datetime.now(datetime.timezone.utc).isoformat())",
+        "if missing := [x for x in (\"flow.lock*\", \"state.json.new\") if x not in have]:"
+      ],
+      "fix": "put a per-driver nonce in the claim, created on the first `drive`, printed by `drive` and passed back on each refresh and on `--release`. Refresh only on a matching nonce. Add `driver.lock*` to `.gitignore`. Add a TC with two drivers that pass the same `--by`.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`lock`, the code CT-5 is `Like:`, identifies its holder by pid and host. CT-5 identifies the holder by `--by \"<role> / <host> / <model>\"`. Two Claude Code sessions on the same model both pass the same string, so the second \"refreshes\" the first's claim and both drive, which is what FR-29 forbids. The tests hide this because they use `driver / a / m` and `driver / b / m`. Also, CT-5 renames to `driver.lock.<pid>.<hex>` but only adds `driver.lock` to `.gitignore`. A crash leaves the temp file for `commit_gate`'s `git add -A` to commit. `lock` ignores `flow.lock*` for this reason.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "two driver sessions on the same host and model, both started with the same `by` string (role / host / model). The first claims the effort. The second calls `nio flow drive`. Its `by` equals the claim's `by`, so CT-5 refreshes the claim and the second driver carries on. Both now move the effort, and AC-9 / FR-29 say the second must stop. The only refusal is the `O_EXCL` race loser, so a late second driver is never refused. The `by` is a role / host / model string, not a session identity, so it cannot separate two drivers.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the human, or a compacted session's replacement, starts a second `@nio:auto` on the same machine and model. Both pass `--by \"driver / claude-code / <model>\"`. The second call matches `by`, so CT-5 refreshes the claim instead of refusing it. Two drivers then run `next`/`done` and two fixers edit `spec.md` at the same time. `flow.lock` serialises history writes but not the fixers' file edits, so one fixer's edits silently overwrite the other's. TC-9, TC-43 and TC-44 all use distinct `by` strings, so no test shows the collision.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-5 refreshes a claim whose `by` equals the caller's, and `by` is \"<role> / <host> / <model>\", which two sessions can share. TC-9, TC-38 and TC-43 use distinct `by` strings. The `driver.lock*` ignore point overlaps ledger J-12.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-5 per-driver token, temp-file refresh, driver.lock* ignored; TC-51, TC-38",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "CT-7 binds `resumed`, which can't write the `raise` line it describes",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-7",
+        "FR-40",
+        "AC-41"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the state is `auto` and the pause it clears is `suspended: cap` or `suspended: stuck`, the `resume` line is followed by",
+        "entry, new = resumed(state, lines, None, stop if stop and stop[\"kind\"] == \"pause\" else None)",
+        "return line, {**state, \"pause\": None, \"abandon\": None, \"waiting\": None}"
+      ],
+      "fix": "bind CT-7 to `flow.py:start` (existing). Once `entry[\"to\"]` is known, append the `raise` line with the gate read from the cleared pause, or from `GATES[entry[\"to\"]]`. Keep `resumed`'s return shape.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`resumed` returns one line and the state. `start`, the caller that resumes a cap or stuck suspension, passes stage `None` and sets `entry[\"to\"]` only afterwards. So inside `resumed`, the `raise` line's `from`/`to` and `evidence.gate` (\"the stage's gate\") are unknown. If it is written there, the gate is `\"\"` and the stopped gate's round limit never rises, which breaks AC-41 and TC-41's \"at plan round 4 no round pause\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-7 binds `resumed`, and `start` calls it with stage None (flow.py:892) and sets `entry[\"to\"]` afterwards. CT-7's own \"stage's gate or ''\" lets an empty gate be written, and `stops` counts raise lines per gate. TC-41 would catch it, but the contract binds the wrong function.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-7 bound to flow.start",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "CT-1 records host and model in `evidence.ran_in`, while AC-42 checks `who`",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "AC-42",
+        "FR-30"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Observable: the grant line's `who` holds a non-empty host and model.",
+        "return {\"role\": \"human\", \"host\": \"\", \"model\": \"\"}",
+        "The grant line records `unknown` for a model it can't detect, which keeps AC-42 as written"
+      ],
+      "fix": "either raise a change request so AC-42 reads `evidence.ran_in`, or have CT-1 write the grant's `who` as `{\"role\": \"human\", \"host\": <host>, \"model\": <model>}`. Make TC-42 assert whichever field is chosen.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "CT-1's grant goes through `record` with `who(\"human\")`, whose host and model are always empty. The host and model go to `evidence.ran_in` instead, and TC-42 checks `evidence.ran_in`. AC-42 as written then always fails, though the plan's decision says it is kept as written.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "CT-1 and the architecture put the host and model in `evidence.ran_in` and leave `who` as the human. They also store the literal `unknown` when nothing is detected. A test written from AC-42 reads `who` and fails. A test written from CT-1 reads `ran_in` and passes with `unknown`, which satisfies AC-42's \"non-empty\" without recording a host or model, so FR-30's audit trail can be empty and still pass.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-42's Observable says the grant's `who` holds host and model, but `who(\"human\")` (flow.py:48-51) gives empty host and model, and CT-1 and TC-42 use `evidence.ran_in`. The plan says it keeps AC-42 \"as written\", which is false.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-1 grant who holds host and model (unknown when missing); TC-42 asserts who",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-6",
+      "title": "Two drivers with the same `--by` string both get the claim",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-29",
+        "AC-9",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a claim whose `by` equals the caller's is refreshed (`at` rewritten)",
+        "`drive(root, slug, by, release=False, now=None) -> (code, lines)`",
+        "Given a driver running an effort, when a second driver starts on the same effort, then the second stops without moving it."
+      ],
+      "fix": "give each driver a unique id, for example a token the driver generates once and passes on every `drive` call, and compare that id; or refuse a same-`by` claim that is under 30 minutes old unless the caller passes its token.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "two driver sessions on the same host and model, both started with the same `by` string (role / host / model). The first claims the effort. The second calls `nio flow drive`. Its `by` equals the claim's `by`, so CT-5 refreshes the claim and the second driver carries on. Both now move the effort, and AC-9 / FR-29 say the second must stop. The only refusal is the `O_EXCL` race loser, so a late second driver is never refused. The `by` is a role / host / model string, not a session identity, so it cannot separate two drivers.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-3",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "After the human accepts a round-check hit, nothing can start the next round",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-37",
+        "FR-12",
+        "CT-13",
+        "CT-12",
+        "CT-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a CT-13 hit while `current` differs from the judged version → `human` with CT-13's lines",
+        "and no `resume` line names this gate and round → `pause`"
+      ],
+      "fix": "tell CT-12 and CT-13 how the human's acceptance is recorded, so the hit clears once a resume line names the gate and round and `composed` falls through to `compose`'s `rerun`. The same applies to `held` once the human re-disposes it. Add an AC for resuming after a CT-13 hit.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "a fix round removes AC-4. The round ends with `current` different from the judged version. CT-12 composes `human`, and CT-6 item 1 pauses. The human reads it, accepts the cut and resumes with `nio flow start`. A resume line now names this gate and round, so `stops` does not pause again. But no new round has been collected, so `current` still differs from the judged version, and `composed` returns `human` with the same CT-13 lines on every call, before `compose` could return its own `rerun` (\"changed since round N judged it\"). `rerun` is the only outcome that makes the jury skill run the lenses. The driver and the jury skill therefore get `human` forever. The only exits are `--human` closure of the gate, which skips the re-review, or the human running a round by hand. The same loop applies to a `held` finding after the human resumes without re-disposing it. Spec UJ-2 says the human \"settles it and resumes; the run carries on in auto\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-12 returns `human` for a CT-13 hit for as long as `current` differs from the judged version, ahead of `compose`'s `rerun` (jury.py:1014). A resume line only silences CT-6 item 1. Nothing clears the hit, so UJ-2's \"settles it and resumes; the run carries on\" has no path.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-12 resume line naming gate and round clears a round-check hit; re-disposed held clears; TC-52",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "Auto approval commits land on the base branch before the run has its own branch",
+      "kind": "risk",
+      "severity": "blocker",
+      "cites": [
+        "CT-16",
+        "CT-8",
+        "TC-22",
+        "AC-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "at a gate, `--commit` (or the auto flag on a spec without a risky flag) also makes the approval commit",
+        "The first claim also switches to `nio/<slug>`",
+        "Assert: `gh.log` holds exactly one `pr create --head nio/<S>` and no `merge`; `main`'s head unchanged."
+      ],
+      "fix": "put the switch to `nio/<slug>` in the grant (CT-1/CT-2) or in the driver's first step (CT-16): refuse or switch when the checked-out branch isn't the effort branch, before any auto commit. Add a TC that grants on `main`, passes the spec gate under auto, and asserts `main`'s head is unchanged and the approval commit is on `nio/<slug>`.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the human grants auto on `main` at drafting or spec_jury, which is how this repo's own `nio: approve spec` commits were made. The driver passes spec_jury, plan_jury and tasks_jury, and `done` makes each approval commit with no human, on `main`. Only implementing's first claim switches to `nio/<slug>`. Three unreviewed commits are now on the base branch, outside the pull request the human was meant to decide on. Undoing them means rewriting or reverting `main`. TC-4 and TC-22 start at spec_jury, so TC-22's `main` assertion fails as planned.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "before implementing, `done` makes the `nio: approve spec|plan|tasks` commits on whatever branch is checked",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "Research RF-4 says approval commits land on the current branch. Only `implement` switches to `nio/<slug>` on the first claim (implement.py:217). Under auto, `done` commits the spec, plan and tasks gates on main, so TC-22's \"main's head unchanged\" cannot hold for a run granted on main.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "Approved by the human: the grant switches to nio/<slug> (refuses on unrelated changes), so no auto commit lands on main (CT-1, TC-53)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-9",
+      "title": "A held finding reads as resolved once auto is off",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "CT-12",
+        "CT-3",
+        "TC-31"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`held` leaves `status: disposed`, so the human may re-dispose it (`--by human`), as they may any disposed finding.",
+        "Under auto, before `compose`'s own reading:",
+        "a `held` finding → `human`, `[\"held for the human: J-n: <note>\", ...]`;",
+        "only the human grants or revokes auto"
+      ],
+      "fix": "make `held` read as `human` whatever the flag: either keep the finding `open` with the held note, or have `compose` treat `disposition == held` as handed over in every mode. Add a TC: hold J-1 under auto, run `nio flow manual`, then `nio jury check`, and assert outcome `human` naming J-1.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "under auto the fixer disposes confirmed blocker J-1 `held` because its fix touches a `[human]` line, so `spec.md` is unchanged. The human then runs `nio flow manual` (CT-3). `check` now passes `auto=False`, and `compose` collects unresolved IDs only from findings whose status is `open`. `unapplied` looks only at `spec-fix`/`plan-fix`. J-1 counts as settled and the gate can compose `approved` with a confirmed blocker unfixed and no human ruling. The same happens to any reader of the ledger without the flag. The data `held` writes means \"the human's\" only while the flag is on.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "the fixer marks a confirmed blocker `held` because fixing it would rewrite a `[human]` line, and then the",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-12 treats `held` as `human` only under auto. In `compose` (jury.py:1050), `ids` collects only `status == \"open\"` findings, and `unapplied` looks only at spec-fix and plan-fix. After `nio flow manual` a `held` finding reads as settled and the gate can compose `approved`.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-12 held needs the human in every mode; TC-54",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "Two sessions on the same model share one driver claim",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "TC-9",
+        "TC-43",
+        "AC-9",
+        "FR-29"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a claim whose `by` equals the caller's is refreshed (`at` rewritten)",
+        "JSON `{by, host, at}`, created with `O_EXCL`",
+        "Action: `nio flow drive S --by \"driver / b / m\"`."
+      ],
+      "fix": "give each claim a per-driver token (a random ID the driver creates once and passes to every `drive` call, stored in the claim) and refresh only on a token match. Add a TC where two `drive` calls carry the same `by` but different tokens and the second is refused.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the human, or a compacted session's replacement, starts a second `@nio:auto` on the same machine and model. Both pass `--by \"driver / claude-code / <model>\"`. The second call matches `by`, so CT-5 refreshes the claim instead of refusing it. Two drivers then run `next`/`done` and two fixers edit `spec.md` at the same time. `flow.lock` serialises history writes but not the fixers' file edits, so one fixer's edits silently overwrite the other's. TC-9, TC-43 and TC-44 all use distinct `by` strings, so no test shows the collision.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-3",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "The human's draft is rewritten with no committed copy to restore",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-18",
+        "CT-17",
+        "CT-13",
+        "CT-14",
+        "TC-16"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "remove `## Open points`, move each OP ID to `retired`",
+        "The git blob hash of `text`, stored in git's objects when `write` (the version a round judged, #27 FR-23).",
+        "`## Fixed by the run`: each finding with `by: auto`: `- J-n [<severity>] <title>: <note> (<gate>, verdict <V-id>)`;"
+      ],
+      "fix": "commit (or stash on `nio/<slug>`) the effort folder as it stands at the grant, before the grill or the fixer edit anything, and have the grill's `## Auto` entry copy each removed open point's text. Add a TC that grants auto, runs the grill and one fixer round, then recovers the original `spec.md` from the grant commit.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "the human writes a draft and grants auto at drafting. The grill under auto deletes `## Open points` and retags items before any jury round, so no version of the draft before the grill is stored anywhere. The grill.md entry keeps only \"each choice and its reason\", not the open point's text. Later fixer edits survive only as `hash-object -w` blobs, which are referenced by the ledger but by no commit, so `git gc` can prune them. CT-13 also depends on those blobs. The run report gives a note per fix, not the text before it. A human who disagrees with an `[auto]` choice or a fix has no reliable way to get their own wording back, and no TC tries.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The human's own words are protected by FR-10, FR-12 and CT-13's `[human]` checks. What the grill removes are open points that become `[auto]` items listed with IDs in CT-14's report, and each fix has a note and a verdict. Nothing in the spec requires restoring open-point text, so this is a wish rather than an allowed bad outcome.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-12",
+      "title": "Claim takeover leftovers aren't ignored, and refresh skips the takeover's re-check",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-5",
+        "TC-38"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`lock()`'s `.gitignore` list gains `driver.lock`",
+        "rename to `driver.lock.<pid>.<hex>`, re-read, create with `O_EXCL`, as `lock` does",
+        "make its `nio: approve <gate>` commit (or `message`, for `gate`) of the effort folder"
+      ],
+      "fix": "add `driver.lock*` to the ignore list, and write refreshes to a temp file then `os.replace` after re-reading that the claim still names the caller. TC-38 can also assert that `.gitignore` holds `driver.lock*`.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "`lock` ignores `flow.lock*`, a glob, but CT-5 adds the bare name `driver.lock`. A driver that dies between the rename and the unlink leaves `driver.lock.<pid>.<hex>`, which the next auto approval commit adds to the effort folder's commit. Separately, a refresh rewrites `at` in place on a `by` match. If it races a takeover, which renames, re-reads and creates, the refresh can write over the new holder's claim, or leave a torn file that no reader parses.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "driver.lock* ignored, refresh re-checks the claim (CT-5)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "The fixer card's authority is never exercised: the tests play the fixer themselves",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-13",
+        "AC-13",
+        "TC-12",
+        "AC-12",
+        "TC-14",
+        "AC-14",
+        "TC-21",
+        "AC-21",
+        "CT-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "means the test does what CT-17 says the card",
+        "the fixer card holds `held` and `[human]` in one line",
+        "Observable: `spec.md` unchanged; status `waiting_for_human` naming the finding and the line's ID."
+      ],
+      "fix": "add an e2e in `tests/test_auto_e2e.py` (or a `tests/test_lenses.py`-style card run) that gives `nio-fixer` a ledger with one confirmed major per row of the \"Fixer action on a finding\" table. Assert on `spec.md` and the dispositions it actually writes.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "the fixer card could rewrite FR-1's `[human]` wording and dispose it `spec-fix --by auto`, or edit the spec for a refuted major. TC-13 would still pass, because the test does the dispose itself and the card check only greps for `held` and `[human]`. The asserts \"`spec.md` unchanged\" (TC-13), \"`### US-2` still in `spec.md`\" (TC-14), \"no finding has `by: auto`\" (TC-21) and \"`spec.md` blob changed\" (TC-12) are fixed by the setup. TC-15's round check would catch the first case, but not a fix that drops a non-`[human]` FR under a vaguer note, or a refuted finding that gets \"fixed\" anyway.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tests.md's header says \"the fixer acts\" means the test does what CT-17 says. TC-12, TC-13, TC-14 and TC-21 write the dispositions themselves, and the card is only grepped. TC-4's clean spec never calls the fixer, and TC-16 is the only e2e that runs a changed card.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-55 e2e nio-fixer card run per fixer-table row",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-14",
+      "title": "TC-19 expects the [auto] IDs in an order that contradicts CT-10's \"spec order\"",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "TC-19",
+        "AC-19",
+        "CT-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each holds `Defaults the run chose (judge each): FR-2, AC-1`.",
+        "the IDs in spec order"
+      ],
+      "fix": "expect `AC-1, FR-2`, or assert that each ID is on the line whatever the order.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "in `tests/fixtures/spec/spec.md`, AC-1 (line 29) comes before FR-2 (line 36). A `_pack_text` that follows CT-10 prints `AC-1, FR-2` and fails TC-19. One that sorts FRs first, or by any other rule, passes. The exact-string assert tests the order and not the AC, which is that every ID is listed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "In tests/fixtures/spec/spec.md AC-1 is on line 29 and FR-2 on line 36. CT-10 says \"IDs in spec order\" while TC-19 asserts `FR-2, AC-1`.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-19 expects spec order",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "TC-5, TC-8 and TC-33 already pass on today's code, except for a grep",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "TC-5",
+        "AC-5",
+        "TC-8",
+        "AC-8",
+        "TC-33",
+        "AC-33"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the output holds the reason and `nio flow start S --by human`; `skills/auto/SKILL.md` step 4 holds `waiting_for_human`, `suspended` and `Talking to the human`.",
+        "why = f\"{gate} jury ran {n} rounds without approval\"",
+        "\"command\": f\"nio flow start {slug} --by human\"",
+        "caps.get(\"subagents\") and caps[\"subagents\"] <= runs"
+      ],
+      "fix": "for TC-5, assert on the driver's last message in an e2e run (as TC-4 does), or accept that it is a regression guard and say so. Mark TC-8 and TC-33 as regression guards, not tests of new work.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "today's `stops` already records the plan round-3 pause, and `stopped` already prints the resume command. So TC-5's `waiting.why`, no-pass and output asserts hold before any work. AC-5's real claim is that the driver stops and tells the human, and only a grep of the SKILL.md wording proves it. A driver that ignores `waiting_for_human` and loops would still pass. TC-8's \"`auto: true`\" holds because `resumed` copies `state`. TC-33's two halves hold because `stops` has no default subagent cap and already suspends at `budgets.subagents`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`stops` (flow.py:1264-1274) already pauses at plan round 3. `resumed` already copies state, and `budgets.subagents` already suspends. TC-5's driver-stops claim is proved only by a grep of SKILL.md, and the e2e TC-4 never reaches a pause. TC-8 and TC-33 mostly guard existing behaviour.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-5, TC-8, TC-33 marked regression guards; TC-56 e2e asserts the driver's last message",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "TC-44's claim-age assert is fixed by its own setup",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "TC-44",
+        "AC-44",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "claim by `driver / a / m` created 45 minutes ago and refreshed (same `--by`) 8 minutes ago.",
+        "claim `at` under 10 minutes old"
+      ],
+      "fix": "in the e2e run, check that a long backgrounded command shows a `nio flow drive` refresh in the transcript at least every 10 minutes. Or drop the age assert and keep only the grep, and say so.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "the test writes `at` 8 minutes ago and then asserts it is under 10 minutes old. A driver that never refreshes while it waits on a long command passes, as long as SKILL.md contains the words `every 10 minutes`. CT-5's lock holds no creation time, so \"created 45 minutes ago\" can't be set up. The rest repeats TC-38's fresh-claim refusal.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-44 age assert dropped; cadence checked via skill text",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "TC-42 checks `evidence.ran_in`, while AC-42 says the grant's `who` holds the host and model",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "TC-42",
+        "AC-42",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the grant line's `who` holds a non-empty host and model",
+        "the `grant` line's `evidence.ran_in` is `{\"host\": \"claude-code\", \"model\": \"unknown\"}`.",
+        "return {\"role\": \"human\", \"host\": \"\", \"model\": \"\"}"
+      ],
+      "fix": "reword AC-42's observable to `evidence.ran_in` (a change request on the spec), or have the test also check what the AC names.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`who(\"human\")` gives an empty host and model, and CT-1 leaves `who` as it is. So TC-42 passes while AC-42's observable is still false on the grant line.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "TC-42 asserts who, as AC-42 names",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "The fixer overwrites the human's draft with no way back but an unreferenced git blob",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-17",
+        "CT-14",
+        "CT-13"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "else edit the gate's files and run",
+        "kept by `blob(..., write=True)`",
+        "each finding with `by: auto`"
+      ],
+      "fix": "keep each judged version where it can be reached (for example, a ref per gate and round, or the blob ID plus a",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "under auto the fixer rewrites `spec.md` or the plan files over several rounds before any approval commit",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "refuted",
+      "reason": "Nothing in the spec requires restoring the pre-fix text. The human's own words are guarded by FR-10 and CT-13's `[human]` checks, and every round stores the judged version as a blob (`blob(..., write=True)`). The prior refuter already refuted this wish as J-11. The finding is also cut off in the batch.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-19",
+      "title": "The round check passes silently when the judged version is gone",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-13",
+        "CT-12"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`[]` at an epic's gate, with no judged version, or with no hit.",
+        "isn't in this clone's git objects; re-run every lens"
+      ],
+      "fix": "have `cuts` treat an unreadable judged version (as opposed to there never being a round) as a hit that composes",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "an auto effort sits paused for a while, `git gc` prunes the unreferenced judged blob, or the effort is",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-24",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-20",
+      "title": "Approval commits made under auto land on the base branch, not `nio/<slug>`",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-15",
+        "CT-16",
+        "AC-22"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "commits the task on the effort branch `nio/<slug>`",
+        "`git push -u origin nio/<slug>`",
+        "the base branch's head is unchanged",
+        "`main`'s head unchanged"
+      ],
+      "fix": "have the grant (or the first commit under auto) switch to or create `nio/<slug>` so that every auto commit lands",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "before implementing, `done` makes the `nio: approve spec|plan|tasks` commits on whatever branch is checked",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-8",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-21",
+      "title": "A `held` finding reads as settled once auto is switched off",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "CT-12",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`held` leaves `status: disposed`, so the human may re-dispose it",
+        "Under auto, before `compose`'s own reading:",
+        "nothing else changes"
+      ],
+      "fix": "make `compose` treat `held` as open (unresolved, needing the human) in either mode, or have `manual` reopen held",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "the fixer marks a confirmed blocker `held` because fixing it would rewrite a `[human]` line, and then the",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-9",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-22",
+      "title": "Driver-claim takeover temp files are not git-ignored",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-5"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "rename to `driver.lock.<pid>.<hex>`",
+        "`lock()`'s `.gitignore` list gains `driver.lock`"
+      ],
+      "fix": "add `driver.lock*` to the ignore list, as is done for `flow.lock*`.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "if a takeover stops between the rename and the unlink, it leaves `driver.lock.<pid>.<hex>` in the effort",
+          "severity": "minor",
+          "round": 2
+        },
+        {
+          "juror": "plan-risk-rollback-3",
+          "lens": "risk-rollback",
+          "situation": "A driver crashes during a takeover, after the rename and before the cleanup, and leaves `driver.lock.<pid>.<hex>` behind. `flow.lock` ignores its own leftovers with the pattern `flow.lock*`, but the ignore line here is the exact name `driver.lock`. The next auto gate commit runs `git add -A -- .nio/specs/<slug>`. It commits the stray file with no human involved, and `nio flow pr` then pushes it.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "driver.lock* ignored (CT-5)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-23",
+      "title": "The grill under auto erases the open points with no copy to recover",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-18",
+        "FR-7",
+        "FR-14",
+        "TC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "remove `## Open points`, move each OP ID to `retired`, and log one `## Auto · <IDs> · <date>` entry in `grill.md` listing each choice and its reason",
+        "switching auto off reopens none of them",
+        "at a gate, `--commit` (or the auto flag on a spec without a risky flag) also makes the approval commit"
+      ],
+      "fix": "Make CT-18's `## Auto` entry record each open point word for word before it is removed, as the manual `## Asked` entry does. Say that a re-run skips any OP already turned into an item. Add an assert to TC-16 that `grill.md` holds the original OP-1 and OP-2 text.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-3",
+          "lens": "risk-rollback",
+          "situation": "An effort is granted auto at grilling. The grill deletes `## Open points` from `spec.md` and logs only its choices. Nothing has committed `spec.md` yet, and no jury round has stored a version of it. The human then switches auto off to answer OP-3 themselves. The original question and its options are gone from the spec, from git and from `grill.md`. If the grill stops halfway (OP-1 is now an item but not yet in `retired`), a re-run can turn OP-1 into a second item.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The grill turns open points into `[auto]` items that the spec jury judges and the report lists (CT-14, FR-14), and FR-14 says switching auto off reopens none of them, so the \"answer OP-3 myself\" path is not promised. Nothing requires keeping the original open-point text, as the ledger's J-11 refutation says. The mid-grill re-run duplicate is speculative, because the CT-18 text does not describe a non-idempotent flow.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-24",
+      "title": "The round check can pass silently when the judged version is missing",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "CT-13",
+        "CT-12",
+        "FR-12",
+        "FR-37"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`[]` at an epic's gate, with no judged version, or with no hit.",
+        "Reads the version the ledger's last round judged (`git cat-file -p <version>`, kept by `blob(..., write=True)`)"
+      ],
+      "fix": "State that `[]` is only for a ledger with no recorded version. A recorded version whose object is missing must compose `human` (or raise, as `diff` does). Add a test that deletes the object and expects the pause.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-3",
+          "lens": "risk-rollback",
+          "situation": "The ledger names a judged version, but its blob is missing from this clone. Unreferenced loose objects can be pruned, or a driver can take over in another checkout. The existing `diff` raises \"the judged {gate} version isn't in this clone's git objects\". If `cuts` reads the missing blob as \"no judged version\" and returns `[]`, a fix that removed a story or rewrote a `[human]` line moves to the next round with no pause.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "plan-risk-rollback-2",
+          "lens": "risk-rollback",
+          "situation": "an auto effort sits paused for a while, `git gc` prunes the unreferenced judged blob, or the effort is",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-13 says `[]` \"with no judged version\" without saying what a recorded-but-missing blob does. The existing `diff` raises for exactly that case (jury.py:409-411), while `cuts` would compare against nothing. A cut or `[human]` rewrite then passes silently, and tests.md has no case for it.",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-13 missing judged object composes human; TC-57",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-25",
+      "title": "A human re-dispose overwrites the fixer's record that the report needs",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-11",
+        "CT-14",
+        "FR-23"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`held` leaves `status: disposed`, so the human may re-dispose it (`--by human`), as they may any disposed finding.",
+        "`## Fixed by the run`: each finding with `by: auto`"
+      ],
+      "fix": "Keep the earlier disposition (for example a `was` field, or the report reading the verdict record of the round). Alternatively, say in CT-14 that a re-disposed auto fix is still listed, and add a test for it.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-3",
+          "lens": "risk-rollback",
+          "situation": "The fixer disposes J-1 `spec-fix --by auto` and edits `spec.md`. The human then re-disposes J-1. `_dispose_one` overwrites `by` and `note` in place. The edit stays in `spec.md`, but the run report no longer lists it as the run's fix, and the `held` note that said what the fix would touch is lost too.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "CT-11 keeps the earlier disposition in was; CT-14 lists it; TC-58",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-26",
+      "title": "No recovery path is named for a fixer edit the human rejects",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "CT-17",
+        "CT-3",
+        "TC-31"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Assert: `auto: false`; a `switch_off` line by the human; the spec edit is kept",
+        "else edit the gate's files and run `nio jury dispose <slug> <gate> J-n spec-fix|plan-fix --by auto --note \"<what changed>\"`"
+      ],
+      "fix": "Name the recovery in CT-3 or CT-17. For example, `nio flow manual` prints the `git cat-file -p <version>` command for the last judged version of each gate file. Alternatively, keep the judged blob reachable, for example with a ref under `refs/nio/`. Add a TC-31 assert that the pre-fix text can be restored.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback-3",
+          "lens": "risk-rollback",
+          "situation": "At the spec gate, `spec.md` has no commit yet. The fixer overwrites it, and the human switches auto off halfway through the fix (TC-31 keeps the edit). The text before the fix exists only as the unreferenced blob of the last judged version. No step, command or test tells the human how to restore it, and `git gc` can eventually prune the blob.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "plan-fix",
+      "by": "human",
+      "note": "Approved by the human: judged versions kept at refs/nio/<slug>/<gate>/<round>; nio flow manual prints restore commands (CT-22, CT-3, TC-31)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      3,
+      "human"
+    ],
+    [
+      3,
+      "closed"
+    ]
+  ],
+  "versions": {
+    "1": "a023e832c6002c7a32bacdc34759936f189f4694",
+    "2": "a023e832c6002c7a32bacdc34759936f189f4694",
+    "3": "c577539d03e338428603c93cf230573aea940f3f"
+  },
+  "asked": {},
+  "closed": [
+    3,
+    "505afeb3a74e0c9fc50bc8d308097c9fe421b122",
+    "logic re-check confirmed all fixes (J-3, J-5, J-7); only its front-matter field was misnamed slug for subject, twice"
+  ]
+}

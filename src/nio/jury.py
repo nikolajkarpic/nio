@@ -35,20 +35,49 @@ PLAN_LENSES = {"security": {"auth", "pii"}, "risk-rollback": {"migration", "data
 IMPL_LENSES = {"adversary": {"external-input", "multi-party", "public-api"}, "security": {"auth", "pii", "secrets"},
                "risk-rollback": {"migration", "data-deletion"}}
 MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
+PR_RUNS = 7  # the pr gate's own default: its five core lenses and both risk lenses run without asking (2026-11-14-effort-jury)
+PR_CORE = ["correctness", "conformance", "adversary", "consistency", "integration"]  # FR-4
+MAX_ROUNDS = 2  # rounds per gate before the human rules what is open; `jury.max_rounds` in config overrides it (#129)
+SKIPPED = "minor, skipped at the round cap"
+
+
+def max_rounds(root):
+    """`jury.max_rounds` from config, 2 when unset; anything but a whole number of at least 1 stops (#129 FR-3, FR-7)."""
+    n = records.config(root).get("jury", {}).get("max_rounds", MAX_ROUNDS)
+    if type(n) is not int or n < 1:
+        raise ValueError(f"jury.max_rounds must be a whole number of at least 1, not {n!r}")
+    return n
+
+
+def impl_gate(gate):
+    """An implementation gate: an epic's old `implementation-E-n`, or `pr`, the one on the whole effort diff."""
+    return gate == "pr" or gate.startswith("implementation")
+
+
+def lens_of(stem, gate):
+    """The lens a juror's file stem names: `<gate>-<lens>`, with an epic part (`~E1`, `~rest`) at the pr gate over the
+    split limit, and `-<n>` for an escalation juror."""
+    return re.sub(r"(~\w+)?(-\d+)?$", "", stem[len(gate) + 1:])
 
 
 def gate_arg(name):
-    """argparse type: a known gate, or an implementation name that `epic_gate` then accepts or refuses."""
+    """argparse type: a known gate, `pr`, or an implementation name that `epic_gate` then accepts or refuses."""
     import argparse
-    if name in GATES or name.startswith("implementation"):
+    if name in GATES or impl_gate(name):
         return name
     raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(sorted(GATES))}, implementation-E-n)")
 
 
 def epic_gate(root, slug, gate, finished=True):
     """The epic `implementation-E-n` names, when every task in it, fix tasks included, is done; else ValueError (CT-1).
-    `finished` False checks the name only: a finding can be ruled on while its fix tasks wait."""
+    `finished` False checks the name only: a finding can be ruled on while its fix tasks wait. `pr` is the whole effort:
+    every task of it done."""
     from nio import implement
+    if gate == "pr":
+        left = undone(root, slug, "pr") if finished else []
+        if left:
+            raise ValueError(f"the effort is not finished: {', '.join(left)} not done")
+        return "pr"
     m = re.fullmatch(r"implementation-(E-\d+)", gate)
     if not (m and any(t["epic"] == m.group(1) for t in implement.tasks_of(root, slug))):
         raise ValueError(f"the subject of the implementation gate must be an epic from tasks.md as implementation-E-n, not {gate!r}")
@@ -62,7 +91,7 @@ def undone(root, slug, epic):
     """The epic's tasks, fix tasks included, that aren't done."""
     from nio import flow, implement
     states = implement.status(root, slug, flow.read(root, slug)[1])
-    return [t["id"] for t in implement.tasks_of(root, slug) if t["epic"] == epic and states.get(t["id"]) != "done"]
+    return [t["id"] for t in implement.tasks_of(root, slug) if epic in ("pr", t["epic"]) and states.get(t["id"]) != "done"]
 
 
 def folder(root, slug):
@@ -112,7 +141,7 @@ def parse_lens(path, gate, slug):
     if "Findings" not in secs:
         errs.append("section `## Findings` is missing")
     lines = body[body.index("## Findings") + 1:] if "## Findings" in body else []
-    findings, impl = [], gate.startswith("implementation")
+    findings, impl = [], impl_gate(gate)
     for head, f in blocks(lines):
         m = re.match(r"^(F\d+)\s+(.+)$", head)
         missing = [k for k in FIELDS + ["gap", "where"] * impl if not f.get(k)]
@@ -178,13 +207,27 @@ def grounded(finding, text, human="", quotes=True):
     return not undefined(finding, text) and (not quotes or all(" ".join(q.split()) in flat for q in finding["quotes"]))
 
 
-def planned(name, text):
-    """A file as its gate judges it: tasks.md without its `#### Fixes` sections, any other file as it is. Work added
-    under Fixes after approval doesn't withdraw it (#42 FR-27, FR-50)."""
+def planned(name, text, keep=()):
+    """A file as its gate judges it: tasks.md without its `#### Fixes` sections, except the fix tasks in `keep`, and
+    without retired fix-task IDs; any other file as it is. Work added under Fixes after approval, or a fix task retired,
+    doesn't withdraw it (#42 FR-27, FR-50; #126)."""
     if name != "tasks.md":
         return text
+    kept = []
+    if keep:  # fix tasks the caller still judges as planned: an edit to one reopens the gate (#126 FR-10)
+        from nio import tasks
+        found = tasks.parse(text)["tasks"]
+        kept = [line for t in keep for line in found[t]["block"]]
     text = re.sub(r"^#### Fixes$.*?(?=^## |\Z)", "", text, flags=re.M | re.S)
-    return re.sub(r"\n\s*\n+", "\n\n", text).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+    text = re.sub(r"^## E-\d+ PR fixes\s*$", "", text, flags=re.M)  # the pr gate's closing epic holds only fix tasks
+    top = max(map(int, re.findall(r"^### T-(\d+)\b", re.sub(r"<!--.*?-->", "", text, flags=re.S), re.M)), default=0)
+
+    def unfix(m):  # a retired fix task: its ID is above every planned one, and retiring it doesn't count (#126 FR-9)
+        ids = [x.strip() for x in m[2].split(",") if x.strip()]
+        left = [x for x in ids if not (re.fullmatch(r"T-\d+", x) and int(x[2:]) > top)]
+        return m[0] if left == ids else f"{m[1]}{', '.join(left)}]"
+    text = re.sub(r"^(retired:\s*\[)([^\]\n]*)\]", unfix, text, count=1, flags=re.M)
+    return re.sub(r"\n\s*\n+", "\n\n", "\n".join([text, *kept])).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
 
 
 def artefact(root, slug, gate):
@@ -203,8 +246,7 @@ def sources(root, slug, gate, lens=""):
     folder = root / ".nio/specs" / slug
     if gate not in GATES:  # an implementation gate: the spec and tasks, and what the epic's commits changed
         from nio import evidence
-        commits = evidence.commits_of(root, slug, epic_gate(root, slug, gate, finished=False))
-        changed = evidence.code_diff(root, evidence.parent_of(root, commits[-1]), commits[0], "--name-only", "--diff-filter=d")
+        changed = evidence.code_diff(root, *evidence.span(root, slug, epic_gate(root, slug, gate, finished=False)), "--name-only", "--diff-filter=d")
         return [p for p in [folder / n for n in ("spec.md", "contracts.md", "tasks.md")] + [root / n for n in changed] if p.is_file()]
     files = [folder / n for n in GATES[gate]]
     if gate == "plan":
@@ -262,7 +304,7 @@ class Lines(list):
 def plan(root, slug, gate, extra=(), pick=None):
     """(lines, ok): the lens runs this gate needs, why each runs, the tier, and the run budget. Not ok when the gate's
     own check fails or a lens has no card; over the cap is reported for the human to choose, not refused."""
-    impl = gate.startswith("implementation")
+    impl = impl_gate(gate)
     if impl:
         epic = epic_gate(root, slug, gate)
     elif gate not in CORE:
@@ -285,12 +327,12 @@ def plan(root, slug, gate, extra=(), pick=None):
             return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
     meta, _ = records.parse(spec.path(root, slug)) if spec.path(root, slug).exists() else ({}, "")
     risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
-    lenses = {lens: "core" for lens in (["conformance", "correctness"] if impl else CORE[gate])}
+    lenses = {lens: "core" for lens in (PR_CORE if gate == "pr" else ["conformance", "correctness"] if impl else CORE[gate])}
     table = IMPL_LENSES if impl else PLAN_LENSES if gate == "plan" else {k: v for k, v in spec.LENSES.items() if "(plan gate)" not in k}
     for lens, flags in table.items() if gate != "tasks" else []:
         if flags & set(risk):
             lenses.setdefault(lens, "risk: " + ", ".join(sorted(flags & set(risk))))
-    if impl:  # a module that existed before the epic is changed: a file modified from the parent of its first commit
+    if impl and gate != "pr":  # a module that existed before the epic is changed: a file modified from the parent of its first commit
         try:
             commits = evidence.commits_of(root, slug, epic)
         except ValueError:  # no commits, no diff
@@ -314,7 +356,7 @@ def plan(root, slug, gate, extra=(), pick=None):
         lenses.setdefault(lens.strip(), why.strip())
     cards = agents.load(root)
     missing = [lens for lens in lenses if lens not in cards]
-    cap = records.config(root).get("jury", {}).get("max_runs", MAX_RUNS)
+    cap = records.config(root).get("jury", {}).get("max_runs", PR_RUNS if gate == "pr" else MAX_RUNS)
     tier = rung(risk)
     over = len(lenses) > cap
     if pick is not None:  # the human's choice over the cap: the core lenses always run, the rest may be dropped (CT-8)
@@ -364,7 +406,7 @@ def fixes(led):
     listed = [f for f in led["findings"] if f["id"] in lst.get("ids", [])]
     if not listed or any(f["status"] == "open" for f in listed):
         return []
-    return [f["id"] for f in listed if f["disposition"] in FIXES and not (led["gate"].startswith("implementation") and f["severity"] == "minor")]
+    return [f["id"] for f in listed if f["disposition"] in FIXES and not (impl_gate(led["gate"]) and f["severity"] == "minor")]
 
 
 def pack_ids(led, lens):
@@ -403,11 +445,11 @@ def diff(root, slug, gate):
     versions = led.get("versions", {})
     if not versions:
         raise ValueError(f"no round of the {gate} jury has been collected for {slug}")
-    if gate.startswith("implementation"):
+    if impl_gate(gate):
         judged = versions[max(versions, key=int)]
         if records.git(root, "cat-file", "-e", judged, full=True)[0]:
             raise ValueError(f"the judged {gate} commit isn't in this clone's git objects; re-run every lens")
-        head = evidence.commits_of(root, slug, gate.removeprefix("implementation-"))[0]
+        head = evidence.span(root, slug, gate.removeprefix("implementation-"))[1]
         items = evidence.items(root, slug)[0], {}
         return led, items, items, evidence.code_diff(root, judged, head, "--name-only"), [], []
     old = "\n".join(records.git(root, "cat-file", "-p", versions[max(versions, key=int)]))
@@ -462,7 +504,7 @@ def changed(root, slug, gate):
         # an approved or closed gate whose artefact changed since (a change request, #57 FR-35, FR-47): every lens that
         # judged it re-checks only what changed, from its fix-check pack
         rerun = set(votes(led))
-    if gate.startswith("implementation") and any(o == "rejected" for _, o in led["recorded"]):
+    if impl_gate(gate) and any(o == "rejected" for _, o in led["recorded"]):
         if (ids and not rerun) or any(awaits_fix_verdict(f) and any(s["lens"] == "cli" for s in f["sources"]) for f in led["findings"]):
             rerun.add("conformance")
     return ids, sorted(rerun), neighbours, secs
@@ -475,7 +517,7 @@ def fixcheck(root, slug, gate, lens, blocker=None):
     led, before, after, ids, secs, neighbours = diff(root, slug, gate)
     by_id = {f["id"]: f for f in led["findings"]}
     mine = [by_id[i] for i in pack_ids(led, lens)]
-    impl = gate.startswith("implementation")
+    impl = impl_gate(gate)
     if blocker and blocker not in by_id:
         raise ValueError(f"no finding {blocker} in the {gate} ledger of {slug}")
     out = [f"# Fix-check pack: {lens}, {gate} gate of {slug}", "",
@@ -504,7 +546,7 @@ def fixcheck(root, slug, gate, lens, blocker=None):
     out += ["## Settled by the human: don't raise these again", *([f"- {f['id']} {f['title']} ({f['disposition']}: {f['note']})" for f in ruled] or ["None."]), ""]
     if impl:
         judged = version(led, led["round"])
-        return out + [f"## Diff since {judged[:8]}", "", *evidence.code_diff(root, judged, evidence.commits_of(root, slug, gate.removeprefix("implementation-"))[0])]
+        return out + [f"## Diff since {judged[:8]}", "", *evidence.code_diff(root, judged, evidence.span(root, slug, gate.removeprefix("implementation-"))[1])]
     out += ["## Changed items, before and after", ""]
     for i in ids:
         out += [f"### {i}", "Before:", before[0].get(i, "(new)"), "After:", after[0].get(i, "(removed)"), ""]
@@ -591,18 +633,18 @@ def ask_refuter(root, slug, gate, run, ids):
 def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
     """Merge the run's new lens outputs into the ledger, then apply the refuter's output if present.
     Returns lines to print, ending with the refuter batch when blocker or major findings still need validating."""
-    impl = gate.startswith("implementation")
+    impl = impl_gate(gate)
     if impl:
         epic = epic_gate(root, slug, gate)
         led = load(root, slug, gate)
         if "picked" not in led and any("over the cap" in x for x in plan(root, slug, gate)[0]):
             raise ValueError(f"{gate} plans more runs than the cap: record the human's pick first (nio jury plan {slug} {gate} --pick <lens,lens>)")
         for path in sorted((root / ".nio/runs" / run / "jury").glob(f"{gate}-*.md")):  # T-20: a lens the human didn't pick is refused (FR-16)
-            lens = re.sub(r"-\d+$", "", path.stem[len(gate) + 1:])  # an escalation juror (-2, -3) counts as its lens
+            lens = lens_of(path.stem, gate)  # an escalation juror (-2, -3) counts as its lens
             if "picked" in led and lens != "refuter" and lens not in led["picked"]:
                 raise ValueError(f"{path.name}: lens {lens} was not picked for {gate} (picked: {', '.join(led['picked'])})")
         # a round judges the epic's last commit; the cites are checked against the spec and contracts (CT-12)
-        commit = evidence.commits_of(root, slug, epic)[0]
+        commit = evidence.span(root, slug, epic)[1]
         moved(root, slug, gate, run, led)
         evidence.current(root, slug, epic, evidence.load(root, run))  # before the ledger marks anything collected: a retry must still join
         text = ground = "\n".join(p.read_text() for p in (root / ".nio/specs" / slug / n for n in ("spec.md", "contracts.md")) if p.exists())
@@ -633,9 +675,13 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
         raise ValueError(st[1])  # no round runs until the human rules, or the spec change is settled (#57 FR-50)
     # a retry: every new file re-runs a juror that failed (invalid, or asked for more context) in this round, on this
     # same version. It joins the round its juror failed in instead of starting one (#55).
+    # An escalation juror (`<gate>-<lens>-2`, #105) joins the round its lens judged too (#129 FR-4).
     jj = led["jurors"]
+    base = lambda p: re.sub(r"-\d+$", "", p.stem)
     retry = new and all(p.stem in jj and jj[p.stem]["round"] == led["round"] and jj[p.stem]["version"] == judged()
-                        and (not jj[p.stem]["valid"] or jj[p.stem]["context"] == "needs-more") for p in new)
+                        and (not jj[p.stem]["valid"] or jj[p.stem]["context"] == "needs-more")
+                        or base(p) != p.stem and jj.get(base(p), {}).get("round") == led["round"] and jj[base(p)]["version"] == judged()
+                        for p in new)
     if new and retry:
         out += merge(led, new, gate, slug, ground, human)
     elif new:
@@ -668,13 +714,13 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
             led["asked"].pop(run)  # answered: a later change to the file has no batch until the next one prints
     save(root, led)
     if impl:  # the conformance lens's matches are joined to the results (CT-21); each review round re-judges them on its results
-        lens_out = next((p for p in new if p.stem == f"{gate}-conformance"), None)
-        juror = led["jurors"].get(f"{gate}-conformance") or {}
-        usable = lens_out and juror.get("valid") and juror.get("context") != "needs-more"
+        # at the pr gate over the split limit each part's conformance juror matches its own ACs: join them all
+        outs = [p for p in new if lens_of(p.stem, gate) == "conformance" and not re.search(r"-\d+$", p.stem)]
+        usable = [p for p in outs if (j := led["jurors"].get(p.stem) or {}).get("valid") and j.get("context") != "needs-more"]
         results = evidence.load(root, run)
         if usable or (review and led.get("matched")):
-            matches = re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", lens_out.read_text(), re.M | re.S) if usable else None
-            evidence.join(root, slug, epic, matches[1].splitlines() if matches else [], results)
+            found = [m[1] for p in usable if (m := re.search(r"^## Matches[ \t]*\n(.*?)(?=^## |\Z)", p.read_text(), re.M | re.S))]
+            evidence.join(root, slug, epic, "\n".join(found).splitlines(), results)
             evidence.save(root, run, results)
     led = load(root, slug, gate) if impl else led
     pending = [f for f in led["findings"] if f["validation"] == "pending" and f["status"] in ("open", "disposed")]
@@ -721,7 +767,7 @@ def merge(led, paths, gate, slug, text, human=""):
     packs, verdicts = {}, collections.defaultdict(list)
     for path in paths:
         meta, findings, errs = parse_lens(path, gate, slug)
-        lens = re.sub(r"-\d+$", "", path.stem[len(gate) + 1:])  # the file name gives the lens; `-2` marks an escalation juror
+        lens = lens_of(path.stem, gate)  # the file name gives the lens; `-2` marks an escalation juror
         if meta.get("lens") and meta["lens"] != lens:
             out.append(f"lens    {path.name}: front matter says {meta['lens']}; filed under {lens}")
         # after the first review a lens answers a fix verdict per finding in its pack; an escalation juror
@@ -800,7 +846,7 @@ def same(g, f):
 
 
 def add(led, f, juror, lens, rnd, text, human="", review=False):
-    impl = led["gate"].startswith("implementation")
+    impl = impl_gate(led["gate"])
     source = {"juror": juror, "lens": lens, "situation": f["situation"], "severity": f["severity"], "round": rnd}
     if f.get("run"):  # on the source: two jurors on one finding may each ask for a run, and each round has its own (CT-11)
         source["run"] = f["run"]
@@ -940,13 +986,15 @@ def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, rout
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
     if disposition not in DISPOSITIONS or by not in BY or not note.strip():
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
+    if fid in batch_open(led) and by != "human" and not routed:  # #129: the capped batch is the human's to rule
+        raise ValueError(f"{fid} is in the capped batch; only the human rules it (nio jury rule, or --by human)")
     if f.get("tampering") and by != "human" and not routed:  # only the human disposes of it; `tasks.append_fix` alone routes it to its fix task (FR-26)
         raise ValueError(f"{fid} is test tampering; only the human disposes of it (--by human)")
     if disposition in PLAN_ONLY and gate != "plan":
         raise ValueError(f"`{disposition}` belongs to the plan gate")
     if disposition == "fix-task":
         from nio import tasks
-        if not gate.startswith("implementation"):
+        if not impl_gate(gate):
             raise ValueError("`fix-task` belongs to the implementation gate")
         if not tasks.fixes_of(root, slug, gate, fid):
             raise ValueError(f"`fix-task` needs a task whose `From:` names {fid}; the rejected outcome appends it")
@@ -967,7 +1015,7 @@ def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, rout
         raise ValueError(f"{fid} is disposed and waits on {(CHANGE.findall(f['note']) or ['its change request'])[0]}")
     if disposition == "overruled" and fid not in (led.get("list") or {}).get("flagged", []):
         raise ValueError(f"only a finding the final fix check flagged can be overruled; {fid} isn't one")
-    noted_major = f["status"] == "noted" and f["severity"] == "major" and gate.startswith("implementation")
+    noted_major = f["status"] == "noted" and f["severity"] == "major" and impl_gate(gate)
     if f["status"] != "open" and not (by == "human" and (f["status"] == "disposed" or noted_major)):
         raise ValueError(f"{fid} is {f['status']}; only open findings take a disposition")
     f.update(status="overruled" if disposition == "overruled" else "disposed", disposition=disposition, by=by, note=note)
@@ -1027,7 +1075,12 @@ def compose(led, current):
             f["validation"] == "pending" and f["status"] == "open" for f in led["findings"]):  # a not-fixed blocker too
         return "pending", ["blocker or major findings wait for the refuter"], []
     split = []
+    # one group per juror and its escalation jurors: the pr gate's per-epic jurors of a lens judge different diffs
+    groups = collections.defaultdict(list)
     for lens, js in lenses.items():
+        for n, v in js:
+            groups[(lens, re.sub(r"-\d+$", "", n))].append((n, v))
+    for (lens, _), js in groups.items():
         counted = [v for _, v in js if v in ("block", "approve")]
         if len(counted) > 1:
             block, ok = counted.count("block"), counted.count("approve")
@@ -1040,7 +1093,7 @@ def compose(led, current):
                         f.update(status="overruled", reason=f"{lens}: {ok} of {len(counted)} jurors approved ({', '.join(sorted(majority))})")
     blocker = any(f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" for f in led["findings"])
     # failed twice: the human decides instead of another re-review, so only where one would start (#52 FR-16)
-    impl = led["gate"].startswith("implementation")  # CT-13: minors never reject or hand over; they are listed in the verdict
+    impl = impl_gate(led["gate"])  # CT-13: minors never reject or hand over; they are listed in the verdict
     live = [f for f in led["findings"] if not (impl and f["severity"] == "minor")]
     stale = [f"{f['id']} failed {f['rounds']} rounds" for f in live
              if f["status"] == "open" and f["rounds"] >= 2 and (ph == "first" or (ph == "re-review" and blocker))]
@@ -1065,6 +1118,25 @@ def compose(led, current):
     return "approved", [], []
 
 
+def later_epic(root, slug, gate, led):
+    """An open finding whose cited ACs tasks.md serves only in later epics not built yet is the system's `out-of-scope`,
+    before any fix task is made (#126 FR-12); any other finding is left as it is."""
+    from nio import implement
+    if gate == "pr":  # every epic is built by the pr gate
+        return
+    ts = implement.tasks_of(root, slug)
+    order = list(dict.fromkeys(t["epic"] for t in ts))
+    here = order.index(gate.removeprefix("implementation-"))
+    built = lambda e: (l := load(root, slug, f"implementation-{e}"))["outcome"] == "approved" or l.get("closed")
+    for f in led["findings"]:
+        serving = {c: [t for t in ts if c in t["serves"]] for c in f["cites"] if c.startswith("AC-")}
+        if f["status"] == "open" and serving and all(s and all(order.index(t["epic"]) > here and not built(t["epic"]) for t in s)
+                                                     for s in serving.values()):
+            ac, t = next((c, s[0]) for c, s in serving.items())
+            f.update(status="disposed", disposition="out-of-scope", by="system",
+                     note=f"{ac} is served by {t['id']} in {t['epic']}, a later epic not built yet")
+
+
 def code_right(f):
     return f.get("gap") == "contradicts" and f.get("right") == "code"
 
@@ -1077,8 +1149,8 @@ def to_task(f, rejected=()):
 
 def version_now(root, slug, gate):
     """The version the gate would judge now: the epic's last commit, as `collect` judges, or the artefact's blob."""
-    if gate.startswith("implementation"):
-        return evidence.commits_of(root, slug, gate.removeprefix("implementation-"))[0]
+    if impl_gate(gate):
+        return evidence.span(root, slug, gate.removeprefix("implementation-"))[1]
     return blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
 
 
@@ -1087,7 +1159,7 @@ def composed(root, slug, gate, led, current, rejected=()):
     or a fix has no verdict yet (FR-26); and human, not a dead end, when rejected has no new work to send back, since a
     finding `not fixed` with its task done can't get a second one (FR-26)."""
     outcome, reasons, listed = compose(led, current)
-    if outcome not in ("approved", "rejected") or not gate.startswith("implementation"):
+    if outcome not in ("approved", "rejected") or not impl_gate(gate):
         return outcome, reasons, listed
     left = undone(root, slug, gate.removeprefix("implementation-"))
     if outcome == "approved":
@@ -1110,9 +1182,11 @@ def check(root, slug, gate, record=False, human=""):
     Returns (outcome, lines to print)."""
     led = load(root, slug, gate)
     reopened = reopen_dropped(root, led) if gate == "plan" else []
+    if impl_gate(gate):
+        later_epic(root, slug, gate, led)
     current = version_now(root, slug, gate)
     held, rejected, raised = settle(root, slug, gate, led, record and not human.strip() and not led.get("closed")) \
-        if gate.startswith("implementation") else ([], [], [])
+        if impl_gate(gate) else ([], [], [])
     outcome, reasons, listed = composed(root, slug, gate, led, current, [] if held else rejected)
     if human.strip():
         if record:  # only a recorded closure sticks; an unrecorded --human counts for this call alone
@@ -1123,7 +1197,7 @@ def check(root, slug, gate, record=False, human=""):
     if closed:
         outcome, reasons = "human", [f"the human closed the gate: {closed[2]}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
     appended = []
-    if record and outcome == "rejected" and not closed and gate.startswith("implementation"):
+    if record and outcome == "rejected" and not closed and impl_gate(gate):
         from nio import tasks
         save(root, led)  # append_fix disposes through the saved ledger
         appended = [(f["id"], tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)) for f in led["findings"] if to_task(f, [] if held else rejected)]  # a pending request holds its own finding and the rejected ones
@@ -1141,6 +1215,8 @@ def check(root, slug, gate, record=False, human=""):
     review = [f for f in led["findings"] if f["by"] == "agent"]  # still listed once a re-run marks it fixed
     lines += ["for the human to review (set by the agent):"] * bool(review)
     lines += [f"- {f['id']} {f['disposition']}: {f['note']}" for f in review]
+    system = [f for f in led["findings"] if f["by"] == "system"]  # the gate summary (#129 FR-12, FR-15)
+    lines += ["closed by the system:"] * bool(system) + [f"- {f['id']} [{f['severity']}] {f['title']}: {f['disposition']} ({f['note']})" for f in system]
     # the human's closure is its own record, even in a round that already recorded `human` from the jury (#55)
     entry = [led["round"], "closed" if closed else outcome]
     if record and outcome in ("approved", "rejected", "human") and entry not in led["recorded"]:
@@ -1155,12 +1231,88 @@ def check(root, slug, gate, record=False, human=""):
         elif not led.get("list"):
             led["list"] = {"round": led["round"], "ids": listed, "final": None, "flagged": []}
     save(root, led)
-    if record and outcome != "approved" and gate.startswith("implementation"):  # approved: `nio flow done` makes its commit (CT-17)
+    if record and outcome != "approved" and impl_gate(gate):  # approved: `nio flow done` makes its commit (CT-17)
         from nio import flow
         with flow.lock(root, slug):
             if flow.uncommitted(root, slug, gate):
                 lines += flow.commit_gate(root, slug, "implementing", [], None, None, [], gate, f"nio: jury {gate} round {led['round']}")[1]
+    if record and gate == "pr" and outcome in ("approved", "rejected", "human"):  # FR-11, FR-16: the human's one message
+        text = outcome_text(led, outcome, bool(closed))
+        lines += ["outcome for the human:", *text, *post(root, slug, led, "\n".join(text))]
     return outcome, lines
+
+
+def post(root, slug, led, body):
+    """Publish the pr gate's verdict comment; until it is on the pull request it waits in the ledger as `unposted`, which
+    keeps the gate from approval and which the next `nio jury next <slug> pr` posts again (FR-16)."""
+    led["unposted"] = body
+    save(root, led)
+    out = publish(root, slug, body)
+    led.pop("unposted")
+    save(root, led)
+    return out
+
+
+def outcome_text(led, outcome, closed=False):
+    """The pr gate's verdict (FR-11, FR-16): `APPROVED` or `REQUEST_CHANGES` and the head commit judged, the verdict, then
+    the findings fixed, still open, ruled by the human and closed by the system. A gate the human closed through their
+    rulings has nothing left to change: APPROVED."""
+    fs = led["findings"]
+    row = lambda f: f"- {f['id']} [{f['severity']}] {f['title']}" + (f": {f['disposition']} by {f['by']} ({f['note']})" if f["disposition"] else "")
+    groups = (("fixed", [f for f in fs if f["status"] == "fixed"]),
+              ("open", [f for f in fs if f["status"] == "open" or f["status"] == "disposed" and f["disposition"] == "fix-task"]),
+              ("ruled by the human", [f for f in fs if f["status"] in ("disposed", "overruled") and f["by"] == "human" and f["disposition"] != "fix-task"]),
+              ("closed by the system", [f for f in fs if f["by"] == "system"]))
+    return [f"{'APPROVED' if outcome == 'approved' or closed else 'REQUEST_CHANGES'} {version(led, led['round']) or ''}",
+            f"verdict: {'closed by the human' if closed else outcome}, round {led['round']}"] + \
+        [x for name, g in groups if g for x in [f"{name}:", *map(row, g)]]
+
+
+def hub(root, *args):
+    """Run one `git` or `gh` command: every GitHub call of the pr gate goes through here (tests fake it). (code, out, err)."""
+    try:
+        r = subprocess.run(args, cwd=root, capture_output=True, text=True)
+    except FileNotFoundError:
+        return 127, "", f"{args[0]} is not installed"
+    return r.returncode, r.stdout, r.stderr
+
+
+VERDICT_MARK = "<!-- nio: pr gate verdict -->"  # finds the one verdict comment to edit; nothing else is kept
+
+
+def publish(root, slug, body=None):
+    """Push `nio/<slug>`, open its pull request against the default branch or reuse the open one, and with `body` post
+    the verdict comment, or edit the one posted before (FR-16, FR-17). Never merges. A failed step raises ValueError
+    naming it: push, pull request or comment; the gate stays open."""
+    from nio import implement
+    branch = implement.branch(slug)
+
+    def call(step, *args):
+        code, out, err = hub(root, *args)
+        if code:
+            raise ValueError(f"{step} failed, the pr gate stays open: {(err or out).strip()}")
+        return out.strip()
+    call("push", "git", "push", "-u", "origin", branch)
+    find = ("gh", "pr", "list", "--head", branch, "--state", "open", "--json", "number", "--jq", ".[0].number // empty")
+    num = call("pull request", *find)
+    if not num:
+        sp = spec.path(root, slug)
+        title = next((x[2:] for x in (sp.read_text().splitlines() if sp.exists() else []) if x.startswith("# ")), slug)
+        call("pull request", "gh", "pr", "create", "--head", branch, "--base", evidence.default_branch(root).removeprefix("origin/"),
+             "--title", title, "--body", f"Effort `{slug}`. The pr gate's verdict is the comment below; only the human approves it.")
+        num = call("pull request", *find)
+    out = [f"pull request: #{num} on {branch}"]
+    if body is None:
+        return out
+    api = "repos/{owner}/{repo}/issues"
+    ids = call("comment", "gh", "api", "--paginate", f"{api}/{num}/comments", "--jq",
+               f'.[] | select(.body | contains("{VERDICT_MARK}")) | .id').split()
+    text = f"body={body}\n\n{VERDICT_MARK}"
+    if ids:
+        call("comment", "gh", "api", "-X", "PATCH", f"{api}/comments/{ids[0]}", "-f", text)
+    else:
+        call("comment", "gh", "api", f"{api}/{num}/comments", "-f", text)
+    return out + [f"verdict comment {'edited' if ids else 'posted'}: {body.splitlines()[0]}"]
 
 
 CHANGE = re.compile(r"\bC-\d{6}-[a-z2-7]{4}\b")
@@ -1188,7 +1340,7 @@ def change_for(root, slug, gate, fid):
 
 def gate_changes(root, slug, gate):
     """The change requests against `slug`'s spec that name this epic gate, as paths from the root; [] at any other gate."""
-    if not gate.startswith("implementation"):
+    if not impl_gate(gate):
         return []
     named = re.compile(rf"(?<![\w-]){gate}(?![\w-])")
     return [str(p.relative_to(root)) for p in sorted((root / ".nio/memory").rglob("C-*.md"))
@@ -1338,18 +1490,18 @@ def render(led):
     return "\n".join(out) + "\n"
 
 
-def _out_line(gate, lens, run):
+def _out_line(gate, lens, run, name=None):
     return ("## Your output\n\nWrite your whole output, front matter first, to "
-            f".nio/runs/{run}/jury/{gate}-{lens}.md and to no other file. Set lens: {lens}, gate: {gate}, "
+            f".nio/runs/{run}/jury/{gate}-{name or lens}.md and to no other file. Set lens: {lens}, gate: {gate}, "
             f'subject: {{slug}}, by: "juror / <your host> / <your model>".\n')
 
 
-def _pack_text(root, slug, gate, run, lens, fix):
+def _pack_text(root, slug, gate, run, lens, fix, part=None):
     """What the skill gives a lens today, then the lens output format and where its output goes (CT-2)."""
     from importlib import resources
     from nio import plan as plans, pack as memory, query, tasks
     if gate not in GATES:
-        body = evidence.pack(root, slug, gate, lens, run)
+        body = evidence.pack(root, slug, gate, lens, run, part)
     elif fix:
         body = "\n".join(fixcheck(root, slug, gate, lens)) + "\n"
     else:
@@ -1371,7 +1523,8 @@ def _pack_text(root, slug, gate, run, lens, fix):
             query.log(root, "pack", f"{lens}-memory", ids, text)
             body += "\n" + text + "\n"
     tail = resources.files("nio").joinpath("templates/lens-output.md").read_text()
-    return body.rstrip("\n") + "\n\n" + tail.rstrip("\n") + "\n\n" + _out_line(gate, lens, run).replace("{slug}", slug)
+    name = f"{lens}~{part}" if part else lens
+    return body.rstrip("\n") + "\n\n" + tail.rstrip("\n") + "\n\n" + _out_line(gate, lens, run, name).replace("{slug}", slug)
 
 
 def packs(root, slug, gate, run, lenses, fix=False):
@@ -1380,16 +1533,19 @@ def packs(root, slug, gate, run, lenses, fix=False):
     folder = root / ".nio/runs" / run / "jury/packs"
     folder.mkdir(parents=True, exist_ok=True)
     led = load(root, slug, gate)
+    parts = list(evidence.split(root, slug)) if gate == "pr" and not fix else []  # FR-13: one juror per epic, plus the rest
+    jurors = [(lens, p) for lens in lenses for p in (parts if parts and lens != "integration" else [None])]
     sj = folder / "step.json"
     if not sj.exists() or not json.loads(sj.read_text())["lenses"]:  # a run started before its evidence has no lenses yet
         sj.write_text(json.dumps({"gate": gate, "round": led["round"], "version": version_now(root, slug, gate),
-                                                      "lenses": list(lenses)}))
+                                                      "lenses": [f"{lens}~{p}" if p else lens for lens, p in jurors]}))
     lines = []
-    for lens in lenses:
-        p = folder / f"{lens}.md"
+    for lens, part in jurors:
+        name = f"{lens}~{part}" if part else lens
+        p = folder / f"{name}.md"
         if not p.exists():
-            p.write_text(_pack_text(root, slug, gate, run, lens, fix))
-        lines.append(f"run {lens}: card nio-{lens}, pack {p.relative_to(root)}, output .nio/runs/{run}/jury/{gate}-{lens}.md")
+            p.write_text(_pack_text(root, slug, gate, run, lens, fix, part))
+        lines.append(f"run {name}: card nio-{lens}, pack {p.relative_to(root)}, output .nio/runs/{run}/jury/{gate}-{name}.md")
     return lines
 
 
@@ -1410,16 +1566,17 @@ def _begin(root, slug, gate, run, lenses, fix):
     """CT-1 case 2: the run's packs and the lines that start its jurors; no lenses, no run (CT-6)."""
     if not lenses:
         return [f"next: show the human: the {gate} changed but no lens has a fix to check"]
+    pushed = publish(root, slug) if gate == "pr" and not run else []  # each pr round starts on the pushed branch (FR-16, FR-17)
     run = run or _reusable(root, slug, gate) or records.new_run(root)
     if gate not in GATES and not evidence.path(root, run).exists():
         sj = root / ".nio/runs" / run / "jury/packs/step.json"
         sj.parent.mkdir(parents=True, exist_ok=True)
         led = load(root, slug, gate)
         sj.write_text(json.dumps({"gate": gate, "round": led["round"], "version": version_now(root, slug, gate), "lenses": []}))
-        return [f"run: {run}", f"next: nio jury evidence {slug} {gate.removeprefix('implementation-')} --run {run}, "
+        return [*pushed, f"run: {run}", f"next: nio jury evidence {slug} {gate.removeprefix('implementation-')} --run {run}, "
                 f"then nio jury next {slug} {gate} --run {run}"]
     lines = packs(root, slug, gate, run, lenses, fix)
-    return [f"run: {run}", *lines, f"next: run each juror above in parallel, then nio jury next {slug} {gate} --run {run}"]
+    return [*pushed, f"run: {run}", *lines, f"next: run each juror above in parallel, then nio jury next {slug} {gate} --run {run}"]
 
 
 def _reusable(root, slug, gate):
@@ -1433,12 +1590,18 @@ def _reusable(root, slug, gate):
 def step(root, slug, gate, run="", add=(), pick=None):
     """One gate step (CT-1): collect, check and write the next packs; every line it returns ends in `next: <action>`."""
     root = Path(root)
+    max_rounds(root)  # a bad setting starts no round (#129 FR-7)
     lines, ok = plan(root, slug, gate, add, pick)
     if not ok:
         return lines + [f"next: {lines[-1]}"]
     if run and not (root / ".nio/runs" / run).is_dir():
         raise ValueError(f"no run {run} under .nio/runs/")
     led = load(root, slug, gate)
+    if gate == "pr" and not run and led.get("unposted"):  # a verdict comment that failed: post it before anything else
+        return post(root, slug, led, led["unposted"]) + [{
+            "rejected": f"next: nio flow next {slug}",
+            "human": "next: show the human the listed findings and wait for their ruling"}.get(
+            "closed" if led.get("closed") else led.get("outcome"), APPROVE.format(slug=slug))]
     if pick is None and "picked" not in led and any(x.startswith("choices:") for x in lines):
         return lines + [f"next: show the human the planned runs and let them choose, then nio jury next {slug} {gate} --pick <lens,lens>"]
     names = lines.lenses
@@ -1450,10 +1613,12 @@ def step(root, slug, gate, run="", add=(), pick=None):
         errors = agents.sync(root)[1]
         if errors:
             raise ValueError("; ".join(errors))
+        if (cl := capped(root, slug, gate, led, names)) is not None:
+            return cl
         fix = bool(led["round"])
-        return _begin(root, slug, gate, run, changed(root, slug, gate)[1] if fix else names, fix)
+        return _begin(root, slug, gate, run, next_lenses(root, slug, gate) if fix else names, fix)
     for p in outputs:
-        lens = re.sub(r"-\d+$", "", p.stem[len(gate) + 1:])
+        lens = lens_of(p.stem, gate)
         if lens != "refuter" and lens not in names:
             raise ValueError(f"{p.name}: {lens} is not planned for {gate} (planned: {', '.join(names)}); rename or remove it")
     got = collect(root, slug, gate, run, names, tier, ask=False)
@@ -1465,8 +1630,8 @@ def step(root, slug, gate, run="", add=(), pick=None):
     sj = root / ".nio/runs" / run / "jury/packs/step.json"
     packed = json.loads(sj.read_text())["lenses"] if sj.exists() else []
     redo = [l for l in packed if not (root / f".nio/runs/{run}/jury/{gate}-{l}.md").exists()]
-    redo += [j["lens"] for k, j in led["jurors"].items() if k == f"{gate}-{j['lens']}" and j["round"] == led["round"]
-             and (not j["valid"] or j["context"] == "needs-more") and j["attempts"] < 2 and j["lens"] not in redo]
+    redo += [k[len(gate) + 1:] for k, j in led["jurors"].items() if not re.search(r"-\d+$", k) and j["round"] == led["round"]
+             and (not j["valid"] or j["context"] == "needs-more") and j["attempts"] < 2 and k[len(gate) + 1:] not in redo]
     if redo:
         return lines + [f"next: re-run {l} on .nio/runs/{run}/jury/packs/{l}.md, adding the INVALID lines above to it "
                         f"(output .nio/runs/{run}/jury/{gate}-{l}.md), then {again.format(run)}" for l in redo]
@@ -1475,20 +1640,151 @@ def step(root, slug, gate, run="", add=(), pick=None):
         return lines + [f"next: run nio-refuter on .nio/runs/{run}/jury/packs/refuter.md (output .nio/runs/{run}/jury/{gate}-refuter.md), then {again.format(run)}"]
     for f in led["findings"]:  # escalation jurors land in a later round than the blocker: count every round since it was raised
         for l in dict.fromkeys(s["lens"] for s in f["sources"] if s["lens"] in names):
-            if f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" and \
-                    sum(j["lens"] == l and j["round"] >= f.get("first_round", led["round"]) for j in led["jurors"].values()) < 3 and \
-                    not any(k != f"{gate}-{l}" and j["lens"] == l and j["round"] >= f.get("first_round", led["round"])
-                            for k, j in led["jurors"].items()):  # a blocker an escalation juror raised: the lens has had its jurors
+            if f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" and escalation(led, f, l) < 3:
+                j = re.sub(r"-\d+$", "", next(s["juror"] for s in f["sources"] if s["lens"] == l))  # its part's juror at a split pr gate
                 return lines + [f"next: escalate {l}: run 2 more jurors on copies of its pack whose ## Your output line names "
-                                f"{gate}-{l}-2.md and {gate}-{l}-3.md (in the first review the copies are of packs/{l}.md; after it, of "
+                                f"{j}-2.md and {j}-3.md (in the first review the copies are of packs/{j[len(gate) + 1:]}.md; after it, of "
                                 f"nio jury fixcheck {slug} {gate} --lens {l} --blocker {f['id']} plus the lens output format), then {again.format(run)}"]
+    if (cl := capped(root, slug, gate, led, names)) is not None:
+        return lines + cl
     outcome, cl = check(root, slug, gate, record=True)
     lines += cl
     impl = gate not in GATES
     if outcome == "rerun":
-        return lines + _begin(root, slug, gate, "", changed(root, slug, gate)[1], True)
+        return lines + _begin(root, slug, gate, "", next_lenses(root, slug, gate), True)
     return lines + [{
         "rejected": f"next: nio flow next {slug}" if impl else f"next: dispose of each open finding in one nio jury dispose {slug} {gate} J-a,J-b <disposition> --by <by> --note <note> call per disposition, fix the artefact, then {again.format(run)}",
         "human": "next: show the human the listed findings and wait for their ruling",
-        "approved": f'next: nio flow done {gate} {slug} --by "<role> / <host> / <model>"' if impl else f"next: tell the human the outcome, then nio flow next {slug}",
+        "approved": APPROVE.format(slug=slug) if gate == "pr" else f'next: nio flow done {gate} {slug} --by "<role> / <host> / <model>"' if impl else f"next: tell the human the outcome, then nio flow next {slug}",
     }.get(outcome, f"next: {again.format(run)}")]
+
+
+APPROVE = "next: stop and tell the human the outcome above; only they approve the pr gate, at a terminal: nio flow approve {slug}"
+
+
+def escalation(led, f, lens):
+    """The jurors of `lens` that judged blocker `f`: every one since the round it was raised, escalation jurors of an
+    earlier round included, so a later round never asks for them again (#105, #129 FR-4)."""
+    raised = {re.sub(r"-\d+$", "", s["juror"]) for s in f["sources"] if s["lens"] == lens}  # a split pr juror's part only
+    return sum(j["lens"] == lens and j["round"] >= f.get("first_round", led["round"]) and (re.sub(r"-\d+$", "", n) in raised or "~" not in n)
+               for n, j in led["jurors"].items())
+
+
+def next_lenses(root, slug, gate):
+    """The lenses the next round re-runs: an automatic or human-asked round's own (#129 FR-5, FR-13), else `changed`'s."""
+    led = load(root, slug, gate)
+    cap = led.get("cap") or {}
+    return cap.get("lenses") or changed(root, slug, gate)[1] if cap.get("allow", 0) > led["round"] else changed(root, slug, gate)[1]
+
+
+def lenses_of(f, gate):
+    """The lenses that re-check finding `f`, as `changed` maps them: a CLI finding's is conformance at the implementation
+    gate; a point the grill deferred has none, only the human closes it."""
+    impl = impl_gate(gate)
+    return {"conformance" if s["lens"] == "cli" else s["lens"] for s in f["sources"]
+            if s["lens"] != "deferred" and (impl or s["lens"] != "cli")}
+
+
+def batch_open(led):
+    """The IDs of the capped batch the human hasn't ruled yet: none before the round cap stops the gate, or once a round
+    runs (#129). A finding disposed by anyone but the human is still theirs to rule."""
+    cap, by_id = led.get("cap") or {}, {f["id"]: f for f in led["findings"]}
+    return [i for i in cap.get("batch", []) if cap.get("round") == led["round"] and (by_id[i]["status"] == "open" or by_id[i]["by"] != "human")]
+
+
+def capped(root, slug, gate, led, names):
+    """None while the gate goes on as today; else the step's lines at the round cap (#129, the state table "gate rounds").
+    A finished round at or over `jury.max_rounds` decides once: 2+ open blockers start one automatic round on their
+    lenses, once per gate; else open minors are skipped, and open majors and blockers go to the human in one batch.
+    Once the human ruled every finding of it, the gate closes, unless they asked for one more round."""
+    cap, impl = led.get("cap") or {}, gate not in GATES
+    if cap.get("round") != led["round"]:
+        if led["round"] < max(max_rounds(root), cap.get("allow", 0)):
+            return None
+        open_ = [f for f in led["findings"] if f["status"] == "open"]
+        if gate not in GATES:  # a later epic's finding is the system's out-of-scope before the cap counts it (#126 FR-12)
+            later_epic(root, slug, gate, led)
+            open_ = [f for f in open_ if f["status"] == "open"]
+        if not open_:
+            save(root, led)
+            return None
+        blockers = [f for f in open_ if f["severity"] == "blocker" and f["validation"] == "confirmed"]
+        cap = led["cap"] = {"round": led["round"], "auto": cap.get("auto", False)}
+        lenses = sorted({x for f in blockers for x in lenses_of(f, gate) if x in names})
+        if len(blockers) >= 2 and not cap["auto"] and lenses:  # FR-13: its round starts once the blockers' fixes are in
+            cap.update(auto=True, allow=led["round"] + 1, lenses=lenses)
+            save(root, led)
+            return None
+        for f in open_:  # FR-15
+            if f["severity"] == "minor":
+                f.update(status="disposed", disposition="accepted-risk", by="system", note=SKIPPED)
+        cap["batch"] = [f["id"] for f in open_ if f["severity"] != "minor"]
+        if not impl:  # the version judged: a `fix` ruling waits until it changes
+            cap["version"] = version_now(root, slug, gate)
+        save(root, led)
+    left = batch_open(led)
+    if left:
+        by_id = {f["id"]: f for f in led["findings"]}
+        how = (f"a fix or again appends a fix task: build it through the implement stage, nio flow next {slug}" if impl else
+               f"a fix: edit the {gate} first")
+        return [f"capped: round {led['round']} is at the round cap; the human rules each finding: accept (as risk), fix "
+                f"(no juror re-checks it), or again (one more round on its lenses)",
+                *[f"- {i} [{by_id[i]['severity']}/{by_id[i]['kind']}] {by_id[i]['title']}" for i in left],
+                f'next: show the human the capped batch, then record each ruling with nio jury rule {slug} {gate} J-a,J-b '
+                f'accept|fix|again --note "<their words>" ({how}), then nio jury next {slug} {gate}']
+    if not cap.get("batch") or cap.get("allow", 0) > led["round"] and not impl:  # only minors were open (FR-18), or one more round
+        return None
+    if cap.get("allow", 0) > led["round"]:
+        return None
+    if owed := owed_fixes(root, slug, gate, led):
+        return [f"waiting: edit the {gate} for {', '.join(owed)} (ruled fix by the human), then call the step again",
+                f"next: edit the {gate} for {', '.join(owed)}, then nio jury next {slug} {gate}"]
+    lines = check(root, slug, gate, record=True, human="the human ruled every finding of the capped batch")[1]
+    return lines + [APPROVE.format(slug=slug) if gate == "pr" else f'next: nio flow done {gate} {slug} --by "<role> / <host> / <model>"' if impl else
+                    f"next: tell the human the gate is closed by their rulings, then nio flow next {slug}"]
+
+
+def owed_fixes(root, slug, gate, led):
+    """The capped batch's findings the human ruled `fix` at a spec, plan or tasks gate while the artefact is still the
+    version the capped round judged: the edit is owed before the gate closes."""
+    cap = led.get("cap") or {}
+    if gate not in GATES or cap.get("round") != led["round"] or "version" not in cap:
+        return []
+    return cap.get("fix", []) if version_now(root, slug, gate) == cap["version"] else []
+
+
+RULINGS = ("accept", "fix", "again")
+
+
+def rule(root, slug, gate, fid, ruling, note):
+    """The human's ruling on findings of a capped batch (#129 FR-5, FR-6, FR-16, FR-20): accept as risk; fix, which no
+    juror re-checks; or again, a fix one more round re-checks on those findings' lenses. Refused, recording nothing,
+    unless every ID is open in the batch."""
+    ids = fid.split(",")
+    led = load(root, slug, gate)
+    bad = [i for i in ids if i not in batch_open(led)]
+    if bad:
+        raise ValueError(f"{', '.join(bad)} not open in a capped batch of the {gate} gate (a round is running, or the gate "
+                         f"hasn't reached its round cap)")
+    none = [i for i in ids if ruling == "again" and not lenses_of(next(f for f in led["findings"] if f["id"] == i), gate)]
+    if none:
+        raise ValueError(f"no lens re-checks {', '.join(none)} (deferred by the grill): rule accept or fix")
+    if ruling == "accept":
+        return dispose(root, slug, gate, fid, "accepted-risk", "human", note)
+    if impl_gate(gate):
+        from nio import tasks
+        for f in [f for f in led["findings"] if f["id"] in ids]:
+            tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)
+    dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in GATES else "spec-fix"), "human", note)
+    if ruling == "fix" and gate in GATES:
+        led = load(root, slug, gate)
+        led["cap"]["fix"] = sorted(set(led["cap"].get("fix", [])) | set(ids), key=lambda i: int(i[2:]))
+        save(root, led)
+    if ruling == "again":
+        led = load(root, slug, gate)
+        cap = led["cap"]
+        lenses = {x for f in led["findings"] if f["id"] in ids for x in lenses_of(f, gate)}
+        cap.update(auto=True, lenses=sorted(lenses | set(cap.get("lenses", []) if cap.get("allow", 0) > led["round"] else [])),
+                   allow=led["round"] + 1)
+        save(root, led)
+    return ids
