@@ -1096,8 +1096,21 @@ def epic_done(root, gate, slug=None, by=None):
             return 0, [f"{gate} is closed already ({reason}); nothing to do"]
         out = [f"closed {gate}: {reason}"] + [f"merge: {implement.branch(slug)}"] * last
         if last:
+            out += docs_close_lines(root, slug)
             out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines + entries)]
         return commit_gate(root, slug, "implementing", entries, state, w, out, gate, message)
+
+
+def docs_close_lines(root, slug):
+    """CT-20: the project-doc sources the effort changed since it left main; nothing when there is no base or no docs."""
+    from nio import onboard, implement
+    base = (records.git(root, "merge-base", "main", implement.branch(slug)) or [""])[0]
+    if not base:
+        return []
+    try:
+        return onboard.close_lines(root, base)
+    except ValueError:  # git failed: the close must not depend on the docs
+        return []
 
 
 def gate_paths(root, slug, gate):

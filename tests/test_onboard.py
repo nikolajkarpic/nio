@@ -943,8 +943,100 @@ def test_changed_refuses_option_ref():
     assert not (root / "CLAUDE.md").exists()
 
 
+def _httpx_repo(changed_file):
+    """An onboarded project on main (stack.md records pyproject.toml); branch nio/x changes `changed_file`."""
+    import json
+    from nio import onboard
+    root = repo({"README.md": "hi\n", "app.py": "x = 1\n", "pyproject.toml": "[project]\nname='x'\n"})
+    h = next(l.split()[2] for l in scan(root)[1].splitlines() if l.split()[1:2] == ["pyproject.toml"])
+    d = root / ".nio/project"
+    d.mkdir(parents=True)
+    (d / "stack.md").write_text(f"# Stack\n\n## Languages\n- Python (source: pyproject.toml@{h})\n")
+    (d / "onboarding.json").write_text(json.dumps({"state": "done", "reason": "", "empty": False, "apps": {}, "confirmed": [],
+                                                    "seen": [list(e) for e in onboard.scan(root)]}))
+    g = lambda *a: subprocess.run(["git", *a], cwd=root, check=True, capture_output=True)
+    g("config", "user.name", "t")
+    g("config", "user.email", "t@t")
+    g("add", "-A")
+    g("commit", "-qm", "base")
+    g("branch", "-M", "main")
+    g("checkout", "-qb", "nio/x")
+    f = root / changed_file
+    f.write_text(f.read_text() + ("dependencies = ['httpx']\n" if changed_file == "pyproject.toml" else "y = 2\n"))
+    g("commit", "-qam", "T-1: change")
+    return root
+
+
+def test_changed_sources_listed():
+    """TC-44: the changed source is listed with the docs it feeds, and the last epic's close prints it after merge:."""
+    from nio import onboard
+    root = _httpx_repo("pyproject.toml")
+    r = nio(root, "changed", "main")
+    assert r.returncode == 0 and r.stdout.strip() == "pyproject.toml: stack.md", (r.stdout, r.stderr)
+    want = ["project docs: pyproject.toml changed, feeds stack.md: propose edits with @nio:reconcile-onboarding"]
+    assert onboard.close_lines(root, "main") == want
+    # CT-20: the last epic's close, on the lite epic-gate fixture of tests/test_flow.py, with this project doc set up
+    import re
+    import test_flow as tf
+    from nio import evidence, flow, jury, tasks
+    g = lambda *a: tf.git(root, *a)
+    g("checkout", "-q", "main")
+    g("branch", "-D", "nio/x")
+    g("checkout", "-qb", f"nio/{tf.S}")
+    (root / "pyproject.toml").write_text((root / "pyproject.toml").read_text() + "dependencies = ['httpx']\n")
+    g("commit", "-qam", "T-1: add httpx")
+    (root / ".nio/config.json").write_text('{"memory": {"areas": ["auth", "project"]}}')
+    folder = root / ".nio/specs" / tf.S
+    folder.mkdir(parents=True)
+    (folder / "intake.md").write_text("# Intake\nDouble refund.\n")
+    (folder / "spec.md").write_text(re.sub(
+        r"^slug: .*$", f"slug: {tf.S}", (tf.FIXTURES / "spec/spec-bugfix.md").read_text(), count=1, flags=re.M))
+    flow.start(root, tf.S, by=tf.BY)
+    for stage in ("drafting", "grilling"):
+        flow.done(root, stage, tf.S, by=tf.BY)
+    tasks.new(root, tf.S)
+    (folder / "tasks.md").write_text(
+        (tf.FIXTURES / "tasks/tasks.md").read_text().replace("slug: checkout-refunds", f"slug: {tf.S}"))
+    flow.done(root, "tasking", tf.S, by=tf.BY)
+    tf.approve(root, tf.S, "tasks")
+    flow.done(root, "tasks_jury", tf.S, by=tf.BY)
+    tf.history(root, tf.S, *[tf.task_line("task_done", t) for t in ("T-1", "T-2", "T-3")])
+    (root / "fix.py").write_text("x = 1\n")
+    g("add", "-A")
+    g("commit", "-qm", "T-1: fix")
+    gate = "implementation-E-1"
+    plan, ok = jury.plan(root, tf.S, gate)
+    assert ok, plan
+    run = f"R-{gate}"
+    for lens in ("conformance", "correctness", "consistency"):
+        path = root / ".nio/runs" / run / "jury" / f"{gate}-{lens}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"---\nlens: {lens}\ngate: {gate}\nsubject: {tf.S}\nby: \"juror / claude-code / opus\"\n"
+                        "context: sufficient\n---\n## Reasoning\nChecked the diff.\n\n## Findings\nnone\n"
+                        + "\n## Matches\nAC-1 -> `tests/test_fix.py:1`\nAC-2 -> `tests/test_fix.py:1`\n" * (lens == "conformance"))
+    evidence.save(root, run, {**evidence.load(root, run), "slug": tf.S, "epic": "E-1",
+                              "tests": [{"name": "test_fix", "file": "tests/test_fix.py", "line": 1, "result": "passed"}],
+                              "commit": evidence.commits_of(root, tf.S, "E-1")[0]})
+    jury.collect(root, tf.S, gate, run)
+    assert jury.check(root, tf.S, gate, record=True)[0] == "approved"
+    code, out = flow.done(root, gate, tf.S, by=tf.BY)
+    assert code == 0, out
+    i = next(n for n, l in enumerate(out) if l.startswith("merge:"))
+    assert out[i + 1:i + 2] == want, ("CT-20: close_lines must follow merge:", out)
+
+
+def test_no_source_changed():
+    """TC-45: a branch touching only an unrecorded file proposes nothing and leaves .nio/project/ alone."""
+    root = _httpx_repo("app.py")
+    snap = lambda: {str(p): p.read_bytes() for p in sorted((root / ".nio/project").rglob("*")) if p.is_file()}
+    before = snap()
+    r = nio(root, "changed", "main")
+    assert r.returncode == 0 and r.stdout.strip() == "no project doc source changed", (r.stdout, r.stderr)
+    assert snap() == before
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
+    selfcheck.main([test_changed_sources_listed, test_no_source_changed, test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
