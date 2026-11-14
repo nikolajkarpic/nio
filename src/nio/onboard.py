@@ -211,3 +211,18 @@ def docs_for(root, reader, slug=""):
     else:
         out.append("onboarding: " + st["state"] + (": " + st["reason"] if st["state"] == "skipped" else ""))
     return "\n".join(out) + "\n"
+
+
+def backup(file, root="."):
+    """Copy file to .nio/backup/<today>/<repo path>; a second copy the same day keeps the first (CT-17)."""
+    import datetime
+    import shutil
+    r = Path(root).resolve()
+    src = Path(file).resolve()
+    if not file or not src.is_file() or not src.is_relative_to(r):
+        raise ValueError(f"{file or '(no file)'}: not a file inside the repo")
+    dst = r / ".nio" / "backup" / datetime.date.today().isoformat() / src.relative_to(r)
+    if not dst.exists():
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+    return str(dst.relative_to(r))

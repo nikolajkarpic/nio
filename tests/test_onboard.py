@@ -486,6 +486,24 @@ def test_check_spec_apps():
         assert r.returncode == 1 and want in r.stdout + r.stderr, (val, r.returncode, r.stdout, r.stderr)
 
 
+def test_backup_keeps_first_copy():
+    import datetime
+    root = repo({"CLAUDE.md": "rules v1"})
+    want = f".nio/backup/{datetime.date.today().isoformat()}/CLAUDE.md"
+    r = nio(root, "backup", "CLAUDE.md")
+    assert r.returncode == 0 and want in r.stdout, (r.stdout, r.stderr)
+    (root / "CLAUDE.md").write_text("rules v2")
+    r = nio(root, "backup", "CLAUDE.md")
+    assert r.returncode == 0 and want in r.stdout, (r.stdout, r.stderr)
+    assert (root / want).read_bytes() == b"rules v1"
+    before = sorted(p.relative_to(root) for p in (root / ".nio/backup").rglob("*")) if (root / ".nio/backup").exists() else []
+    assert before, "no backup written"
+    for bad in ("missing.md", "../outside.md"):
+        r = nio(root, "backup", bad)
+        assert r.returncode == 1, (bad, r.returncode, r.stdout, r.stderr)
+    assert sorted(p.relative_to(root) for p in (root / ".nio/backup").rglob("*")) == before
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -495,4 +513,5 @@ if __name__ == "__main__":
                     test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed,
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
-                    test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps])
+                    test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
+                    test_backup_keeps_first_copy])
