@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-5",
   "subject": "2026-11-08-project-onboarding",
-  "round": 5,
+  "round": 6,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -24,7 +24,12 @@
     "R-261114-3r7w/implementation-E-5-security-2.md": "2c1b3a90d7dba13c2ed64950f00f315b0aed4dda14ed9b9457e1fed3f3c4c9f2",
     "R-261114-3r7w/implementation-E-5-security-3.md": "9dbaa0eb2fbc84d38e3d14373ccd9ec9b2f1805e0e9e981630e47df8433cba51",
     "R-261114-3r7w/implementation-E-5-correctness-2.md": "58e72d2fe9c930191f86622c4f76cfd4f0b295786990f25a5ac42ca098ed9034",
-    "R-261114-3r7w/implementation-E-5-correctness-3.md": "11ca14fe37884927aadd0f5b8ec43f1b87bacb809eace12cb11cd4dba27f5b81"
+    "R-261114-3r7w/implementation-E-5-correctness-3.md": "11ca14fe37884927aadd0f5b8ec43f1b87bacb809eace12cb11cd4dba27f5b81",
+    "R-261114-iuy3/implementation-E-5-adversary.md": "255693fc55d242aab2b6c0b82be024328a01d29b8db9886c0532a441ceb14087",
+    "R-261114-iuy3/implementation-E-5-conformance.md": "0b5759bb5e316fdfbc907f5532b7b081abdbad4a2dfef3889d5bcfb6f4370774",
+    "R-261114-iuy3/implementation-E-5-correctness.md": "f23fbf76c1ce6f88d9e07d373a1969fcbc60280ea2eb025ca7fd5d8cc033ddec",
+    "R-261114-iuy3/implementation-E-5-security.md": "0ba85dd3933a5f6b93040ffbcbb46413405fdd83735ef78cbdbf301147838806",
+    "R-261114-iuy3/implementation-E-5-refuter.md": "94ed65376d8e4a4b613f0a26ae9311989d9baf355d9d7854aa529e9a966bac0c"
   },
   "jurors": {
     "implementation-E-5-adversary": {
@@ -34,9 +39,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
-      "judged": 1
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
     },
     "implementation-E-5-conformance": {
       "attempts": 1,
@@ -45,9 +50,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
-      "judged": 1
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
     },
     "implementation-E-5-consistency": {
       "attempts": 1,
@@ -61,15 +66,15 @@
       "judged": 1
     },
     "implementation-E-5-correctness": {
-      "attempts": 1,
+      "attempts": 2,
       "lens": "correctness",
       "by": "juror / claude-code / sonnet",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
-      "judged": 1
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
     },
     "implementation-E-5-security": {
       "attempts": 1,
@@ -78,9 +83,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
-      "judged": 1
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
     },
     "implementation-E-5-adversary-2": {
       "attempts": 1,
@@ -246,17 +251,18 @@
       ],
       "validation": "confirmed",
       "reason": "grill SKILL.md step 2 \"Blank tech fields\" says to look answers up in the repo and write each answer into infra.md as a fact. It has no rule on secret files or secret values and no CLI check. FR-24 and FR-30 only bind \"the onboarding agent\", and the CLI refusal that onboard relies on is in `nio onboard confirm` (T-62/T-66), which the grill's writes don't go through.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-68",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 5,
       "gap": "missing",
       "where": "skills/grill/SKILL.md (Blank tech fields)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 6
     },
     {
       "id": "J-2",
@@ -349,18 +355,25 @@
           "situation": "the grill could fill stack.md but skip architecture.md and infra.md, or write them without the `(source: dev, <slug> grill Q<n>)` form, and the test would still pass. AC-14 requires all three docs.",
           "severity": "minor",
           "round": 5
+        },
+        {
+          "juror": "implementation-E-5-conformance",
+          "lens": "conformance",
+          "situation": "a lite spec's grill could fill the tech docs and no test would catch it",
+          "severity": "minor",
+          "round": 6
         }
       ],
-      "validation": "confirmed",
-      "reason": "AC-14's Observable says the answered fields \"no longer read `NEEDS CLARIFICATION`\", but test_ac14_first_spec_fills_stack (tests/test_onboard_e2e.py:328-342) only checks that \"Python 3.12\" and the source suffix appear in stack.md's `## Languages`. It never checks that `NEEDS CLARIFICATION` is gone, so a grill that leaves the placeholder next to the answer still passes. AC-14 and its Observable cover stack.md, architecture.md and infra.md, and nothing else in the artefact tests those two docs. The skill's repo-first lookup (grill/SKILL.md:71-75) defines only the `source: dev ... grill Q<n>` suffix, so provenance for repo-answered fields is undefined.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-69",
-      "baseline": "new",
-      "rounds": 0,
+      "validation": "refuted",
+      "reason": "The finding describes a test that no longer exists. tests/test_onboard_e2e.py:328-352 scripts one answer each for stack (Python 3.12), architecture (shop) and infra (AWS). For each doc it asserts the answer is present, `NEEDS CLARIFICATION` is gone from that body, the `(source: dev, <slug> grill Q<n>)` form is present and no `@<hash>` appears. It also asserts the unanswered Storage field stays blank. skills/grill/SKILL.md:73-75 now defines the repo-found form `(source: <path>@<hash>)`, so the provenance gap is closed. The \"result unknown\" point is the same one J-4 raised, and the ledger refutes it with a recorded NIO_E2E run. A lite-spec negative case is still untested, but AC-14 does not require one.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 5,
+      "last_round": 6,
       "gap": "partial",
       "where": "tests/test_onboard_e2e.py::test_ac14_first_spec_fills_stack",
       "tampering": false
@@ -720,11 +733,15 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       5,
       "rejected"
+    ],
+    [
+      6,
+      "approved"
     ]
   ],
   "versions": {
@@ -732,7 +749,8 @@
     "2": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
     "3": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
     "4": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
-    "5": "b6b5511ed1291dd6db3745b85705ade62d7af25b"
+    "5": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+    "6": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70"
   },
   "matched": {
     "AC-13": [
