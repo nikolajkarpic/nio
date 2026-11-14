@@ -2531,7 +2531,7 @@ def test_planned_and_plan_files_come_from_their_modules():
     assert [f for f, g in flow.JUDGED_BY.items() if g == "plan_jury"] == list(plan.FILES)
     root = effort("tasks_jury")
     real = jury.planned
-    jury.planned = lambda name, text_: "planned:" + name
+    jury.planned = lambda name, text_, **_: "planned:" + name
     try:
         assert "planned:tasks.md" in jury.artefact(root, S, "tasks")
     finally:
@@ -2759,6 +2759,20 @@ def test_ac9_retired_fix_task_keeps_implementing():
     root, tasks_md = with_fix()
     code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "covered by T-1", "--by", "human")
     assert code == 0 and "### T-4" not in tasks_md.read_text() and "retired: [T-4]" in tasks_md.read_text(), (out, err)
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    print("ok")
+
+
+def test_tasks_ledger_judged_before_126_stays_approved():
+    """A tasks ledger recorded before #126 hashed tasks.md with retired fix-task IDs left in: still approved."""
+    root, tasks_md = with_fix()
+    text = tasks_md.read_text().replace(FIX_T4, "\n")
+    text = re.sub(r"^retired:.*$", "retired: [T-4]", text, flags=re.M) if re.search(r"^retired:", text, re.M) else "retired: [T-4]\n" + text
+    tasks_md.write_text(text)
+    led = jury.load(root, S, "tasks")
+    led["versions"][str(led["round"])] = jury.blob(root, jury.artefact(root, S, "tasks", legacy=True), write=True)
+    jury.save(root, led)
+    assert jury.artefact(root, S, "tasks", legacy=True) != jury.artefact(root, S, "tasks")
     assert "state: implementing" in nxt(root) and approved_exit(root) == 0
     print("ok")
 
