@@ -41,6 +41,50 @@ Every message to the human (question, report, error or hand-off):
    last line, and each option's description says what happens.
 Before sending, ask: could they act on this without opening a file? If not, rewrite it.
 
+## Drivers and waiting
+
+An effort runs one unit of work at a time: one gate (spec, plan or tasks), or one epic with its tasks and its
+implementation jury. Each unit runs in a **driver**, a fresh agent that runs that one unit and then ends. The main
+session, the one the human talks to, only routes.
+
+**The main session** does only this:
+1. Run `nio flow next <slug>` to see the next unit.
+2. Start a fresh driver for it whose first input is what `nio flow brief <slug>` prints, and nothing else: no note
+   from an earlier driver, nothing from an earlier unit. One epic may take several drivers one after another; a unit
+   resumed after a hand-back gets a new one.
+3. Start a driver only once the previous one for this effort has ended; never two at once. A driver that ended
+   without a summary counts as ended: go on from `nio flow brief <slug>` alone.
+4. Relay the driver's summary: what needs the human goes to them from the summary alone, in the shape above. Then
+   start the next driver.
+Read nothing else yourself: what lies past the brief and the summaries is the driver's.
+
+On a host without subagents, the main session runs the unit itself from `nio flow brief <slug>`, following the
+driver's rules below, and goes on without stopping for the human. Optional, on Claude Code: run each driver as a
+subagent (general-purpose) in the background.
+
+**The driver** runs every step under Steps below, and only for its unit:
+- Start from the brief. If it shows `running: <command>, started <time>`, that command is still running from an
+  earlier driver: wait on that run (below), never start it again.
+- Where a step says to show or ask the human (a human-only disposition, a ruling at the round cap, a blocked task, a
+  change request, a refusal it can't settle), end there with the summary naming that item and the command to
+  continue. Never make the human's decision yourself.
+- End once the unit is closed or handed back; never go on into the next unit.
+- Your last message is the summary, at most 15 lines, in three parts: `closed:` what closed, `open:` what is open
+  (each item for the human), `next:` the command to run next.
+
+**Waiting for long work.** A long command is one that can outlast the host's foreground limit: `nio flow green`,
+`nio jury evidence`, a suite run, and any subagent (a juror, a worker, a driver). The main session and the driver
+wait for it like this:
+- **The host sends completion notices:** start it in the background, then act on its notice when it arrives. Nothing
+  in between: no sleep, no loop, no status check.
+- **No notices, or it is not known whether it has them, but a blocking wait with a timeout:** wait blocking, with a
+  10-minute timeout. If the wait times out, check once whether the command finished; if not, wait again. At most
+  three waits: after the third that times out, end with the summary naming the command as still running and how to
+  continue. Never check at an interval.
+- **Neither:** don't run the long command; end with the summary naming it as open and how to continue, for the main
+  session to take to the human.
+`nio flow green` and `nio jury evidence` record themselves as running while they run, so the next brief shows them.
+
 ## Steps
 
 1. **Plan.** Run `nio jury plan <slug> spec`. It checks the gate, lists the lenses with the reason each runs, sets
@@ -114,8 +158,6 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    `nio jury dispose` refuses the spec-fix while the line is still there.
    The same applies when a change request edits a gate that was approved or closed: every lens that judged it
    re-checks the change, which the step arranges as a fix check.
-5. **Optional: a gate driver.** A host may run steps 2 to 4 in a fresh, cheaper subagent that returns the outcome and
-   the list for the human, so the main context doesn't grow. Dispositions that need the human stay with you.
 
 ## At the round cap
 
