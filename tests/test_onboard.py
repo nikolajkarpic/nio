@@ -834,6 +834,78 @@ def test_nothing_to_reconcile_with_secrets():
     assert "key.pem" not in changed()
 
 
+def stale_project(src="pyproject.toml", doc="stack"):
+    root = repo({src: "[project]\nname='x'\n"})
+    h = hashlib.sha256((root / src).read_bytes()).hexdigest()[:12]
+    setup_project(root, "done", {n: f"## H\n{n} (source: {src}@{h})\n" if n == doc else f"## H\n{n}\n"
+                                 for n in ("product", "personas", "stack", "architecture", "infra", "principles")})
+    return root
+
+
+def status_out(root):
+    r = subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "status"], cwd=root, capture_output=True, text=True)
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    return r.stdout
+
+
+def test_status_flags_changed_source():
+    root = stale_project()
+    assert "stale:" not in status_out(root)
+    (root / "pyproject.toml").write_text("[project]\nname='x'\nversion='1'\n")
+    assert "stale: stack.md (pyproject.toml changed)" in status_out(root).splitlines()
+
+
+def test_worker_pack_marks_stale():
+    root = stale_project()
+    (root / "pyproject.toml").write_text("changed\n")
+    r = pack_reader(root, "worker")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert "### stack.md" in r.stdout and "stale: stack.md (pyproject.toml changed)" in r.stdout, r.stdout
+
+
+def test_status_flags_deleted_source():
+    root = stale_project("ARCHITECTURE.md", "architecture")
+    (root / "ARCHITECTURE.md").unlink()
+    assert "stale: architecture.md (ARCHITECTURE.md deleted)" in status_out(root).splitlines()
+
+
+def test_no_stale_after_rehash():
+    root = stale_project()
+    (root / "pyproject.toml").write_text("changed\n")
+    h = hashlib.sha256((root / "pyproject.toml").read_bytes()).hexdigest()[:12]
+    (root / ".nio/project/stack.md").write_text(f"## H\nstack (source: pyproject.toml@{h})\n")
+    assert "stale:" not in status_out(root)
+
+
+def test_status_speed():
+    import os
+    import time
+    if not os.environ.get("NIO_PERF"):
+        print("skipped")
+        return
+    files = {f"src/f{i}.txt": "x" * 10240 for i in range(100)}
+    root = repo(files)
+    names = ("product", "personas", "stack", "architecture", "infra", "principles")
+    docs = {}
+    for k, n in enumerate(names):
+        recs = " ".join(f"(source: {p}@{hashlib.sha256((root / p).read_bytes()).hexdigest()[:12]})" for p in list(files)[k::6])
+        docs[n] = f"## H\n{n} {recs}\n"
+    setup_project(root, "done", docs)
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    t = time.time()
+    status_out(root)
+    t = time.time() - t
+    assert t < 2.0, f"status took {t:.1f}s, over the limit of 2 seconds"
+
+
+def test_stale_reaches_every_reader():
+    root = stale_project()
+    (root / "pyproject.toml").write_text("changed\n")
+    for rd in ("plan", "architecture-fit", "worker"):
+        r = pack_reader(root, rd)
+        assert "stale: stack.md (pyproject.toml changed)" in r.stdout, (rd, r.stdout)
+
+
 if __name__ == "__main__":
     selfcheck.main([test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -845,4 +917,5 @@ if __name__ == "__main__":
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
                     test_backup_keeps_first_copy, test_backup_failed_copy_leaves_no_partial, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
-                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded, test_skill_inline_secret_rule, test_confirm_refuses_value_from_secrets_file, test_grill_blank_fields_secret_rule])
+                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded, test_skill_inline_secret_rule, test_confirm_refuses_value_from_secrets_file, test_grill_blank_fields_secret_rule,
+                    test_status_flags_changed_source, test_worker_pack_marks_stale, test_status_flags_deleted_source, test_no_stale_after_rehash, test_status_speed, test_stale_reaches_every_reader])
