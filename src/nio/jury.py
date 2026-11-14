@@ -222,14 +222,18 @@ def planned(name, text, keep=()):
         kept = [line for t in keep for line in found[t]["block"]]
     text = re.sub(r"^#### Fixes$.*?(?=^## |\Z)", "", text, flags=re.M | re.S)
     text = re.sub(r"^## E-\d+ PR fixes\s*$", "", text, flags=re.M)  # the pr gate's closing epic holds only fix tasks
+    return re.sub(r"\n\s*\n+", "\n\n", "\n".join([unretire(text), *kept])).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+
+
+def unretire(text):
+    """`text` without retired fix-task IDs: an ID above every planned task's; retiring one doesn't count (#126 FR-9)."""
     top = max(map(int, re.findall(r"^### T-(\d+)\b", re.sub(r"<!--.*?-->", "", text, flags=re.S), re.M)), default=0)
 
-    def unfix(m):  # a retired fix task: its ID is above every planned one, and retiring it doesn't count (#126 FR-9)
+    def unfix(m):
         ids = [x.strip() for x in m[2].split(",") if x.strip()]
         left = [x for x in ids if not (re.fullmatch(r"T-\d+", x) and int(x[2:]) > top)]
         return m[0] if left == ids else f"{m[1]}{', '.join(left)}]"
-    text = re.sub(r"^(retired:\s*\[)([^\]\n]*)\]", unfix, text, count=1, flags=re.M)
-    return re.sub(r"\n\s*\n+", "\n\n", "\n".join([text, *kept])).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
+    return re.sub(r"^(retired:\s*\[)([^\]\n]*)\]", unfix, text, count=1, flags=re.M)
 
 
 def artefact(root, slug, gate):
@@ -242,7 +246,7 @@ def artefact(root, slug, gate):
 LIKE = re.compile(r"^- (?:Binding|Like):\s*`([^`:]+)", re.M)
 
 
-def sources(root, slug, gate):
+def sources(root, slug, gate, lens=""):
     """The files a juror at this gate is given, which are also the only files its quotes may come from (#57 FR-42,
     FR-43). The plan gate adds CLAUDE.md and every file a contract binds or a `Like:` line names."""
     folder = root / ".nio/specs" / slug
@@ -255,12 +259,16 @@ def sources(root, slug, gate):
         contracts = folder / "contracts.md"
         named = LIKE.findall(contracts.read_text()) if contracts.exists() else []
         files += [root / "CLAUDE.md"] + [root / n for n in dict.fromkeys(named)]
+    reader = {("spec", "scope"): "scope", ("plan", "architecture-fit"): "architecture-fit"}.get((gate, lens))
+    if reader:
+        from nio import onboard
+        files += onboard.doc_paths(root, reader, slug)
     return [p for p in dict.fromkeys(files) if p.is_file() and p.resolve().is_relative_to(root.resolve())]
 
 
-def grounding(root, slug, gate):
-    """What a quote is checked against: the gate's artefact, plus at the plan gate the other files its jurors read."""
-    return "\n".join(p.read_text() for p in sources(root, slug, gate))
+def grounding(root, slug, gate, lens=""):
+    """What a quote is checked against: the gate's artefact, plus at the plan gate the other files the lens reads."""
+    return "\n".join(p.read_text() for p in sources(root, slug, gate, lens))
 
 
 def blob(root, text, write=False):
@@ -657,7 +665,8 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
         if not text:
             raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
         moved(root, slug, gate, run, led)
-        human, ground = human_words(root, slug), grounding(root, slug, gate)
+        human = human_words(root, slug)
+        ground = lambda lens="": grounding(root, slug, gate, lens)
     led["expect"] = sorted(set(led["expect"]) | set(expect))
     led["tier"] = tier or led["tier"]
     judged = lambda write=False: commit if impl else blob(root, text, write)
@@ -692,7 +701,7 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
         out += merge(led, new, gate, slug, ground, human)
     review = phase(led) in ("re-review", "final")
     for f in led["findings"]:  # what the grounding sources now hold may ground a finding dropped earlier
-        if f["status"] == "dropped" and grounded(f, ground, human, not impl):
+        if f["status"] == "dropped" and any(grounded(f, ground(s["lens"]) if callable(ground) else ground, human, not impl) for s in f["sources"]):
             f.update(status="open", reason="", validation="pending" if f["severity"] != "minor" else "grounded")
             if review and f["severity"] != "blocker":  # after the first review, a note (#52 FR-12)
                 f.update(status="noted", validation="grounded")
@@ -789,7 +798,7 @@ def merge(led, paths, gate, slug, text, human=""):
         if juror["context"] != "needs-more":  # the last round this juror actually judged
             juror["judged"] = rnd
         for f in findings:
-            out.append(add(led, f, path.stem, juror["lens"], rnd, text, human, review))
+            out.append(add(led, f, path.stem, juror["lens"], rnd, text(juror["lens"]) if callable(text) else text, human, review))
     if review:
         return out + apply_verdicts(led, verdicts, rnd)
     # fixed: every juror that raised it has since judged a different version without raising it again, in this round or
@@ -1148,7 +1157,16 @@ def version_now(root, slug, gate):
     """The version the gate would judge now: the epic's last commit, as `collect` judges, or the artefact's blob."""
     if impl_gate(gate):
         return evidence.span(root, slug, gate.removeprefix("implementation-"))[1]
-    return blob(root, artefact(root, slug, gate))  # an emptied or deleted artefact is a version too
+    text = artefact(root, slug, gate)
+    now = blob(root, text)  # an emptied or deleted artefact is a version too
+    if gate == "tasks":  # a ledger judged before #126 kept retired fix-task IDs in its text: the same tasks, so its version
+        led = load(root, slug, gate)
+        last = version(led, led["round"])
+        if last and last != now:
+            code, old, _ = records.git(root, "cat-file", "-p", last, full=True)
+            if code == 0 and unretire(old).rstrip() == text.rstrip():
+                return last
+    return now
 
 
 def composed(root, slug, gate, led, current, rejected=()):
@@ -1504,8 +1522,12 @@ def _pack_text(root, slug, gate, run, lens, fix, part=None):
     else:
         errors, notes = {"spec": spec, "plan": plans, "tasks": tasks}[gate].check(root, slug, True, "HEAD")
         body = "\n".join([f"# Pack: {lens}, {gate} gate of {slug}", "", "Files to read (quotes may come only from these):",
-                          *[str(p.relative_to(root)) for p in sources(root, slug, gate)], "", f"## nio check {gate} {slug}", "",
+                          *[str(p.relative_to(root)) for p in sources(root, slug, gate, lens)], "", f"## nio check {gate} {slug}", "",
                           *[f"ERROR {e}" for e in errors], *notes, f"{len(errors)} errors", ""])
+        reader = {("spec", "scope"): "scope", ("plan", "architecture-fit"): "architecture-fit"}.get((gate, lens))
+        if reader:
+            from nio import onboard
+            body += "\n" + onboard.docs_for(root, reader, slug)
         if lens == "scope":
             body += "\n".join(["## Intake and the human's answers", f".nio/specs/{slug}/intake.md", "", *answers(root, slug), ""])
         if lens == "consistency":
@@ -1631,7 +1653,7 @@ def step(root, slug, gate, run="", add=(), pick=None):
     if batch:
         refuter_pack(root, slug, gate, run, batch)
         return lines + [f"next: run nio-refuter on .nio/runs/{run}/jury/packs/refuter.md (output .nio/runs/{run}/jury/{gate}-refuter.md), then {again.format(run)}"]
-    for f in led["findings"]:
+    for f in led["findings"]:  # escalation jurors land in a later round than the blocker: count every round since it was raised
         for l in dict.fromkeys(s["lens"] for s in f["sources"] if s["lens"] in names):
             if f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" and escalation(led, f, l) < 3:
                 j = re.sub(r"-\d+$", "", next(s["juror"] for s in f["sources"] if s["lens"] == l))  # its part's juror at a split pr gate

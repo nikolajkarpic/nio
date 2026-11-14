@@ -4,7 +4,7 @@ from pathlib import Path
 
 from test_records import repo
 
-from nio import spec
+from nio import onboard, spec
 import selfcheck
 
 FIXTURES = Path(__file__).parent / "fixtures/spec"
@@ -47,6 +47,7 @@ def test_examples_pass():
 
 def test_templates_need_filling():
     root = repo()
+    onboard.act("skip", "test", root=root)  # full and epic specs wait for onboarding (FR-14)
     for route in spec.ROUTES:
         p = spec.new(root, f"new-{route}", route, today="2026-10-26")
         assert p == spec.path(root, f"2026-10-26-new-{route}"), p

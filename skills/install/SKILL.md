@@ -47,5 +47,5 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## When to stop
 
-Stop after step 2. Don't commit. Tell the human what was set up, and that `/nio:spec` on Claude Code, or the spec
-skill elsewhere, starts the first effort.
+Stop after step 2. Don't commit. End with a message that tells the human what was set up, then that the next step is
+onboarding: `/nio:onboard` on Claude Code, the onboard skill elsewhere. Install never starts onboarding.

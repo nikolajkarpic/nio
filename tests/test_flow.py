@@ -872,7 +872,7 @@ def test_ac11_no_hand_edit_instruction():
     command, and none tells an agent to edit, write, append to or change one."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 28, paths
+    assert len(paths) == 30, paths
     for path in paths:
         lines = path.read_text().splitlines()
         assert lines.count(RULE) == 1, path
@@ -2785,6 +2785,25 @@ def test_ac9_retired_fix_task_keeps_implementing():
     code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "covered by T-1", "--by", "human")
     assert code == 0 and "### T-4" not in tasks_md.read_text() and "retired: [T-4]" in tasks_md.read_text(), (out, err)
     assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    print("ok")
+
+
+def test_tasks_ledger_judged_before_126_stays_approved():
+    """A tasks ledger recorded before #126 hashed tasks.md with retired fix-task IDs left in: still approved."""
+    root, tasks_md = with_fix()
+    text = tasks_md.read_text().replace(FIX_T4, "\n")
+    text = re.sub(r"^retired:.*$", "retired: [T-4]", text, flags=re.M) if re.search(r"^retired:", text, re.M) else "retired: [T-4]\n" + text
+    tasks_md.write_text(text)
+    led = jury.load(root, S, "tasks")
+    legacy = jury.artefact(root, S, "tasks").replace("retired: []", "retired: [T-4]", 1)  # tasks.md comes first
+    assert "retired: [T-4]" in legacy and legacy != jury.artefact(root, S, "tasks")
+    led["versions"][str(led["round"])] = jury.blob(root, legacy, write=True)
+    jury.save(root, led)
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    tasks_md.write_text(tasks_md.read_text().replace("retired: [T-4]", "retired: [T-4, T-5]"))  # another fix task retired
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    tasks_md.write_text(tasks_md.read_text() + "\nA real edit.\n")
+    assert approved_exit(root) != 0
     print("ok")
 
 

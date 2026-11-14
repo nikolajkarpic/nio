@@ -1,0 +1,770 @@
+{
+  "gate": "implementation-E-5",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 6,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "security"
+  ],
+  "collected": {
+    "R-261114-3r7w/implementation-E-5-adversary.md": "1ebf59d98480c0dd11f889d9d26c8bb139b40428a326964c3aeba6d1af989434",
+    "R-261114-3r7w/implementation-E-5-conformance.md": "7a56e633e5349f1c27a06c84b435a9666b4766678549094bb1f48fbda6826da8",
+    "R-261114-3r7w/implementation-E-5-consistency.md": "a073aff8c6d6bd5ac55f23c26ff3335c4ccf1c9ecb6640547fb30fa21acb8b50",
+    "R-261114-3r7w/implementation-E-5-correctness.md": "8d140ae5648aecbc04107e71bcd96d35db83944521ff5423d7cd4cd90c4395ad",
+    "R-261114-3r7w/implementation-E-5-security.md": "8846dde22043afe2a7c5f096eb9594c632192fd3c81f38a21fa2d8ffa74f0cb1",
+    "R-261114-3r7w/implementation-E-5-refuter.md": "0376bf8bf7c73f611650140ec87be89d9fb3dbe5867a354516ca33649e37c642",
+    "R-261114-3r7w/implementation-E-5-adversary-2.md": "f172b3d248bd6a42c582fbb76945232f512533d06289ba68cc42b45cc60690f2",
+    "R-261114-3r7w/implementation-E-5-adversary-3.md": "058ede1551f0363cc2a7478275cb17090c2bd9696cfca0d66119b18bc432abdb",
+    "R-261114-3r7w/implementation-E-5-conformance-2.md": "70ee15a1583c82a95cc5feddd0e7a4c1222e2aa82a090cc1dd7b4cf97f3d22de",
+    "R-261114-3r7w/implementation-E-5-conformance-3.md": "fdec9c2af0bb227d2ffd8665b3f8310ea31413b21b0febb5aa3c39d45d757795",
+    "R-261114-3r7w/implementation-E-5-security-2.md": "2c1b3a90d7dba13c2ed64950f00f315b0aed4dda14ed9b9457e1fed3f3c4c9f2",
+    "R-261114-3r7w/implementation-E-5-security-3.md": "9dbaa0eb2fbc84d38e3d14373ccd9ec9b2f1805e0e9e981630e47df8433cba51",
+    "R-261114-3r7w/implementation-E-5-correctness-2.md": "58e72d2fe9c930191f86622c4f76cfd4f0b295786990f25a5ac42ca098ed9034",
+    "R-261114-3r7w/implementation-E-5-correctness-3.md": "11ca14fe37884927aadd0f5b8ec43f1b87bacb809eace12cb11cd4dba27f5b81",
+    "R-261114-iuy3/implementation-E-5-adversary.md": "255693fc55d242aab2b6c0b82be024328a01d29b8db9886c0532a441ceb14087",
+    "R-261114-iuy3/implementation-E-5-conformance.md": "0b5759bb5e316fdfbc907f5532b7b081abdbad4a2dfef3889d5bcfb6f4370774",
+    "R-261114-iuy3/implementation-E-5-correctness.md": "f23fbf76c1ce6f88d9e07d373a1969fcbc60280ea2eb025ca7fd5d8cc033ddec",
+    "R-261114-iuy3/implementation-E-5-security.md": "0ba85dd3933a5f6b93040ffbcbb46413405fdd83735ef78cbdbf301147838806",
+    "R-261114-iuy3/implementation-E-5-refuter.md": "94ed65376d8e4a4b613f0a26ae9311989d9baf355d9d7854aa529e9a966bac0c"
+  },
+  "jurors": {
+    "implementation-E-5-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
+    },
+    "implementation-E-5-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
+    },
+    "implementation-E-5-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 1
+    },
+    "implementation-E-5-correctness": {
+      "attempts": 2,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
+    },
+    "implementation-E-5-security": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 6,
+      "version": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70",
+      "judged": 6
+    },
+    "implementation-E-5-adversary-2": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 2
+    },
+    "implementation-E-5-adversary-3": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 2
+    },
+    "implementation-E-5-conformance-2": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 3
+    },
+    "implementation-E-5-conformance-3": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 3
+    },
+    "implementation-E-5-security-2": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 4
+    },
+    "implementation-E-5-security-3": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 4
+    },
+    "implementation-E-5-correctness-2": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 5,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 5
+    },
+    "implementation-E-5-correctness-3": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 5,
+      "version": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+      "judged": 5
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Grill's blank-field step writes dev answers and repo lookups into docs with no secret guard",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-14",
+        "CT-21"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "first look the answer up in the repo; for what\\n   is still blank, ask each field as a question in the step 6 shape"
+      ],
+      "fix": "make the grill step follow onboard's secrets rules (never open secret files, never write a secret value), and write the answer through the same CLI validation.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the dev answers the infra question with \"deploy key is sk_live_...\" or \"DB is postgres://user:pass@host/db\". The grill writes it into infra.md as a fact ending in `(source: dev, <slug> grill Q<n>)`. The repo lookup can also open `.env` or other files the onboard scan lists under `secrets`, and copy an inline token into a doc. `skills/onboard/SKILL.md` forbids this (\"Never open a file the scan lists under `secrets`\") and relies on the CLI refusing \"any line holding a secret-looking value\". The grill step names neither rule and does not say the write goes through the same CLI check. A doc that is committed or fed to later packs then holds the credential, and nothing flags it.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-conformance",
+          "lens": "conformance",
+          "situation": "test_ac14_first_spec_fills_stack is an e2e test that skips without NIO_E2E, so the grill's fill of blank tech fields has no run showing it works",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-security",
+          "lens": "security",
+          "situation": "The grill asks for an infra field, for example the database. The dev answers with a connection string that has a password, or the repo lookup finds a key in a `.env` or CI file. The step says to write the answer into infra.md as a fact. Nothing in grill SKILL.md says to skip secret files, to keep secret values out, or to run the CLI check that onboard relies on. The secret ends up in a committed doc, which onboard's rules (AC-12 and AC-39) forbid. No test tries this.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-adversary-2",
+          "lens": "adversary",
+          "situation": "the grill finds the language in `pyproject.toml` and never asks. The step says each answer is written as `(source: dev, <slug> grill Q<n>)`, and Q<n> is \"the question's number in grill.md\". No question exists, so the writer either invents a Q<n> or labels repo data as dev-given with no file or hash. The doc then claims a dev said it, and the reconcile staleness check has nothing to watch. A source that is wrong but looks valid goes unnoticed.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "implementation-E-5-conformance-3",
+          "lens": "conformance",
+          "situation": "test_ac14_first_spec_fills_stack is the only proof of the grill filling blank tech fields. It is e2e-gated and its result is unknown, so the new \"Blank tech fields\" skill step is unproven.",
+          "severity": "blocker",
+          "round": 3
+        },
+        {
+          "juror": "implementation-E-5-security-2",
+          "lens": "security",
+          "situation": "A dev answering an infra or stack question pastes a database URL with a password, or the repo lookup reads `.env` or a CI file with an inline token. The grill writes that value into `infra.md` as a fact ending in `(source: dev, <slug> grill Q<n>)`, and it also lands in grill.md as the logged question. The onboard skill forbids this for the same docs, but the grill step doesn't.",
+          "severity": "major",
+          "round": 4
+        },
+        {
+          "juror": "implementation-E-5-security-3",
+          "lens": "security",
+          "situation": "the grill asks the infra field \"where does it run?\". The dev answers with a database URL that includes a password. The step writes it into `.nio/project/infra.md` as a fact ending in `(source: dev, <slug> grill Q<n>)`. No step tells the grill to redact it or refuse it. The onboard path refuses such lines in the CLI, and the grill path has no equivalent check. The secret lands in a committed doc that every spec reader pack loads.",
+          "severity": "major",
+          "round": 4
+        },
+        {
+          "juror": "implementation-E-5-correctness-2",
+          "lens": "correctness",
+          "situation": "the grill could fill only stack.md, or only skip architecture.md and infra.md, and test_ac14_first_spec_fills_stack would still pass, because it reads only `.nio/project/stack.md` and the script answers only the language.",
+          "severity": "minor",
+          "round": 5
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "grill SKILL.md step 2 \"Blank tech fields\" says to look answers up in the repo and write each answer into infra.md as a fact. It has no rule on secret files or secret values and no CLI check. FR-24 and FR-30 only bind \"the onboarding agent\", and the CLI refusal that onboard relies on is in `nio onboard confirm` (T-62/T-66), which the grill's writes don't go through.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-68",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 5,
+      "gap": "missing",
+      "where": "skills/grill/SKILL.md (Blank tech fields)",
+      "tampering": false,
+      "fixed_in": 6
+    },
+    {
+      "id": "J-2",
+      "title": "Free-text answer written in place of NEEDS CLARIFICATION is not contained",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-21"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Write each answer into\\n   its doc, in place of that field's `NEEDS CLARIFICATION`, as a fact"
+      ],
+      "fix": "say the answer is written as one line of plain text, and run the doc check (the one onboard uses) after each write.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "the answer is multi-line, holds a `## ` heading, or says \"ignore previous instructions...\". It is spliced into the doc and can create or split headings. Later readers, and `test_ac13_empty_repo`, which splits on `\\n## `, then misread the structure. The text is also agent-authored, and nothing says the CLI re-validates the doc after the edit. A half-written edit, or an answer that matches only part of a heading's body, goes unnoticed.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-correctness-3",
+          "lens": "correctness",
+          "situation": "the new grill step applies only \"On a full spec (not lite)\". The test writes spec.md by hand and never sets a route. If the skill reads the route from state, the step may not fire and the test fails for a setup reason. If it infers the route from the spec, the test is fine.",
+          "severity": "minor",
+          "round": 5
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 5,
+      "gap": "partial",
+      "where": "skills/grill/SKILL.md; tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "AC-14 e2e covers only one of three docs and one field",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert \"Python 3.12\" in langs, stack"
+      ],
+      "fix": "script one answer each for architecture and infra, and assert that each doc's field changed and has no hash. Add a lite-spec case that must leave the docs blank.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary",
+          "lens": "adversary",
+          "situation": "AC-14 says \"stack.md, architecture.md and infra.md hold the answers\". The test scripts only the language answer and asserts only the `## Languages` section of stack.md. If the grill silently skips architecture.md or infra.md, or writes a hash, or fills the wrong doc, the test still passes. A lite spec, or a second spec's grill re-asking an already-answered field, is also untested.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-correctness",
+          "lens": "correctness",
+          "situation": "the grill writes the answer next to a still-present `NEEDS CLARIFICATION` in the Languages section. The test passes, but AC-14 says the answered field no longer reads `NEEDS CLARIFICATION`.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-5-adversary-3",
+          "lens": "adversary",
+          "situation": "the step tells the grill to fill fields from the repo first, but the only suffix it defines is `source: dev ... grill Q<n>`. A field answered from `pyproject.toml` has no question number and was not told by the dev. The agent either writes a false `source: dev` with an invented Q<n>, or writes no source at all. Either way AC-14's \"each names the spec grill question it was answered in\" fails silently, and a later reconcile cannot tell guessed provenance from real.",
+          "severity": "major",
+          "round": 2
+        },
+        {
+          "juror": "implementation-E-5-conformance-2",
+          "lens": "conformance",
+          "situation": "test_ac14_first_spec_fills_stack has result \"unknown\". The suite's exit 0 is consistent with the e2e test having been skipped, so there is no proof it ran and passed.",
+          "severity": "blocker",
+          "round": 3
+        },
+        {
+          "juror": "implementation-E-5-correctness-3",
+          "lens": "correctness",
+          "situation": "the grill could fill stack.md but skip architecture.md and infra.md, or write them without the `(source: dev, <slug> grill Q<n>)` form, and the test would still pass. AC-14 requires all three docs.",
+          "severity": "minor",
+          "round": 5
+        },
+        {
+          "juror": "implementation-E-5-conformance",
+          "lens": "conformance",
+          "situation": "a lite spec's grill could fill the tech docs and no test would catch it",
+          "severity": "minor",
+          "round": 6
+        }
+      ],
+      "validation": "refuted",
+      "reason": "The finding describes a test that no longer exists. tests/test_onboard_e2e.py:328-352 scripts one answer each for stack (Python 3.12), architecture (shop) and infra (AWS). For each doc it asserts the answer is present, `NEEDS CLARIFICATION` is gone from that body, the `(source: dev, <slug> grill Q<n>)` form is present and no `@<hash>` appears. It also asserts the unanswered Storage field stays blank. skills/grill/SKILL.md:73-75 now defines the repo-found form `(source: <path>@<hash>)`, so the provenance gap is closed. The \"result unknown\" point is the same one J-4 raised, and the ledger refutes it with a recorded NIO_E2E run. A lite-spec negative case is still untested, but AC-14 does not require one.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 6,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py::test_ac14_first_spec_fills_stack",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "AC-13 test has no recorded passing run",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Without NIO_E2E they print `skipped` and pass."
+      ],
+      "fix": "run the test with NIO_E2E=1 (run: TC-23) and put its pass in the evidence",
+      "sources": [
+        {
+          "juror": "implementation-E-5-conformance",
+          "lens": "conformance",
+          "situation": "the suite exit 0 is consistent with test_ac13_empty_repo skipping, so the empty-repo behaviour is unproven",
+          "severity": "blocker",
+          "round": 1,
+          "run": "TC-23"
+        },
+        {
+          "juror": "implementation-E-5-conformance-2",
+          "lens": "conformance",
+          "situation": "test_ac13_empty_repo has result \"unknown\". The suite's exit 0 is consistent with the e2e test having been skipped, so there is no proof it ran and passed.",
+          "severity": "blocker",
+          "round": 3,
+          "run": "TC-23"
+        },
+        {
+          "juror": "implementation-E-5-conformance-3",
+          "lens": "conformance",
+          "situation": "test_ac13_empty_repo is the only proof of AC-13. Without NIO_E2E set the suite exits 0 with it skipped, and the pack records its result as unknown. The AC is unproven.",
+          "severity": "blocker",
+          "round": 3
+        }
+      ],
+      "validation": "refuted",
+      "reason": "history.jsonl line 253 records a `green` event for T-67 with command `NIO_E2E=1 uv run python tests/test_onboard_e2e.py test_ac13_empty_repo` (run R-261114-vhwo). The finding's premise, that only a skipped run exists, is wrong, because the e2e run with the env var is already recorded as evidence.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 3,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "The grill's outputs and provenance lists do not cover the new project-doc writes",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-21",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "all under `.nio/specs/<slug>/`",
+        "in place of that field's `NEEDS CLARIFICATION`",
+        "an agent decided it: below the bar (step 4), or the session is delegated"
+      ],
+      "fix": "add the three project docs to the outputs list, and add a row to the provenance table for the `(source: dev, <slug> grill Q<n>)` record.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "The grill's \"Inputs and outputs\" section says every output is under `.nio/specs/<slug>/`. Step 2 now writes answers into `.nio/project/stack.md`, `architecture.md` and `infra.md`. The \"Provenance you write\" table has no row for the `(source: dev, <slug> grill Q<n>)` record the step writes. A reader of the skill's contract would not expect the grill to touch project docs, and the provenance table does not say what tag those writes carry.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/grill/SKILL.md (Inputs and outputs; Provenance you write; step 2)",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Delegated answers to blank tech fields are recorded as the dev's own",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-21",
+        "AC-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "as a fact ending in `(source: dev, <slug> grill Q<n>)`",
+        "an agent decided it: below the bar (step 4), or the session is delegated",
+        "On a full spec (not lite)"
+      ],
+      "fix": "either write delegated answers with a source that says the agent answered (for example `(source: agent, ...)`, and extend DEV_SOURCE to match), or state in CT-21 and in step 2 that a delegated answer keeps `(source: dev, ...)` on purpose.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-consistency",
+          "lens": "consistency",
+          "situation": "The human delegates a full spec's grill to an agent. The agent answers the stack question with the recommended option, as the skill allows for delegated sessions. Step 2 then writes `(source: dev, checkout-refunds grill Q4)` into stack.md. A later reader (the worker pack, the plan, or the jury) reads that line as the dev's own answer, while the provenance table says delegated answers are `[agent]`. The spec does not say how delegated sessions are recorded.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/grill/SKILL.md (step 2, blank tech fields; Provenance you write); spec CT-21 does not cover delegation",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "A dev answer is written into the doc with no rule for its shape",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "AC-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Write each answer into"
+      ],
+      "fix": "say the answer is one line of plain text with no heading. Say that a don't-know answer stays blank, and that nothing secret-looking is written.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary-2",
+          "lens": "adversary",
+          "situation": "the dev answers with several lines, a `## ` heading, a pasted URL or secret, or text that is itself `NEEDS CLARIFICATION`. It is written verbatim under the field's heading. An answer with a heading line adds a section. This breaks the \"body of each heading\" check, and the onboarding check that splits on `\\n## `. AC-12/AC-39 keep secrets out of onboarding, but this path has no such guard. An answer like \"not sure\" is written as a fact with a source, so the field no longer reads as unknown.",
+          "severity": "minor",
+          "round": 2
+        },
+        {
+          "juror": "implementation-E-5-adversary-3",
+          "lens": "adversary",
+          "situation": "a greenfield dev answers \"don't know\" for infra. The field stays blank, with no record that it was asked. Every later full spec's grill asks it again, and with \"even when the spec has nothing else open\" it is forced each time. This spends the dev's attention on every spec, and the answer \"don't know\" gets logged as a question each time.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "refuted",
+      "reason": "skills/grill/SKILL.md:73-76 already says \"Fields the human doesn't know stay `NEEDS CLARIFICATION`\", so the \"don't know\" case is settled. Re-asking an unknown field on each full spec is the intended behaviour (\"Run this before finishing\"). The heading, secret and multi-line answer cases are speculative, and nothing in the spec or AC-14 requires an answer-shape rule.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "missing",
+      "where": "skills/grill/SKILL.md (Blank tech fields)",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "test_ac14 can pass while most of the step fails",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert \"Python 3.12\" in langs, stack"
+      ],
+      "fix": "assert that an architecture.md or infra.md field is filled with the source form, and that unanswered fields still read `NEEDS CLARIFICATION`.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary-2",
+          "lens": "adversary",
+          "situation": "AC-14 says \"stack.md, architecture.md and infra.md hold the answers\". The test scripts one answer, for Languages only, and checks only that section of stack.md. If the grill never touches architecture.md or infra.md, or writes \"accept every recommendation\" answers with a wrong or missing source, the test still passes. test_ac13 filters questions by lines ending in \"?\", so a statement-form question about the stack escapes it.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "AC-14's test checks only one section of one doc",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then stack.md, architecture.md and infra.md hold the answers.",
+        "langs = stack.split(\"## Languages\", 1)[1].split(\"\\n## \", 1)[0]"
+      ],
+      "fix": "script one answer per doc, assert each is filled with a source suffix, assert an unanswered field still reads `NEEDS CLARIFICATION`, and add a lite-spec case.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary-3",
+          "lens": "adversary",
+          "situation": "the test scripts one answer (the language) and checks only `## Languages` in stack.md. If the grill never touches architecture.md or infra.md, or writes a hash or a wrong Q<n> there, the test passes. The test does not check that \"Fields the human doesn't know stay NEEDS CLARIFICATION\" holds, and it does not check that a lite spec skips the step. Both of those rules can break silently.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-3",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "The AC-13 \"no stack question\" check can pass without catching anything",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "qs = [l for l in out.splitlines() if l.strip().endswith(\"?\")]"
+      ],
+      "fix": "assert on questions logged in the transcript or in grill.md, or on any line mentioning stack, architecture or infra that sits in a question block.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary-3",
+          "lens": "adversary",
+          "situation": "only output lines that end in `?` count as questions. A grill question phrased as a statement, wrapped across lines, or followed by a trailing quote or parenthesis is not counted. The final reply is the only transcript kept, so a stack question can be asked and the assertion still passes. The \"state is done\" and blank-body assertions are sound; this one is weak.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "Two grills filling the same blank field overwrite each other silently",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Write each answer into"
+      ],
+      "fix": "say to re-read the doc just before writing, and to raise a contradiction (step 9) if the field is already filled with a different answer.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-adversary-3",
+          "lens": "adversary",
+          "situation": "two full specs are grilled in parallel (separate sessions or waves) while stack.md is blank. Both ask the language and both replace `NEEDS CLARIFICATION`. The second write wins with no conflict check, so Q-numbers and answers from the first spec vanish. If the two devs answered differently, nothing flags the contradiction. The step has no re-read before the write and no rule for a field already filled.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "missing",
+      "where": "skills/grill/SKILL.md",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "AC-14 test checks only stack.md",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "then stack.md, architecture.md and infra.md hold the answers"
+      ],
+      "fix": "also assert on a field in architecture.md or infra.md, or narrow the AC to the fields the scripted answers settle.",
+      "sources": [
+        {
+          "juror": "implementation-E-5-conformance-2",
+          "lens": "conformance",
+          "situation": "the test reads only stack.md and only the Languages section. Nothing asserts that architecture.md or infra.md fields are filled or lose NEEDS CLARIFICATION. The scripted answers only cover language and \"accept every recommendation\".",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py:328",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      5,
+      "rejected"
+    ],
+    [
+      6,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+    "2": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+    "3": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+    "4": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+    "5": "b6b5511ed1291dd6db3745b85705ade62d7af25b",
+    "6": "af7f358bf67bb5ac93ea9dfc8e1bf0727e24fd70"
+  },
+  "matched": {
+    "AC-13": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac13_empty_repo"
+      ]
+    ],
+    "AC-14": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac14_first_spec_fills_stack"
+      ]
+    ]
+  },
+  "asked": {}
+}
