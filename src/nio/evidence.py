@@ -1,5 +1,6 @@
 """The implementation jury's CLI-first evidence (2026-10-27-implementation-jury): running commands in a throwaway copy of
 the repo and the run's results file."""
+import collections
 import fnmatch
 import json
 import os
@@ -83,8 +84,8 @@ def load(root, run):
 
 
 def current(root, slug, epic, results):
-    """Raise unless the results were collected for this epic at its last commit (FR-6)."""
-    head = commits_of(root, slug, epic)[0]
+    """Raise unless the results were collected for this epic (or `pr`, the effort) at its last commit (FR-6)."""
+    head = span(root, slug, epic)[1]
     if (results.get("slug"), results.get("epic"), results.get("commit")) != (slug, epic, head):
         raise ValueError(f"the run's results are not for {slug} {epic} at {head[:8]}: run `nio jury evidence` again")
 
@@ -202,10 +203,91 @@ def matched(expected, output):
     return output.strip() == expected.strip()
 
 
+def members(root, slug, epic):
+    """The epic's tasks; every task of the effort for `pr`, the gate on the whole effort diff (2026-11-14-effort-jury)."""
+    return [t for t in implement.tasks_of(root, slug) if epic in ("pr", t["epic"])]
+
+
+def gate_of(epic):
+    return "pr" if epic == "pr" else f"implementation-{epic}"
+
+
+def default_branch(root):
+    """The remote's default branch as the pre-push hook finds it, else a local main or master, else the branch's upstream
+    (not its own pushed copy, which `publish` sets): the effort diff's base."""
+    for ref in ("origin/HEAD", "main", "master"):
+        if records.git(root, "rev-parse", "-q", "--verify", f"{ref}^{{commit}}"):
+            return (records.git(root, "rev-parse", "--abbrev-ref", ref) or [ref])[0]
+    code, up, _ = records.git(root, "rev-parse", "--abbrev-ref", "@{upstream}", full=True)
+    up, me = up.strip(), records.git(root, "branch", "--show-current")
+    if not code and up and up not in me and not any(up.endswith("/" + b) for b in me):
+        return up
+    raise ValueError("the pr gate has no default branch to diff the effort against: set origin/HEAD "
+                     "(`git remote set-head origin -a`), or the branch's upstream to it")
+
+
+def span(root, slug, epic):
+    """(base, head) a gate judges. An epic: the parent of its first task commit to its last. `pr`: the effort diff, from
+    the merge base with the default branch (`main...HEAD`) to the newest commit that changes what `code_diff` shows, so
+    the jury's and the flow's own commits never move it; out-of-flow commits do (FR-3, FR-16)."""
+    if epic != "pr":
+        commits = commits_of(root, slug, epic)
+        return parent_of(root, commits[-1]), commits[0]
+    ref = default_branch(root)
+    base = (records.git(root, "merge-base", ref, "HEAD") or [None])[0]
+    if not base:
+        raise ValueError(f"the pr gate can't diff the effort: {ref} and HEAD share no commit")
+    return base, (records.git(root, "log", "-1", "--format=%H", f"{base}..HEAD", "--", ".", *PRIVATE) or [base])[0]
+
+
+def changed_lines(root, slug):
+    """Lines the effort diff adds and removes, binary files counting none (FR-13)."""
+    rows = code_diff(root, *span(root, slug, "pr"), "--numstat")
+    return sum(int(a) + int(d) for a, d, _ in (r.split("\t", 2) for r in rows) if a.isdigit() and d.isdigit())
+
+
+def split(root, slug):
+    """{part: [commits, oldest first]} when the effort diff is over `jury.split_lines` (1,500) changed lines, else {}: one
+    part per epic (`E1` for E-1: a part never ends in `-<n>`, an escalation juror's mark), then `rest`, every other
+    commit of the diff: out-of-flow ones and the `PR fixes` epic's (FR-13). Exactly at the limit is not over it."""
+    limit = (records.config(root).get("jury") or {}).get("split_lines", 1500)
+    if changed_lines(root, slug) <= limit:
+        return {}
+    base, head = span(root, slug, "pr")
+    last = pr_fixes(root, slug)
+    epic = {t["id"]: t["epic"].replace("-", "") for t in implement.tasks_of(root, slug) if t["epic"] != last}
+    rows = records.git(root, "log", "--reverse", "--format=%H %s", f"{base}..{head}")
+    added = records.git(root, "log", "-1", "--format=%H", "--diff-filter=A", "--", f".nio/specs/{slug}/tasks.md")
+    ours = not any(x.startswith(f"{a} ") for a in added for x in rows)  # a `T-n:` before this tasks.md is an earlier effort's
+    out = {}
+    for x in rows:
+        sha, _, subject = x.partition(" ")
+        out.setdefault(epic.get(subject.split(":")[0], "rest") if ours else "rest", []).append(sha)
+        ours = ours or [sha] == added
+    return {p: out[p] for p in sorted(out, key=lambda p: (p == "rest", int(p[1:]) if p != "rest" else 0))}
+
+
+def pr_fixes(root, slug):
+    """The ID of the effort's closing `PR fixes` epic, or None before its first fix task (FR-15)."""
+    from nio import tasks
+    return next((e["id"] for e in tasks.parse("\n".join(records.parse(tasks.path(root, slug))[1]))["epics"]
+                 if e["title"].strip() == "PR fixes"), None)
+
+
+def part_diff(root, commits, *flags):
+    """The diff of `commits` one by one; a merge shows only what its resolution changed."""
+    out = []
+    for c in commits:
+        merge = len(records.git(root, "rev-list", "--parents", "-n1", c)[0].split()) > 2
+        out += records.git(root, "show", "--cc", "--format=", *flags, c, "--", ".", *PRIVATE) if merge else \
+            code_diff(root, parent_of(root, c), c, *flags)
+    return out
+
+
 def commits_of(root, slug, epic):
     """The commits named `T-n: ...` for a task of the epic, newest first. The walk stops at the commit that added the
     spec's tasks.md, since an earlier effort has its own T-1."""
-    mine = {t["id"] for t in implement.tasks_of(root, slug) if t["epic"] == epic}
+    mine = {t["id"] for t in members(root, slug, epic)}
     added = records.git(root, "log", "-1", "--format=%H", "--diff-filter=A", "--", f".nio/specs/{slug}/tasks.md")
     out = []
     for x in records.git(root, "log", "--format=%H %s", "HEAD"):
@@ -228,7 +310,7 @@ TEST_FILE = re.compile(r"(^|[/_.-])tests?([/_.-]|$)|\.(test|spec)\.")
 DEFINES = re.compile(r"^\s*(?:async\s+)?(?:def|class|function)\s+(\w+)")
 
 
-PRIVATE = [f":(exclude,glob){x}" for x in (".nio/runs/**", ".nio/memory/**", ".nio/specs/*/jury/**", ".nio/specs/*/history.jsonl", ".nio/specs/*/state.json")]
+PRIVATE = [f":(exclude,glob){x}" for x in (".nio/runs/**", ".nio/cache/**", ".nio/memory/**", ".nio/specs/*/jury/**", ".nio/specs/*/history.jsonl", ".nio/specs/*/state.json", ".nio/specs/*/.gitignore")]
 
 
 def code_diff(root, base, head, *flags):
@@ -410,11 +492,11 @@ def collect(root, slug, epic, run):
     (CT-3, FR-3, FR-6, FR-7, FR-11, FR-12, FR-42). Returns the lines to print. ValueError when the epic isn't finished."""
     from nio import jury
     root = Path(root)
-    jury.epic_gate(root, slug, f"implementation-{epic}")
+    gate = gate_of(epic)
+    jury.epic_gate(root, slug, gate)
     cfg = records.config(root)
     t = cfg.get("tests") or {}
-    commits = commits_of(root, slug, epic)
-    commit, base = commits[0], parent_of(root, commits[-1])
+    base, commit = span(root, slug, epic)
     runs = lambda commands: runs_in_copy(root, commit, commands)
     mis, rest = misuse(root, slug)
     if not (root / ".nio/specs" / slug / "tests.md").exists():  # a lite spec: the tests the epic's commits add
@@ -487,13 +569,15 @@ def collect(root, slug, epic, run):
                    for a, (f, n) in zip(attacks, mis) if a["result"] == "not configured"]}
     save(root, run, results)
     named = list(zip(("lint check", "type check"), results["checks"]))
-    raised = {f["title"] for f in jury.load(root, slug, f"implementation-{epic}")["findings"]}
+    raised = {f["title"] for f in jury.load(root, slug, gate)["findings"]}
     off = [{"title": f"the {name} failed", "severity": "major", "gap": f"the {name} failed and is now not configured", "cite": "", "where": ".nio/config.json"}
            for name, c in named if c["result"] == "not configured" and f"the {name} failed" in raised]  # turning a check off isn't fixing it
     changed = code_diff(root, base, commit, "--name-only", "--diff-filter=d")
-    jury.record_cli(root, slug, f"implementation-{epic}", [
-        *phantoms(root, [x for x in implement.tasks_of(root, slug) if x["epic"] == epic], base, commit), *tampering(root, base, commit),
-        *[check_finding(root, name, c, changed) for name, c in named if c["result"] == "failed"], *off], origin="checks")
+    # at the pr gate a failing whole suite is an ordinary finding: confirmed, it gets a fix task like any other
+    whole = [check_finding(root, "test suite", suite, changed)] if epic == "pr" and suite.get("command") and suite["result"] != "passed" else []
+    jury.record_cli(root, slug, gate, [
+        *phantoms(root, members(root, slug, epic), base, commit), *tampering(root, base, commit),
+        *[check_finding(root, name, c, changed) for name, c in named if c["result"] == "failed"], *off, *whole], origin="checks")
     return [str(path(root, run).relative_to(root))] + skipped + [f"{k}: not configured" for k, c in zip(("lint", "typecheck"), results["checks"])
                                                        if c["result"] == "not configured"] \
         + (["attacks: not configured"] if any(a["result"] == "not configured" for a in attacks) else [])
@@ -506,7 +590,7 @@ def join(root, slug, epic, matches, results):
     passing entry to the ledger, and returns them.
     ponytail: a match counts only when its line is a test's own `def` line in the results."""
     from nio import jury
-    acs = sorted({s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"] if s.startswith("AC-")},
+    acs = sorted({s for t in members(root, slug, epic) for s in t["serves"] if s.startswith("AC-")},
                  key=lambda a: int(a[3:]))
     found = [(m[1], m[2], int(m[3])) for x in matches if (m := re.search(r"(AC-\d+)\s*->\s*`?([^\s:`]+):(\d+)", x))]
     hinted = {(h["file"], h["line"]) for h in results.get("hints") or [] if h["kind"] == "test with no assertion"}
@@ -516,7 +600,7 @@ def join(root, slug, epic, matches, results):
                   for a in results.get("attacks") or [] if a.get("line")})
     # a round's lens may match only some ACs, or none: the rest keep the test matched earlier, judged on these results
     by_name = {(t["file"], t["name"]): t for t in tests.values()}
-    led = jury.load(root, slug, f"implementation-{epic}")  # the ledger, since each round may have its own run
+    led = jury.load(root, slug, gate_of(epic))  # the ledger, since each round may have its own run
     kept = led.get("matched") or {}
     entries = []
     for ac in acs:
@@ -534,9 +618,9 @@ def join(root, slug, epic, matches, results):
         mine = [e for e in entries if e["ac"] == ac]
         if not any(e["result"] == "passed" or (e["result"] == "unknown" and e["line"]) for e in mine):
             why = "; ".join(f"{e['_name'] or e['file'] or 'no test'} {e['result']}" for e in mine)
-            out.append({"title": f"{ac} has no passing evidence", "severity": "blocker", "gap": "missing", "cite": ac, "where": mine[0]["file"] or ", ".join(dict.fromkeys(f for t in implement.tasks_of(root, slug) if t["epic"] == epic and ac in t["serves"] for f in t["files"])) or ac,
+            out.append({"title": f"{ac} has no passing evidence", "severity": "blocker", "gap": "missing", "cite": ac, "where": mine[0]["file"] or ", ".join(dict.fromkeys(f for t in members(root, slug, epic) if ac in t["serves"] for f in t["files"])) or ac,
                         "situation": f"no passing test proves {ac}: {why}", "fix": f"add or fix a test that proves {ac}"})
-    jury.record_cli(root, slug, f"implementation-{epic}", out, origin="join")
+    jury.record_cli(root, slug, gate_of(epic), out, origin="join")
     return out
 
 
@@ -589,7 +673,7 @@ def requested(root, led, run):
                 started += 1
     if pending:
         try:
-            commit = commits_of(root, slug, epic)[0]
+            commit = span(root, slug, epic)[1]
             for r, out in zip(pending, runs_in_copy(root, commit, [r["command"] for r in pending], "couldn't run")):
                 r.update(commit=commit, result=out["result"], output=out["output"], cut=out["cut"])
         except ValueError as e:
@@ -613,16 +697,17 @@ def items(root, slug):
     return out, bound
 
 
-def pack(root, slug, gate, lens, run):
+def pack(root, slug, gate, lens, run, part=None):
     """A lens's pack at the implementation gate (CT-9, FR-17, FR-18): the epic's diff, the text of the ACs, FRs and CTs the
     diff touches and no others, the run's results and the hints. In a re-review it is a fix check: the lens's own findings
-    and the diff since the commit the last round judged.
+    and the diff since the commit the last round judged. At the `pr` gate over `jury.split_lines`, `part` names the
+    epic (or `rest`) whose commits this juror judges, and the integration lens's pack is the whole change at summary level:
+    the stat of every changed file, then the full diff of the files two or more parts touch (FR-13).
     ponytail: the last round's commit is the newest `versions` entry of the ledger, which the gate's collect must write."""
     from nio import jury
     root = Path(root)
     epic = jury.epic_gate(root, slug, gate)
-    commits = commits_of(root, slug, epic)
-    base, head = parent_of(root, commits[-1]), commits[0]
+    base, head = span(root, slug, epic)
     results = load(root, run)
     current(root, slug, epic, results)
     led = jury.load(root, slug, gate)
@@ -641,7 +726,7 @@ def pack(root, slug, gate, lens, run):
                     f"- what was done: {f['note']}", ""]
         if lens == "conformance":
             text, _ = items(root, slug)
-            acs = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
+            acs = {s for t in members(root, slug, epic) for s in t["serves"]}
             out += ["## ACs to match", "", "Also write `## Matches`, one `AC-n -> file:line` per AC, the test's `def` line in these results. "
                     "An AC you leave out keeps the test matched earlier.", "", *[text[i] + "\n" for i in text if i in acs and i.startswith("AC-")],
                     "## Results", "", json.dumps({k: results.get(k) for k in ("tests", "suite", "attacks", "evidence")}, indent=2, ensure_ascii=False), ""]
@@ -651,6 +736,21 @@ def pack(root, slug, gate, lens, run):
         return "\n".join(out) + "\n"
     diff = code_diff(root, base, head)
     names = set(code_diff(root, base, head, "--name-only"))
+    mine = members(root, slug, epic)
+    parts = split(root, slug) if epic == "pr" and (part or lens == "integration") else {}
+    if part:
+        commits = parts[part]
+        diff, names = part_diff(root, commits), set(part_diff(root, commits, "--name-only"))
+        mine = [t for t in mine if t["epic"].replace("-", "") == part] if part != "rest" else \
+            [t for t in mine if t["epic"] == pr_fixes(root, slug)]
+        out += [f"You judge one part of a large effort diff: {'the commits outside any epic (out-of-flow ones and the PR fixes epic)' if part == 'rest' else 'epic ' + part[0] + '-' + part[1:] + ' only'}. "
+                "Other jurors judge the other parts, and the integration lens the whole.", ""]
+    elif parts:  # integration over the limit: summary level
+        touched = collections.Counter(f for cs in parts.values() for f in set(part_diff(root, cs, "--name-only")))
+        shared = sorted(f for f, n in touched.items() if n > 1)
+        diff = ["Summary level: the stat of every changed file, then the full diff of the files two or more epics (or "
+                "out-of-flow commits) touch. Open any other file to read it.", "", *code_diff(root, base, head, "--stat"), "",
+                *(records.git(root, "diff", base, head, "--", *shared) if shared else ["No file is touched by two parts."])]
     decisions = []
     if lens == "consistency":  # the related decisions and lessons with their standing, as the spec gate finds them
         from nio import pack as memory
@@ -663,7 +763,7 @@ def pack(root, slug, gate, lens, run):
             found = ""
         decisions = ["## Decisions", "", found if "Memory has nothing" not in found and found else "None found.", ""]
     text, bound = items(root, slug)
-    serves = {s for t in implement.tasks_of(root, slug) if t["epic"] == epic for s in t["serves"]}
+    serves = {s for t in mine for s in t["serves"]}
     touched = serves | {c for c, f in bound.items() if f in names}
     out += ["## Diff", "", *diff, "", "## Items the diff touches", "", *[text[i] + "\n" for i in text if i in touched],
             *decisions, "## Results", "",

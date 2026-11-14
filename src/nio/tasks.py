@@ -350,7 +350,24 @@ def show(root, slug, tid):
         raise ValueError(f"no {tid} in tasks.md")
     task = parsed["tasks"][tid]
     head = next(e["head"] for e in parsed["epics"] if e["id"] == task["epic"])
-    return [head, ""] + (["#### Fixes", ""] if task["fix"] else []) + task["block"]
+    return [head, ""] + (["#### Fixes", ""] if task["fix"] else []) + [globbed(root, x) for x in task["block"]]
+
+
+def globbed(root, line):
+    """A `- Files:` line with each glob pattern as the paths it matches, or marked as matching none (#126 FR-17)."""
+    if not line.startswith("- Files:") or not any(c in line for c in "*?"):
+        return line
+    out = []
+    for f in files(line[len("- Files:"):]):
+        if not any(c in f for c in "*?"):  # `[` is literal, as in `app/[id]/page.tsx`
+            out.append(f"`{f}`")
+            continue
+        try:
+            hits = sorted(str(p.relative_to(root)) for p in root.glob(f.replace("[", "[[]")) if p.is_file() and p.resolve().is_relative_to(root.resolve()))
+        except (ValueError, NotImplementedError):  # an absolute or empty pattern matches nothing here
+            hits = []
+        out += [f"`{h}`" for h in hits] or [f"`{f}` (pattern: matches no file)"]
+    return "- Files: " + ", ".join(out)
 
 
 def approved(root, slug):
@@ -378,6 +395,34 @@ def fixes_of(root, slug, gate, fid):
     """The tasks whose `From:` names this finding of this gate; another epic's ledger counts from J-1 too."""
     tasks = parse("\n".join(records.parse(path(root, slug))[1]))["tasks"]
     return [t for t, x in tasks.items() if (m := FINDING.match(x["fields"].get("From", ""))) and (m[1], m[2]) == (fid, gate)]
+
+
+def retire(root, slug, tid, reason, by):
+    """Retire a fix task (#126 FR-9, FR-11): its block leaves tasks.md, its ID joins `retired:`, and the finding it served
+    closes as `accepted-risk` credited to `by`, the reason its note, so no later round makes it a task again. The tasks
+    gate stays approved. Refused, changing nothing, without a reason."""
+    from nio import jury
+    if not reason.strip():
+        raise ValueError(f"retiring {tid} needs a reason (--reason)")
+    if by not in jury.BY:
+        raise ValueError(f"retiring {tid} needs --by, one of {', '.join(sorted(jury.BY))}: who retires it")
+    p = path(root, slug)
+    task = parse("\n".join(records.parse(p)[1]))["tasks"].get(tid)
+    if not task or not task["fix"]:
+        raise ValueError(f"{tid} is not a fix task in tasks.md; retire a planned task by hand (it reopens the tasks gate)")
+    text = re.sub(rf"^### {tid}\b.*?(?=^#{{1,4}} |\Z)", "", p.read_text(), count=1, flags=re.M | re.S)
+    text, n = re.subn(r"^(retired:\s*\[)([^\]\n]*)\]", lambda m: f"{m[1]}{m[2].strip() + ', ' if m[2].strip() else ''}{tid}]",
+                      text, count=1, flags=re.M)
+    if not n:
+        raise ValueError("tasks.md has no `retired: [...]` line")
+    p.write_text(text)
+    m = FINDING.match(task["fields"].get("From", ""))
+    led = jury.load(root, slug, m[2]) if m else None
+    f = next((g for g in led["findings"] if g["id"] == m[1] and g["status"] in ("open", "disposed")), None) if m else None
+    if f:
+        f.update(status="disposed", disposition="accepted-risk", by=by, note=reason)
+        jury.save(root, led)
+    return f"retired {tid}" + (f"; {f['id']} closed as accepted-risk by {by}" if f else "")
 
 
 def fix_test(root, slug, finding, cites):
@@ -410,9 +455,10 @@ def append_fix(root, slug, epic, finding):
 def one_fix(root, slug, epic, finding):
     """Append one fix task for a finding the decision table routes to a task, under the epic's `#### Fixes`, and dispose of
     the finding as `fix-task` (CT-14, FR-26, FR-27, FR-29). The new ID, or None when the finding already has a task. Every
-    byte already in the file stays; the decision table's routing is the caller's (`jury.to_task`)."""
-    from nio import jury
-    gate, fid = f"implementation-{epic}", finding["id"]
+    byte already in the file stays; the decision table's routing is the caller's (`jury.to_task`). `epic` `pr`: the pr
+    gate's fix tasks go under the closing `## E-<n> PR fixes` epic, added at the end on the first one (2026-11-14 FR-15)."""
+    from nio import evidence, jury
+    gate, fid = evidence.gate_of(epic), finding["id"]
     led = jury.load(root, slug, gate)
     src = f"{fid} ({gate}, round {led['round']})"
     now = next((f for f in led["findings"] if f["id"] == fid), None)
@@ -433,14 +479,17 @@ def one_fix(root, slug, epic, finding):
         tracked = set(records.git(root, "ls-files"))
         named = list(dict.fromkeys(f for f in map(file_of, files(finding["where"])) if f in tracked))
         if not named:  # as `evidence.check_finding`: the epic's changed files
-            from nio import evidence
-            commits = evidence.commits_of(root, slug, epic)
-            named = evidence.code_diff(root, evidence.parent_of(root, commits[-1]), commits[0], "--name-only", "--diff-filter=d") if commits else []
+            named = evidence.code_diff(root, *evidence.span(root, slug, epic), "--name-only", "--diff-filter=d")
         where = ", ".join(f"`{f}`" for f in named)
         ask = "Justify or remove" if finding.get("gap") == "unrequested" else "Fix"
         block = [f"### {tid} {ask}: {finding['title']}", f"- From: {src}", f"- Files: {where}", f"- Serves: {', '.join(serves)}",
                  f"- Test: {fix_test(root, slug, finding, cites)}", "- Depends on: none", "- Parallel: no",
                  "- Tier: strong: a fix from a jury finding", "- Effort: med", "- Mode: single: a fix from a jury finding", ""]
+        if epic == "pr":
+            epic = evidence.pr_fixes(root, slug)
+            if not epic:
+                epic = f"E-{max([int(e['id'][2:]) for e in parsed['epics']] + [0]) + 1}"
+                text = text.rstrip("\r\n") + f"{nl}{nl}## {epic} PR fixes{nl}"
         # headings inside a comment aren't headings, as in `parse`; an opening mark in a title would hide the tasks after it
         mask = re.sub(r"<!--.*?-->", lambda m: re.sub(r"[^\r\n]", " ", m[0]), text, flags=re.S)
         start = re.search(rf"^## {epic}\b", mask, re.M)

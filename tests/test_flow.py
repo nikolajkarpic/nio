@@ -23,7 +23,7 @@ S = "2026-10-20-refunds"
 BY = "orchestrator / test / test"
 FIXTURES = Path(__file__).parent / "fixtures"
 ORDER = ["intake", "drafting", "researching", "advocate_walking", "grilling", "spec_jury", "arch_grilling", "planning",
-         "plan_jury", "tasking", "tasks_jury", "implementing", "done"]
+         "plan_jury", "tasking", "tasks_jury", "implementing", "pr", "done"]
 LENS = {"spec": "logic", "plan": "test-proof", "tasks": "executability"}
 
 
@@ -348,7 +348,7 @@ def test_lock():
         msg = refused(root)
         assert msg == f"{S} is being written by another nio flow call (pid {os.getpid()} on {host}); try again", msg
     assert not path.exists()
-    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\n"
+    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\nrunning.json\n"
     try:
         with flow.lock(root, S):
             raise KeyError("boom")
@@ -369,7 +369,7 @@ def test_lock():
             assert f"(pid {pid} on {other})" in refused(root) and path.read_bytes() == before
             path.unlink()
         assert sorted(p.name for p in folder.iterdir() if p.name.startswith("flow.lock")) == []
-    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\n"  # written once
+    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\nrunning.json\n"  # written once
     print("ok")
 
 
@@ -449,7 +449,8 @@ def task_line(kind, task, **ev):
 
 def test_guards_pass_and_implementing_waits_for_its_tasks():
     """Every guard before implementing passes on an effort past them, a gate naming its approval verdict; implementing
-    passes only once every task is done and every epic has its `epic` line (implement CT-14)."""
+    passes once every task is done, and an epic already in its old implementation jury has its `epic` line (implement
+    CT-14, 2026-11-14-effort-jury FR-12)."""
     root = effort("implementing")
     for stage in GUARDED:
         result, output, ev = flow.guard(root, S, stage)
@@ -458,6 +459,9 @@ def test_guards_pass_and_implementing_waits_for_its_tasks():
     result, output, ev = flow.guard(root, S, "implementing")
     assert result == "fail" and any(x.startswith("T-1 is ready") for x in output) and "isn't built" not in str(output), output
     history(root, S, *[task_line("task_done", t) for t in ("T-1", "T-2", "T-3")])
+    assert flow.guard(root, S, "implementing")[:2] == ("pass", [])
+    led = jury.load(root, S, "implementation-E-1")
+    jury.save(root, {**led, "round": 1})  # E-1 was in its old jury when the pr gate came in
     result, output, ev = flow.guard(root, S, "implementing")
     assert result == "fail" and output == ["E-1 has no epic line"], output
     history(root, S, {"kind": "epic", "from": "implementing", "to": "implementing", "reason": "skipped: not built",
@@ -469,6 +473,8 @@ def test_guards_pass_and_implementing_waits_for_its_tasks():
 def test_closed_gate_is_an_override():
     """CT-5 (FR-27): a jury gate the human closed with a reason is `closed`, carrying the reason, at every gate."""
     for stage, (gate, _) in flow.GATES.items():
+        if stage == "pr":  # tests/test_effort.py: test_effort_ac13_capped_gate_closes_on_the_human_rulings
+            continue
         root = effort(stage)
         assert jury.check(root, S, gate, record=True, human="ship it, I accept the risk")[0] == "human"
         result, output, ev = flow.guard(root, S, stage)
@@ -866,7 +872,7 @@ def test_ac11_no_hand_edit_instruction():
     command, and none tells an agent to edit, write, append to or change one."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 28, paths
+    assert len(paths) == 29, paths
     for path in paths:
         lines = path.read_text().splitlines()
         assert lines.count(RULE) == 1, path
@@ -1435,7 +1441,7 @@ def test_lite_route_stages():
 
 
 def test_lite_epic_gate():
-    """TC-5: the implementation jury reviews a lite fix: implementing waits for the epic's gate, then passes."""
+    """TC-5, as 2026-11-14-effort-jury FR-14 changed it: a lite fix's epics get no jury; it goes to the pr gate."""
     from nio import evidence, tasks
     root = repo()
     git(root, "config", "user.name", "t")
@@ -1462,25 +1468,9 @@ def test_lite_epic_gate():
     gate = "implementation-E-1"
     plan, ok = jury.plan(root, S, gate)
     assert ok and "conformance" in plan[1] and "correctness" in plan[1], plan
-    code, out = flow.done(root, "implementing", S, by=BY)
-    assert code == 1 and "E-1 has no epic line" in "\n".join(out) and "is not done" not in "\n".join(out), out
-    assert not any(x["to"] == "done" for x in lines_of(root)), lines_of(root)
-    run = f"R-{gate}"
-    for lens in ("conformance", "correctness", "consistency"):
-        path = root / ".nio/runs" / run / "jury" / f"{gate}-{lens}.md"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(f"---\nlens: {lens}\ngate: {gate}\nsubject: {S}\nby: \"juror / claude-code / opus\"\n"
-                        "context: sufficient\n---\n## Reasoning\nChecked the diff.\n\n## Findings\nnone\n"
-                        + "\n## Matches\nAC-1 -> `tests/test_fix.py:1`\nAC-2 -> `tests/test_fix.py:1`\n" * (lens == "conformance"))
-    evidence.save(root, run, {**evidence.load(root, run), "slug": S, "epic": "E-1",
-                              "tests": [{"name": "test_fix", "file": "tests/test_fix.py", "line": 1, "result": "passed"}],
-                              "commit": evidence.commits_of(root, S, "E-1")[0]})
-    jury.collect(root, S, gate, run)
-    assert jury.check(root, S, gate, record=True)[0] == "approved"
-    code, out = flow.done(root, gate, S, by=BY)
-    assert code == 0, out
-    last = lines_of(root)[-1]
-    assert (last["kind"], last["from"], last["to"]) == ("pass", "implementing", "done"), last
+    code, out = flow.done(root, "implementing", S, by=BY)  # no epic jury: a lite effort goes to the pr gate
+    assert code == 0 and out[0] == f"moved {S}: implementing → pr", out
+    assert flow.where(root, S)["stage"] == "pr" and not (folder / "jury/implementation-E-1.json").exists()
     print("ok")
 
 
@@ -1747,6 +1737,11 @@ def test_ac34_next_resumes():
     print("ok")
 
 
+def shipped(root, slug):
+    """An effort the human passed to done before the pr gate existed."""
+    history(root, slug, {"kind": "override", "from": "implementing", "to": "done", "reason": "shipped by hand"})
+
+
 def test_ac35_park_refusals():
     """TC-35: park refuses an empty reason and a done effort, recording nothing."""
     root = effort("planning")
@@ -1754,7 +1749,7 @@ def test_ac35_park_refusals():
     other = "2026-10-21-refunds"
     effort("implementing", slug=other, root=root)
     flow.start(root, other, by=BY)
-    assert flow.done(root, "implementing", other, human="shipped by hand", by="human")[0] == 0
+    shipped(root, other)
     assert " · done · " in line_for(root, other)
     counts = count(root), count(root, other)
     for slug, why in ((S, ""), (other, "x")):
@@ -1837,7 +1832,7 @@ def test_ac62_abandon_refusals():
     finished = "2026-10-22-refunds"
     effort("implementing", slug=finished, root=root)
     flow.start(root, finished, by=BY)
-    flow.done(root, "implementing", finished, human="shipped by hand", by="human")
+    shipped(root, finished)
     slugs = [S, "grilling", "2026-10-21-fix", finished]
     before = {s: snap(root, s) for s in slugs}
     for slug, why in zip(slugs, ["", "x", "x", "x"]):
@@ -2727,6 +2722,220 @@ def test_lite_skill_texts():
                for ln in s1.splitlines()), "TC-14"
     assert any(all(k in ln for k in ("one line", "by what it means", "can change")) for ln in s1.splitlines()), "TC-15"
 
+
+
+# --- fix tasks don't reopen the tasks gate (#126), spec 2026-11-14-jury-round-cap ---
+
+FIX_T4 = ("\n#### Fixes\n\n### T-4 Fix the finding\n- From: J-1 (implementation-E-1, round 1)\n- Files: `app.py`\n- Serves: AC-1\n"
+          "- Test: TC-1\n- Depends on: none\n- Parallel: no\n- Tier: strong: a fix\n- Effort: med\n- Mode: single: a fix\n")
+
+
+def with_fix(finding=False):
+    """An effort at implementing whose tasks.md has fix task T-4 appended; with `finding`, J-1 open in E-1's ledger."""
+    root = effort("implementing")
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    tasks_md.write_text(tasks_md.read_text() + FIX_T4)
+    if finding:
+        led = jury.load(root, S, "implementation-E-1")
+        led["findings"] = [{"id": "J-1", "title": "Refund twice", "kind": "gap", "severity": "major", "cites": ["AC-1"],
+                            "evidence": "observed", "quotes": [], "fix": "pay once", "sources": [{"juror": "j", "lens": "correctness", "situation": "paid twice", "severity": "major"}],
+                            "validation": "confirmed", "reason": "", "status": "open", "disposition": "", "by": "", "note": "",
+                            "baseline": "new", "rounds": 0, "first_round": 1, "last_round": 1}]
+        jury.save(root, led)
+    return root, tasks_md
+
+
+def approved_exit(root):
+    return run_main(root, "check", "tasks", S, "--approved")[0]
+
+
+def test_ac8_appended_fix_task_keeps_implementing():
+    root, _ = with_fix()
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    print("ok")
+
+
+def test_ac9_retired_fix_task_keeps_implementing():
+    root, tasks_md = with_fix()
+    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "covered by T-1", "--by", "human")
+    assert code == 0 and "### T-4" not in tasks_md.read_text() and "retired: [T-4]" in tasks_md.read_text(), (out, err)
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    print("ok")
+
+
+def test_ac11_retired_fix_task_closes_its_finding():
+    root, _ = with_fix(finding=True)
+    assert run_main(root, "task", "retire", S, "T-4", "--reason", "not worth it", "--by", "human")[0] == 0
+    led = jury.load(root, S, "implementation-E-1")
+    f = led["findings"][0]
+    assert (f["status"], f["disposition"], f["by"], f["note"]) == ("disposed", "accepted-risk", "human", "not worth it"), f
+    again = {"title": "Refund twice", "kind": "gap", "severity": "major", "cites": ["AC-1"], "evidence": "observed",
+             "quotes": [], "fix": "pay once", "situation": "still twice"}
+    jury.add(led, again, "implementation-E-1-correctness", "correctness", 2, "AC-1")  # the next round raises it again
+    assert f["disposition"] == "accepted-risk" and not jury.to_task(f) and len(led["findings"]) == 1, led["findings"]
+    print("ok")
+
+
+def test_ac28_retire_without_reason_is_refused():
+    root, tasks_md = with_fix(finding=True)
+    before = tasks_md.read_text()
+    code, _, err = run_main(root, "task", "retire", S, "T-4")
+    assert code != 0 and "reason" in err and tasks_md.read_text() == before, err
+    assert jury.load(root, S, "implementation-E-1")["findings"][0]["status"] == "open"
+    print("ok")
+
+
+def test_retire_without_by_is_refused():
+    """`--by` has no default: who retired a fix task is never guessed as the human."""
+    root, tasks_md = with_fix(finding=True)
+    before = tasks_md.read_text()
+    code, _, err = run_main(root, "task", "retire", S, "T-4", "--reason", "not worth it")
+    assert code != 0 and "--by" in err and tasks_md.read_text() == before, err
+    assert jury.load(root, S, "implementation-E-1")["findings"][0]["status"] == "open"
+    print("ok")
+
+
+T5 = "### T-5 Log each refund\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: T-3\n- Parallel: no\n" \
+     "- Tier: cheap: a log line\n- Effort: low\n- Mode: single: small\n\n"
+
+
+def test_ac10_planned_task_change_reopens():
+    root = effort("implementing")
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    tasks_md.write_text(tasks_md.read_text().replace("- Effort: high", "- Effort: med", 1))  # T-3 edited: frozen, so tasking
+    assert re.search(r"state: (tasking|tasks_jury)", nxt(root))
+    root = effort("implementing")
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    text = tasks_md.read_text()
+    tasks_md.write_text(text.replace("### T-3", T5 + "### T-3", 1))  # a planned task added
+    assert "state: tasks_jury" in nxt(root)
+    start, end = text.index("### T-3"), len(text)  # a planned task retired: the gate reopens (its tests now orphaned: tasking)
+    tasks_md.write_text(text[:start].replace("retired: []", "retired: [T-3]") + text[end:])
+    assert re.search(r"state: (tasking|tasks_jury)", nxt(root))
+    print("ok")
+
+
+def test_ac27_mixed_fix_edit_and_outside_fixes_reopen():
+    root, tasks_md = with_fix()  # a fix appended together with a planned-task edit
+    tasks_md.write_text(tasks_md.read_text().replace("(US-1)\n", "(US-1)\nRefunds are paid in EUR.\n", 1))
+    assert "state: tasks_jury" in nxt(root)
+    root, tasks_md = with_fix()  # an existing fix task (approved with the list) edited
+    approve(root, S, "tasks", run="R-T2")
+    assert "state: implementing" in nxt(root)
+    tasks_md.write_text(tasks_md.read_text().replace("- Tier: strong: a fix", "- Tier: max: a fix"))
+    assert "state: tasks_jury" in nxt(root)
+    root = effort("implementing")  # a task added outside `#### Fixes` counts as planned
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    tasks_md.write_text(tasks_md.read_text() + "\n" + T5.replace("T-5", "T-4"))
+    assert "state: tasks_jury" in nxt(root)
+    print("ok")
+
+
+# --- 2026-11-14-short-lived-drivers: `nio flow brief` and the running record (#128) ---
+
+def with_findings(n, slug=S):
+    """An effort at the spec gate whose ledger holds `n` open findings, J-1 first."""
+    root = effort("spec_jury", slug=slug)
+    led = jury.load(root, slug, "spec")
+    led.update(round=1, findings=[{"id": f"J-{i}", "title": f"finding {i}", "severity": "major", "status": "open"}
+                                  for i in range(1, n + 1)])
+    jury.folder(root, slug).mkdir(parents=True, exist_ok=True)
+    (jury.folder(root, slug) / "spec.json").write_text(json.dumps(led))
+    return root
+
+
+def test_drivers_ac15_brief_names_state_findings_tasks_and_next():
+    root = with_findings(2)
+    code, out = cli(root, "brief", S)
+    assert code == 0 and "state: spec_jury" in out and "skill: @nio:jury" in out and "next: run" in out, out
+    assert "open findings (spec): 2" in out and "J-1 major: finding 1" in out and "J-2 major: finding 2" in out, out
+    assert len(out.splitlines()) <= 80 and cli(root, "brief", S) == (code, out)  # from saved state: the same again
+    root = effort("implementing")
+    code, out = cli(root, "brief", S)
+    assert code == 0 and "state: implementing" in out and "skill: @nio:implement" in out and "claim: nio flow claim" in out, out
+    assert "open tasks: 3" in out and "T-1 Refund a paid order in full (ready)" in out and "  T-2 Reject a second refund" in out, out
+    assert len(out.splitlines()) <= 80 and cli(root, "brief", S) == (code, out)
+    print("ok")
+
+
+def test_drivers_ac17_brief_over_80_lines_counts_and_names_the_rest():
+    root = with_findings(100)
+    code, out = cli(root, "brief", S)
+    rows = out.splitlines()
+    listed = [r.split()[0] for r in rows if r.startswith("  J-")]
+    assert code == 0 and len(rows) <= 80 and "open findings (spec): 100" in out, out
+    assert listed == [f"J-{i}" for i in range(1, len(listed) + 1)] and 50 < len(listed) < 100, listed
+    assert rows[-1] == f"rest: nio flow brief {S} --all", rows[-1]
+    code, out = cli(root, "brief", S, "--all")
+    assert code == 0 and "  J-100 major" in out and "rest:" not in out
+    print("ok")
+
+
+def test_drivers_ac18_brief_unknown_slug():
+    root = effort("drafting")
+    code, out, err = run_main(root, "flow", "brief", "no-such-slug")
+    assert (code, out, err.strip()) == (1, "", "error: no effort no-such-slug"), (code, out, err)
+    print("ok")
+
+
+def test_drivers_ac20_brief_shows_a_running_long_command():
+    from nio import evidence, implement
+    root = effort("implementing")
+    with flow.running(root, S, "nio flow green x T-1"):
+        code, out = cli(root, "brief", S)
+        assert re.search(r"^running: nio flow green x T-1, started \d{4}-\d\d-\d\d \d\d:\d\d UTC$", out, re.M), out
+    assert "running:" not in cli(root, "brief", S)[1] and not (root / ".nio/specs" / S / "running.json").exists()
+    seen, real = [], (implement.green, evidence.collect)  # the CLI records `nio flow green` and `nio jury evidence`
+    implement.green = lambda *a, **k: (seen.append(cli(root, "brief", S)[1]), (0, []))[1]
+    evidence.collect = lambda *a, **k: (seen.append(cli(root, "brief", S)[1]), [])[1]
+    try:
+        run_main(root, "flow", "green", S, "T-1", "--run", "pytest -q", "--by", BY)
+        run_main(root, "jury", "evidence", S, "E-1", "--run", "R-1")
+    finally:
+        implement.green, evidence.collect = real
+    assert f"running: nio flow green {S} T-1 --run 'pytest -q' --by '{BY}', started" in seen[0], seen
+    assert f"running: nio jury evidence {S} E-1 --run R-1, started" in seen[1], seen
+    assert "running:" not in cli(root, "brief", S)[1]
+    (root / ".nio/specs" / S / "running.json").write_text(json.dumps(  # a killed run's record is not shown
+        {"command": "nio flow green", "at": "2026-11-14T10:00:00Z", "pid": 999999, "host": socket.gethostname()}))
+    assert "running:" not in cli(root, "brief", S)[1]
+    print("ok")
+
+
+def test_brief_another_host_s_run_is_labelled_unchecked():
+    """A record from another host can't be checked from here: shown with its host, not as a verified live run."""
+    root = effort("implementing")
+    (root / ".nio/specs" / S / "running.json").write_text(json.dumps(
+        {"command": "nio flow green", "at": "2026-11-14T10:00:00Z", "pid": 1, "host": "elsewhere"}))
+    out = cli(root, "brief", S)[1]
+    assert "running on elsewhere, can't check: nio flow green, started 2026-11-14 10:00 UTC" in out and "\nrunning:" not in out, out
+    print("ok")
+
+
+def test_brief_long_next_step_is_cut_to_80_lines():
+    """However long `nio flow next`'s part is, the brief stays at 80 lines with the --all hint last."""
+    root, real = with_findings(3), flow.next_step
+    flow.next_step = lambda *a, **k: (0, [f"line {i}" for i in range(100)])
+    try:
+        rows = flow.brief(root, S)[1]
+        assert len(rows) == 80 and rows[-1] == f"rest: nio flow brief {S} --all", rows[-3:]
+        assert len(flow.brief(root, S, True)[1]) > 100
+    finally:
+        flow.next_step = real
+    print("ok")
+
+def test_brief_lists_fixes_the_human_ruled():
+    """A `fix` ruling at the round cap is the driver's edit: the brief lists it until the artefact changes."""
+    root = with_findings(1)
+    led = jury.load(root, S, "spec")
+    led["findings"][0].update(status="disposed", disposition="spec-fix", by="human", note="pin it down")
+    led["cap"] = {"round": 1, "batch": ["J-1"], "fix": ["J-1"], "version": jury.version_now(root, S, "spec")}
+    (jury.folder(root, S) / "spec.json").write_text(json.dumps(led))
+    assert "owed fixes (spec): edit the spec for J-1 (ruled fix by the human)" in cli(root, "brief", S)[1]
+    sp = root / ".nio/specs" / S / "spec.md"
+    sp.write_text(sp.read_text() + "\nEdited.\n")
+    assert "owed fixes" not in cli(root, "brief", S)[1]
+    print("ok")
 
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

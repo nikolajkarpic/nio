@@ -1,0 +1,938 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-08-full-auto-run",
+  "round": 4,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "consistency",
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261108-uukc/spec-adversary.md": "30c93f9aaeafada619bc7d50bec1c97847d25c3b1d42dd284ab092aa951efe45",
+    "R-261108-uukc/spec-consistency.md": "afb0d48c3ccdecc24becaf94aac427d368cb1b8d6fcbdc37b4787399d6890c0b",
+    "R-261108-uukc/spec-logic.md": "9eaa58b7553494bfc0bced665a4d1ec3e6ae094c915d2275a1460f8c3aeb7c6a",
+    "R-261108-uukc/spec-scope.md": "517620f9b997c9f9c6f1b3b5a4505dae038898e5f834460ae2db2cb8e14a5dfd",
+    "R-261108-uukc/spec-testability.md": "a177845862007dc7598c0dc79108c9290eef061c601926deead26a331435ccd8",
+    "R-261108-uukc/spec-refuter.md": "3de4774ccf5e6b232a9ec4f300fc00aabcf8f2f208a1c5073cac63897a52c13c",
+    "R-261108-hnx2/spec-adversary.md": "4ab098a49b0d7a2b68eef783897be7b71d318957cf492007f8437e3ed0dbae71",
+    "R-261108-hnx2/spec-consistency.md": "8b078420cfbfd349abc3e04fc55a8916deb9c7a8455b8cfb5e6cbeb001344bde",
+    "R-261108-hnx2/spec-logic.md": "a41cb735288fbcebe11253b6e6de77ce24411393f918196483e86cf593e36ef5",
+    "R-261108-hnx2/spec-scope.md": "7603e21c192f4f284ddf4caae40ded3268fab88a78923bdd1bfb54d707810d1d",
+    "R-261108-hnx2/spec-testability.md": "68f4ed66b186e1a7f1f6b72b509b3fcdb47700837c616e5ac611e482e195742f",
+    "R-261108-ogj2/spec-adversary.md": "b37e64183e3a048fa7517c6cf303e0008b4ad8d16b04c09ca1e7253f207d96f3",
+    "R-261108-ogj2/spec-logic.md": "a2bb031270da228fbd153e64bef95c9ae75667e9da2607adf229094c1a941e66",
+    "R-261108-ogj2/spec-testability.md": "ea721d11d466f2654bd5bd2f14d27053418dee8d8eed8b69b5d10d6ffe464043",
+    "R-261108-tmxa/spec-adversary.md": "79e99284e29dd69c581fae02519fe017188972f17a4d52c304337bce7f30edc5",
+    "R-261108-tmxa/spec-consistency.md": "3e8ff564fb2da50c5e22ea73db10bea1bc53da98ab562702157869edbaf162bf",
+    "R-261108-tmxa/spec-logic.md": "d12c8e080d48faf169bce2b78f18277e56b55cff36f574bf386679768688740f",
+    "R-261108-tmxa/spec-scope.md": "8bc27e2b5f5722046d4b70beab2be151f790e20359c1a8b535770f2fb37cb3b1",
+    "R-261108-tmxa/spec-testability.md": "7ba2ae1f7d46e5180acfc0768c28ff9cabc35d9c85391ad37b6517cbd9a1d597"
+  },
+  "jurors": {
+    "spec-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "5e37d086ccec1a1d5e5abc48dd55b5dda4e2c78c",
+      "judged": 4
+    },
+    "spec-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "5e37d086ccec1a1d5e5abc48dd55b5dda4e2c78c",
+      "judged": 4
+    },
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "5e37d086ccec1a1d5e5abc48dd55b5dda4e2c78c",
+      "judged": 4
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "5e37d086ccec1a1d5e5abc48dd55b5dda4e2c78c",
+      "judged": 4
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "5e37d086ccec1a1d5e5abc48dd55b5dda4e2c78c",
+      "judged": 4
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "The grant guard is a self-declared string",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-30"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`--by` other than `human`",
+        "the driver or fixer grants itself auto"
+      ],
+      "fix": "state how a grant is proven to be the human's (for example, only a call from a human-run terminal is accepted), apply it to FR-2 and FR-32, and add an AC where an agent passes `--by human`.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the driver and fixer are agents running shell commands. They can run `nio flow start <slug> --auto --by human` and pass FR-30 and AC-29, which only test `--by orchestrator`. FR-2 has no `--by` condition on the done command at all, so `nio flow done <stage> --auto` has no stated check. The misuse line in UJ-1 is therefore not covered by any AC that rejects it, and the history line would record \"human\" as the granter. Revoke and resume have no stated actor check either.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "The driver runs `nio flow done <drafting stage> --auto --by \"orchestrator / claude-code / model\"` after a passing draft. AC-2 passes as written, since it names no role and checks only `auto: true` and the grant line. Only FR-30 refuses a non-human `--by`, and it is worded for \"asked for\", not for the done command. D-261108-txqj says only the human switches auto on, at any stage, so an agent can take the grant through this path.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-consistency: the grant still rests on a self-declared `--by human`. The changed text names this as a risk (Risks entry) and adds host and model to the history line (AC-42), but nothing proves the grant is the human's, and no AC refuses an agent's `--by human`. The human's Q14 answer accepts this trust model, but the finding's own fix is not met.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Accept: same trust as gate approvals; the spec names it in Risks and history shows who ran each grant",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-2",
+      "title": "The fixer can edit the field that triggers the risky-flag stop",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-28",
+        "FR-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the spec's `risk:` holds `money`, `data-deletion`, `migration` or `auth`",
+        "IF a fix would change or drop a `[human]`-tagged line"
+      ],
+      "fix": "say that `risk:` is read from the version at grant time, or that a change to it pauses. Say that FR-12 compares by item ID, not by current tag.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the `risk:` list is front matter that the fixer is allowed to edit, and nothing marks it as a `[human]` line. A jury finding such as \"risk list is overstated\" lets the fixer drop `money`. FR-28 then reads the edited list and the per-gate stop never fires. The same applies to a `[human]` line that the fixer retags as `[auto]` or `[default]` in the same edit that rewrites it. FR-12 would only catch this if the baseline comparison is by line identity rather than by tag.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-28 reads `risk:` with no baseline, and `risk:` is front matter, not a `[human]` line, so FR-10/FR-12 do not guard it. FR-12 says \"changed or gone\" without saying whether a retag counts.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q15: a change to risk: pauses (FR-36, AC-36)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "One-driver rule and takeover rule need a liveness check that is not specified",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-29",
+        "NFR-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a driver starts on an effort another driver is running THEN THE SYSTEM SHALL stop it without moving the effort.",
+        "let a new driver take over an effort after any interruption"
+      ],
+      "fix": "define running versus dead (a heartbeat or lease with an age) and the atomic claim, and add an AC for a crashed driver and one for a simultaneous start.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "a driver session dies or is compacted away, and the human starts a new one. FR-29 says the new one stops because \"another driver is running\". NFR-2 and AC-11 say it takes over. Nothing says how a running driver is told from a dead one. If the rule is a plain marker, a crash locks the effort forever with no stated way out. If it is a timeout, two live drivers can move the effort at once, and a race on `nio flow done` can then write two pass lines. Two drivers started at the same moment is also unhandled.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a driver crashes mid-stage. The new driver (AC-11 must take over) meets a trace of a \"running\" one (AC-9 must stop). No signal or time limit says when a driver is dead, so the two ACs cannot both be tested and either can pass while the other fails.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-adversary: FR-38 defines running versus stale, but two gaps remain. (1) There is no atomic claim and no AC for two drivers started at the same moment; AC-38 covers only a stale claim and a fresh one. (2) The claim is refreshed \"at each stage\", yet a stage with a long jury round or test run can last longer than 30 minutes. A live driver then becomes stale and a second driver can take over, giving two live drivers on one effort. \"Alive on its machine\" also says nothing about a claim made from another machine. These are inferred, not observed, so I do not raise them as blockers.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q20: claim taken atomically, refreshed at least every 10 min while waiting; AC-43, AC-44 (FR-38)",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-4",
+      "title": "A missing or failed refuter verdict has no row in the decision table",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-9",
+        "FR-17",
+        "Decision table: Fixer action on a finding"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Refuter (confirmed, refuted)",
+        "leave minor and refuted findings unfixed, accept them as the gate's risk in place of the human"
+      ],
+      "fix": "add a row for \"no refuter verdict\": pause for the human. Consider pausing on a refuted blocker as well, or at least marking it prominently in the report.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "the refuter times out, errors, or returns nothing for a blocker. The table only has confirmed and refuted. The driver could read the absence as not confirmed, so the blocker is accepted and listed as the gate's risk, or the fixer skips it. The failure is silent, and the gate passes. A refuter that wrongly refutes a real blocker has the same effect, and blockers accepted that way are not flagged for the human anywhere.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "Under C-261030-fohc (accepted), a finding that a CLI-first check makes goes to the ledger as confirmed and never reaches the refuter. Take a CLI-made major at an epic jury. It is not \"refuter-confirmed\" under FR-9, and it matches no row of the decision table, since the refuter column has only confirmed and refuted. FR-17 covers only minor and refuted findings. So the fixer neither fixes it nor pauses, and the round closes with a major unsettled.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The decision table has only confirmed and refuted for the refuter column. A missing verdict has no row, and FR-17 covers only minor and refuted findings. A refuted blocker is accepted with no flag to the human.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q17: no refuter verdict pauses; refuted blocker accepted and listed first (FR-39, AC-39, AC-40, decision table)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "\"Cut scope\" is undefined and the fixer judges it for itself",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "FR-11",
+        "AC-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF a fix would cut scope THEN THE SYSTEM SHALL pause for the human"
+      ],
+      "fix": "define a scope cut by what is removed (any FR, AC, story, or ID dropped or loosened, or a change to Non-goals) and check it mechanically against the previous round, as FR-12 does for `[human]` lines.",
+      "sources": [
+        {
+          "juror": "spec-adversary",
+          "lens": "adversary",
+          "situation": "AC-14 tests only the case where a user story is dropped. A fixer can instead delete or weaken an AC, narrow an FR, or move a requirement to Non-goals. Those are all cuts, but they are not \"drop a user story\" and they may not touch a `[human]`-tagged line. The fixer decides for itself that the fix cuts nothing, and the jury sees the weakened spec as the new baseline. This is the lowest-effort way to get past a jury, which is the UJ-1 misuse.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a fixer deletes an AC, narrows an FR to fewer cases, or moves a story to Non-goals. Only dropping a whole user story is covered by AC-14, so a test cannot say whether the other edits must pause, and the fixer can cut scope and still pass.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-adversary: FR-37 mechanically catches a removed FR, AC or story and a new Non-goals entry (AC-37). It does not catch the loosening cases in the original situation: an AC weakened in place, or an FR narrowed in place. The text is simply rewritten, with nothing removed, and the jury sees the weaker spec as the new baseline. The fix asked said \"dropped or loosened\". Only \"dropped\" is done.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Accept: mechanical scope check only, as chosen in Q18; softened wording can slip, the PR report lists every fix",
+      "baseline": "unchanged",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2
+    },
+    {
+      "id": "J-6",
+      "title": "The done command's grant has no human-only rule of its own",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-2",
+        "FR-2",
+        "FR-30"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the done command that closes drafting is given the auto flag, then the effort moves on with auto on and the grant recorded",
+        "WHEN the done command that closes the drafting stage is given the auto flag THE SYSTEM SHALL switch the auto flag on as the effort moves on."
+      ],
+      "fix": "state in FR-2 and AC-2 that the grant needs `--by human`, and add the refusal case (`--by` other than human, flag stays off, no history line) to AC-2's observable.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "The driver runs `nio flow done <drafting stage> --auto --by \"orchestrator / claude-code / model\"` after a passing draft. AC-2 passes as written, since it names no role and checks only `auto: true` and the grant line. Only FR-30 refuses a non-human `--by`, and it is worded for \"asked for\", not for the done command. D-261108-txqj says only the human switches auto on, at any stage, so an agent can take the grant through this path.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-7",
+      "title": "The grant command in AC-1 omits the `--by` that FR-1 requires",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-1",
+        "FR-1",
+        "FR-30"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "when the human runs `nio flow start <slug> --auto`, then the auto flag is on",
+        "WHEN the human runs `nio flow start <slug> --auto --by human` THE SYSTEM SHALL switch the effort's auto flag on."
+      ],
+      "fix": "write AC-1 as `nio flow start <slug> --auto --by human`, and state that a grant without `--by` is refused and leaves the flag off.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "A test written from AC-1 runs `nio flow start <slug> --auto` with no `--by`. Today `nio flow start` requires `--by` (src/nio/cli.py:161), so the test fails at argument parsing and never reaches the grant. If a builder makes `--by` optional and defaults it to human, the spec is silent on a missing `--by`, which is the case where the grant must fail closed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-1 writes `nio flow start <slug> --auto` without `--by`, while FR-1 requires `--by human`. A missing `--by` is not specified.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "FR-18's cap counts gates that the lite route skips",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-18",
+        "FR-35",
+        "AC-35"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "cap juries at 6 (2 for each of the spec, plan and tasks gates) until the tasks are known, then at 2 × the effort's gates (spec, plan, tasks, and one per epic)",
+        "THE SYSTEM SHALL drive the lite route as well as the full route, each through its own stages."
+      ],
+      "fix": "state the cap for the lite route, or say the formula counts only the gates the route actually runs.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "D-261107-7egd (current) says a lite effort skips the spec jury and planning. A lite effort with two epics runs tasks and one gate per epic. FR-18's formula gives 2 × (spec + plan + tasks + 2 epics) = 10, counting two gates the route never runs. Either the run's cap is too high, or the implementer invents a lite number the spec never states. AC-25 and AC-32 cover only full-route counts, so no test would catch it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-18 counts spec, plan and tasks gates for every effort. The lite route has no plan or spec gate (D-261107-7egd, FR-35), and no lite cap is stated.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "`[default]` items have no path to `[auto]` or to the spec jury",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-7",
+        "FR-8",
+        "FR-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "turn each open point into a default tagged `[auto]` instead of asking the human",
+        "settle its open points and `[default]` items by FR-7 and ask the human nothing"
+      ],
+      "fix": "extend FR-7 to cover `[default]` items, and say what the gate does with a `[default]` item that the jury has not judged.",
+      "sources": [
+        {
+          "juror": "spec-consistency",
+          "lens": "consistency",
+          "situation": "The drafter writes a `[default]` item with no open point, then the grill runs under auto. FR-8 says the grill settles `[default]` items \"by FR-7\", but FR-7 covers only open points. So the item is neither converted to `[auto]` nor judged by the spec jury. FR-14 covers only `[auto]` items, so the gate's treatment of the still-`[default]` item is unstated: it either blocks the run, which FR-8 says must not ask the human, or passes without a jury verdict, which FR-15 forbids for `[auto]` items.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-8 settles `[default]` items \"by FR-7\", but FR-7 covers only open points. FR-14 and FR-15 cover only `[auto]` items.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "PR failure after done has no state-table row",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-24",
+        "FR-20",
+        "state table row `running`",
+        "state table row `waiting`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF the pull request can't be opened THEN THE SYSTEM SHALL pause for the human, print the run report and keep the effort's commits, without retrying.",
+        "| running | ignore | → waiting | → suspended | ignore | → pr_open | → manual | [agent] |",
+        "reject: a waiting effort doesn't move"
+      ],
+      "fix": "add an explicit outcome for \"done but PR not opened\" (a row or a split of the done event) and say what resume does there.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "an auto effort reaches done and `gh pr create` fails (AC-24). The table says running + reaches done goes to the final state `pr_open`, while FR-24 says the effort pauses (waiting). If it is waiting, the human resumes it to running, but the effort is already done, and \"reaches done\" in waiting is rejected. Nothing says who opens the PR after the human fixes the cause, or whether the state is pr_open without a PR.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "spec-logic: the new column sends running + PR fails to waiting (matching FR-24), but the \"human resumes\" column then sends waiting to running, and the effort is already done. \"reaches done\" in running goes to pr_open, and in waiting it is rejected, so no row says who opens the PR after the human fixes the cause. No row or text says whether the effort ends in pr_open without a PR or retries the PR.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q20: resume after a failed PR only retries opening it, no stage runs; FR-41, AC-45, state table pr_pending",
+      "baseline": "absent",
+      "rounds": 1,
+      "first_round": 1,
+      "last_round": 2,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-11",
+      "title": "Cap and stuck stops resume into the same stop",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-18",
+        "FR-26",
+        "AC-5",
+        "state table row `suspended`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "| suspended | ignore | ignore | ignore | → running | reject: a suspended effort doesn't move | → manual | [agent] |",
+        "WHEN the human resumes or commits a paused auto effort THE SYSTEM SHALL carry the run on with the auto flag still on."
+      ],
+      "fix": "state what a resume does to the round count or cap (reset the gate's rounds, or require a raised `budgets.juries`).",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the plan gate has used its cap (or 3 rounds, AC-5) and the run is suspended. The human runs `nio flow start <slug>`, and the table moves it to running with auto on. No rule resets or raises the count, so the next jury check sees the same counts above the cap and suspends again at once. The human cannot get out except by editing `budgets.juries` or switching auto off. Neither the table nor the FRs say which.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The table moves suspended to running on resume. No FR resets or raises the round count, so the same cap fires again.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q19: resume after cap or stuck gives the gate 2 more rounds and raises the cap by 2 (FR-40, AC-41)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "\"3 jury rounds\" stuck rule is unreachable or unsourced beside the 2-per-gate cap",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "FR-18",
+        "FR-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "cap juries at 6 (2 for each of the spec, plan and tasks gates)",
+        "Given an auto effort whose plan gate has run 3 jury rounds without approval"
+      ],
+      "fix": "say whether the cap is per gate or per run, put the stuck threshold in an FR, and give the lite route's cap formula.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "if the cap is 2 rounds per gate, the plan gate stops at round 2 and AC-5's start (3 rounds) can't occur. If the cap is a pool of 6 for the whole run, a plan gate can legitimately take 3 or 4 rounds, and \"2 for each\" is not what is enforced. The 3-round number appears in no FR (FR-25 only tells the human), and the lite route has no plan gate, but FR-18 counts \"spec, plan, tasks\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-20",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-13",
+      "title": "FR-7 covers open points only, while FR-8 also converts `[default]` items",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-7",
+        "FR-8",
+        "AC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "turn each open point into a default tagged `[auto]` instead of asking the human.",
+        "settle its open points and `[default]` items by FR-7 and ask the human nothing."
+      ],
+      "fix": "state in FR-7 what happens to a `[default]` item (retag to `[auto]`) and add an AC for it.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "a grilling-stage spec has one open point and one `[default]` item. FR-7 gives `[auto]` for the open point only. FR-8 says the `[default]` item is settled \"by FR-7\", which has no rule for it, so it is either left as `[default]` (still needing a human confirm, so the grill asks) or retagged `[auto]`. AC-16 tests open points only. The spec jury under FR-15 judges `[auto]` items, so the outcome decides whether a `[default]` item is judged.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "The only guard on the grant is a self-declared `--by` value",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-30",
+        "FR-1",
+        "FR-2",
+        "UJ-1 (Misuse)"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "IF auto is asked for by anyone but the human (`--by` other than `human`) THEN THE SYSTEM SHALL refuse it and leave the flag off.",
+        "the driver or fixer grants itself auto"
+      ],
+      "fix": "state how the human is told from the driver (for example a check the agent can't pass), or record this as a known limit in Risks. Say whether a grant on a done effort is refused.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "the driver is an agent that types the CLI command. It runs `nio flow start <slug> --auto --by human`. FR-30 accepts it, because `human` is what the string says, and the invariant \"only the human grants auto\" is broken. FR-2 has the same hole on `nio flow done`, and AC-29 only tests `--by orchestrator`. The spec shows no way to tell a human's command from the driver's. FR-31 also allows the grant at \"any stage from the end of drafting\", including a finished effort, which would leave it running with no done event ahead.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q14: same as J-1",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "One effort ships grant, grilling defaults, fixer, driver, report, budgets and the lite route together",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "FR-5",
+        "FR-9",
+        "FR-20",
+        "FR-35",
+        "AC-35"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "with a fixer that settles refuter-confirmed blockers and majors on its own.",
+        "`epic: \"\"`"
+      ],
+      "fix": "split into an epic with slices, for example grant and history (FR-1 to FR-4), grilling and [auto] defaults (FR-7, FR-8, FR-13 to FR-15), fixer (FR-9 to FR-12, FR-16, FR-17, FR-34), driver (FR-5, FR-6, FR-25 to FR-29), and report and budgets (FR-18 to FR-24, FR-33). Set `epic:` on each slice.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the spec holds 35 FRs and 35 ACs in one effort, and its front matter `epic` is empty. The intake's own list has four separate missing pieces (switch, driver, fixer, notify). If the fixer slice (FR-9 to FR-11) is late or wrong, the driver, the report and the lite route all wait on it, and the human cannot ship the switch (FR-1 to FR-3) on its own. The spec does not say which parts can ship first.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-16",
+      "title": "The default jury cap may change the stop list's limits, which the non-goals forbid",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-18",
+        "FR-19",
+        "Non-goals",
+        "AC-25"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Changing the stop list's limits (FR-39 to FR-42 of the flow-state spec)",
+        "THE SYSTEM SHALL cap juries at 6 (2 for each of the spec, plan and tasks gates)"
+      ],
+      "fix": "state in FR-18 whether the default is the stop list's FR-40 cap or a new value that does not alter FR-39 to FR-42, and say which in the Non-goals line.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake says the effort \"is suspended at the budgets.juries / budgets.subagents caps (FR-40)\", so a cap already exists as a budget. FR-18 gives an unset `budgets.juries` a value of 6, then 2 × gates, under auto. An implementer can read this as a new default for the stop list (a change the non-goal forbids) or as a default for an unset budget (allowed). The spec does not say which, so the stop list's behaviour under auto is unclear.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-17",
+      "title": "FR-29 is a driver-exclusion rule that nobody asked for and no one confirmed",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-29",
+        "NFR-2",
+        "Non-goals"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a driver starts on an effort another driver is running THEN THE SYSTEM SHALL stop it without moving the effort. [agent]",
+        "or [default] (your proposal; the grill must confirm it)"
+      ],
+      "fix": "tag FR-29 [default] so the grill confirms it, or drop it and let NFR-2 carry the no-double-run case.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the human's answers (Q1 to Q13) never mention a second driver. The tag [agent] is not one of the provenance values the template allows, so the grill never confirmed the rule. It is partly covered by NFR-2 (no gate run twice), which traces to the compaction answer (Q13). If the human does not want a driver lock, the rule still stands in the spec unconfirmed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "Q16: FR-29 kept, confirmed by the human",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-18",
+      "title": "Driver \"already running\" is undefined and clashes with takeover",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-29",
+        "AC-9",
+        "NFR-2",
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF a driver starts on an effort another driver is running THEN THE SYSTEM SHALL stop it without moving the effort.",
+        "its context can be compacted or replaced"
+      ],
+      "fix": "state what marks a driver as running (record, heartbeat) and a duration after which it is stale; add an AC for the stale case.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a driver crashes mid-stage. The new driver (AC-11 must take over) meets a trace of a \"running\" one (AC-9 must stop). No signal or time limit says when a driver is dead, so the two ACs cannot both be tested and either can pass while the other fails.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-3",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-19",
+      "title": "\"Without polling\" cannot be seen by AC-10's Observable",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-10",
+        "FR-27"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "waits for the round's completion notice, without polling, before calling `nio flow done`",
+        "WHILE a jury round or test run is one the host would move to the background"
+      ],
+      "fix": "give an observable for no polling (for example a count of status or ledger reads during the wait is 0) and the duration that makes a command background.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a driver that polls every second also has no `done` line before the round closes, so the test passes while the FR is broken. \"One the host would move to the background\" has no threshold (seconds) either, so the e2e test cannot pick a command that qualifies.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-10's Observable (no `done` before the round closes) is also satisfied by a polling driver. FR-27 sets no threshold for \"would move to the background\".",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-20",
+      "title": "The stuck limit in AC-5 is not in this spec",
+      "kind": "ambiguity",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "FR-18",
+        "FR-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given an auto effort whose plan gate has run 3 jury rounds without approval",
+        "cap juries at 6 (2 for each of the spec, plan and tasks gates)"
+      ],
+      "fix": "state the stuck number and which of pause or suspended AC-5 expects; if the cap is hit first, change the AC to match.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "FR-18 gives plan 2 jury rounds, yet AC-5 stops at 3. A tester cannot tell whether the stop is the cap (suspended) or the stuck rule (paused), and \"the reason\" in the Observable differs. The stuck threshold is only cited as \"flow-state FR-39 to FR-42\" and never stated.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "if the cap is 2 rounds per gate, the plan gate stops at round 2 and AC-5's start (3 rounds) can't occur. If the cap is a pool of 6 for the whole run, a plan gate can legitimately take 3 or 4 rounds, and \"2 for each\" is not what is enforced. The 3-round number appears in no FR (FR-25 only tells the human), and the lite route has no plan gate, but FR-18 counts \"spec, plan, tasks\".",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-5 uses 3 rounds, FR-18 caps the plan gate at 2, and the stuck threshold is only cited from flow-state. The spec does not say whether the stop is paused or suspended.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-21",
+      "title": "FR-8's `[default]` items have no AC",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-8",
+        "FR-7",
+        "AC-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "settle its open points and `[default]` items by FR-7 and ask the human nothing",
+        "Given an auto effort at grilling with two open points"
+      ],
+      "fix": "add an AC with a `[default]` item and state its end tag.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "AC-16 uses only open points. A grill that leaves a `[default]` item unconfirmed could ask the human or leave it untagged, and every AC still passes. FR-7 turns open points into `[auto]` defaults, but what a `[default]` item becomes (retagged `[auto]`, left as is) is not said.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "AC-1 and AC-2 carry --by human and the refusal case (FR-2 needs --by human); FR-18 counts the gates the route runs and is stated as FR-40's default value; non-goal says so; FR-7 retags [default] items [auto] and AC-16 covers one; state table gains a PR fails column (running → waiting, as FR-24 says); AC-10 Observable: no status/ledger reads during the wait, FR-27 says the host decides when; AC-5 names flow-state FR-39's 3-round per-gate limit under the cap and expects a pause; same fix as J-21 for FR-8",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "human"
+    ],
+    [
+      3,
+      "approved"
+    ],
+    [
+      4,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "0c8f8f3fd983df5348a65a2ddf02831e13d9a42f",
+    "2": "045347ac4ae7fcd4aa9a29196e6923511f040db1",
+    "3": "a3fe3005386eae90ae261c98cc10545c401bf50a",
+    "4": "5e37d086ccec1a1d5e5abc48dd55b5dda4e2c78c"
+  },
+  "asked": {},
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-1",
+      "J-3",
+      "J-5",
+      "J-10"
+    ],
+    "final": 3,
+    "flagged": []
+  }
+}
