@@ -35,7 +35,7 @@ def main():
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
     c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
     ob = sub.add_parser("onboard", help="`onboard scan`: list the project's docs, manifests, IaC and CI files with a content hash")
-    ob.add_argument("action", choices=["scan", "start", "confirm", "pause", "skip", "backup"])
+    ob.add_argument("action", choices=["scan", "start", "confirm", "pause", "skip", "backup", "changed", "reconciled"])
     ob.add_argument("arg", nargs="*", help="skip: the reason; confirm: the doc")
     ob.add_argument("--empty", action="store_true", help="start: write blank docs")
     ob.add_argument("--app", action="append", default=[], help="start: <slug>=<path>[,<path>...], repeatable; confirm: the app's slug")
@@ -178,6 +178,19 @@ def main():
             try:
                 print(onboard.backup(a.arg[0] if a.arg else "", records.repo_root()))
             except (ValueError, OSError) as e:
+                sys.exit(f"error: {e}")
+            return
+        if a.action in ("changed", "reconciled"):
+            try:
+                r = records.repo_root()
+                if a.action == "reconciled":
+                    onboard.reconciled(r)
+                    print("reconciled")
+                elif a.arg:
+                    print("\n".join(f"{p}: {', '.join(d)}" for p, d in onboard.changed(r, a.arg[0])) or "no project doc source changed")
+                else:
+                    print("\n".join(onboard.to_reconcile(r)) or "nothing to reconcile")
+            except ValueError as e:
                 sys.exit(f"error: {e}")
             return
         if a.action != "scan":
