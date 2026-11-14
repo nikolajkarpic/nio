@@ -2,6 +2,7 @@
 slug: <slug>
 route: epic
 risk: []                         # auth | pii | money | external-input | data-deletion | migration | multi-party | public-api
+apps: []                       # the apps this spec touches, when the project has docs per app
 retired: []
 ---
 <!-- Epic spec: a feature too large for one spec. Each roadmap slice gets its own full spec

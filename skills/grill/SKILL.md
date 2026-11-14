@@ -68,6 +68,16 @@ it and read `grill.md`: an `Asked` entry with no answer after it is the question
    the item with `[research: RF-n]`, and move the OP's ID to `retired:`. When a lookup finds nothing, never guess: show the human
    in plain words what you looked for and what turned up (the files and queries go in `Refs:`), and let them decide it now (`[human]`) or defer it (step 10). When sources
    disagree, raise it as a contradiction (step 9).
+   **Blank tech fields.** On a full spec (not lite), when `.nio/project/stack.md`, `architecture.md` or `infra.md`
+   (or the app's folder under `.nio/project/`) hold `NEEDS CLARIFICATION`, first look the answer up in the repo; a fact
+   found there ends in that file's `(source: <path>@<hash>)` record, with the hash `nio onboard scan` prints. For what
+   is still blank, ask each field as a question in the step 6 shape (log it as any other question). Write each answer into
+   its doc, in place of that field's `NEEDS CLARIFICATION`, as one line ending in `(source: dev, <slug> grill Q<n>)`, with
+   no hash and with Q<n> the question's number in grill.md. Fields the human doesn't know stay `NEEDS CLARIFICATION`.
+   Secrets: never open a file the scan lists under `secrets`, and never write, quote or show a secret value (a
+   password, token, key or connection string with credentials), in a doc, grill.md or a question; write only where it
+   is kept (the file or secret manager's name). If an answer holds one, write it without the value and tell the human.
+   Run this before finishing, even when the spec has nothing else open.
 3. **Order what's left.** Contradictions come first, always. Then, for each goal the spec states, its core facets:
    meaning, actors and permissions, effect on data and state, failure and conflict, the change from today, and
    verification. Then everything else, most impact first. A question whose answer depends on another open question

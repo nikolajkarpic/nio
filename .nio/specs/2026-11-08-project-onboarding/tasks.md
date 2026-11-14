@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-project-onboarding
-retired: [T-8]
+retired: [T-8, T-11, T-17, T-20, T-24]
 ---
 # Tasks: project onboarding
 
@@ -15,6 +15,52 @@ retired: [T-8]
 - Tier: strong: new scanner with clear tests
 - Effort: med
 - Mode: split: new logic with clear tests
+
+#### Fixes
+
+### T-26 Fix: Outside a git repo the scan reports success with "nothing found"
+- From: J-2 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`, `src/nio/cli.py`
+- Serves: CT-2, J-2
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-27 Fix: Non-ASCII or quoted paths are dropped silently
+- From: J-3 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`
+- Serves: CT-1, J-3
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-28 Fix: Output order and the CLI shape don't match the contract, and the contract tests are missing
+- From: J-5 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`, `src/nio/cli.py`
+- Serves: CT-1, CT-2, J-5
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-29 Fix: The category table is narrower than CT-1, and `docs/*.md` is in the wrong category
+- From: J-7 (implementation-E-1, round 1)
+- Files: `src/nio/onboard.py`
+- Serves: CT-1, FR-1, J-7
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
 
 ## E-2 Spec waits for onboarding (US-4)
 
@@ -58,6 +104,85 @@ retired: [T-8]
 - Effort: low
 - Mode: direct: skill text, e2e test checks it after
 
+#### Fixes
+
+### T-30 Fix: the six project-doc templates under `src/nio/templates/project/` don't exist, and headings differ from `HEADINGS` (J-1 to J-6, J-34; also T-31 to T-35, T-50)
+- From: J-1 (implementation-E-2, round 5)
+- Files: `CLAUDE.md`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/onboard.py`, `src/nio/spec.py`, `tests/test_onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_spec.py`
+- Serves: AC-30
+- Test: new: a test that fails while any of the six `src/nio/templates/project/*.md` is missing or its headings differ from CT-12's `HEADINGS`
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-36 Fix: `start --empty` overwrites existing docs and writes all six, not only stack, architecture and infra when missing (J-7, J-23, J-33; also T-44, T-49)
+- From: J-7 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, J-7
+- Test: new: a test that `start --empty` writes only missing stack.md, architecture.md and infra.md and leaves an existing doc byte-for-byte unchanged (CT-4)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-37 Fix: `confirm` walks all six docs, never checks the doc file or headings, and the last confirm never sets `done` or saves `seen` (J-10, J-17, J-20, J-22; also T-40, T-42, T-43)
+- From: J-10 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, J-10
+- Test: new: a test that confirm refuses a missing or heading-less doc, walks only the expected docs, and the last confirm leaves state `done` with `seen` saved so a full spec starts (CT-4)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-38 Fix: the progress file is written non-atomically, and a torn file crashes `nio status` (J-11)
+- From: J-11 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`, `src/nio/cli.py`
+- Serves: CT-3, CT-8, J-11
+- Test: new: a test that a torn onboarding.json makes every reader stop naming the file instead of crashing, and that saves go through a temp file and rename (CT-3)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-41 Fix: the state table's ignore and reject cells aren't followed (paused can't resume; start or skip work on done), and a test expects exit 1 where the table says 0 (J-19, J-25, J-29, J-35; also T-46, T-48, T-51)
+- From: J-19 (implementation-E-2, round 5)
+- Files: `src/nio/onboard.py`
+- Serves: CT-4, AC-15
+- Test: new: a table-driven test over every state-table cell: ignore exits 0 with `ignored:`, reject exits 1, paused resumes (CT-4)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-45 Fix: the onboard commands use the current directory instead of the repo root (J-24, J-28; also T-47)
+- From: J-24 (implementation-E-2, round 5)
+- Files: `src/nio/cli.py`
+- Serves: CT-4, CT-5, AC-16
+- Test: new: a test that running the onboard commands from a subdirectory reads and writes `.nio/project/` at the repo root (CT-4)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-52 Fix: add next_doc(p) per CT-3/CT-4; start and confirm print the next doc from it
+- From: J-20 (implementation-E-2, round 6)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-3, CT-4, J-20
+- Test: new: next_doc(p) returns the first expected doc not confirmed, and None when all are confirmed (CT-3)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: low
+- Mode: single: a fix from a jury finding
+
 ## E-3 Stages read the project docs (US-5)
 
 ### T-6 `docs_for` and `nio pack --reader/--slug`: the project docs a reader gets, with state, stale, missing and size lines
@@ -90,6 +215,52 @@ retired: [T-8]
 - Effort: low
 - Mode: direct: skill/card text, e2e test checks it after
 
+#### Fixes
+
+### T-53 Fix: A damaged onboarding.json stops every pack, but the docs must never block the stage
+- From: J-1 (implementation-E-3, round 2)
+- Files: `src/nio/onboard.py`, `src/nio/pack.py`, `src/nio/implement.py`, `tests/test_onboard.py`
+- Serves: CT-9, CT-10, CT-19, J-1
+- Test: new: with a corrupt `.nio/project/onboarding.json`, `docs_for` (and so `nio pack --reader worker` and the worker pack) does not raise; it emits a line `onboarding: unreadable: fix .nio/project/onboarding.json` and no docs (CT-9)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-54 Fix: A symlinked project doc is read and sent to the model
+- From: J-2 (implementation-E-3, round 2)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-9, CT-22, CT-1, J-2
+- Test: new: a `.nio/project/stack.md` that is a symlink (to a file inside or outside the repo) is not read into the pack; `docs_for` names it on a `missing:` line instead (CT-9, CT-1)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-55 Fix: The apps line is read from anywhere in the spec, in one form only, and a wrong read drops docs silently
+- From: J-3 (implementation-E-3, round 2)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-9, CT-16, J-3
+- Test: new: `_pairs` reads `apps` only from the spec's front matter, accepts both `apps: [a, b]` and the block list form, ignores an `apps:` line in the body, and an app named but not onboarded gets a `not onboarded: <app>` line (CT-9, CT-16)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-57 Fix: Quotes from project docs never ground
+- From: J-8 (implementation-E-3, round 2)
+- Files: `src/nio/jury.py`, `tests/test_onboard.py`
+- Serves: CT-22, J-8
+- Test: new: at the plan gate a finding by the architecture-fit lens that quotes `.nio/project/principles.md` is grounded (`grounding`/`grounded` given the lens's sources), while the same quote from a lens with no docs is not (CT-22)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Onboard an existing repo through a grill (US-2)
 
 ### T-10 A spec names its apps and `nio check spec` enforces it
@@ -101,16 +272,6 @@ retired: [T-8]
 - Tier: strong: new spec check plus three templates
 - Effort: low
 - Mode: split: check has a clear test
-
-### T-11 Multi-app packs hold the right apps' docs, labelled
-- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
-- Serves: AC-34, AC-35, AC-46
-- Test: TC-15, TC-16, TC-47
-- Depends on: T-7, T-10
-- Parallel: no
-- Tier: strong: multi-app selection and labelling logic
-- Effort: med
-- Mode: split: logic with clear tests
 
 ### T-12 `nio onboard backup` keeps a restorable copy
 - Files: `src/nio/onboard.py`, `src/nio/cli.py`, `tests/test_onboard.py`
@@ -162,16 +323,6 @@ retired: [T-8]
 - Effort: low
 - Mode: single: e2e test and skill fix together
 
-### T-17 Onboard e2e: secrets and planted instructions
-- Files: `skills/onboard/SKILL.md`, `tests/test_onboard_e2e.py`
-- Serves: AC-12, AC-39, AC-40
-- Test: TC-12, TC-20, TC-21
-- Depends on: T-15
-- Parallel: no
-- Tier: max: secrets and prompt-injection handling in a skill
-- Effort: med
-- Mode: single: e2e test and skill fix together
-
 ### T-18 Onboard e2e: patches, agent files and several apps
 - Files: `skills/onboard/SKILL.md`, `tests/test_onboard_e2e.py`
 - Serves: AC-9, AC-33, AC-36, AC-37, AC-43
@@ -181,6 +332,107 @@ retired: [T-8]
 - Tier: strong: five e2e cases, skill wording
 - Effort: low
 - Mode: single: e2e test and skill fix together
+
+#### Fixes
+
+### T-58 Fix: land T-11's multi-app pack tests as regression guards (T-11 retired, already delivered by T-6, T-7, T-55)
+- From: C-261114-lqou
+- Files: `tests/test_onboard.py`
+- Serves: AC-34, AC-35, AC-46
+- Test: TC-15, TC-16, TC-47
+- Depends on: none
+- Parallel: no
+- Tier: cheap: tests over existing behaviour
+- Effort: low
+- Mode: direct: the behaviour exists; the tests guard it
+
+### T-59 Fix: land T-17's tests as regression guards (T-17 retired, already delivered)
+- From: C-261114-oon7
+- Files: `tests/test_onboard_e2e.py`
+- Serves: AC-12, AC-39, AC-40
+- Test: TC-12, TC-20, TC-21
+- Depends on: none
+- Parallel: no
+- Tier: cheap: tests over existing behaviour
+- Effort: low
+- Mode: direct: the behaviour exists; the tests guard it
+
+### T-60 Fix: A failed copy leaves a truncated backup that the next call reports as the kept original
+- From: J-1 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-17, J-1
+- Test: new: a backup whose copy fails part-way (simulated) leaves no file at the backup path, so the next backup writes a full copy; an OSError becomes `error:` with exit 1, not a traceback (CT-17)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-61 Fix: SECRETS hides secret-named IaC from the iac category, and the pattern list has gaps
+- From: J-2 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: AC-38
+- Test: new: `id_ecdsa`, `id_dsa`, `*.keystore`, `*.jks`, `.htpasswd`, `service-account*.json`, `Credentials.json` and `.ENV` (case-insensitive) are listed as secrets by path only (FR-24, AC-38)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-62 Fix: Nothing in the CLI checks that a confirmed doc has source records or is free of secret values
+- From: J-3 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard_e2e.py`, `tests/test_onboard.py`
+- Serves: CT-4, AC-8
+- Test: new: `nio onboard confirm <doc>` refuses (exit 1, naming the line) a doc whose fact lines carry no `(source: ...)` record, and a doc holding a value that looks like a secret (e.g. `ghp_`/`AKIA`/`-----BEGIN` patterns) (CT-4, AC-8)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-63 Fix: E2E-only ACs have no run evidence
+- From: J-6 (implementation-E-4, round 1)
+- Files: `tests/test_onboard_e2e.py`
+- Serves: AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40, AC-43
+- Test: TC-5, TC-7, TC-9, TC-10, TC-11, TC-12, TC-14, TC-17, TC-18, TC-20, TC-21, TC-42 (run with NIO_E2E=1)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: direct: run every E-4 e2e test with NIO_E2E=1 as the recorded run evidence
+
+### T-64 Fix: A spec's apps line that keeps the template comment names the wrong apps, so a one-app worker pack gets every app's docs
+- From: J-8 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`, `src/nio/templates/spec.md`, `tests/test_onboard.py`
+- Serves: CT-9, AC-35, CT-6
+- Test: new: a spec whose front matter keeps the template's trailing comment (`apps: []  # ...` and `apps: [api]  # ...`) names no app / only `api`; a one-app worker pack then holds no `web/` doc, and no `not onboarded:` line names a comment phrase (CT-9, AC-35)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-65 Fix: Skill rule for an inline secret only covers files the agent never opens
+- From: J-12 (implementation-E-4, round 1)
+- Files: `skills/onboard/SKILL.md`, `tests/test_onboard.py`
+- Serves: AC-39, CT-13
+- Test: new: a form check in tests/test_onboard.py that skills/onboard/SKILL.md says a secret value found inline in any file the agent reads is never written, quoted or shown (doc, question or patch preview), only where it is kept (FR-30, AC-39)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-66 Fix: confirm refuses a doc holding a value from a secrets file
+- From: J-3 (implementation-E-4, round 2)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-4, AC-8, J-3
+- Test: new: with a `.env` (listed by the scan as secrets) holding `DB_PASSWORD=hunter2hunter2`, `nio onboard confirm infra` refuses a doc whose line contains `hunter2hunter2`, naming the line but not the value; short values (under 8 chars) are ignored (CT-4, FR-24)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: low
+- Mode: single: a fix from a jury finding
 
 ## E-5 Onboard an empty repo (US-3)
 
@@ -194,15 +446,40 @@ retired: [T-8]
 - Effort: low
 - Mode: single: e2e test and skill fix together
 
-### T-20 An empty repo grills three docs and is done
-- Files: `skills/onboard/SKILL.md`, `tests/test_onboard_e2e.py`
+#### Fixes
+
+### T-67 Fix: land T-20's tests as regression guards (T-20 retired, already delivered)
+- From: C-261114-47ju
+- Files: `tests/test_onboard_e2e.py`
 - Serves: AC-13
 - Test: TC-23
-- Depends on: T-15
+- Depends on: none
 - Parallel: no
-- Tier: strong: skill branch checked by one e2e
+- Tier: cheap: tests over existing behaviour
 - Effort: low
-- Mode: single: e2e test and skill fix together
+- Mode: direct: the behaviour exists; the tests guard it
+
+### T-68 Fix: Grill's blank-field step writes dev answers and repo lookups into docs with no secret guard
+- From: J-1 (implementation-E-5, round 5)
+- Files: `skills/grill/SKILL.md`, `tests/test_onboard.py`
+- Serves: AC-14, CT-21
+- Test: new: a form check in tests/test_onboard.py that skills/grill/SKILL.md's blank-tech-field step says never open a file the scan lists under `secrets` and never write, quote or show a secret value (only where it is kept), and that answers found in the repo carry the file's `(source: <path>@<hash>)` record (FR-24, FR-30, CT-21)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-69 Fix: AC-14 e2e covers only one of three docs and one field
+- From: J-3 (implementation-E-5, round 5)
+- Files: `tests/test_onboard_e2e.py`
+- Serves: AC-14
+- Test: TC-24 (run with NIO_E2E=1): test_ac14_first_spec_fills_stack also scripts one answer each for architecture.md and infra.md and asserts each answered field no longer reads NEEDS CLARIFICATION and ends in `(source: dev, <slug> grill Q<n>)` with no hash
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: direct: the behaviour exists; the strengthened e2e test proves it with NIO_E2E=1
 
 ## E-6 Flag stale docs and reconcile them (US-6)
 
@@ -236,15 +513,51 @@ retired: [T-8]
 - Effort: low
 - Mode: single: skill and its check together
 
-### T-24 Reconcile e2e: changed files, nothing to do, declines and deletions
-- Files: `skills/reconcile-onboarding/SKILL.md`, `tests/test_onboard_e2e.py`
+#### Fixes
+
+### T-70 Fix: land T-24's tests as regression guards (T-24 retired, already delivered)
+- From: C-261114-tdzo
+- Files: `tests/test_onboard_e2e.py`
 - Serves: AC-23, AC-42, AC-44
 - Test: TC-38, TC-40, TC-41, TC-43
-- Depends on: T-23
+- Depends on: none
 - Parallel: no
-- Tier: strong: four e2e cases, skill wording
+- Tier: cheap: tests over existing behaviour
 - Effort: low
-- Mode: single: e2e test and skill fix together
+- Mode: direct: the behaviour exists; the tests guard it
+
+### T-71 Fix: A partly reconciled session marks every new file as seen, so unreached new files never come back
+- From: J-1 (implementation-E-6, round 1)
+- Files: `src/nio/onboard.py`, `skills/reconcile-onboarding/SKILL.md`, `tests/test_onboard.py`
+- Serves: CT-14, FR-21, J-1
+- Test: new: `nio onboard reconciled <path>...` records only the given paths in `seen`; a new file not passed stays listed by `nio onboard changed` (FR-21, CT-11)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-72 Fix: Quoted or non-ASCII paths are silently dropped from the changed-files list
+- From: J-2 (implementation-E-6, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-11, FR-23, J-2
+- Test: new: a source path with non-ASCII characters (e.g. `docs/café.md`) that changed since a ref is listed by `onboard.changed(root, ref)` (CT-11)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-73 Fix: The ref goes to git unguarded, so a leading dash becomes a git option
+- From: J-3 (implementation-E-6, round 1)
+- Files: `src/nio/onboard.py`, `src/nio/cli.py`, `tests/test_onboard.py`
+- Serves: CT-11, J-3
+- Test: new: `nio onboard changed --output=CLAUDE.md` (a ref starting with `-`) exits 1 naming the ref and writes no file (CT-11)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
 
 ## E-7 An effort's changes reach the project docs (US-7)
 
@@ -257,3 +570,27 @@ retired: [T-8]
 - Tier: strong: touches flow close, clear tests
 - Effort: low
 - Mode: split: clear tests
+
+#### Fixes
+
+### T-74 Fix: A failed merge-base is reported as "no source changed"
+- From: J-1 (implementation-E-7, round 1)
+- Files: `src/nio/flow.py`, `tests/test_onboard.py`
+- Serves: CT-20, AC-26
+- Test: new: when the merge base can't be found (no `main`, trunk named otherwise, or the branch missing), the last epic's close prints `project docs: not checked (<reason>)` instead of nothing; a trunk named `master` is used when `main` doesn't exist (CT-20, AC-26)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-75 Fix: A renamed source is not caught
+- From: J-2 (implementation-E-7, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: AC-26, CT-20
+- Test: new: a recorded source renamed on the effort branch (`pyproject.toml` to `app/pyproject.toml`) is listed by `onboard.changed(root, ref)` under its old path (CT-11, AC-26)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding

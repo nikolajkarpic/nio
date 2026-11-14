@@ -1,0 +1,269 @@
+{
+  "gate": "implementation-E-7",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "security"
+  ],
+  "collected": {
+    "R-261114-pep7/implementation-E-7-adversary.md": "e08d71710ef85adc9d291283e2f4e61767a9cf81c8050d6a5ad6ae774c96ce61",
+    "R-261114-pep7/implementation-E-7-conformance.md": "7c0ea4b138589ac00ba28fce961ccaaf9f9a5cbf409c769893d72ae4b970a36f",
+    "R-261114-pep7/implementation-E-7-consistency.md": "8c7c67aa9273af3ba1e81bcea423ae241833839ad55f0df464df0a1e2919b464",
+    "R-261114-pep7/implementation-E-7-correctness.md": "3fdac2239ea97abfd04c28366fea55e7fb4cd0efcee9b623c0dda2cba6618795",
+    "R-261114-pep7/implementation-E-7-security.md": "c6e36a1f0d7ce0755da9a0d0e87565d168c00381c0539ada1aaf549d1e449322",
+    "R-261114-pep7/implementation-E-7-refuter.md": "ec8ef48b1633a1a4d13fb767be85a33efe99b7499b1ba7c0e297ec24c0cb41f2",
+    "R-261114-kmur/implementation-E-7-adversary.md": "8228e2b0d6f9cf49a4cdd55dea1794e26e4481129c1a254db581d32bc0836839",
+    "R-261114-kmur/implementation-E-7-correctness.md": "4d5cca719da795a47c4990b858be0665dc6426ea99462822a9ab4ca70abbf4b2"
+  },
+  "jurors": {
+    "implementation-E-7-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "07abf048931abd52fe79ae9e3dec31d522fc29f0",
+      "judged": 2
+    },
+    "implementation-E-7-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "714a26436c3228355c73b89dc0f64db82661ce56",
+      "judged": 1
+    },
+    "implementation-E-7-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "714a26436c3228355c73b89dc0f64db82661ce56",
+      "judged": 1
+    },
+    "implementation-E-7-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "07abf048931abd52fe79ae9e3dec31d522fc29f0",
+      "judged": 2
+    },
+    "implementation-E-7-security": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "714a26436c3228355c73b89dc0f64db82661ce56",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A failed merge-base is reported as \"no source changed\"",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-20",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "base = (records.git(root, \"merge-base\", \"main\", implement.branch(slug)) or [\"\"])[0]",
+        "except ValueError:"
+      ],
+      "fix": "on a failed merge-base or git diff, print one line such as `project docs: not checked (<reason>)`. Use the repo's default branch instead of a literal `main`. Keep the close from failing.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-adversary",
+          "lens": "adversary",
+          "situation": "the project's default branch is `master` or `trunk`, or `nio/<slug>` is missing (a renamed or deleted branch, or a shallow CI clone). `git merge-base main ...` exits non-zero. `records.git` discards the exit code, so `base` is \"\" and the function returns `[]`. A ValueError from `git diff` is swallowed the same way. The close prints nothing. A dev who added `httpx` sees the same output as a dev whose diff touched no source (AC-27), and stack.md goes stale with no signal. This is the silent-failure case: an error treated as success.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-7-correctness",
+          "lens": "correctness",
+          "situation": "a project whose default branch is `master` or `develop` finishes its last epic. `git merge-base main nio/<slug>` fails with empty stdout, and `docs_close_lines` returns `[]`. AC-26's proposal never appears and the close shows no sign that it was skipped.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "flow.py:1107 hardcodes \"main\" (the only such literal in src/nio), and records.git without `full` drops the exit code, so a failed merge-base gives `[]`. The `except ValueError` returns `[]` too. CT-20 says \"nothing when there are none\" but does not say a failed check should be silent, so a skipped check looks the same as AC-27's no-change case.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-74",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/flow.py:docs_close_lines",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "A renamed source is not caught",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-26",
+        "CT-20"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "code, out, err = records.git(root, \"diff\", \"--name-only\", \"-z\", \"--end-of-options\", ref, full=True)"
+      ],
+      "fix": "add `--no-renames` so both the old and the new path are listed. Add a test for a renamed source.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-adversary",
+          "lens": "adversary",
+          "situation": "the effort renames the recorded source `requirements.txt` to `requirements/base.txt`, or `pyproject.toml` to `app/pyproject.toml`. With git's default rename detection, `--name-only` lists only the new path. `feeds` holds the old path, so the filter drops it. No line is printed and the docs keep citing a file that no longer exists. Deletion is handled, because the deleted path is listed. A rename is not, and no test covers it.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "onboard.changed (onboard.py:142) runs `git diff --name-only -z <ref>` with no `--no-renames`. With git's default rename detection, `--name-only` lists only the new path, and `_feeds` holds the old path, so the filter drops it. Nothing in the artefact settles this.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-75",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:changed",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "The diff is taken against the working tree, so the close is wrong if it runs after the merge or with a dirty tree",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-20"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "when the last epic closes, after `merge:`, the lines of `onboard.close_lines(root, <merge base of main and nio/<slug>>)`"
+      ],
+      "fix": "diff `<base>..nio/<slug>` explicitly, or document and check that the close runs on the effort branch.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-adversary",
+          "lens": "adversary",
+          "situation": "`git diff --name-only <base>` compares the base with the working tree, not with the branch tip. If the dev merges first and closes from `main`, the merge base is the branch tip and the diff against the working tree is empty. It reports nothing, silently. If the tree holds uncommitted edits to a recorded source, or the checkout is another branch, the list is wrong. Nothing in the diff guards the checkout, and the test only covers the case where `nio/<slug>` is checked out and clean.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/flow.py:docs_close_lines",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "The epic close printing nothing is untested",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-27",
+        "CT-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "and nothing when there are none."
+      ],
+      "fix": "add an `epic_done` assertion on the no-change case, or on the no-base case, that no `project docs:` line follows `merge:`.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-conformance",
+          "lens": "conformance",
+          "situation": "the last epic closes on a branch that changed no recorded source. `docs_close_lines` should add no line, and a git failure or a missing merge base should also add none. `test_no_source_changed` only checks the `nio changed` CLI output. `test_changed_sources_listed` only checks the case where a source changed. A regression that printed a stray `project docs:` line, or raised, on every close would pass both.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard.py (test_no_source_changed); src/nio/flow.py:docs_close_lines",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "714a26436c3228355c73b89dc0f64db82661ce56",
+    "2": "07abf048931abd52fe79ae9e3dec31d522fc29f0"
+  },
+  "matched": {
+    "AC-26": [
+      [
+        "tests/test_onboard.py",
+        "test_changed_sources_listed"
+      ]
+    ],
+    "AC-27": [
+      [
+        "tests/test_onboard.py",
+        "test_no_source_changed"
+      ]
+    ]
+  },
+  "asked": {}
+}

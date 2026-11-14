@@ -36,6 +36,9 @@ can't settle, and the grill and the jury come later. Write WHAT and WHY, never H
 - **Open points:** `- **OP-n** (fact|decision; <ID or section>) <question>?`, in `## Open points`.
 - **Actors and journeys:** the actors the intake names or clearly implies, with one-line journeys, tagged `[default]`
   unless the intake states them, plus one `(fact; Actors and journeys)` open point asking research for evidence.
+  Each human actor line ends with the personas entry it is (`P-n`, from the project's personas doc in the pack) or
+  `no persona` when none matches.
+- **Apps:** in a project with apps, write in the front matter `apps:` the apps the work touches.
 - **Stories and ACs** (full route): `US-n` with a priority, *why this priority* and an *independent test*. Each AC cites
   the FRs it exercises, has Given/when/then, and names its Observable and Level. Write edge cases (errors, retries,
   limits, concurrency) as ACs, not as a list of questions.

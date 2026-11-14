@@ -26,7 +26,7 @@ JUROR = """- You are judging a diff. Reject it if it contradicts an approved or 
 - End your verdict with: memory-used: <IDs you relied on, or none>"""
 
 
-def build(root, text, paths=(), acs=(), task="", diff=None, worker=True):
+def build(root, text, paths=(), acs=(), task="", diff=None, worker=True, reader="", slug=""):
     """Return (markdown, IDs in the pack). Tier A: records on the scope's files, AC or task, in full.
     Tier B: records related only by text, as index lines. `worker=False` leaves out the closing instructions to the
     worker: a task's worker card carries its own (implement-stage CT-6)."""
@@ -77,6 +77,11 @@ def build(root, text, paths=(), acs=(), task="", diff=None, worker=True):
     db.close()
     if not full and not lines:
         out.append("Memory has nothing on this work. Carry on.\n")
+    if reader:
+        from nio import onboard
+        docs = onboard.docs_for(root, reader, slug)
+        if docs:
+            out += [docs]
     if diff or worker:
         out += ["## How to use this\n", JUROR if diff else WORKER, ""]
     shown = [s for s in WEIGHTS if s in used]

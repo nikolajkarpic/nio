@@ -1,0 +1,662 @@
+{
+  "gate": "implementation-E-6",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "security"
+  ],
+  "collected": {
+    "R-261114-sqvb/implementation-E-6-adversary.md": "56136113f97c22d6626d790ce359381926e78739f7ae181db1cb34c9d269882d",
+    "R-261114-sqvb/implementation-E-6-conformance.md": "8cda210b17f6a007729f90ae5aa798fa1406d4543b806ee9ea3342ad4b31679b",
+    "R-261114-sqvb/implementation-E-6-consistency.md": "0299049448c8ce09f5699ab1e633969244635bd1dd5b9bdb9ad7e3d0d7d17753",
+    "R-261114-sqvb/implementation-E-6-correctness.md": "df5ba8836e627362e5afd9c4ee2b702eed0061cbac336738af97c01a2680de60",
+    "R-261114-sqvb/implementation-E-6-security.md": "f4de78a11a10f0bb59f4ad342d0a47e381e3a4b7f56f40aa3f7d628d1db3cadc",
+    "R-261114-sqvb/implementation-E-6-refuter.md": "f688055da0c065986080bee62c4ea5c90871e83da4901d086e1308d11cf7e7dc",
+    "R-261114-ohhp/implementation-E-6-adversary.md": "a109f82e7369cc1654171351db9c843f06f09b07363f054b303dfc8ac05b5945",
+    "R-261114-ohhp/implementation-E-6-correctness.md": "7a5605637ad961f37b8d94164deaf9375315604bd5b31627516b4b17f07c5c50",
+    "R-261114-ohhp/implementation-E-6-security.md": "493b001ec8ad2829c7bb6d682abf04997c6670632d3565cd457dbcad9ed5e3d5"
+  },
+  "jurors": {
+    "implementation-E-6-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "ca38940e75cedb90fa375c63e594b3e49c200313",
+      "judged": 2
+    },
+    "implementation-E-6-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c",
+      "judged": 1
+    },
+    "implementation-E-6-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c",
+      "judged": 1
+    },
+    "implementation-E-6-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "ca38940e75cedb90fa375c63e594b3e49c200313",
+      "judged": 2
+    },
+    "implementation-E-6-security": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "ca38940e75cedb90fa375c63e594b3e49c200313",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A partly reconciled session marks every new file as seen, so unreached new files never come back",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-14",
+        "FR-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "st[\"seen\"] = [list(e) for e in scan(root) if e[0] != \"secrets\"]",
+        "If the dev stops earlier, say the next session picks up the rest."
+      ],
+      "fix": "have `reconciled` take the reviewed paths, or tell the skill to run it only when every listed file was reviewed. Then add `seen` only for reviewed new files.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-adversary",
+          "lens": "adversary",
+          "situation": "two new files, docs/DEPLOY.md and docs/OPS.md, appear. The dev reviews DEPLOY.md, then stops. The skill step 6 says to run `nio onboard reconciled`, and the CLI snapshots the whole scan into `seen`. A new file has no source record, so `seen` is the only thing that tracks it. OPS.md is now neither in a source record nor unseen, `to_reconcile` prints \"nothing to reconcile\", and the promise that the next session picks up the rest fails with no signal. Changed and deleted files still resurface through their old hashes, but new files do not. FR-21 says a file not reached stays at its old state. `reconciled` has no argument for which files were reviewed, and it can be run with no review at all.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-6-correctness",
+          "lens": "correctness",
+          "situation": "two new files appear and the dev reconciles only one, then runs `nio onboard reconciled`. `seen` is overwritten from the full scan, so the second file is never listed again and `nothing to reconcile` hides it. The skill's step 6 says to run `reconciled` and, if the dev stops earlier, to say the next session picks up the rest. It does not say to skip `reconciled` in that case, so an agent that runs it as the closing step loses the unreached file.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "onboard.py `reconciled` overwrites `seen` from the whole scan with no reviewed-paths argument, and `to_reconcile` treats anything in `seen` as known. SKILL.md step 6 says \"Run `nio onboard reconciled`\" and does not say to skip it when the dev stops early, so an unreached new file is lost.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-71",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py:reconciled, skills/reconcile-onboarding/SKILL.md step 6",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Quoted or non-ASCII paths are silently dropped from the changed-files list",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "FR-23"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "return [(f, feeds[f]) for f in sorted(set(out.splitlines())) if f in feeds]"
+      ],
+      "fix": "use `diff --name-only -z <ref>` and split on NUL, as `scan` does.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-adversary",
+          "lens": "adversary",
+          "situation": "`scan` reads `ls-files -z` precisely so non-ASCII paths survive (`test_scan_keeps_non_ascii_paths`). `changed` reads plain `git diff --name-only`. With git's default `core.quotepath`, a source like `docs/café.md` or a path with a space or quote prints as `\"docs/caf\\303\\251.md\"`. It never equals the key in `feeds`, so `if f in feeds` drops it with no message. At the end of an effort the report says \"no project doc source changed\" while a recorded source did change, and the doc goes unproposed. `nio status` still flags it stale, but the effort-close signal the spec promises is lost.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`changed` uses plain `git diff --name-only` through `records.git`, which sets no `core.quotepath=off` and no `-z`. A quoted path never matches the `feeds` keys, so `if f in feeds` drops it silently. `scan` already uses `-z` for this reason.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-72",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:changed",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "The ref goes to git unguarded, so a leading dash becomes a git option",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-11"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "code, out, err = records.git(root, \"diff\", \"--name-only\", ref, full=True)"
+      ],
+      "fix": "reject a ref that starts with `-`, or pass `--end-of-options` or `--` before the path list: `git diff --name-only <ref> --`.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-adversary",
+          "lens": "adversary",
+          "situation": "`nio onboard changed -- --output=.nio/project/stack.md` (argparse accepts `--` and passes the rest as `arg`) runs `git diff --name-only --output=.nio/project/stack.md`, and git writes its diff to that file. An effort ref comes from the dev or an agent, and a branch name or tag could start with `-`. The result is an overwritten file, or a confusing git error. I did not run it, so the exact outcome is inferred.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-6-security",
+          "lens": "security",
+          "situation": "`changed(root, ref)` runs `records.git(root, \"diff\", \"--name-only\", ref, full=True)` with no `--end-of-options` and no check on `ref`. Running `nio onboard changed --output=.nio/memory/x` (or `--output=CLAUDE.md`) makes `git diff` write its output to that file and overwrite it. The ref comes from the agent's command line, and the skill tells agents to run it after an effort. A planted instruction in a repo file, which the skill says to raise as a finding rather than follow, could steer the agent into a ref like this. `ref` also isn't checked to be a revision.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`changed` passes `ref` straight to `git diff --name-only` with no `--end-of-options`, no `--` and no check for a leading `-`. A ref such as `--output=<file>` is read as a git option.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-73",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:changed, src/nio/cli.py",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "The skill requires \"the scan's new hash\" but gives no way to get one",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-14",
+        "AC-42",
+        "AC-44"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "rewrite its source records with the scan's new hash, approved or declined"
+      ],
+      "fix": "add to step 5 \"get each hash from `nio onboard scan`\" and \"check `nio status` shows no stale line before `reconciled`\".",
+      "sources": [
+        {
+          "juror": "implementation-E-6-adversary",
+          "lens": "adversary",
+          "situation": "no step runs `nio onboard scan` or any command that prints a hash. The agent would have to compute a sha256 itself or copy one from elsewhere. A wrong hash leaves the doc flagged stale, which is loud. But a guessed 12-hex string that does not match makes the decline path of AC-42 look broken, and the skill says nothing about checking `nio status` after the rewrite. The e2e tests would show it, but they are gated by `@e2e` and are not in the default run.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/reconcile-onboarding/SKILL.md step 5",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "Four AC proofs are e2e tests that only skip-pass without NIO_E2E",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-23",
+        "AC-25",
+        "AC-42",
+        "AC-44"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Without NIO_E2E they print `skipped` and pass."
+      ],
+      "fix": "run the four e2e tests (NIO_E2E=1) and record their results, or cover the CLI-side parts (a decline rewrites the hash, a deleted source's record dropped) with a non-e2e test.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-conformance",
+          "lens": "conformance",
+          "situation": "AC-23, AC-42 and AC-44 have no test except the `@e2e` cases. AC-25's reply half (`nothing to reconcile` said and the project bytes unchanged) is likewise e2e-only. The pack's evidence has these four at `unknown`, and the suite command sets no NIO_E2E. A pass in the suite therefore says nothing about whether the skill grills only changed files, honours a decline, or drops a deleted source.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tests/test_onboard_e2e.py says \"Without NIO_E2E they print `skipped` and pass\". The AC-23, AC-25, AC-42 and AC-44 tests (lines 407-448) are e2e-only. test_onboard.py has no non-e2e test for a decline rewriting the hash or a deleted source's record being dropped.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Standing ruling 2026-11-14: AC-23/25/42/44 e2e tests passed with NIO_E2E=1 at T-70's recorded green (commit 539385e); jury evidence runs without NIO_E2E",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "`reconciled` marks unreached new files as seen",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-23",
+        "AC-25"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "st[\"seen\"] = [list(e) for e in scan(root) if e[0] != \"secrets\"]",
+        "leave a file it did not reach at its old hash"
+      ],
+      "fix": "make step 6 say \"run `nio onboard reconciled` only once every listed file is reviewed\". Or have `reconciled` take the reviewed paths and add only those to `seen`.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-correctness",
+          "lens": "correctness",
+          "situation": "two new files appear and the dev reconciles only one, then runs `nio onboard reconciled`. `seen` is overwritten from the full scan, so the second file is never listed again and `nothing to reconcile` hides it. The skill's step 6 says to run `reconciled` and, if the dev stops earlier, to say the next session picks up the rest. It does not say to skip `reconciled` in that case, so an agent that runs it as the closing step loses the unreached file.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-1",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:reconciled, skills/reconcile-onboarding/SKILL.md step 6",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "The e2e guards for AC-23 and AC-44 miss half of what each AC states",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-23",
+        "AC-44"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "assert qs and not [l for l in qs if re.search(r\"README|ARCHITECTURE\", l)], out",
+        "assert \"nothing to reconcile\" not in out.lower().split(\"onboard reconciled\")[0], out"
+      ],
+      "fix": "assert that a Q line names pyproject.toml, and one names DEPLOY.md (AC-23). Assert that a Q line or a shown edit names architecture.md (AC-44).",
+      "sources": [
+        {
+          "juror": "implementation-E-6-correctness",
+          "lens": "correctness",
+          "situation": "AC-23 says reconcile \"grills only those two files\". The test never checks that a question about docs/DEPLOY.md or pyproject.toml was asked, so a skill that asks nothing relevant, or asks only about pyproject.toml, passes. AC-44 says reconcile \"grills architecture.md\". The test only checks that \"nothing to reconcile\" is absent, so a reply that grills about the wrong doc passes.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py test_ac23_reconcile_only_changed, test_ac44_deleted_source",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "Source records can point outside the repo and are now hashed on every status and pack",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "CT-8",
+        "CT-9"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`stale(root) -> list[tuple[str, str, str]]`, `(doc, source path, \"changed\" | \"deleted\")` for every project doc under `.nio/project/`"
+      ],
+      "fix": "in `stale`, treat a source that is a symlink or resolves outside the repo as unreadable (skip it or report it), as `scan` does.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-security",
+          "lens": "security",
+          "situation": "`SOURCE` accepts any `[^@()\\s]+` path, such as `../../home/u/.ssh/id_rsa` or an absolute path. `stale` does `root / src` and reads it with `p.read_bytes()` if `p.is_file()`, which follows symlinks. `status_lines` and `docs_for` now call it on every `nio status` and every pack. A doc line carrying an outside path makes NIO read that file on each run. The file's content is never shown, but its existence and a change in it are visible through `stale: <doc> (<path> changed|deleted)`. That is an existence and change oracle for any readable file, for whoever can write a doc line. `scan` and `docs_for` both refuse symlinks and outside-repo paths, and `stale` doesn't.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:stale, src/nio/onboard.py:_feeds",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "The reconcile list can name a secrets file, against the skill's rule",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-14",
+        "CT-11"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "run `nio onboard changed` (CT-11's `to_reconcile`: changed, deleted and new files, never a secrets entry)"
+      ],
+      "fix": "drop secrets-named paths from the stale and diff branches (`is_secret(Path(p).name)`), and add a test where a doc records `.env`.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-security",
+          "lens": "security",
+          "situation": "`to_reconcile` filters secrets only from the `new` branch. The first branch, `sorted({f\"{s} {w}\" for _, s, w in stale(root)})`, and `changed(root, ref)` have no `is_secret` filter. If a project doc records a secrets-named file as a source, say `.env@<12 hex>` under infra Secrets, the output lists `.env changed`. The skill then says to \"Read only those files and the docs they feed\", which sends the agent to open `.env`. The same skill says \"Never open a file the scan lists under `secrets`\". No test covers a secrets file as a recorded source.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:to_reconcile, src/nio/onboard.py:changed",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "AC-23 scenario has the dev decline an infra.md edit that the spec's rule excludes",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-23"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "decline the infra.md edit; the project docs are otherwise right",
+        "grills only those two files and the docs they feed",
+        "if re.search(r"
+      ],
+      "fix": "take the infra.md instruction out of the script, and fail the test on any question naming a doc outside stack.md and the docs fed by the changed files.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-consistency",
+          "lens": "consistency",
+          "situation": "the fixture feeds infra.md from README.md (its feeds map in tests/test_onboard_e2e.py, `onboarded_repo`), and this scenario never changes README. Under AC-23 reconcile grills only pyproject.toml, docs/DEPLOY.md and the docs that record them. The script still tells the dev to decline an infra.md edit, so the test expects infra.md to be grilled. The only guard, the `re.search` check on question lines, looks for README or ARCHITECTURE. A question about infra.md would pass it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py (test_ac23_reconcile_only_changed)",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "T-70 Serves line omits AC-25 while its Test line covers TC-40",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Serves: AC-23, AC-42, AC-44",
+        "def test_ac25_nothing_to_reconcile():"
+      ],
+      "fix": "add AC-25 to T-70's Serves line.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-consistency",
+          "lens": "consistency",
+          "situation": "the diff adds `test_ac25_nothing_to_reconcile`, and T-70's Test line lists TC-40, which tests.md (line 289) gives as \"Nothing to reconcile changes nothing (AC-25; e2e)\". Yet the Serves line does not name AC-25, so a coverage read from Serves would show AC-25 without a regression guard from T-70. No AC goes uncovered, since T-21 also serves AC-25.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": ".nio/specs/2026-11-08-project-onboarding/tasks.md (T-70)",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "confirm saves seen with secrets entries, against CT-4",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-4",
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "it saves `seen`: the scan's paths outside the secrets category at that moment",
+        "scan(root) if e[0] !="
+      ],
+      "fix": "filter `e[0] != \"secrets\"` in the confirm path, as `reconciled` does, and add a test that confirms the last doc and checks `seen` holds no secrets entry.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-consistency",
+          "lens": "consistency",
+          "situation": "the diff's `reconciled` filters secrets out of `seen`, as CT-4 requires. The confirm-to-done path in `act` (src/nio/onboard.py, around line 263) sets `seen` from the full scan with no such filter, so it stores secrets entries. Output today is not wrong, because `to_reconcile` never lists a secret, but the two writers disagree on what `seen` holds, and a later reader of `seen` would see secret paths the spec says it must not.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py (`act`, confirm to done; outside this diff)",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "CT-3 names one progress writer, but reconciled writes the file inline",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-3",
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`save(root, p)` writes a temp file next to it and `os.replace`s it, as `flow.record` does.",
+        "tmp.write_text(json.dumps(st))"
+      ],
+      "fix": "make `save(root, p)` a module-level function, as CT-3 names it, and have both `act` and `reconciled` call it.",
+      "sources": [
+        {
+          "juror": "implementation-E-6-consistency",
+          "lens": "consistency",
+          "situation": "CT-3 names a module-level `save(root, p)` as the one writer of the progress file. The code has no such function. The only save is a closure inside `act`, and the diff's new `reconciled` repeats the temp-file write inline. A later change to the write rule, such as a lock, would have to be made in two places and could drift.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py (`reconciled`, and `act`'s inner `save`)",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c",
+    "2": "ca38940e75cedb90fa375c63e594b3e49c200313"
+  },
+  "matched": {
+    "AC-21": [
+      [
+        "tests/test_onboard.py",
+        "test_status_flags_changed_source"
+      ]
+    ],
+    "AC-22": [
+      [
+        "tests/test_onboard.py",
+        "test_status_flags_deleted_source"
+      ]
+    ],
+    "AC-23": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac23_reconcile_only_changed"
+      ]
+    ],
+    "AC-24": [
+      [
+        "tests/test_onboard.py",
+        "test_no_stale_after_rehash"
+      ]
+    ],
+    "AC-25": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac25_nothing_to_reconcile"
+      ]
+    ],
+    "AC-31": [
+      [
+        "tests/test_onboard.py",
+        "test_worker_pack_marks_stale"
+      ]
+    ],
+    "AC-41": [
+      [
+        "tests/test_onboard.py",
+        "test_skills_keep_skip_with_dev"
+      ]
+    ],
+    "AC-42": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac42_decline_records_hash"
+      ]
+    ],
+    "AC-44": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac44_deleted_source"
+      ]
+    ]
+  },
+  "asked": {}
+}

@@ -5,7 +5,7 @@ import shlex
 import sys
 from importlib import resources
 
-from nio import agents, evidence, explain, flow, hooks, implement, index, jury, pack, plan, query, records, spec, tasks, usage
+from nio import agents, evidence, explain, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
 
 
 def report(errors, warnings, count):
@@ -38,6 +38,11 @@ def main():
     e = sub.add_parser("explain", help="explainer commands: `explain finish <slug>` and `explain topic <path>` (not built yet)")
     e.add_argument("action", choices=["finish", "topic"])
     e.add_argument("target", nargs="?")
+    ob = sub.add_parser("onboard", help="`onboard scan`: list the project's docs, manifests, IaC and CI files with a content hash")
+    ob.add_argument("action", choices=["scan", "start", "confirm", "pause", "skip", "backup", "changed", "reconciled"])
+    ob.add_argument("arg", nargs="*", help="skip: the reason; confirm: the doc")
+    ob.add_argument("--empty", action="store_true", help="start: write blank docs")
+    ob.add_argument("--app", action="append", default=[], help="start: <slug>=<path>[,<path>...], repeatable; confirm: the app's slug")
     t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
     t.add_argument("action", choices=["show", "retire"])
     t.add_argument("slug")
@@ -64,6 +69,8 @@ def main():
     k.add_argument("--task", default="", help="task ID; names the pack")
     k.add_argument("--diff", metavar="REF", help="juror pack: add the files changed since REF and judge against the records")
     k.add_argument("--run", help="also save the pack to .nio/runs/<run>/packs/")
+    k.add_argument("--reader", choices=list(onboard.READERS), help="add the project docs this reader gets")
+    k.add_argument("--slug", default="", help="effort slug; picks the apps its spec names")
     sub.add_parser("hooks", help="install git hooks: refresh the index and agent files after pulls, checkouts and rebases; check memory before commits and pushes")
     al = sub.add_parser("allow", help="let agents run stage commands without a prompt on Claude Code; the human's decisions still prompt")
     scope = al.add_mutually_exclusive_group(required=True)
@@ -181,6 +188,41 @@ def main():
     if a.cmd == "usage" and a.usage_cmd == "event":  # before repo_root: a hook must never fail the agent's call
         usage.record(a.host)
         return
+    if a.cmd == "onboard":  # before repo_root: outside a git repo it says so instead of a traceback
+        if records.git(".", "rev-parse", "--is-inside-work-tree", full=True)[0]:
+            sys.exit(f"nio onboard {a.action} needs a git repository")
+        if a.action == "backup":
+            try:
+                print(onboard.backup(a.arg[0] if a.arg else "", records.repo_root()))
+            except (ValueError, OSError) as e:
+                sys.exit(f"error: {e}")
+            return
+        if a.action in ("changed", "reconciled"):
+            try:
+                r = records.repo_root()
+                if a.action == "reconciled":
+                    onboard.reconciled(r, a.arg)
+                    print("reconciled")
+                elif a.arg:
+                    print("\n".join(f"{p}: {', '.join(d)}" for p, d in onboard.changed(r, a.arg[0])) or "no project doc source changed")
+                else:
+                    print("\n".join(onboard.to_reconcile(r)) or "nothing to reconcile")
+            except ValueError as e:
+                sys.exit(f"error: {e}")
+            return
+        if a.action != "scan":
+            try:
+                st_apps = dict((k, v.split(",")) for k, _, v in (x.partition("=") for x in a.app)) if a.action == "start" else None
+                print(onboard.act(a.action, " ".join(a.arg), a.arg[0] if a.arg else "", a.empty, root=records.repo_root(),
+                                  apps=st_apps, app=a.app[0] if a.action == "confirm" and a.app else ""))
+            except ValueError as e:
+                sys.exit(f"error: {e}")
+            return
+        found = onboard.scan(records.repo_root())
+        for c, f, h in found:
+            print(c, f, h) if h else print(c, f)
+        print(f"{len(found)} candidate files" if found else "no candidate files found")
+        return
     root = records.repo_root()
 
     def long(call):  # a long command is recorded as running while it runs (#128 FR-17)
@@ -266,7 +308,7 @@ def main():
         print(text, end="")
     elif a.cmd == "pack":
         try:
-            text, ids = pack.build(root, a.text, a.path, a.ac, a.task, a.diff)
+            text, ids = pack.build(root, a.text, a.path, a.ac, a.task, a.diff, reader=a.reader or "", slug=a.slug)
             name = a.task or records.slug(a.text)
             if a.run:
                 print(f"saved {pack.save(root, a.run, name, text).relative_to(root)}", file=sys.stderr)
@@ -382,7 +424,11 @@ def main():
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "status":
-        print("\n".join(query.status(root)))
+        try:
+            ob = onboard.status_lines(root)
+        except ValueError as e:
+            ob = [f"onboarding: error: {e}"]
+        print("\n".join(query.status(root) + ob))
     elif a.cmd == "index":
         count, embedded = index.build(root)
         print(f"indexed {count} records, embedded {embedded}")
