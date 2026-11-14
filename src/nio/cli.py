@@ -38,6 +38,7 @@ def main():
     ob.add_argument("action", choices=["scan", "start", "confirm", "pause", "skip", "backup"])
     ob.add_argument("arg", nargs="*", help="skip: the reason; confirm: the doc")
     ob.add_argument("--empty", action="store_true", help="start: write blank docs")
+    ob.add_argument("--app", action="append", default=[], help="start: <slug>=<path>[,<path>...], repeatable; confirm: the app's slug")
     t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
     t.add_argument("action", choices=["show"])
     t.add_argument("slug")
@@ -181,7 +182,9 @@ def main():
             return
         if a.action != "scan":
             try:
-                print(onboard.act(a.action, " ".join(a.arg), a.arg[0] if a.arg else "", a.empty, root=records.repo_root()))
+                st_apps = dict((k, v.split(",")) for k, _, v in (x.partition("=") for x in a.app)) if a.action == "start" else None
+                print(onboard.act(a.action, " ".join(a.arg), a.arg[0] if a.arg else "", a.empty, root=records.repo_root(),
+                                  apps=st_apps, app=a.app[0] if a.action == "confirm" and a.app else ""))
             except ValueError as e:
                 sys.exit(f"error: {e}")
             return

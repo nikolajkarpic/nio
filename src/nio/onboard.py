@@ -94,7 +94,7 @@ def progress(root="."):
         raise ValueError(".nio/project/onboarding.json is not valid: fix or restore it") from None
 
 
-def act(action, reason="", doc="", empty=False, root="."):
+def act(action, reason="", doc="", empty=False, root=".", apps=None, app=""):
     """start/confirm/pause/skip; returns the line to print, raises ValueError on refusal."""
     import json
     d = Path(root) / ".nio/project"
@@ -132,26 +132,37 @@ def act(action, reason="", doc="", empty=False, root="."):
         if resume:
             empty = False
         st["empty"] = st["empty"] or empty
+        if apps and not resume:
+            for slug in apps:
+                if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", slug) or slug in DOCS:
+                    raise ValueError(f"app {slug}: a slug is lowercase words joined by -, and not a doc name")
+            st["apps"] = {k: list(v) for k, v in apps.items()}
         d.mkdir(parents=True, exist_ok=True)
         if empty:
-            for n in ("stack", "architecture", "infra"):
-                if not (d / f"{n}.md").exists():
-                    (d / f"{n}.md").write_text((Path(__file__).parent / f"templates/project/{n}.md").read_text())
+            for a, n in ((a, n) for a in (st["apps"] or [""]) for n in ("stack", "architecture", "infra")):
+                (d / a).mkdir(parents=True, exist_ok=True)
+                if not (d / a / f"{n}.md").exists():
+                    (d / a / f"{n}.md").write_text((Path(__file__).parent / f"templates/project/{n}.md").read_text())
         save()
         return "next: " + (next_doc(st) or DOCS[0])
     if st["state"] != "in progress":
         return f"ignored: onboarding is {st['state']}"
-    if doc not in expected(st):
+    if st["apps"] and app not in st["apps"]:
+        raise ValueError(f"confirm needs --app, one of: {', '.join(st['apps'])}")
+    if app and not st["apps"]:
+        raise ValueError("this project has no apps: leave out --app")
+    full = f"{app}/{doc}" if app else doc
+    if full not in expected(st):
         raise ValueError(f"confirm needs a doc: {', '.join(expected(st))}")
-    f_doc = d / f"{doc}.md"
+    f_doc = d / f"{full}.md"
     if not f_doc.is_file():
         raise ValueError(f"{f_doc.relative_to(root)} does not exist: write it first")
     text = f_doc.read_text()
     if lack := check_doc(doc, text):
-        raise ValueError(f"{doc}.md lacks: {', '.join(lack)}")
+        raise ValueError(f"{full}.md lacks: {', '.join(lack)}")
     if "NEEDS CLARIFICATION" in text:
-        raise ValueError(f"{doc}.md still has NEEDS CLARIFICATION: answer it first")
-    st["confirmed"] = sorted(set(st["confirmed"]) | {doc})
+        raise ValueError(f"{full}.md still has NEEDS CLARIFICATION: answer it first")
+    st["confirmed"] = sorted(set(st["confirmed"]) | {full})
     nxt = next_doc(st)
     if not nxt:
         st["state"] = "done"
@@ -162,7 +173,8 @@ def act(action, reason="", doc="", empty=False, root="."):
 
 def expected(st):
     """The docs this onboarding walks: --empty leaves the three blank stubs out."""
-    return [n for n in DOCS if not (st["empty"] and n in ("stack", "architecture", "infra"))]
+    docs = [n for n in DOCS if not (st["empty"] and n in ("stack", "architecture", "infra"))]
+    return [f"{a}/{n}" for a in st.get("apps") or {} for n in docs] or docs
 
 
 def next_doc(p):

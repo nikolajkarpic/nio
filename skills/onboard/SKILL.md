@@ -48,7 +48,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Steps
 
-1. **Start.** In a repo with several apps, first confirm the apps and their paths with the dev. Run `nio onboard scan`;
+1. **Start.** In a repo with several apps, first confirm the apps and their paths with the dev, then start with every app, e.g. `nio onboard start --app web=web/ --app api=api/`; each app gets its own six docs at `.nio/project/<app>/<doc>.md`, grilled and written from that app's files only, and `next:` names `<app>/<doc>`. Run `nio onboard scan`;
    if it lists no manifest and no code, the repo is empty: start with `nio onboard start --empty`, otherwise
    `nio onboard start`. If `start` refuses because onboarding is done, stop and point the dev to
    @nio:reconcile-onboarding. It prints `next: <doc>`.
@@ -64,9 +64,9 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    `(source: dev, <date>)` for the dev's own words; what is still unknown stays `NEEDS CLARIFICATION`: a field the files don't state and the dev doesn't know has the body exactly `NEEDS CLARIFICATION`, with no reason, source or other text beside it. Each fact line holds one fact and ends with its one source. When the dev corrects a fact, write only the corrected fact; when a file states it (the manifest names Flask), that file is its one source and you add no second line for the dev's confirmation, and the dev is the source only for a fact no file states; never write the wrong value or the stale file's claim, not even as a note. Keep every
    `## ` heading of the template.
 5. **Confirm.** Show the dev the doc's full text and ask for a yes. Only on their yes in this session run
-   `nio onboard confirm <doc>`. It prints `next: <doc>`; go back to step 2, or `done` ends onboarding.
+   `nio onboard confirm <doc>` (with apps: `nio onboard confirm <doc> --app <app>`). It prints `next: <doc>`; go back to step 2, or `done` ends onboarding.
 6. **Repo docs.** When a repo doc is stale against what the dev confirmed, offer a patch with its text shown. Only on
-   a yes, run `nio onboard backup <file>`, then apply it.
+   a yes, run `nio onboard backup <file>`, then apply it. A patched file feeds its docs: after applying, run `nio onboard scan` again and use the patched file's new hash as the source in every doc that cites it (write or rewrite those docs after the patch, so no doc keeps the old hash). Offer the patch as soon as the grill finds the stale claim, before writing the doc it feeds.
 7. **Agent files.** At the end, ask per agent file (CLAUDE.md, AGENTS.md and any the dev names), with the change
    shown. Before changing one, run `nio onboard backup <file>`; change it only on a yes.
 8. **Stop.** When the dev stops, run `nio onboard pause` and say the next session resumes where it left off.
