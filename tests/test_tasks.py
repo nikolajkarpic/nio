@@ -611,5 +611,45 @@ def test_ac2_full_foundation_epic_still_fails():
     print("ok")
 
 
+
+# --- globs in a task's Files list (#126 FR-17) ---
+
+def globs(files):
+    root = repo(field("T-3", "Files", files))
+    (root / "tests").mkdir(exist_ok=True)
+    for name in ("test_a.py", "test_b.py"):
+        (root / "tests" / name).write_text("")
+    return "\n".join(tasks.show(root, SLUG, "T-3"))
+
+
+def test_ac19_glob_lists_its_matching_paths():
+    out = globs("`tests/test_*.py`, `app.py`")
+    assert "- Files: `tests/test_a.py`, `tests/test_b.py`, `app.py`" in out and "test_*" not in out, out
+    print("ok")
+
+
+def test_ac20_glob_matching_nothing_says_so():
+    out = globs("`docs/*.md`")
+    assert "- Files: `docs/*.md` (pattern: matches no file)" in out, out
+    print("ok")
+
+
+def test_real_path_with_brackets_is_kept():
+    """A Next.js-style path that exists, brackets and all, is a path, not a glob."""
+    root = repo(field("T-3", "Files", "`app/[id]/page.tsx`"))
+    (root / "app/[id]").mkdir(parents=True)
+    (root / "app/[id]/page.tsx").write_text("")
+    out = "\n".join(tasks.show(root, SLUG, "T-3"))
+    assert "- Files: `app/[id]/page.tsx`" in out and "matches no file" not in out, out
+    print("ok")
+
+
+def test_bracket_path_not_made_yet_is_kept():
+    """A bracket path for a file the task will create is a path too: only `*` and `?` make a pattern."""
+    out = "\n".join(tasks.show(repo(field("T-3", "Files", "`app/[id]/page.tsx`")), SLUG, "T-3"))
+    assert "- Files: `app/[id]/page.tsx`" in out and "matches no file" not in out, out
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

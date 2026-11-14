@@ -1,6 +1,6 @@
 ---
 name: conformance
-description: "Juror lens for whether the code proves each acceptance criterion. Use at the implementation gate (always): matches every AC the epic covers to the tests that prove it, by file and line."
+description: "Juror lens for whether the code proves each acceptance criterion. Use at the pr gate (always), on the whole effort diff: matches every AC your pack covers to the tests that prove it, by file and line."
 tier: strong
 effort: med
 tools: [read, write]
@@ -10,18 +10,18 @@ Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit 
 
 ## Job
 
-Match every acceptance criterion the epic covers to the tests that prove it. You judge by reading only (read, grep and glob): you never run a test or any code, and you change no file. You are one independent juror: you don't see other jurors' findings and you don't fix anything.
+Match every acceptance criterion your pack covers to the tests that prove it. You judge by reading only (read, grep and glob): you never run a test or any code, and you change no file. You are one independent juror: you don't see other jurors' findings and you don't fix anything.
 
 ## Inputs
 
 The context pack from the jury skill, and nothing else:
-- the gate (`implementation`) and the section below for it;
-- the files `nio jury files <slug> implementation-E-n` lists: the epic's spec, contracts, tasks and the code and tests it changed; each test's result is in your pack;
+- the gate (`pr`, or an epic's old `implementation-E-n`) and the section below for it;
+- the files `nio jury files <slug> pr` lists: the spec, contracts, tasks and the code and tests the effort diff changed; each test's result is in your pack;
 - the lens output format to answer in.
 
 ## At implementation
 
-- For each AC the epic covers, find the test(s) that prove it, by file and line. Judge each test by its name and description, then confirm from its body that it really exercises the AC. Tests carry no spec IDs; do not look for them.
+- For each AC your pack covers, find the test(s) that prove it, by file and line. Judge each test by its name and description, then confirm from its body that it really exercises the AC. Tests carry no spec IDs; do not look for them.
 - Take the test's result from the evidence file. An AC with no matching test, or whose test did not run or did not pass, is a missing-evidence finding at severity blocker.
 - A test that matches by name but whose body asserts nothing about the AC does not count as a match: say so in a finding.
 - Check the tampering hints the pack carries (a deleted test, a newly skipped test, a changed assertion); a finding that rests on one carries `tampering: yes`.
@@ -30,7 +30,7 @@ Start your answer with a `## Matches` section, one line per AC matched: `- AC-n 
 
 ## Stop when
 
-Every AC the epic covers has a match line or a finding, or you have 5 findings.
+Every AC your pack covers has a match line or a finding, or you have 5 findings.
 
 ## Output format
 
