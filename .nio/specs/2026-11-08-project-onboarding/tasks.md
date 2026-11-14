@@ -459,6 +459,28 @@ retired: [T-8, T-11, T-17, T-20]
 - Effort: low
 - Mode: direct: the behaviour exists; the tests guard it
 
+### T-68 Fix: Grill's blank-field step writes dev answers and repo lookups into docs with no secret guard
+- From: J-1 (implementation-E-5, round 5)
+- Files: `skills/grill/SKILL.md`
+- Serves: AC-14, CT-21
+- Test: TC-24
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-69 Fix: AC-14 e2e covers only one of three docs and one field
+- From: J-3 (implementation-E-5, round 5)
+- Files: `tests/test_onboard_e2e.py`
+- Serves: AC-14
+- Test: TC-24
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-6 Flag stale docs and reconcile them (US-6)
 
 ### T-21 Changed, deleted and new sources: `changed`, `to_reconcile`, `reconciled`, `close_lines`
