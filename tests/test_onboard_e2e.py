@@ -342,5 +342,21 @@ def test_ac14_first_spec_fills_stack():
     assert re.search(r"\(source: dev, " + slug + r" grill Q\d+\)", langs) and not re.search(r"@[0-9a-f]{12}", langs), langs
 
 
+@e2e
+def test_ac13_empty_repo():
+    import json
+    root = fresh_repo()
+    (root / ".gitignore").write_text("node_modules/\n")
+    out = run_skill(root, "onboard", ALL.format(script="the product is a shop for pottery; the users are shop owners; "
+                    "answer every other question with a short plausible answer; confirm product, personas and principles as written"))
+    qs = [l for l in out.splitlines() if l.strip().endswith("?")]
+    assert not [l for l in qs if re.search(r"stack|architecture|infra", l, re.I)], out
+    for d in ("stack", "architecture", "infra"):
+        text = re.sub(r"<!--.*?-->", "", (root / ".nio/project" / f"{d}.md").read_text(), flags=re.S)
+        for part in text.split("\n## ")[1:]:
+            assert part.split("\n", 1)[1].strip() == "NEEDS CLARIFICATION", (d, part)
+    assert json.loads((root / ".nio/project/onboarding.json").read_text())["state"] == "done", out
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_ac") and callable(f)])
