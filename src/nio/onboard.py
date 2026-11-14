@@ -89,7 +89,7 @@ def check_facts(text):
         if note:
             note = "" if "-->" in s else note
             continue
-        if s and not s.startswith("#") and s != "NEEDS CLARIFICATION" and not miss \
+        if s and not s.startswith("#") and not s.endswith("NEEDS CLARIFICATION") and not miss \
                 and not (SOURCE.search(s) or DEV_SOURCE.search(s)):
             miss = f"line {n} has no (source: ...) record: add one or mark it NEEDS CLARIFICATION"
     return miss
