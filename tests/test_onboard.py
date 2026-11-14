@@ -1035,8 +1035,19 @@ def test_no_source_changed():
     assert snap() == before
 
 
+def test_close_lines_trunk_and_unchecked():
+    """CT-20, AC-26: the close finds a trunk named master, and says so when the docs could not be checked."""
+    from nio import flow
+    root = _httpx_repo("pyproject.toml")
+    subprocess.run(["git", "branch", "-m", "main", "master"], cwd=root, check=True)
+    want = ["project docs: pyproject.toml changed, feeds stack.md: propose edits with @nio:reconcile-onboarding"]
+    assert flow.docs_close_lines(root, "x") == want, flow.docs_close_lines(root, "x")
+    out = flow.docs_close_lines(root, "missing-branch")
+    assert len(out) == 1 and out[0].startswith("project docs: not checked ("), out
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_changed_sources_listed, test_no_source_changed, test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
+    selfcheck.main([test_changed_sources_listed, test_no_source_changed, test_close_lines_trunk_and_unchecked, test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
