@@ -124,6 +124,27 @@ def test_drivers_ac8_relay_from_the_summary_alone():
         assert "what needs the human goes to them from the summary alone" in drivers(name)[2], name
 
 
+def test_drivers_main_session_records_the_human_s_rulings():
+    """A human-only item has a way back: the main session records the human's ruling itself, then starts a new driver."""
+    for name in BOTH:
+        main = drivers(name)[2]
+        assert "record their ruling yourself" in main and "their words as the note: that counts as routing" in main, name
+        assert "`nio jury rule`" in main and "--by human" in main and "start a fresh driver from `nio flow brief <slug>`" in main, name
+
+
+def test_drivers_main_session_starts_the_next_driver():
+    """A summary with nothing for the human: the main session starts the next unit's fresh driver from the brief."""
+    for name in BOTH:
+        assert "When it holds nothing for the human (a gate approved, an epic done), start the next unit's fresh driver from `nio flow brief <slug>`" in drivers(name)[2], name
+
+
+def test_drivers_another_host_s_run():
+    """A run on another host: the driver asks the human whether it is alive before starting the command again."""
+    for name in BOTH:
+        drv = drivers(name)[3]
+        assert "`running on <host>, can't check:" in drv and "asking the human whether that run is still alive" in drv, name
+
+
 def wait(name):
     return drivers(name)[1].split("**Waiting for long work.**")[1]
 

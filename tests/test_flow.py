@@ -2762,7 +2762,7 @@ def test_ac8_appended_fix_task_keeps_implementing():
 
 def test_ac9_retired_fix_task_keeps_implementing():
     root, tasks_md = with_fix()
-    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "covered by T-1")
+    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "covered by T-1", "--by", "human")
     assert code == 0 and "### T-4" not in tasks_md.read_text() and "retired: [T-4]" in tasks_md.read_text(), (out, err)
     assert "state: implementing" in nxt(root) and approved_exit(root) == 0
     print("ok")
@@ -2786,6 +2786,16 @@ def test_ac28_retire_without_reason_is_refused():
     before = tasks_md.read_text()
     code, _, err = run_main(root, "task", "retire", S, "T-4")
     assert code != 0 and "reason" in err and tasks_md.read_text() == before, err
+    assert jury.load(root, S, "implementation-E-1")["findings"][0]["status"] == "open"
+    print("ok")
+
+
+def test_retire_without_by_is_refused():
+    """`--by` has no default: who retired a fix task is never guessed as the human."""
+    root, tasks_md = with_fix(finding=True)
+    before = tasks_md.read_text()
+    code, _, err = run_main(root, "task", "retire", S, "T-4", "--reason", "not worth it")
+    assert code != 0 and "--by" in err and tasks_md.read_text() == before, err
     assert jury.load(root, S, "implementation-E-1")["findings"][0]["status"] == "open"
     print("ok")
 
@@ -2896,6 +2906,41 @@ def test_drivers_ac20_brief_shows_a_running_long_command():
     assert "running:" not in cli(root, "brief", S)[1]
     print("ok")
 
+
+def test_brief_another_host_s_run_is_labelled_unchecked():
+    """A record from another host can't be checked from here: shown with its host, not as a verified live run."""
+    root = effort("implementing")
+    (root / ".nio/specs" / S / "running.json").write_text(json.dumps(
+        {"command": "nio flow green", "at": "2026-11-14T10:00:00Z", "pid": 1, "host": "elsewhere"}))
+    out = cli(root, "brief", S)[1]
+    assert "running on elsewhere, can't check: nio flow green, started 2026-11-14 10:00 UTC" in out and "\nrunning:" not in out, out
+    print("ok")
+
+
+def test_brief_long_next_step_is_cut_to_80_lines():
+    """However long `nio flow next`'s part is, the brief stays at 80 lines with the --all hint last."""
+    root, real = with_findings(3), flow.next_step
+    flow.next_step = lambda *a, **k: (0, [f"line {i}" for i in range(100)])
+    try:
+        rows = flow.brief(root, S)[1]
+        assert len(rows) == 80 and rows[-1] == f"rest: nio flow brief {S} --all", rows[-3:]
+        assert len(flow.brief(root, S, True)[1]) > 100
+    finally:
+        flow.next_step = real
+    print("ok")
+
+def test_brief_lists_fixes_the_human_ruled():
+    """A `fix` ruling at the round cap is the driver's edit: the brief lists it until the artefact changes."""
+    root = with_findings(1)
+    led = jury.load(root, S, "spec")
+    led["findings"][0].update(status="disposed", disposition="spec-fix", by="human", note="pin it down")
+    led["cap"] = {"round": 1, "batch": ["J-1"], "fix": ["J-1"], "version": jury.version_now(root, S, "spec")}
+    (jury.folder(root, S) / "spec.json").write_text(json.dumps(led))
+    assert "owed fixes (spec): edit the spec for J-1 (ruled fix by the human)" in cli(root, "brief", S)[1]
+    sp = root / ".nio/specs" / S / "spec.md"
+    sp.write_text(sp.read_text() + "\nEdited.\n")
+    assert "owed fixes" not in cli(root, "brief", S)[1]
+    print("ok")
 
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

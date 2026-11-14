@@ -622,5 +622,22 @@ def test_ac20_glob_matching_nothing_says_so():
     print("ok")
 
 
+def test_real_path_with_brackets_is_kept():
+    """A Next.js-style path that exists, brackets and all, is a path, not a glob."""
+    root = repo(field("T-3", "Files", "`app/[id]/page.tsx`"))
+    (root / "app/[id]").mkdir(parents=True)
+    (root / "app/[id]/page.tsx").write_text("")
+    out = "\n".join(tasks.show(root, SLUG, "T-3"))
+    assert "- Files: `app/[id]/page.tsx`" in out and "matches no file" not in out, out
+    print("ok")
+
+
+def test_bracket_path_not_made_yet_is_kept():
+    """A bracket path for a file the task will create is a path too: only `*` and `?` make a pattern."""
+    out = "\n".join(tasks.show(repo(field("T-3", "Files", "`app/[id]/page.tsx`")), SLUG, "T-3"))
+    assert "- Files: `app/[id]/page.tsx`" in out and "matches no file" not in out, out
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

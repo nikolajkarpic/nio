@@ -40,7 +40,7 @@ def main():
     t.add_argument("slug")
     t.add_argument("id")
     t.add_argument("--reason", default="", help="retire: why the fix task is dropped; its finding closes as accepted risk with it")
-    t.add_argument("--by", default="human", choices=sorted(jury.BY), help="retire: who retires the fix task")
+    t.add_argument("--by", choices=sorted(jury.BY), help="retire (required): who retires the fix task")
     c.add_argument("--base", default="HEAD", help="ref committed records are compared with; only `paths` may change (CI: origin/main)")
     i = sub.add_parser("index", help="build .nio/cache/index.db and INDEX.md from the records")
     i.add_argument("--check", action="store_true", help="also lint and run the cross-branch conflict checks")

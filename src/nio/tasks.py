@@ -355,15 +355,15 @@ def show(root, slug, tid):
 
 def globbed(root, line):
     """A `- Files:` line with each glob pattern as the paths it matches, or marked as matching none (#126 FR-17)."""
-    if not line.startswith("- Files:") or not any(c in line for c in "*?["):
+    if not line.startswith("- Files:") or not any(c in line for c in "*?"):
         return line
     out = []
     for f in files(line[len("- Files:"):]):
-        if not any(c in f for c in "*?["):
+        if not any(c in f for c in "*?"):  # `[` is literal, as in `app/[id]/page.tsx`
             out.append(f"`{f}`")
             continue
         try:
-            hits = sorted(str(p.relative_to(root)) for p in root.glob(f) if p.is_file() and p.resolve().is_relative_to(root.resolve()))
+            hits = sorted(str(p.relative_to(root)) for p in root.glob(f.replace("[", "[[]")) if p.is_file() and p.resolve().is_relative_to(root.resolve()))
         except (ValueError, NotImplementedError):  # an absolute or empty pattern matches nothing here
             hits = []
         out += [f"`{h}`" for h in hits] or [f"`{f}` (pattern: matches no file)"]
@@ -404,6 +404,8 @@ def retire(root, slug, tid, reason, by):
     from nio import jury
     if not reason.strip():
         raise ValueError(f"retiring {tid} needs a reason (--reason)")
+    if by not in jury.BY:
+        raise ValueError(f"retiring {tid} needs --by, one of {', '.join(sorted(jury.BY))}: who retires it")
     p = path(root, slug)
     task = parse("\n".join(records.parse(p)[1]))["tasks"].get(tid)
     if not task or not task["fix"]:
