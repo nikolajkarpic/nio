@@ -61,5 +61,143 @@ def check():
         assert [p for p in problems(root) if p.startswith("NORTH_STAR.md")], problems(root)
 
 
+# --- 2026-11-14-short-lived-drivers: the driver and waiting rules in the implement and jury skills (#128) ---
+
+def drivers(name):
+    """(whole skill, its "Drivers and waiting" section, the main session's part, the driver's part), whitespace folded."""
+    text = (ROOT / f"skills/{name}/SKILL.md").read_text()
+    sec = text.split("\n## Drivers and waiting\n")[1].split("\n## ")[0]
+    fold = lambda s: " ".join(s.split())
+    main = sec.split("**The main session**")[1].split("**The driver**")[0]
+    return fold(text), fold(sec), fold(main), fold(sec.split("**The driver**")[1].split("**Waiting for long work.**")[0])
+
+
+BOTH = ("implement", "jury")
+
+
+def test_drivers_ac1_ac2_one_fresh_driver_per_unit():
+    for name in BOTH:
+        _, sec, main, drv = drivers(name)
+        assert "one gate (spec, plan, tasks or pr), or one epic with its tasks; the pr gate, on the whole effort diff, is always its own unit" in sec, name
+        assert "a fresh agent that runs that one unit and then ends" in sec and "Start a fresh driver for it" in main, name
+        assert "several drivers one after another; a unit resumed after a hand-back gets a new one" in main, name
+        assert "never go on into the next unit" in drv, name
+
+
+def test_drivers_ac3_driver_starts_from_the_brief_alone():
+    for name in BOTH:
+        main = drivers(name)[2]
+        assert "whose first input is what `nio flow brief <slug>` prints, and nothing else: no note from an earlier driver" in main, name
+
+
+def test_drivers_ac4_summary_three_parts_15_lines():
+    for name in BOTH:
+        drv = drivers(name)[3]
+        assert "at most 15 lines" in drv and all(x in drv for x in ("`closed:`", "`open:`", "`next:`")), name
+
+
+def test_drivers_ac5_hand_back_never_decide_for_the_human():
+    for name in BOTH:
+        drv = drivers(name)[3]
+        assert "end there with the summary naming that item and the command to continue" in drv, name
+        assert "a blocked task" in drv and "Never make the human's decision yourself" in drv, name
+
+
+def test_drivers_ac6_one_driver_at_a_time():
+    for name in BOTH:
+        main = drivers(name)[2]
+        assert "only once the previous one for this effort has ended; never two at once" in main, name
+        assert "ended without a summary counts as ended: go on from `nio flow brief <slug>` alone" in main, name
+
+
+def test_drivers_ac7_ac16_main_session_only_routes():
+    for name in BOTH:
+        text, _, main, drv = drivers(name)
+        assert "Read nothing else yourself" in main and "runs every step under Steps below" in drv, name
+        for word in ("pack", "juror output", "nio jury evidence", "nio flow red", "nio flow green", "test log", ".nio/runs"):
+            assert word not in main, (name, word)
+    assert "Optional: a gate driver" not in drivers("jury")[0]  # the old step kept dispositions with the main session
+
+
+def test_drivers_ac8_relay_from_the_summary_alone():
+    for name in BOTH:
+        assert "what needs the human goes to them from the summary alone" in drivers(name)[2], name
+
+
+def test_drivers_main_session_records_the_human_s_rulings():
+    """A human-only item has a way back: the main session records the human's ruling itself, then starts a new driver."""
+    for name in BOTH:
+        main = drivers(name)[2]
+        assert "record their ruling yourself" in main and "their words as the note: that counts as routing" in main, name
+        assert "`nio jury rule`" in main and "--by human" in main and "start a fresh driver from `nio flow brief <slug>`" in main, name
+
+
+def test_drivers_main_session_starts_the_next_driver():
+    """A summary with nothing for the human: the main session starts the next unit's fresh driver from the brief."""
+    for name in BOTH:
+        assert "When it holds nothing for the human (a gate approved, an epic done), start the next unit's fresh driver from `nio flow brief <slug>`" in drivers(name)[2], name
+
+
+def test_drivers_another_host_s_run():
+    """A run on another host: the driver asks the human whether it is alive before starting the command again."""
+    for name in BOTH:
+        drv = drivers(name)[3]
+        assert "`running on <host>, can't check:" in drv and "asking the human whether that run is still alive" in drv, name
+
+
+def wait(name):
+    return drivers(name)[1].split("**Waiting for long work.**")[1]
+
+
+def test_drivers_ac9_background_and_completion_notice():
+    for name in BOTH:
+        w = wait(name)
+        assert "`nio flow green`, `nio jury evidence`, a suite run, and any subagent" in w, name
+        assert "start it in the background, then act on its notice when it arrives" in w and "no sleep, no loop, no status check" in w, name
+
+
+def test_drivers_ac10_ac11_blocking_wait_three_times():
+    for name in BOTH:
+        w = wait(name)
+        assert "it is not known whether it has them" in w and "wait blocking, with a 10-minute timeout" in w, name
+        assert "check once whether the command finished; if not, wait again. At most three waits" in w, name
+        assert "after the third that times out, end with the summary naming the command as still running" in w, name
+        assert "Never check at an interval" in w and "every few" not in w and "poll " not in w, name
+
+
+def test_drivers_ac12_refused_background_green_goes_to_step_3():
+    text = drivers("implement")[0]
+    step3 = text.split("3. **On a refusal**")[1].split("4. **")[0]
+    assert "A `nio flow green` started in the background that refuses" in step3 and "with the text it printed, exactly" in step3
+
+
+def test_drivers_ac13_host_neutral():
+    for name in BOTH:
+        sec = drivers(name)[1]
+        claude = [s for s in sec.split(". ") if "Claude" in s]
+        assert claude and all("Optional, on Claude Code" in s for s in claude), (name, claude)
+
+
+def test_drivers_ac14_no_subagents_main_session_runs_it():
+    for name in BOTH:
+        sec = drivers(name)[1]
+        assert "On a host without subagents, the main session runs the unit itself from `nio flow brief <slug>`" in sec, name
+        assert "goes on without stopping for the human" in sec and "new session" not in sec, name
+
+
+def test_drivers_ac19_no_notices_no_timed_wait_hands_back():
+    for name in BOTH:
+        w = wait(name)
+        assert "**Neither:** don't run the long command; end with the summary naming it as open" in w, name
+        assert "foreground" not in w.replace("outlast the host's foreground limit", ""), name
+
+
+def test_drivers_ac20_running_brief_means_wait():
+    for name in BOTH:
+        _, sec, _, drv = drivers(name)
+        assert "If it shows `running: <command>, started <time>`" in drv and "wait on that run (below), never start it again" in drv, name
+        assert "`nio flow green` and `nio jury evidence` record themselves as running" in sec, name
+
+
 if __name__ == "__main__":
-    selfcheck.main([check])
+    selfcheck.main([check] + [f for n, f in list(globals().items()) if n.startswith("test_drivers") and callable(f)])

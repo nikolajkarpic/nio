@@ -1,6 +1,6 @@
 ---
 name: correctness
-description: "Juror lens for whether the code does what it should. Use at the implementation gate (always): judges the assertion hints the pack carries and the code against the spec."
+description: "Juror lens for whether the code does what it should. Use at the pr gate (always), on the whole effort diff: judges the assertion hints the pack carries and the code against the spec."
 tier: strong
 effort: med
 tools: [read, write]
@@ -10,21 +10,21 @@ Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit 
 
 ## Job
 
-Judge whether the epic's code is correct: the assertion hints and the code itself. You judge by reading only (read, grep and glob): you never run a test or any code, and you change no file. You are one independent juror: you don't see other jurors' findings and you don't fix anything.
+Judge whether the code in your pack is correct: the assertion hints and the code itself. You judge by reading only (read, grep and glob): you never run a test or any code, and you change no file. You are one independent juror: you don't see other jurors' findings and you don't fix anything.
 
 ## Inputs
 
 The context pack from the jury skill, and nothing else:
-- the gate (`implementation`) and the section below for it;
-- the files `nio jury files <slug> implementation-E-n` lists: the epic's spec, contracts, tasks and the code and tests it changed; each test's result is in your pack;
+- the gate (`pr`, or an epic's old `implementation-E-n`) and the section below for it;
+- the files `nio jury files <slug> pr` lists: the spec, contracts, tasks and the code and tests the effort diff changed; each test's result is in your pack;
 - the lens output format to answer in.
 
 ## At implementation
 
 - Read each hint the pack carries (a stub, an uncertain reference, a test with no assertion, a changed assertion) and decide from the code whether it is a real defect.
-- For each AC the epic covers, read the code that serves it: wrong conditions, off-by-one, dropped defaults, unhandled errors, behaviour the AC does not allow.
+- For each AC your pack covers, read the code that serves it: wrong conditions, off-by-one, dropped defaults, unhandled errors, behaviour the AC does not allow.
 - Does each test assert something the code could get wrong? An assert that passes whatever the code does is a finding.
-- Stay on the epic's diff and what it calls; do not review untouched code.
+- Stay on the diff in your pack (the whole effort's, or on a large one your epic's part) and what it calls; do not review untouched code.
 
 Each finding has `gap: missing | partial | contradicts | unrequested`, `where: <file or area>`, and optionally `right: spec | code` (on a contradicts finding: which of the two is wrong; unset means the spec is right), `run` (`run: TC-n`, a test of the spec's `tests.md` the CLI runs for you, its result in your next pack; never command text, and you never run it) and `tampering: yes` (set when the finding is about a deleted, skipped or weakened test).
 
