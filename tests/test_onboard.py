@@ -465,6 +465,27 @@ def test_apps_line_front_matter_only():
     assert "not onboarded: ghost" in onboard.docs_for(root, "worker", "s")
 
 
+def test_check_spec_apps():
+    import json
+    root = repo({})
+    (root / ".nio/project").mkdir(parents=True, exist_ok=True)
+    for a in ("web", "api"):
+        (root / ".nio/project" / a).mkdir()
+    (root / ".nio/project/onboarding.json").write_text(json.dumps({"state": "done", "reason": "", "empty": False, "apps": {"api": {}, "web": {}}, "confirmed": [], "seen": []}))
+    assert newspec(root, "full").returncode == 0
+    f = next((root / ".nio/specs").glob("*/spec.md"))
+    slug = f.parent.name
+    text = f.read_text()
+    assert text.startswith("---\n"), text[:40]
+    for val, want in (("[mobile]", "app mobile has no project docs (.nio/project/mobile/)"),
+                      ("[]", "spec names no app; the project has apps: api, web")):
+        body = "".join(ln for ln in text.splitlines(keepends=True) if not ln.startswith("apps:"))
+        f.write_text(body.replace("---\n", f"---\napps: {val}\n", 1))
+        r = subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "check", "spec", slug],
+                           cwd=root, capture_output=True, text=True)
+        assert r.returncode == 1 and want in r.stdout + r.stderr, (val, r.returncode, r.stdout, r.stderr)
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -474,4 +495,4 @@ if __name__ == "__main__":
                     test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed,
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
-                    test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only])
+                    test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps])
