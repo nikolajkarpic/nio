@@ -5,7 +5,7 @@ import itertools
 import re
 from importlib import resources
 
-from nio import records
+from nio import onboard, records
 
 ROUTES = {
     "full": {"mandatory": ["Summary", "Actors and journeys", "User stories", "Functional requirements", "Non-goals"],
@@ -50,6 +50,9 @@ def new(root, name, route="full", epic="", today=None):
         raise ValueError("name must be lowercase words joined by dashes")
     if epic and not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*/R-\d+", epic):
         raise ValueError("--epic must look like <epic slug>/R-<n>")
+    state = onboard.progress(root)["state"] if route != "lite" else "done"
+    if state not in ("done", "skipped"):
+        raise ValueError(f'onboarding is {state}: run @nio:onboard first, or skip it on purpose with nio onboard skip "<reason>"')
     taken = sorted((root / ".nio/specs").glob(f"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-{name}/spec.md"))
     if taken or path(root, name).exists():
         raise ValueError(f"{(taken or [path(root, name)])[0].relative_to(root)} already exists")
@@ -210,6 +213,12 @@ def check(root, slug, gate=False, base="HEAD"):
     if not isinstance(risk, list) or any(not isinstance(r, str) or r not in RISKS for r in risk):
         errs.append(f"`risk` must be a list from {sorted(RISKS)}, or []")
         risk = [r for r in risk if isinstance(r, str) and r in RISKS] if isinstance(risk, list) else []
+    have = sorted(onboard.progress(root).get("apps") or {})
+    if have and "apps" in meta:
+        named = meta["apps"] if isinstance(meta["apps"], list) else []
+        if not named:
+            errs.append(f"spec names no app; the project has apps: {', '.join(have)}")
+        errs += [f"app {a} has no project docs (.nio/project/{a}/)" for a in named if str(a) not in have or not (root / ".nio/project" / str(a)).is_dir()]
     retired = meta.get("retired") or []
     if not isinstance(retired, list) or any(not isinstance(r, str) or not re.fullmatch(r"[A-Z]+-\d+", r) for r in retired):
         errs.append("`retired` must be a list of IDs, e.g. [FR-3, OP-1]")

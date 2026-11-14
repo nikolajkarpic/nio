@@ -183,14 +183,17 @@ def worker_pack(root, slug, task):
     instructions, CT-15 replaces them), its section of tasks.md, the ACs it serves, the CT-n blocks its TC-n entries
     cover, and those TC-n entries. No mode and no handoff format: `claim` prints the mode, the card carries the rest."""
     folder = root / ".nio/specs" / slug
-    memory, _ = pack.build(root, task["title"], task["files"], task["serves"], task["id"], worker=False)
+    memory, _ = pack.build(root, task["title"], task["files"], task["serves"], task["id"], worker=False, reader="worker", slug=slug)
+    memory, sep, docs = memory.partition("## Project docs\n")
     acs, cts, tcs = defs(folder / "spec.md"), defs(folder / "contracts.md"), defs(folder / "tests.md")
     tests = [t for t in task["tests"] if t in tcs]
     covers = list(dict.fromkeys(c for t in tests for c in tasks.ids(plan.field(tcs[t], "Covers")) if c in cts))
     block = lambda ids, found: [x for i in ids if i in found for x in found[i]]
     body = lambda name, lines: [f"## {name}", ""] + nest("\n".join(lines).strip().splitlines()) + [""]
     shown = [x for x in tasks.show(root, slug, task["id"]) if not x.startswith("- Mode:")]  # claim prints the mode
-    out = nest(memory.rstrip().splitlines()) + [""]  # the pack's `# Memory for T-n` becomes its part's heading
+    out = nest(memory.rstrip().splitlines()) + [""]
+    if sep:  # the docs sit in the first part: their headings are already nested
+        out = nest(memory.rstrip().splitlines()) + ["", "### Project docs"] + docs.partition("\n## ")[0].rstrip().splitlines() + [""] + nest(("## " + docs.partition("\n## ")[2]).splitlines() if "\n## " in docs else [])  # the pack's `# Memory for T-n` becomes its part's heading
     return "\n".join(out + body("Task", shown + finding_lines(root, slug, shown)) + body("Acceptance criteria", block(task["serves"], acs))
                      + body("Contracts", block(covers, cts)) + body("Tests", block(tests, tcs))).rstrip() + "\n"
 

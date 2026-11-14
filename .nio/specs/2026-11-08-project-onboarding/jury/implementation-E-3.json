@@ -1,0 +1,472 @@
+{
+  "gate": "implementation-E-3",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 3,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "security"
+  ],
+  "collected": {
+    "R-261108-vmdw/implementation-E-3-adversary.md": "a95ff1291e8115e14dba7af723109ea560bf6efc6f7f7ac71f5057f559a7e112",
+    "R-261108-vmdw/implementation-E-3-conformance.md": "40d27ae96a53d148e3765449001e15299bf1e80a680be618b2f53beaed60427f",
+    "R-261108-vmdw/implementation-E-3-consistency.md": "acab1a05c32a29526091d1c5420f80c449aab6ea726df46dae7e4773e666411f",
+    "R-261108-vmdw/implementation-E-3-correctness.md": "49ebad6ff574456538ed6b6e9dfe4b6af57e3f56cf324faaf891232edf1181f5",
+    "R-261108-vmdw/implementation-E-3-security.md": "b6d83575ef4214f395f2310d6bb83f48fdb547ba73a47e6bb52cf5608ad92d58",
+    "R-261108-vmdw/implementation-E-3-refuter.md": "224772213183424b75f2ccdaa4db6bfe36a46a61abd07e32b2e04c913151ae2b",
+    "R-261108-vmdw/implementation-E-3-conformance-2.md": "301c9c158d68cabce9c7409589dbadd304e5999fee907ec127a04fd029669af3",
+    "R-261108-vmdw/implementation-E-3-conformance-3.md": "90e424ede3eb3d3e26a7b401e37200c3e30c168b52c3283a7520f3de4f27b623",
+    "R-261114-yqpa/implementation-E-3-adversary.md": "edde9ea05f3fd1a21fa3467fd109306386e4b8be3f6060d1b8162c82012f948b",
+    "R-261114-yqpa/implementation-E-3-correctness.md": "c9f1d55b959dad53806911594708be6881ba54465e7de2ecb32c74e8c8f113fe"
+  },
+  "jurors": {
+    "implementation-E-3-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "4e6777abe4ebe84d79fecfd769d166b499ad30f6",
+      "judged": 3
+    },
+    "implementation-E-3-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "f635227d433ad50d15f1e7973f543fa36b042935",
+      "judged": 1
+    },
+    "implementation-E-3-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "f635227d433ad50d15f1e7973f543fa36b042935",
+      "judged": 1
+    },
+    "implementation-E-3-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 3,
+      "version": "4e6777abe4ebe84d79fecfd769d166b499ad30f6",
+      "judged": 3
+    },
+    "implementation-E-3-security": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "f635227d433ad50d15f1e7973f543fa36b042935",
+      "judged": 1
+    },
+    "implementation-E-3-conformance-2": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "f635227d433ad50d15f1e7973f543fa36b042935",
+      "judged": 2
+    },
+    "implementation-E-3-conformance-3": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "f635227d433ad50d15f1e7973f543fa36b042935",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A damaged onboarding.json stops every pack, but the docs must never block the stage",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-9",
+        "CT-10",
+        "CT-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "SHALL NOT block the stage"
+      ],
+      "fix": "in `docs_for`, catch the `ValueError` and emit a `onboarding: unreadable: fix .nio/project/onboarding.json` line, or let the stage commands print the error and stop. Pick one and test it.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`.nio/project/onboarding.json` is half-written or hand-edited. `progress` raises `ValueError(\".nio/project/onboarding.json is not valid: fix or restore it\")`. `docs_for` doesn't catch it, and neither do `pack.build` (reader branch), `jury._pack_text` or `implement.worker_pack`. Every worker pack and every scope or architecture-fit juror pack then fails or crashes. A docs file that only helps a reader ends up blocking the spec, plan and implement stages. If a caller swallows the error instead, the pack ships with no docs and no line saying why.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`onboard.progress` (onboard.py:65-77) raises ValueError on a bad onboarding.json, and `docs_for` (onboard.py:186) and `_pairs` call it with no catch, so pack.py:82 and jury.py:1362 fail for every reader. Nothing in the artefact says a damaged state file is allowed to stop a pack.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-53",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py:docs_for, src/nio/pack.py:build, src/nio/implement.py:worker_pack",
+      "tampering": false,
+      "right": "spec",
+      "fixed_in": 3
+    },
+    {
+      "id": "J-2",
+      "title": "A symlinked project doc is read and sent to the model",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-9",
+        "CT-22",
+        "CT-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a symlink is never listed or followed"
+      ],
+      "fix": "in `docs_for`, skip any doc that is a symlink or whose resolved path is outside the root, and add a `missing:` line for it.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`.nio/project/stack.md` is a symlink, for example to a secrets file or to `~/.ssh/config`, and a cloned repo can carry one. `docs_for` checks `p.is_file()`, which follows links, then runs `p.read_text()`. The target's whole text goes into every worker, plan and architecture-fit pack, and so to the model. `jury.sources` rejects paths outside the repo, but `docs_for` and `worker_pack` have no such check. The scan's own rule says it never follows a symlink.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`docs_for` (onboard.py:188-193) uses `p.is_file()` and `p.read_text()`, which follow symlinks, and has no root check. The `resolve().is_relative_to` check exists only in `jury.sources` (jury.py:218). The worker and plan packs read the link target unchecked.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-54",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:docs_for",
+      "tampering": false,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-3",
+      "title": "The apps line is read from anywhere in the spec, in one form only, and a wrong read drops docs silently",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-9",
+        "CT-16"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the apps are those the slug's spec names in `apps`"
+      ],
+      "fix": "parse only the front matter (the first `---` block) and accept both list forms. When the spec names an app that isn't onboarded, add a line saying so.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`_pairs` runs `re.search(r\"^apps:\\s*\\[?([^\\n\\]]*)\", spec.read_text(), re.M)` on the whole file. A line starting `apps:` in the body wins over a missing front-matter key. The spec drafter or a quoted intake can write one, for example `apps: web` in an example block. Then only `web/` docs are mapped, and the `api` stack and architecture never reach the plan or worker pack. Nothing is named missing, because unmapped docs aren't listed. The block form `apps:\\n  - api` gives `[\"\"]`, matches no app, and falls back to all apps. So the narrowing is silently lost and the pack is bigger than the table says. A name in `apps:` that matches no onboarded app, such as a typo, also falls back to all apps without a word.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`_pairs` (onboard.py:172) runs `^apps:` with re.M over the whole spec, not just the front matter. The block form is read as the text `- api`, which matches no app, and `or apps` falls back to all apps without a word. Both the typo case and the block-form case narrow nothing and say nothing.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-55",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:_pairs",
+      "tampering": false,
+      "fixed_in": 3
+    },
+    {
+      "id": "J-4",
+      "title": "worker_pack splits the pack on a text match, so a memory record can corrupt its structure",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-19"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "so the docs sit inside its first part and the pack keeps exactly five `## ` parts"
+      ],
+      "fix": "have `pack.build` return the docs part separately, or look for the marker only after the last record.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-adversary",
+          "lens": "adversary",
+          "situation": "`memory.partition(\"## Project docs\\n\")` matches the first occurrence anywhere in the memory pack. A full record whose text contains that heading line, for example a record describing this very feature, is cut there. The rest of the record is then treated as the project docs and the real docs sit below it. Docs stay un-nested but sit under the wrong `###` heading, and the test only checks docs from a clean fixture.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/implement.py:worker_pack",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "AC-32 is proved only by a model-run test that the suite skips",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-32"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Without NIO_E2E they print `skipped` and pass."
+      ],
+      "fix": "run the e2e test with NIO_E2E=1 and put its pass in the evidence, or have the CLI run it as a TC. Until then AC-32 has no passing test.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-conformance",
+          "lens": "conformance",
+          "situation": "test_ac32_actor_names_persona is the only test for AC-32 (level: e2e). The pack gives its result as \"unknown\", and the suite that passed runs without NIO_E2E. A pass of that suite therefore says nothing about the persona behaviour of the drafter card or the spec skill, so no run evidence exists for AC-32.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-3-conformance-2",
+          "lens": "conformance",
+          "situation": "the only test for AC-32 is `test_ac32_actor_names_persona`, which prints `skipped` and passes unless NIO_E2E=1 is set. The suite command in the pack sets no such variable. Its `passed` result is reused from T-9 and has no per-test result, so a skipped e2e run and a real pass look the same. The pack therefore holds no evidence that the drafter card produces `P-n` or `no persona` on the actor lines.",
+          "severity": "blocker",
+          "round": 2,
+          "run": "TC-30"
+        },
+        {
+          "juror": "implementation-E-3-conformance-3",
+          "lens": "conformance",
+          "situation": "AC-32 (Level: e2e) is covered only by `test_ac32_actor_names_persona`. That test is gated by `NIO_E2E`, and the suite command sets no such variable. The test therefore printed `skipped` and passed without drafting a spec, so nothing shows that the drafter names P-1 or \"no persona\". The result in the pack is `unknown`.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tests/test_onboard_e2e.py:3-4 says the test prints `skipped` and passes without NIO_E2E, and `test_ac32_actor_names_persona` is the only test serving AC-32 (tasks.md T-9). A normal suite pass therefore gives no evidence for AC-32.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "AC-32's e2e test passed at T-9's green with NIO_E2E=1 (run R-261108-7dt6); jury evidence runs without NIO_E2E. Approved by the human 2026-11-14.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 2,
+      "gap": "missing",
+      "where": "tests/test_onboard_e2e.py (test_ac32_actor_names_persona), skills/spec/SKILL.md, src/nio/agents/spec-drafter.md",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "Packs carry no stale line, though CT-9 and the accepted change require one",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-9",
+        "C-261108-mk6n"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "stale: <doc> (<path> <changed|deleted>)",
+        "ponytail: no stale line yet, it needs the docs' source records (CT-7).",
+        "nio pack also reads the project docs and hashes their recorded source files"
+      ],
+      "fix": "add the `stale:` line from the CT-7 check to `docs_for`, or record in the spec that stale lines wait for CT-7 in a later effort and that C-261108-mk6n is only partly built.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "an onboarded project's `stack.md` records a source file that has since changed. A worker or plan pack is built with `docs_for`, which emits no `stale:` line and hashes nothing, so the reader is handed the out-of-date doc with no warning. CT-9 requires that line, and C-261108-mk6n accepts hashing the recorded sources in `nio pack`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tasks.md schedules stale flags in packs for E-6 (T-22 serves AC-31 with TC-36 and TC-51, after T-21), and `docs_for` states the deferral in its ponytail note. The stale source records and the `stale` function do not exist yet (no `def stale` in onboard.py), so E-3 cannot emit the line.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:docs_for",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "The spec skill passes `--slug` before the spec exists, against CT-16",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "--reader spec --slug <slug>",
+        "(and `--slug` once the spec exists)"
+      ],
+      "fix": "pass `--slug` at step 4 only when the spec exists, as CT-16 says, or change CT-16 to match the skill.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-consistency",
+          "lens": "consistency",
+          "situation": "at step 4 of the spec skill, no `spec.md` exists yet, so `--slug` finds nothing and the pack gets every app. That matches the result without a slug, so no pack is wrong today. But the skill and CT-16 disagree on when `--slug` is passed, and a re-run after `apps:` is written would name the apps a different way than the contract describes.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "skills/spec/SKILL.md (step 4)",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "Quotes from project docs never ground",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "so they are listed under \"Files to read\" and a quote from them grounds"
+      ],
+      "fix": "give `grounding` and its caller the lens, or have `grounding` take the lens's sources. Add a test that runs `grounded` on a quote from a project doc.",
+      "sources": [
+        {
+          "juror": "implementation-E-3-correctness",
+          "lens": "correctness",
+          "situation": "the architecture-fit lens at the plan gate quotes `.nio/project/principles.md`, which its pack lists. `grounding()` calls `sources(root, slug, gate)` without the lens, so the docs are missing from the ground text and the quote is dropped as ungrounded.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`grounding(root, slug, gate)` (jury.py:221-223) calls `sources` with no lens, so `reader` stays None (jury.py:214) and no project docs are added. jury.py:620 passes that text as the ground for `add`/`grounded` (jury.py:811), so a quote from principles.md or personas.md is dropped as ungrounded.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-57",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/jury.py (grounding, line 620 caller)",
+      "tampering": false,
+      "fixed_in": 3
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      2,
+      "rejected"
+    ],
+    [
+      3,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "f635227d433ad50d15f1e7973f543fa36b042935",
+    "2": "f635227d433ad50d15f1e7973f543fa36b042935",
+    "3": "4e6777abe4ebe84d79fecfd769d166b499ad30f6"
+  },
+  "matched": {
+    "AC-18": [
+      [
+        "tests/test_onboard.py",
+        "test_reader_packs"
+      ]
+    ],
+    "AC-19": [
+      [
+        "tests/test_onboard.py",
+        "test_missing_doc_named"
+      ]
+    ],
+    "AC-20": [
+      [
+        "tests/test_onboard.py",
+        "test_skipped_pack"
+      ]
+    ],
+    "AC-32": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac32_actor_names_persona"
+      ]
+    ],
+    "AC-47": [
+      [
+        "tests/test_onboard.py",
+        "test_oversized_doc_flagged"
+      ]
+    ]
+  },
+  "asked": {}
+}
