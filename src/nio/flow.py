@@ -1104,13 +1104,19 @@ def epic_done(root, gate, slug=None, by=None):
 def docs_close_lines(root, slug):
     """CT-20: the project-doc sources the effort changed since it left main; nothing when there is no base or no docs."""
     from nio import onboard, implement
-    base = (records.git(root, "merge-base", "main", implement.branch(slug)) or [""])[0]
-    if not base:
+    if not onboard._feeds(root):  # no project doc records a source: nothing to check
         return []
+    branch = implement.branch(slug)
+    trunk = next((t for t in ("main", "master", "trunk") if not records.git(root, "rev-parse", "-q", "--verify",
+                                                                           f"refs/heads/{t}", full=True)[0]), "")
+    code, out, err = records.git(root, "merge-base", trunk or "main", branch, full=True)
+    if code or not out.strip():
+        why = "no main or master branch" if not trunk else f"no merge base of {trunk} and {branch}"
+        return [f"project docs: not checked ({why}); run `nio onboard changed <base>` by hand"]
     try:
-        return onboard.close_lines(root, base)
-    except ValueError:  # git failed: the close must not depend on the docs
-        return []
+        return onboard.close_lines(root, f"{out.strip()}..{branch}")  # the branch's commits, not the working tree
+    except ValueError as e:  # the close must not depend on the docs, but must not look like "nothing changed"
+        return [f"project docs: not checked ({e})"]
 
 
 def gate_paths(root, slug, gate):
