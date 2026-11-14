@@ -215,6 +215,63 @@ retired: [T-8]
 - Effort: low
 - Mode: direct: skill/card text, e2e test checks it after
 
+#### Fixes
+
+### T-53 Fix: A damaged onboarding.json stops every pack, but the docs must never block the stage
+- From: J-1 (implementation-E-3, round 2)
+- Files: `src/nio/onboard.py`, `src/nio/pack.py`, `src/nio/implement.py`
+- Serves: CT-9, CT-10, CT-19, J-1
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-54 Fix: A symlinked project doc is read and sent to the model
+- From: J-2 (implementation-E-3, round 2)
+- Files: `src/nio/onboard.py`
+- Serves: CT-9, CT-22, CT-1, J-2
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-55 Fix: The apps line is read from anywhere in the spec, in one form only, and a wrong read drops docs silently
+- From: J-3 (implementation-E-3, round 2)
+- Files: `src/nio/onboard.py`
+- Serves: CT-9, CT-16, J-3
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-56 Fix: AC-32 is proved only by a model-run test that the suite skips
+- From: J-5 (implementation-E-3, round 2)
+- Files: `tests/test_onboard_e2e.py`, `skills/spec/SKILL.md`, `src/nio/agents/spec-drafter.md`
+- Serves: AC-32
+- Test: TC-30
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-57 Fix: Quotes from project docs never ground
+- From: J-8 (implementation-E-3, round 2)
+- Files: `src/nio/jury.py`
+- Serves: CT-22, J-8
+- Test: TC-55
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-4 Onboard an existing repo through a grill (US-2)
 
 ### T-10 A spec names its apps and `nio check spec` enforces it
