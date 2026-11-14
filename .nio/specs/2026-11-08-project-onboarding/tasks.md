@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-project-onboarding
-retired: [T-8]
+retired: [T-8, T-11]
 ---
 # Tasks: project onboarding
 
@@ -273,16 +273,6 @@ retired: [T-8]
 - Effort: low
 - Mode: split: check has a clear test
 
-### T-11 Multi-app packs hold the right apps' docs, labelled
-- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
-- Serves: AC-34, AC-35, AC-46
-- Test: TC-15, TC-16, TC-47
-- Depends on: T-7, T-10
-- Parallel: no
-- Tier: strong: multi-app selection and labelling logic
-- Effort: med
-- Mode: split: logic with clear tests
-
 ### T-12 `nio onboard backup` keeps a restorable copy
 - Files: `src/nio/onboard.py`, `src/nio/cli.py`, `tests/test_onboard.py`
 - Serves: AC-37
@@ -352,6 +342,19 @@ retired: [T-8]
 - Tier: strong: five e2e cases, skill wording
 - Effort: low
 - Mode: single: e2e test and skill fix together
+
+#### Fixes
+
+### T-58 Fix: land T-11's multi-app pack tests as regression guards (T-11 retired, already delivered by T-6, T-7, T-55)
+- From: C-261114-lqou
+- Files: `tests/test_onboard.py`
+- Serves: AC-34, AC-35, AC-46
+- Test: TC-15, TC-16, TC-47
+- Depends on: none
+- Parallel: no
+- Tier: cheap: tests over existing behaviour
+- Effort: low
+- Mode: direct: the behaviour exists; the tests guard it
 
 ## E-5 Onboard an empty repo (US-3)
 
