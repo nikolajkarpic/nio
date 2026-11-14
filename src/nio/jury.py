@@ -218,9 +218,9 @@ def sources(root, slug, gate, lens=""):
     return [p for p in dict.fromkeys(files) if p.is_file() and p.resolve().is_relative_to(root.resolve())]
 
 
-def grounding(root, slug, gate):
-    """What a quote is checked against: the gate's artefact, plus at the plan gate the other files its jurors read."""
-    return "\n".join(p.read_text() for p in sources(root, slug, gate))
+def grounding(root, slug, gate, lens=""):
+    """What a quote is checked against: the gate's artefact, plus at the plan gate the other files the lens reads."""
+    return "\n".join(p.read_text() for p in sources(root, slug, gate, lens))
 
 
 def blob(root, text, write=False):
@@ -617,7 +617,8 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
         if not text:
             raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
         moved(root, slug, gate, run, led)
-        human, ground = human_words(root, slug), grounding(root, slug, gate)
+        human = human_words(root, slug)
+        ground = lambda lens="": grounding(root, slug, gate, lens)
     led["expect"] = sorted(set(led["expect"]) | set(expect))
     led["tier"] = tier or led["tier"]
     judged = lambda write=False: commit if impl else blob(root, text, write)
@@ -648,7 +649,7 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
         out += merge(led, new, gate, slug, ground, human)
     review = phase(led) in ("re-review", "final")
     for f in led["findings"]:  # what the grounding sources now hold may ground a finding dropped earlier
-        if f["status"] == "dropped" and grounded(f, ground, human, not impl):
+        if f["status"] == "dropped" and any(grounded(f, ground(s["lens"]) if callable(ground) else ground, human, not impl) for s in f["sources"]):
             f.update(status="open", reason="", validation="pending" if f["severity"] != "minor" else "grounded")
             if review and f["severity"] != "blocker":  # after the first review, a note (#52 FR-12)
                 f.update(status="noted", validation="grounded")
@@ -745,7 +746,7 @@ def merge(led, paths, gate, slug, text, human=""):
         if juror["context"] != "needs-more":  # the last round this juror actually judged
             juror["judged"] = rnd
         for f in findings:
-            out.append(add(led, f, path.stem, juror["lens"], rnd, text, human, review))
+            out.append(add(led, f, path.stem, juror["lens"], rnd, text(juror["lens"]) if callable(text) else text, human, review))
     if review:
         return out + apply_verdicts(led, verdicts, rnd)
     # fixed: every juror that raised it has since judged a different version without raising it again, in this round or

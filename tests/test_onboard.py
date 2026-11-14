@@ -414,6 +414,16 @@ def test_lens_sources_include_docs():
     assert ".nio/project/principles.md" in text.split("## nio check")[0], text[:600]
 
 
+def test_doc_quote_grounds_for_its_lens():
+    from test_jury import plan_repo, PSLUG
+    from nio import jury
+    root = plan_repo()
+    setup_project(root, "done", SIX)
+    f = {"cites": [], "quotes": ["principles text"]}
+    assert jury.grounded(f, jury.grounding(root, PSLUG, "plan", "architecture-fit")), "doc quote not grounded"
+    assert not jury.grounded(f, jury.grounding(root, PSLUG, "plan", "test-proof")), "no-docs lens grounded"
+
+
 def test_corrupt_progress_does_not_block_docs():
     from nio import onboard
     root = Path(tempfile.mkdtemp())
@@ -463,5 +473,5 @@ if __name__ == "__main__":
                     test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes,
                     test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed,
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
-                    test_reader_packs, test_lens_sources_include_docs,
+                    test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only])
