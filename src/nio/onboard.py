@@ -245,13 +245,19 @@ def docs_for(root, reader, slug=""):
 def backup(file, root="."):
     """Copy file to .nio/backup/<today>/<repo path>; a second copy the same day keeps the first (CT-17)."""
     import datetime
+    import os
     import shutil
     r = Path(root).resolve()
-    src = Path(file).resolve()
-    if not file or not src.is_file() or not src.is_relative_to(r):
-        raise ValueError(f"{file or '(no file)'}: not a file inside the repo")
+    src = Path(os.path.abspath(file)) if file else Path()  # the path as given: a symlink keeps its own name
+    if not file or not src.resolve().is_file() or not src.is_relative_to(r) or any(fnmatch(src.name, s) for s in SECRETS):
+        raise ValueError(f"{file or '(no file)'}: not a file inside the repo, or a secret")
     dst = r / ".nio" / "backup" / datetime.date.today().isoformat() / src.relative_to(r)
     if not dst.exists():
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+        tmp = dst.with_name(dst.name + ".tmp")
+        try:
+            shutil.copy2(src, tmp)
+            os.replace(tmp, dst)
+        finally:
+            tmp.unlink(missing_ok=True)
     return str(dst.relative_to(r))
