@@ -215,7 +215,7 @@ def main():
             except ValueError as e:
                 sys.exit(f"error: {e}")
             return
-        found = onboard.scan()
+        found = onboard.scan(records.repo_root())
         for c, f, h in found:
             print(c, f, h) if h else print(c, f)
         print(f"{len(found)} candidate files" if found else "no candidate files found")

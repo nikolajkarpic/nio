@@ -777,7 +777,8 @@ def test_skill_inline_secret_rule():
 def test_confirm_refuses_value_from_secrets_file():
     """J-3: a value copied from a file the scan lists as secrets is refused at confirm, without printing it."""
     pw = "hunter2" + "hunter2"
-    root = repo({"README.md": "hi\n", ".env": f"DB_PASSWORD={pw}\nDEBUG=on\n"}, ignore=".env\n")
+    root = repo({"README.md": "hi\n", ".env": f"DB_PASSWORD={pw}\nDEBUG=on\nNODE_ENV=production\n"
+                                              "DATABASE_URL=postgres://localhost:5432/app\n"}, ignore=".env\n")
     d = root / ".nio/project"
     assert nio(root, "start", "--empty").returncode == 0
     tpl = Path(__file__).parent.parent / "src/nio/templates/project"
@@ -786,7 +787,7 @@ def test_confirm_refuses_value_from_secrets_file():
     r = nio(root, "confirm", "product")
     out = r.stdout + r.stderr
     assert r.returncode == 1 and "line 5" in out and "secret" in out and pw not in out, (r.stdout, r.stderr)
-    (d / "product.md").write_text(base.replace("x (source: dev", "debug is on (source: dev", 1))  # `on` is too short to count
+    (d / "product.md").write_text(base.replace("x (source: dev", "debug is on in production, db postgres://localhost:5432/app (source: dev", 1))  # ordinary settings aren't secrets
     assert nio(root, "confirm", "product").returncode == 0
 
 
