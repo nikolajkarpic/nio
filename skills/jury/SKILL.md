@@ -54,8 +54,12 @@ session, the one the human talks to, only routes.
    resumed after a hand-back gets a new one.
 3. Start a driver only once the previous one for this effort has ended; never two at once. A driver that ended
    without a summary counts as ended: go on from `nio flow brief <slug>` alone.
-4. Relay the driver's summary: what needs the human goes to them from the summary alone, in the shape above. Then
-   start the next driver.
+4. Relay the driver's summary: what needs the human goes to them from the summary alone, in the shape above. When
+   it holds nothing for the human (a gate approved, an epic done), start the next unit's fresh driver from
+   `nio flow brief <slug>`.
+5. When the human answers, record their ruling yourself with the command the summary names (`nio jury rule`,
+   `nio jury dispose ... --by human`, `nio flow unblock ... --human` and the like), their words as the note: that
+   counts as routing. Then start a fresh driver from `nio flow brief <slug>`.
 Read nothing else yourself: what lies past the brief and the summaries is the driver's.
 
 On a host without subagents, the main session runs the unit itself from `nio flow brief <slug>`, following the
@@ -64,7 +68,9 @@ subagent (general-purpose) in the background.
 
 **The driver** runs every step under Steps below, and only for its unit:
 - Start from the brief. If it shows `running: <command>, started <time>`, that command is still running from an
-  earlier driver: wait on that run (below), never start it again.
+  earlier driver: wait on that run (below), never start it again. If it shows `running on <host>, can't check:
+  <command>, ...`, the run is on another machine: end with the summary asking the human whether that run is still
+  alive, and start the command again only once they say it is gone.
 - Where a step says to show or ask the human (a human-only disposition, a ruling at the round cap, a blocked task, a
   change request, a refusal it can't settle), end there with the summary naming that item and the command to
   continue. Never make the human's decision yourself.
@@ -173,8 +179,11 @@ confirmed blocker starts another round. When a round at or over the cap ends wit
   message, each with three options: accept as risk; fix (no juror checks the fix); one more round (the reviewers that
   raised it check the fix once). Record each answer, one call per ruling, with their words as the note:
   `nio jury rule <slug> <gate> J-a,J-b accept|fix|again --note "<their words>"`. It is refused while a round runs or
-  before the cap. For `fix` and `again`, make the fix first: edit the spec, plan or tasks (at the implementation gate
-  the ruling appends the fix task; run it through the implement stage). Then call the step again: while a finding of
+  before the cap. For `fix` and `again`, the driver makes the fix, never the main session: it edits the spec, plan or
+  tasks (at the implementation gate the ruling appends the fix task; run it through the implement stage: the gate
+  waits until it is done). Until the artefact differs from the version the capped round judged, the step prints
+  `waiting: edit the <gate> for J-a (ruled fix by the human)` and `nio flow brief` lists the owed fixes, and the gate
+  doesn't close. Then call the step again: while a finding of
   the batch is unruled it prints the batch again; once all are ruled, `again` starts one round on those findings'
   lenses, after which the step prints a new batch if anything is still open (the human may ask again), and otherwise
   the gate closes on the human's rulings with no re-check. Tell the human, then run the `next:` line.
@@ -207,7 +216,7 @@ the `nio check tasks` output with its estimate. A finding is fixed in `tasks.md`
 it as a `spec-fix` on the tasks, as you would at the spec gate). When the outcome is `approved` and the human approves
 the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approve tasks` commit; `nio check tasks <slug>
 --approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later, and fix tasks retired with
-`nio task retire <slug> T-n --reason "<why>"`, don't withdraw it; the retired task's finding closes as accepted risk.
+`nio task retire <slug> T-n --reason "<why>" --by <human|agent>`, don't withdraw it; the retired task's finding closes as accepted risk.
 
 ## At the implementation gate
 

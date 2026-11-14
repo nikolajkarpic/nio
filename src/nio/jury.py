@@ -962,6 +962,8 @@ def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, rout
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
     if disposition not in DISPOSITIONS or by not in BY or not note.strip():
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
+    if fid in batch_open(led) and by != "human" and not routed:  # #129: the capped batch is the human's to rule
+        raise ValueError(f"{fid} is in the capped batch; only the human rules it (nio jury rule, or --by human)")
     if f.get("tampering") and by != "human" and not routed:  # only the human disposes of it; `tasks.append_fix` alone routes it to its fix task (FR-26)
         raise ValueError(f"{fid} is test tampering; only the human disposes of it (--by human)")
     if disposition in PLAN_ONLY and gate != "plan":
@@ -1545,13 +1547,22 @@ def next_lenses(root, slug, gate):
     """The lenses the next round re-runs: an automatic or human-asked round's own (#129 FR-5, FR-13), else `changed`'s."""
     led = load(root, slug, gate)
     cap = led.get("cap") or {}
-    return cap["lenses"] if cap.get("allow", 0) > led["round"] else changed(root, slug, gate)[1]
+    return cap.get("lenses") or changed(root, slug, gate)[1] if cap.get("allow", 0) > led["round"] else changed(root, slug, gate)[1]
+
+
+def lenses_of(f, gate):
+    """The lenses that re-check finding `f`, as `changed` maps them: a CLI finding's is conformance at the implementation
+    gate; a point the grill deferred has none, only the human closes it."""
+    impl = gate.startswith("implementation")
+    return {"conformance" if s["lens"] == "cli" else s["lens"] for s in f["sources"]
+            if s["lens"] != "deferred" and (impl or s["lens"] != "cli")}
 
 
 def batch_open(led):
-    """The IDs of the capped batch still open: none before the round cap stops the gate, or once a round runs (#129)."""
+    """The IDs of the capped batch the human hasn't ruled yet: none before the round cap stops the gate, or once a round
+    runs (#129). A finding disposed by anyone but the human is still theirs to rule."""
     cap, by_id = led.get("cap") or {}, {f["id"]: f for f in led["findings"]}
-    return [i for i in cap.get("batch", []) if cap.get("round") == led["round"] and by_id[i]["status"] == "open"]
+    return [i for i in cap.get("batch", []) if cap.get("round") == led["round"] and (by_id[i]["status"] == "open" or by_id[i]["by"] != "human")]
 
 
 def capped(root, slug, gate, led, names):
@@ -1559,39 +1570,60 @@ def capped(root, slug, gate, led, names):
     A finished round at or over `jury.max_rounds` decides once: 2+ open blockers start one automatic round on their
     lenses, once per gate; else open minors are skipped, and open majors and blockers go to the human in one batch.
     Once the human ruled every finding of it, the gate closes, unless they asked for one more round."""
-    cap = led.get("cap") or {}
+    cap, impl = led.get("cap") or {}, gate not in GATES
     if cap.get("round") != led["round"]:
         if led["round"] < max(max_rounds(root), cap.get("allow", 0)):
             return None
         open_ = [f for f in led["findings"] if f["status"] == "open"]
+        if gate not in GATES:  # a later epic's finding is the system's out-of-scope before the cap counts it (#126 FR-12)
+            later_epic(root, slug, gate, led)
+            open_ = [f for f in open_ if f["status"] == "open"]
         if not open_:
+            save(root, led)
             return None
         blockers = [f for f in open_ if f["severity"] == "blocker" and f["validation"] == "confirmed"]
         cap = led["cap"] = {"round": led["round"], "auto": cap.get("auto", False)}
-        if len(blockers) >= 2 and not cap["auto"]:  # FR-13: its round starts once the blockers' fixes are in
-            cap.update(auto=True, allow=led["round"] + 1,
-                       lenses=sorted({s["lens"] for f in blockers for s in f["sources"] if s["lens"] in names}))
+        lenses = sorted({x for f in blockers for x in lenses_of(f, gate) if x in names})
+        if len(blockers) >= 2 and not cap["auto"] and lenses:  # FR-13: its round starts once the blockers' fixes are in
+            cap.update(auto=True, allow=led["round"] + 1, lenses=lenses)
             save(root, led)
             return None
         for f in open_:  # FR-15
             if f["severity"] == "minor":
                 f.update(status="disposed", disposition="accepted-risk", by="system", note=SKIPPED)
         cap["batch"] = [f["id"] for f in open_ if f["severity"] != "minor"]
+        if not impl:  # the version judged: a `fix` ruling waits until it changes
+            cap["version"] = version_now(root, slug, gate)
         save(root, led)
     left = batch_open(led)
     if left:
         by_id = {f["id"]: f for f in led["findings"]}
+        how = (f"a fix or again appends a fix task: build it through the implement stage, nio flow next {slug}" if impl else
+               f"a fix: edit the {gate} first")
         return [f"capped: round {led['round']} is at the round cap; the human rules each finding: accept (as risk), fix "
                 f"(no juror re-checks it), or again (one more round on its lenses)",
                 *[f"- {i} [{by_id[i]['severity']}/{by_id[i]['kind']}] {by_id[i]['title']}" for i in left],
                 f'next: show the human the capped batch, then record each ruling with nio jury rule {slug} {gate} J-a,J-b '
-                f'accept|fix|again --note "<their words>" (a fix: edit the {gate} first), then nio jury next {slug} {gate}']
-    if cap.get("allow", 0) > led["round"] or not cap.get("batch"):  # one more round, or only minors were open (FR-18)
+                f'accept|fix|again --note "<their words>" ({how}), then nio jury next {slug} {gate}']
+    if not cap.get("batch") or cap.get("allow", 0) > led["round"] and not impl:  # only minors were open (FR-18), or one more round
         return None
+    if cap.get("allow", 0) > led["round"]:
+        return None
+    if owed := owed_fixes(root, slug, gate, led):
+        return [f"waiting: edit the {gate} for {', '.join(owed)} (ruled fix by the human), then call the step again",
+                f"next: edit the {gate} for {', '.join(owed)}, then nio jury next {slug} {gate}"]
     lines = check(root, slug, gate, record=True, human="the human ruled every finding of the capped batch")[1]
-    impl = gate not in GATES
     return lines + [f'next: nio flow done {gate} {slug} --by "<role> / <host> / <model>"' if impl else
                     f"next: tell the human the gate is closed by their rulings, then nio flow next {slug}"]
+
+
+def owed_fixes(root, slug, gate, led):
+    """The capped batch's findings the human ruled `fix` at a spec, plan or tasks gate while the artefact is still the
+    version the capped round judged: the edit is owed before the gate closes."""
+    cap = led.get("cap") or {}
+    if gate not in GATES or cap.get("round") != led["round"] or "version" not in cap:
+        return []
+    return cap.get("fix", []) if version_now(root, slug, gate) == cap["version"] else []
 
 
 RULINGS = ("accept", "fix", "again")
@@ -1607,6 +1639,9 @@ def rule(root, slug, gate, fid, ruling, note):
     if bad:
         raise ValueError(f"{', '.join(bad)} not open in a capped batch of the {gate} gate (a round is running, or the gate "
                          f"hasn't reached its round cap)")
+    none = [i for i in ids if ruling == "again" and not lenses_of(next(f for f in led["findings"] if f["id"] == i), gate)]
+    if none:
+        raise ValueError(f"no lens re-checks {', '.join(none)} (deferred by the grill): rule accept or fix")
     if ruling == "accept":
         return dispose(root, slug, gate, fid, "accepted-risk", "human", note)
     if gate.startswith("implementation"):
@@ -1614,10 +1649,14 @@ def rule(root, slug, gate, fid, ruling, note):
         for f in [f for f in led["findings"] if f["id"] in ids]:
             tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)
     dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in GATES else "spec-fix"), "human", note)
+    if ruling == "fix" and gate in GATES:
+        led = load(root, slug, gate)
+        led["cap"]["fix"] = sorted(set(led["cap"].get("fix", [])) | set(ids), key=lambda i: int(i[2:]))
+        save(root, led)
     if ruling == "again":
         led = load(root, slug, gate)
         cap = led["cap"]
-        lenses = {s["lens"] for f in led["findings"] if f["id"] in ids for s in f["sources"] if s["lens"] not in ("deferred", "cli")}
+        lenses = {x for f in led["findings"] if f["id"] in ids for x in lenses_of(f, gate)}
         cap.update(auto=True, lenses=sorted(lenses | set(cap.get("lenses", []) if cap.get("allow", 0) > led["round"] else [])),
                    allow=led["round"] + 1)
         save(root, led)

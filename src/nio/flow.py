@@ -921,10 +921,11 @@ def brief(root, slug, everything=False):
     if not (root / ".nio/specs" / slug).is_dir():
         raise ValueError(f"no effort {slug}")
     _, out = next_step(root, slug)
-    if rec := live_run(root / ".nio/specs" / slug / "running.json"):
-        out.append(f"running: {rec['command']}, started {stamp(rec['at'])} UTC")
+    if rec := live_run(root / ".nio/specs" / slug / "running.json"):  # another host's run can't be checked from here
+        host = "" if rec.get("host") == socket.gethostname() else f" on {rec.get('host')}, can't check"
+        out.append(f"running{host}: {rec['command']}, started {stamp(rec['at'])} UTC")
     if kind(root, slug) != "effort":
-        return 0, out
+        return 0, cut(out, slug, everything)
     state, lines = load(root, slug)
     here = where(root, slug, state, lines)
     heads, items = [], []
@@ -941,10 +942,17 @@ def brief(root, slug, everything=False):
         found = [f for f in jury.load(root, slug, gate)["findings"] if f.get("status") == "open"]
         heads.append(f"open findings ({gate}): {len(found)}")
         items += [f"  {f['id']} {f['severity']}: {f['title']}" for f in found]
+        if owed := jury.owed_fixes(root, slug, gate, jury.load(root, slug, gate)):  # the driver's edit, ruled by the human
+            heads.append(f"owed fixes ({gate}): edit the {gate} for {', '.join(owed)} (ruled fix by the human)")
     room = BRIEF - len(out) - len(heads) - 1
     if not everything and len(items) > room:
         items = items[:max(room, 0)] + [f"rest: nio flow brief {slug} --all"]
-    return 0, out + heads + items
+    return 0, cut(out + heads + items, slug, everything)
+
+
+def cut(lines, slug, everything):
+    """A brief at most BRIEF lines, however long `nio flow next`'s part is; the last line then names the rest."""
+    return lines if everything or len(lines) <= BRIEF else lines[:BRIEF - 1] + [f"rest: nio flow brief {slug} --all"]
 
 
 def never_reviewed(root, slug, lines):

@@ -53,8 +53,12 @@ session, the one the human talks to, only routes.
    resumed after a hand-back gets a new one.
 3. Start a driver only once the previous one for this effort has ended; never two at once. A driver that ended
    without a summary counts as ended: go on from `nio flow brief <slug>` alone.
-4. Relay the driver's summary: what needs the human goes to them from the summary alone, in the shape above. Then
-   start the next driver.
+4. Relay the driver's summary: what needs the human goes to them from the summary alone, in the shape above. When
+   it holds nothing for the human (a gate approved, an epic done), start the next unit's fresh driver from
+   `nio flow brief <slug>`.
+5. When the human answers, record their ruling yourself with the command the summary names (`nio jury rule`,
+   `nio jury dispose ... --by human`, `nio flow unblock ... --human` and the like), their words as the note: that
+   counts as routing. Then start a fresh driver from `nio flow brief <slug>`.
 Read nothing else yourself: what lies past the brief and the summaries is the driver's.
 
 On a host without subagents, the main session runs the unit itself from `nio flow brief <slug>`, following the
@@ -63,7 +67,9 @@ subagent (general-purpose) in the background.
 
 **The driver** runs every step under Steps below, and only for its unit:
 - Start from the brief. If it shows `running: <command>, started <time>`, that command is still running from an
-  earlier driver: wait on that run (below), never start it again.
+  earlier driver: wait on that run (below), never start it again. If it shows `running on <host>, can't check:
+  <command>, ...`, the run is on another machine: end with the summary asking the human whether that run is still
+  alive, and start the command again only once they say it is gone.
 - Where a step says to show or ask the human (a human-only disposition, a ruling at the round cap, a blocked task, a
   change request, a refusal it can't settle), end there with the summary naming that item and the command to
   continue. Never make the human's decision yourself.
