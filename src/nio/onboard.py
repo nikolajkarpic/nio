@@ -123,6 +123,51 @@ def stale(root="."):
     return out
 
 
+def _feeds(root):
+    """{source path: [docs recording it]} over the project docs."""
+    out = {}
+    for f in sorted((Path(root) / ".nio/project").rglob("*.md")):
+        for src, _ in SOURCE.findall(f.read_text()):
+            out.setdefault(src, [])
+            d = str(f.relative_to(Path(root) / ".nio/project"))
+            if d not in out[src]:
+                out[src].append(d)
+    return out
+
+
+def changed(root, ref):
+    """(path, docs it feeds) per file `git diff --name-only <ref>` lists that a project doc records (CT-11)."""
+    code, out, err = records.git(root, "diff", "--name-only", ref, full=True)
+    if code:
+        raise ValueError(f"git diff {ref} failed: {err.strip()}")
+    feeds = _feeds(root)
+    return [(f, feeds[f]) for f in sorted(set(out.splitlines())) if f in feeds]
+
+
+def to_reconcile(root="."):
+    """Stale sources, then scan paths (never secrets) in neither `seen` nor a source record, as `<path> new`."""
+    out = sorted({f"{s} {w}" for _, s, w in stale(root)})
+    seen = {e if isinstance(e, str) else e[1] for e in progress(root)["seen"]}
+    known = seen | set(_feeds(root))
+    return out + sorted({f"{f} new" for c, f, _ in scan(root) if c != "secrets" and not is_secret(Path(f).name) and f not in known})
+
+
+def reconciled(root="."):
+    """Save `seen` from the current scan, outside the secrets category (CT-11)."""
+    import json
+    f = Path(root) / ".nio/project/onboarding.json"
+    st = progress(root)
+    st["seen"] = [list(e) for e in scan(root) if e[0] != "secrets"]
+    f.parent.mkdir(parents=True, exist_ok=True)
+    tmp = f.with_suffix(".tmp")
+    tmp.write_text(json.dumps(st))
+    tmp.replace(f)
+
+
+def close_lines(root, ref):
+    return [f"project docs: {p} changed, feeds {', '.join(d)}: propose edits with @nio:reconcile-onboarding" for p, d in changed(root, ref)]
+
+
 def progress(root="."):
     import json
     f = Path(root) / ".nio/project/onboarding.json"
