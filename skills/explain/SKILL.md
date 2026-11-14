@@ -10,6 +10,8 @@ Plan mode explains an approved plan; topic mode explains anything the human name
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+
 ## Inputs and outputs
 
 - **Input:** a spec slug (plan mode) or a topic in words (topic mode).
@@ -33,23 +35,6 @@ Every message to the human (question, report, error or hand-off):
    rests on, never raw command output. In a question tool, `Refs:` is the question text's
    last line, and each option's description says what happens.
 Before sending, ask: could they act on this without opening a file? If not, rewrite it.
-
-## Non-goals (for now)
-
-- Multi-user or team features (NIO has a single user for now). The exception: the memory
-  design must leave room for team sharing.
-- Dry-run mode (low priority).
-- Hosted service or UI.
-- Hosts beyond Claude Code and Antigravity until both work well.
-
-## Success looks like
-
-- I can read why every autonomous decision was allowed.
-- A NIO run fits within the $100 Claude and $20 Antigravity plans.
-- Specs and tasks rarely need rework after implementation starts.
-
-See the GitHub issues for open decisions and deferred ideas.
-
 
 ## Plan mode (given a slug)
 
