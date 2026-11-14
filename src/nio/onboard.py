@@ -152,12 +152,17 @@ def to_reconcile(root="."):
     return out + sorted({f"{f} new" for c, f, _ in scan(root) if c != "secrets" and not is_secret(Path(f).name) and f not in known})
 
 
-def reconciled(root="."):
-    """Save `seen` from the current scan, outside the secrets category (CT-11)."""
+def reconciled(root=".", paths=()):
+    """Save `seen` from the current scan, outside the secrets category (CT-11). Given paths, only those new files are
+    added to `seen`, so a file the dev didn't reach stays listed (FR-21)."""
     import json
     f = Path(root) / ".nio/project/onboarding.json"
     st = progress(root)
-    st["seen"] = [list(e) for e in scan(root) if e[0] != "secrets"]
+    now = [list(e) for e in scan(root) if e[0] != "secrets"]
+    if paths:
+        keep = {e if isinstance(e, str) else e[1] for e in st["seen"]} | set(paths)
+        now = [e for e in now if e[1] in keep]
+    st["seen"] = now
     f.parent.mkdir(parents=True, exist_ok=True)
     tmp = f.with_suffix(".tmp")
     tmp.write_text(json.dumps(st))

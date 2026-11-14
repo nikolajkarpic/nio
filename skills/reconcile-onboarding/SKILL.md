@@ -58,4 +58,6 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 4. **Repo files.** For a patch to a repo file, show it; only on a yes run `nio onboard backup <file>`, then apply it.
 5. **Records.** On every reviewed file rewrite its source records with the scan's new hash, approved or declined. Drop a
    reviewed deleted file's records. Leave a file you didn't reach as it is.
-6. **Finish.** Run `nio onboard reconciled`. If the dev stops earlier, say the next session picks up the rest.
+6. **Finish.** When every listed file was reviewed, run `nio onboard reconciled`. If the dev stops earlier, run
+   `nio onboard reconciled <path>...` naming only the new files the dev reviewed, so the rest stay listed, and say the
+   next session picks up the rest.

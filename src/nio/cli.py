@@ -184,7 +184,7 @@ def main():
             try:
                 r = records.repo_root()
                 if a.action == "reconciled":
-                    onboard.reconciled(r)
+                    onboard.reconciled(r, a.arg)
                     print("reconciled")
                 elif a.arg:
                     print("\n".join(f"{p}: {', '.join(d)}" for p, d in onboard.changed(r, a.arg[0])) or "no project doc source changed")
