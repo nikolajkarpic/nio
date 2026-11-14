@@ -461,9 +461,9 @@ retired: [T-8, T-11, T-17, T-20]
 
 ### T-68 Fix: Grill's blank-field step writes dev answers and repo lookups into docs with no secret guard
 - From: J-1 (implementation-E-5, round 5)
-- Files: `skills/grill/SKILL.md`
+- Files: `skills/grill/SKILL.md`, `tests/test_onboard.py`
 - Serves: AC-14, CT-21
-- Test: TC-24
+- Test: new: a form check in tests/test_onboard.py that skills/grill/SKILL.md's blank-tech-field step says never open a file the scan lists under `secrets` and never write, quote or show a secret value (only where it is kept), and that answers found in the repo carry the file's `(source: <path>@<hash>)` record (FR-24, FR-30, CT-21)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -474,12 +474,12 @@ retired: [T-8, T-11, T-17, T-20]
 - From: J-3 (implementation-E-5, round 5)
 - Files: `tests/test_onboard_e2e.py`
 - Serves: AC-14
-- Test: TC-24
+- Test: TC-24 (run with NIO_E2E=1): test_ac14_first_spec_fills_stack also scripts one answer each for architecture.md and infra.md and asserts each answered field no longer reads NEEDS CLARIFICATION and ends in `(source: dev, <slug> grill Q<n>)` with no hash
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
 - Effort: med
-- Mode: single: a fix from a jury finding
+- Mode: direct: the behaviour exists; the strengthened e2e test proves it with NIO_E2E=1
 
 ## E-6 Flag stale docs and reconcile them (US-6)
 
