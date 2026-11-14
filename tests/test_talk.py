@@ -78,7 +78,7 @@ BOTH = ("implement", "jury")
 def test_drivers_ac1_ac2_one_fresh_driver_per_unit():
     for name in BOTH:
         _, sec, main, drv = drivers(name)
-        assert "one gate (spec, plan or tasks), or one epic with its tasks and its implementation jury" in sec, name
+        assert "one gate (spec, plan, tasks or pr), or one epic with its tasks; the pr gate, on the whole effort diff, is always its own unit" in sec, name
         assert "a fresh agent that runs that one unit and then ends" in sec and "Start a fresh driver for it" in main, name
         assert "several drivers one after another; a unit resumed after a hand-back gets a new one" in main, name
         assert "never go on into the next unit" in drv, name
