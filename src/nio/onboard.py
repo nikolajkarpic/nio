@@ -36,11 +36,12 @@ def is_secret(name):
 
 
 def scan(root="."):
-    """Return sorted (category, path, sha12) per candidate; secrets by path only (hash ""). Never file contents."""
-    def ls(*a):
-        return set(records.git(root, "ls-files", "-z", *a, "--exclude-standard", full=True)[1].split("\0")) - {""}
+    """Return sorted (category, path, sha12) per candidate; secrets by path only (hash ""). Never file contents.
+    Only tracked and untracked-but-not-ignored files: git-ignored files (node_modules, .env, build output) are never
+    listed, opened or stat'ed."""
+    files = set(records.git(root, "ls-files", "-z", "-co", "--exclude-standard", full=True)[1].split("\0")) - {""}
     out = []
-    for f in sorted(ls("-co") | ls("-o", "-i")):
+    for f in sorted(files):
         p = Path(root) / f
         if f.startswith(".nio/") or p.is_symlink() or not p.is_file():
             continue
@@ -48,7 +49,7 @@ def scan(root="."):
             out.append(("secrets", f, ""))
             if category(f) == "iac":  # secrets.tf also defines where secrets live: a path-only pointer
                 out.append(("iac", f, ""))
-        elif (cat := category(f)) and f in ls("-co"):
+        elif cat := category(f):
             out.append((cat, f, hashlib.sha256(p.read_bytes()).hexdigest()[:12]))
     return sorted(out, key=lambda e: e[:2])
 
@@ -126,7 +127,8 @@ def stale(root="."):
         for src, h in SOURCE.findall(f.read_text()):
             if src not in seen:
                 p = root / src
-                seen[src] = hashlib.sha256(p.read_bytes()).hexdigest()[:12] if p.is_file() else None
+                inside = not p.is_symlink() and p.resolve().is_relative_to(root.resolve())  # never read outside the repo
+                seen[src] = hashlib.sha256(p.read_bytes()).hexdigest()[:12] if inside and p.is_file() else None
             if seen[src] != h:
                 out.append((str(f.relative_to(root / ".nio/project")), src, "deleted" if seen[src] is None else "changed"))
     return out
