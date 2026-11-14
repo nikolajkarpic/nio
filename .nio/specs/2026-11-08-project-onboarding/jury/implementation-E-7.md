@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-7
 subject: 2026-11-08-project-onboarding
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-7 jury: 2026-11-08-project-onboarding
 
@@ -10,8 +10,8 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-20, AC-26 | adversary, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | AC-26, CT-20 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | risk | CT-20, AC-26 | adversary, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | gap | AC-26, CT-20 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-3 | minor | risk | CT-20 | adversary | grounded | open |  | new, 0 |
 | J-4 | minor | gap | AC-27, CT-20 | conformance | grounded | open |  | new, 0 |
 
@@ -45,8 +45,8 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-7-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-7-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-7-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-7-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-7-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-7-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-7-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |

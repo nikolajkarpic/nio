@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-7",
   "subject": "2026-11-08-project-onboarding",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -16,7 +16,9 @@
     "R-261114-pep7/implementation-E-7-consistency.md": "8c7c67aa9273af3ba1e81bcea423ae241833839ad55f0df464df0a1e2919b464",
     "R-261114-pep7/implementation-E-7-correctness.md": "3fdac2239ea97abfd04c28366fea55e7fb4cd0efcee9b623c0dda2cba6618795",
     "R-261114-pep7/implementation-E-7-security.md": "c6e36a1f0d7ce0755da9a0d0e87565d168c00381c0539ada1aaf549d1e449322",
-    "R-261114-pep7/implementation-E-7-refuter.md": "ec8ef48b1633a1a4d13fb767be85a33efe99b7499b1ba7c0e297ec24c0cb41f2"
+    "R-261114-pep7/implementation-E-7-refuter.md": "ec8ef48b1633a1a4d13fb767be85a33efe99b7499b1ba7c0e297ec24c0cb41f2",
+    "R-261114-kmur/implementation-E-7-adversary.md": "8228e2b0d6f9cf49a4cdd55dea1794e26e4481129c1a254db581d32bc0836839",
+    "R-261114-kmur/implementation-E-7-correctness.md": "4d5cca719da795a47c4990b858be0665dc6426ea99462822a9ab4ca70abbf4b2"
   },
   "jurors": {
     "implementation-E-7-adversary": {
@@ -26,9 +28,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "714a26436c3228355c73b89dc0f64db82661ce56",
-      "judged": 1
+      "round": 2,
+      "version": "07abf048931abd52fe79ae9e3dec31d522fc29f0",
+      "judged": 2
     },
     "implementation-E-7-conformance": {
       "attempts": 1,
@@ -59,9 +61,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "714a26436c3228355c73b89dc0f64db82661ce56",
-      "judged": 1
+      "round": 2,
+      "version": "07abf048931abd52fe79ae9e3dec31d522fc29f0",
+      "judged": 2
     },
     "implementation-E-7-security": {
       "attempts": 1,
@@ -109,17 +111,18 @@
       ],
       "validation": "confirmed",
       "reason": "flow.py:1107 hardcodes \"main\" (the only such literal in src/nio), and records.git without `full` drops the exit code, so a failed merge-base gives `[]`. The `except ValueError` returns `[]` too. CT-20 says \"nothing when there are none\" but does not say a failed check should be silent, so a skipped check looks the same as AC-27's no-change case.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-74",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/flow.py:docs_close_lines",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -146,17 +149,18 @@
       ],
       "validation": "confirmed",
       "reason": "onboard.changed (onboard.py:142) runs `git diff --name-only -z <ref>` with no `--no-renames`. With git's default rename detection, `--name-only` lists only the new path, and `_feeds` holds the old path, so the filter drops it. Nothing in the artefact settles this.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-75",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/onboard.py:changed",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -232,15 +236,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "714a26436c3228355c73b89dc0f64db82661ce56"
+    "1": "714a26436c3228355c73b89dc0f64db82661ce56",
+    "2": "07abf048931abd52fe79ae9e3dec31d522fc29f0"
   },
   "matched": {
     "AC-26": [
