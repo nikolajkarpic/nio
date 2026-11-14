@@ -137,7 +137,9 @@ def _feeds(root):
 
 def changed(root, ref):
     """(path, docs it feeds) per file `git diff --name-only <ref>` lists that a project doc records (CT-11)."""
-    code, out, err = records.git(root, "diff", "--name-only", "-z", ref, full=True)  # -z: paths unquoted, like scan
+    if not ref or ref.startswith("-"):
+        raise ValueError(f"not a git ref: {ref}")  # never let a ref become a git option
+    code, out, err = records.git(root, "diff", "--name-only", "-z", "--end-of-options", ref, full=True)  # -z: paths unquoted, like scan
     if code:
         raise ValueError(f"git diff {ref} failed: {err.strip()}")
     feeds = _feeds(root)
