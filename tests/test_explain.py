@@ -670,8 +670,63 @@ def test_ac21_finish_alone_keeps_stale():
         plan.approved = keep
 
 
+def cli_in(root, *args, env=None):
+    import subprocess
+    import sys
+    code = f"import sys; sys.argv = ['nio'] + {list(args)!r}; from nio.cli import main; main()"
+    r = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True, env=env)
+    return r.returncode, r.stdout + r.stderr
+
+
+def test_ac20_topic_render_only():
+    # TC-25
+    import os
+    from test_records import repo
+    root = repo()
+    (root / ".nio/research").mkdir(parents=True, exist_ok=True)
+    (root / ".nio/research/2026-11-08-hooks-explainer.md").write_text(
+        "# Hooks\n\n## Overview\n\n```mermaid\nflowchart LR\nA --> B\n```\n\nOne walk.\n")
+    env = dict(os.environ, PATH=str(npx_bin()) + os.pathsep + os.environ["PATH"])
+    code, out = cli_in(root, "check", "explainer", ".nio/research/2026-11-08-hooks-explainer.md", env=env)
+    assert code == 0, out
+    assert "core diagram" not in out and "CT-" not in out, out
+
+
+def test_uj3_topic_not_plan():
+    # TC-42
+    from test_flow import S, effort
+    root = effort("tasking")
+    (root / ".nio/research").mkdir(parents=True, exist_ok=True)
+    (root / ".nio/research/2026-11-08-refunds-explainer.md").write_text(
+        "GOOD\n(source: .nio/specs/" + S + "/plan.md@000000000000)\n")
+    assert not (root / ".nio/specs" / S / "explainer.md").exists()
+    code, out = cli_in(root, "flow", "next", S)
+    assert "suggest:" in out, out
+    code, out = cli_in(root, "check", "explainer", S)
+    assert code == 1 and "explainer missing" in out, (code, out)
+    code, out = cli_in(root, "status")
+    assert "stale" not in out, out
+
+
+def test_ct6_topic():
+    # TC-23's CLI calls, TC-26/27 name rules
+    import datetime
+    from test_records import repo
+    root = repo()
+    day = datetime.date.today().isoformat()
+    code, out = cli_in(root, "explain", "topic", "../Auth / Tokens!")
+    assert code == 0 and out.strip() == f"new: .nio/research/{day}-auth-tokens-explainer.md", (code, out)
+    code, out = cli_in(root, "explain", "topic", "//")
+    assert code == 1 and 'error: the topic "//" gives an empty file name' in out, (code, out)
+    r = root / ".nio/research"
+    r.mkdir(parents=True, exist_ok=True)
+    (r / f"{day}-auth-tokens-explainer.md").write_text("# Auth tokens\n\n(topic: Auth tokens)\n")
+    assert explain.topic(root, "Auth tokens") == f"continue: .nio/research/{day}-auth-tokens-explainer.md"
+    assert explain.topic(root, "auth/tokens") == f"new: .nio/research/{day}-auth-tokens-explainer-2.md"
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
+    selfcheck.main([test_ac20_topic_render_only, test_uj3_topic_not_plan, test_ct6_topic, test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
                     test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines,
