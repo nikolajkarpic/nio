@@ -1,7 +1,7 @@
 ---
 gate: tasks
 subject: 2026-11-08-project-onboarding
-round: 4
+round: 5
 outcome: approved
 ---
 # Tasks jury: 2026-11-08-project-onboarding
@@ -65,4 +65,4 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| tasks-executability | executability | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 4 |
+| tasks-executability | executability | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 5 |
