@@ -14,7 +14,7 @@ outcome: rejected
 | J-2 | major | gap | CT-11, FR-23 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-3 | major | risk | CT-11 | adversary, security | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-4 | minor | ambiguity | CT-14, AC-42, AC-44 | adversary | grounded | open |  | new, 0 |
-| J-5 | major | gap | AC-23, AC-25, AC-42, AC-44 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | major | gap | AC-23, AC-25, AC-42, AC-44 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-6 | major | gap | AC-23, AC-25 | correctness | merged | merged |  | new, 0 |
 | J-7 | minor | gap | AC-23, AC-44 | correctness | grounded | open |  | new, 0 |
 | J-8 | minor | risk | CT-7, CT-8, CT-9 | security | grounded | open |  | new, 0 |
@@ -58,7 +58,7 @@ outcome: rejected
 - situation (conformance): AC-23, AC-42 and AC-44 have no test except the `@e2e` cases. AC-25's reply half (`nothing to reconcile` said and the project bytes unchanged) is likewise e2e-only. The pack's evidence has these four at `unknown`, and the suite command sets no NIO_E2E. A pass in the suite therefore says nothing about whether the skill grills only changed files, honours a decline, or drops a deleted source.
 - fix: run the four e2e tests (NIO_E2E=1) and record their results, or cover the CLI-side parts (a decline rewrites the hash, a deleted source's record dropped) with a non-e2e test.
 - validation: confirmed: tests/test_onboard_e2e.py says "Without NIO_E2E they print `skipped` and pass". The AC-23, AC-25, AC-42 and AC-44 tests (lines 407-448) are e2e-only. test_onboard.py has no non-e2e test for a decline rewriting the hash or a deleted source's record being dropped.
-- disposition: fix-task by agent: fix task T-74
+- disposition: accepted-risk by human: Standing ruling 2026-11-14: AC-23/25/42/44 e2e tests passed with NIO_E2E=1 at T-70's recorded green (commit 539385e); jury evidence runs without NIO_E2E
 
 ### J-6 `reconciled` marks unreached new files as seen
 - quote: "st["seen"] = [list(e) for e in scan(root) if e[0] != "secrets"]"
