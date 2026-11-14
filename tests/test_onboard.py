@@ -525,6 +525,62 @@ def test_backup_keeps_first_copy():
     assert sorted(p.relative_to(root) for p in (root / ".nio/backup").rglob("*")) == before
 
 
+def test_six_docs_with_headings():
+    from nio import onboard
+    root = repo({})
+    assert nio(root, "start").returncode == 0
+    d = root / ".nio/project"
+    tpl = Path(__file__).parent.parent / "src/nio/templates/project"
+    for doc in onboard.DOCS:
+        text = (tpl / f"{doc}.md").read_text().replace("NEEDS CLARIFICATION", "answered")
+        if doc == "personas":
+            text = text.replace("Who:", "Who: a dev").replace("Wants:", "Wants: speed").replace("Allowed to:", "Allowed to: all").replace("How often:", "How often: daily")
+        (d / f"{doc}.md").write_text(text)
+    stack = (d / "stack.md").read_text()
+    (d / "stack.md").write_text(stack.replace("## Commands", ""))
+    r = nio(root, "confirm", "stack")
+    assert r.returncode == 1 and "Commands" in r.stdout + r.stderr, (r.stdout, r.stderr)
+    assert onboard.progress(root)["confirmed"] == []
+    (d / "stack.md").write_text(stack)
+    persona = (d / "personas.md").read_text()
+    (d / "personas.md").write_text(persona.replace("### P-", "### Q-"))
+    r = nio(root, "confirm", "personas")
+    assert r.returncode == 1 and "no persona entry" in r.stdout + r.stderr, (r.stdout, r.stderr)
+    (d / "personas.md").write_text(persona)
+    for doc in onboard.DOCS:
+        r = nio(root, "confirm", doc)
+        assert r.returncode == 0, (doc, r.stdout, r.stderr)
+    assert onboard.progress(root)["state"] == "done"
+    want = {"product": ["What it does", "Users", "Main flows", "Non-goals", "Glossary"],
+            "stack": ["Languages", "Dependencies", "Commands", "CI"],
+            "architecture": ["Modules", "Boundaries", "Data flow"],
+            "infra": ["Cloud provider", "Deployables", "Eventing and queues", "Storage", "Secrets", "Environments", "Deploys"],
+            "principles": ["Principles"]}
+    for doc, hs in want.items():
+        text = (d / f"{doc}.md").read_text()
+        for h in hs:
+            assert f"## {h}" in text, (doc, h)
+    text = (d / "personas.md").read_text()
+    for x in ("### P-1", "Who:", "Wants:", "Allowed to:", "How often:"):
+        assert x in text, x
+
+
+def test_fact_names_file_and_hash():
+    from nio import onboard
+    root = repo({"pyproject.toml": "[project]\nname='x'\n"})
+    code, out = scan(root)
+    h = next(l.split()[2] for l in out.splitlines() if l.split()[1:2] == ["pyproject.toml"])
+    line = f"- Python 3.12 (source: pyproject.toml@{h})"
+    d = root / ".nio/project"
+    d.mkdir(parents=True)
+    (d / "stack.md").write_text("# Stack\n\n## Languages\n" + line + "\n")
+    assert hasattr(onboard, "stale"), "onboard.stale missing"
+    assert onboard.stale(root) == []
+    assert onboard.SOURCE.findall(line) == [("pyproject.toml", h)]
+    (root / "pyproject.toml").write_text("changed\n")
+    assert onboard.stale(root) == [("stack.md", "pyproject.toml", "changed")]
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -535,4 +591,4 @@ if __name__ == "__main__":
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
-                    test_backup_keeps_first_copy])
+                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash])
