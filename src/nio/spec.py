@@ -213,6 +213,12 @@ def check(root, slug, gate=False, base="HEAD"):
     if not isinstance(risk, list) or any(not isinstance(r, str) or r not in RISKS for r in risk):
         errs.append(f"`risk` must be a list from {sorted(RISKS)}, or []")
         risk = [r for r in risk if isinstance(r, str) and r in RISKS] if isinstance(risk, list) else []
+    have = sorted(onboard.progress(root).get("apps") or {})
+    if have and "apps" in meta:
+        named = meta["apps"] if isinstance(meta["apps"], list) else []
+        if not named:
+            errs.append(f"spec names no app; the project has apps: {', '.join(have)}")
+        errs += [f"app {a} has no project docs (.nio/project/{a}/)" for a in named if not (root / ".nio/project" / str(a)).is_dir()]
     retired = meta.get("retired") or []
     if not isinstance(retired, list) or any(not isinstance(r, str) or not re.fullmatch(r"[A-Z]+-\d+", r) for r in retired):
         errs.append("`retired` must be a list of IDs, e.g. [FR-3, OP-1]")

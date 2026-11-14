@@ -3,6 +3,7 @@ slug: <slug>
 route: full
 epic: ""                         # "<epic slug>/R-<n>" when this is a slice of an epic
 risk: []                         # auth | pii | money | external-input | data-deletion | migration | multi-party | public-api
+apps: []                       # the apps this spec touches, when the project has docs per app
 retired: []                      # IDs removed from this spec; never reused
 ---
 <!-- Spec template. WHAT and WHY only, never HOW. Every item ends with its provenance: [human] (the grill

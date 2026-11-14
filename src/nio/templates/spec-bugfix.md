@@ -2,6 +2,7 @@
 slug: <slug>
 route: lite
 risk: []                         # auth | pii | money | external-input | data-deletion | migration | multi-party | public-api
+apps: []                       # the apps this spec touches, when the project has docs per app
 retired: []
 ---
 <!-- Bugfix spec (Kiro's three sections). Unchanged behaviour is never empty: it is the regression guard.
