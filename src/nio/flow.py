@@ -922,6 +922,9 @@ def next_step(root, slug=None, by=None):
     if here["status"] == "working":
         out = [f"effort: {slug}", f"state: {here['stage']} (working{': ' + here['why'] if here['why'] else ''})",
                f"skill: {here['skill']}", f"next: run {typed(here['skill'])}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}"]
+        d = root / ".nio/specs" / slug
+        if here["stage"] in ("tasking", "tasks_jury", "implementing") and (d / "plan.md").exists() and not (d / "explainer.md").exists():
+            out.append(f"suggest: run {typed('@nio:explain')} for {slug} (no explainer.md yet)")
         out += [f"task: {here['task']}"] * bool(here["task"])
         label = "claim" if here["command"].startswith("nio flow claim") else "done"
         out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines)]

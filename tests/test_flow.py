@@ -1737,6 +1737,21 @@ def test_ac34_next_resumes():
     print("ok")
 
 
+def test_ac24_suggests_explain():
+    """TC-32: once the plan gate is approved, next adds one `suggest:` line naming @nio:explain and the slug."""
+    out = nxt(effort("tasking"))
+    sug = [x for x in out.splitlines() if x.startswith("suggest:")]
+    assert len(sug) == 1 and "nio:explain" in sug[0] and S in sug[0], out
+    print("ok")
+
+
+def test_ac25_no_suggestion_open_gate():
+    """TC-33: while the plan gate is open, next never mentions nio:explain."""
+    out = nxt(effort("plan_jury"))
+    assert "nio:explain" not in out, out
+    print("ok")
+
+
 def shipped(root, slug):
     """An effort the human passed to done before the pr gate existed."""
     history(root, slug, {"kind": "override", "from": "implementing", "to": "done", "reason": "shipped by hand"})
