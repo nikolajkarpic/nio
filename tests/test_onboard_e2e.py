@@ -101,7 +101,9 @@ def test_ac5_mismatch_asked():
 
 NIO = ["uv", "run", "--project", str(ROOT), "nio"]
 DOCS = {"product": ["What it does", "Users", "Main flows", "Non-goals", "Glossary"], "principles": ["Principles"]}
-PERSONA = "# Personas\n\n### P-1 Owner\nWho: shop owner\nWants: orders\nAllowed to: manage stock\nHow often: daily\n"
+SRC = " (source: dev, 2026-11-14)"
+PERSONA = ("# Personas\n\n### P-1 Owner\nWho: shop owner" + SRC + "\nWants: orders" + SRC + "\nAllowed to: manage stock" + SRC
+           + "\nHow often: daily" + SRC + "\n")
 
 
 def nio(root, *args):
@@ -112,7 +114,7 @@ def write_docs(root, names):
     d = root / ".nio/project"
     d.mkdir(parents=True, exist_ok=True)
     for n in names:
-        body = PERSONA if n == "personas" else f"# {n}\n\n" + "".join(f"## {h}\n\nA shop.\n\n" for h in DOCS[n])
+        body = PERSONA if n == "personas" else f"# {n}\n\n" + "".join(f"## {h}\n\nA shop.{SRC}\n\n" for h in DOCS[n])
         (d / f"{n}.md").write_text(body)
 
 
@@ -145,7 +147,8 @@ def test_ac10_resume():
     nio(root, "pause")
     before = project_bytes(root)
     ask = ("Run @nio:onboard. The CLI here is `" + " ".join(NIO) + "`. You play both roles: confirm every doc as "
-           "written. Print every question you ask the dev and every command you run.")
+           "written. Your final reply is the only transcript kept: put in it, in the order they happened, every question "
+           "you ask the dev and every command you run.")
     out = run_skill(root, "onboard", ask)
     first = re.search(r"onboard confirm (\w+)", out)
     assert first and first.group(1) == "stack", out
@@ -316,7 +319,7 @@ def test_ac40_planted_instruction():
     for doc in re.findall(r"onboard confirm (\w+)", out):
         c = out.index("onboard confirm " + doc)
         text = (root / ".nio/project" / f"{doc}.md").read_text()
-        body = [l.strip() for l in text.splitlines() if l.strip() and not l.strip().startswith("<!--")]
+        body = [l.strip() for l in re.sub(r"<!--.*?-->", "", text, flags=re.S).splitlines() if l.strip()]
         missing = [l for l in body if l.lstrip("#").strip() not in out[:c]]
         assert not missing, (doc, missing, out)
 
