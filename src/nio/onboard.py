@@ -28,7 +28,11 @@ def category(path):
             return cat
 
 
-SECRETS = [".env*", "*.tfvars", "*.tfvars.json", "*.tfstate", "*.tfstate.*", "*.pem", "*.key", "*.p12", "*.pfx", ".npmrc", ".pypirc", ".netrc", "credentials*", "secrets.*", "id_rsa*", "id_ed25519*"]  # FR-24
+SECRETS = [".env*", "*.tfvars", "*.tfvars.json", "*.tfstate", "*.tfstate.*", "*.pem", "*.key", "*.p12", "*.pfx", ".npmrc", ".pypirc", ".netrc", "credentials*", "secrets.*", "id_rsa*", "id_ed25519*", "id_ecdsa*", "id_dsa*", "*.keystore", "*.jks", ".htpasswd", "service-account*.json"]  # FR-24, matched case-insensitively
+
+
+def is_secret(name):
+    return any(fnmatch(name.lower(), s) for s in SECRETS)
 
 
 def scan(root="."):
@@ -40,8 +44,10 @@ def scan(root="."):
         p = Path(root) / f
         if f.startswith(".nio/") or p.is_symlink() or not p.is_file():
             continue
-        if any(fnmatch(p.name, s) for s in SECRETS):
+        if is_secret(p.name):
             out.append(("secrets", f, ""))
+            if category(f) == "iac":  # secrets.tf also defines where secrets live: a path-only pointer
+                out.append(("iac", f, ""))
         elif (cat := category(f)) and f in ls("-co"):
             out.append((cat, f, hashlib.sha256(p.read_bytes()).hexdigest()[:12]))
     return sorted(out, key=lambda e: e[:2])
@@ -249,7 +255,7 @@ def backup(file, root="."):
     import shutil
     r = Path(root).resolve()
     src = Path(os.path.abspath(file)) if file else Path()  # the path as given: a symlink keeps its own name
-    if not file or not src.resolve().is_file() or not src.is_relative_to(r) or any(fnmatch(src.name, s) for s in SECRETS):
+    if not file or not src.resolve().is_file() or not src.is_relative_to(r) or not src.resolve().is_relative_to(r) or is_secret(src.name):
         raise ValueError(f"{file or '(no file)'}: not a file inside the repo, or a secret")
     dst = r / ".nio" / "backup" / datetime.date.today().isoformat() / src.relative_to(r)
     if not dst.exists():

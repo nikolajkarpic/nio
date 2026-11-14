@@ -64,6 +64,25 @@ def test_scan_more_secret_names():
     assert not [l for l in lines if not l.startswith("secrets") and any(n in l for n in names)], out
 
 
+def test_scan_more_secret_patterns():
+    names = ["id_ecdsa", "id_dsa", "a.keystore", "b.jks", ".htpasswd", "service-account-x.json", "Credentials.json", ".ENV"]
+    root = repo(dict.fromkeys(names, "s") | {"secrets.tf": "x"})
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    lines = scan(root)[1].strip().splitlines()
+    assert sorted(l for l in lines if l.startswith("secrets")) == sorted(f"secrets {n}" for n in names + ["secrets.tf"]), lines
+    assert [l for l in lines if l.startswith("iac")] == ["iac secrets.tf"], lines
+
+
+def test_backup_refuses_symlink_out_of_repo():
+    root = repo({"a": "x"})
+    outside = Path(tempfile.mkdtemp()) / "o.txt"
+    outside.write_text("x")
+    (root / "L.md").symlink_to(outside)
+    r = nio(root, "backup", "L.md")
+    assert r.returncode != 0, r.stdout
+    assert not (root / ".nio/backup").exists()
+
+
 def test_scan_skips_symlink():
     outside = Path(tempfile.mkdtemp()) / "README.md"
     outside.write_text("outside")
@@ -698,7 +717,7 @@ def test_backup_failed_copy_leaves_no_partial():
 
 
 if __name__ == "__main__":
-    selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
+    selfcheck.main([test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
