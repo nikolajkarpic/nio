@@ -575,9 +575,9 @@ retired: [T-8, T-11, T-17, T-20, T-24]
 
 ### T-74 Fix: A failed merge-base is reported as "no source changed"
 - From: J-1 (implementation-E-7, round 1)
-- Files: `src/nio/flow.py`
+- Files: `src/nio/flow.py`, `tests/test_onboard.py`
 - Serves: CT-20, AC-26
-- Test: TC-44
+- Test: new: when the merge base can't be found (no `main`, trunk named otherwise, or the branch missing), the last epic's close prints `project docs: not checked (<reason>)` instead of nothing; a trunk named `master` is used when `main` doesn't exist (CT-20, AC-26)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
@@ -586,9 +586,9 @@ retired: [T-8, T-11, T-17, T-20, T-24]
 
 ### T-75 Fix: A renamed source is not caught
 - From: J-2 (implementation-E-7, round 1)
-- Files: `src/nio/onboard.py`
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
 - Serves: AC-26, CT-20
-- Test: TC-44
+- Test: new: a recorded source renamed on the effort branch (`pyproject.toml` to `app/pyproject.toml`) is listed by `onboard.changed(root, ref)` under its old path (CT-11, AC-26)
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
