@@ -66,6 +66,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 5. **Confirm.** Show the dev the doc's full text, every line as it is in the file, and ask for a yes. Never run
    `nio onboard confirm` on a doc whose full text you haven't shown in this session, even one you expect it to refuse.
    Only on their yes in this session run `nio onboard confirm <doc>` (with apps: `nio onboard confirm <doc> --app <app>`).
+   The CLI refuses a doc with a fact line lacking a source record, or any line holding a secret-looking value (it names the line, never the value): fix the line and ask again.
    It prints `next: <doc>`; go back to step 2, or `done` ends onboarding.
 6. **Repo docs.** When a repo doc is stale against what the dev confirmed, offer a patch with its text shown. Only on
    a yes, run `nio onboard backup <file>`, then apply it. A patched file feeds its docs: after applying, run `nio onboard scan` again and use the patched file's new hash as the source in every doc that cites it (write or rewrite those docs after the patch, so no doc keeps the old hash). Offer the patch as soon as the grill finds the stale claim, before writing the doc it feeds.

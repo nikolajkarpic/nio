@@ -72,6 +72,29 @@ def check_doc(doc, text):
 SOURCE = re.compile(r"\(source: ([^@()\s]+)@([0-9a-f]{12})\)")
 
 
+SECRET = re.compile(r"ghp_|github_pat_|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY|xox[bp]-|\bsk-[A-Za-z0-9_-]{8,}")
+DEV_SOURCE = re.compile(r"\(source: dev, [^()]+\)")
+
+
+def check_facts(text):
+    """The first secret-looking line, or fact line without a source record (CT-4); never prints a value."""
+    note, miss = "", ""
+    for n, l in enumerate(text.splitlines(), 1):
+        if SECRET.search(l):
+            return f"line {n} holds a secret-looking value: remove it"
+        s = l.strip()
+        if s.startswith("<!--"):
+            note = "" if "-->" in s else "1"
+            continue
+        if note:
+            note = "" if "-->" in s else note
+            continue
+        if s and not s.startswith("#") and s != "NEEDS CLARIFICATION" and not miss \
+                and not (SOURCE.search(s) or DEV_SOURCE.search(s)):
+            miss = f"line {n} has no (source: ...) record: add one or mark it NEEDS CLARIFICATION"
+    return miss
+
+
 def stale(root="."):
     """(doc, source path, "changed" | "deleted") per recorded source whose file differs or is gone (CT-7)."""
     root, seen, out = Path(root), {}, []
@@ -166,6 +189,8 @@ def act(action, reason="", doc="", empty=False, root=".", apps=None, app=""):
     text = f_doc.read_text()
     if lack := check_doc(doc, text):
         raise ValueError(f"{full}.md lacks: {', '.join(lack)}")
+    if bad := check_facts(text):
+        raise ValueError(f"{full}.md: {bad}")
     if "NEEDS CLARIFICATION" in text:
         raise ValueError(f"{full}.md still has NEEDS CLARIFICATION: answer it first")
     st["confirmed"] = sorted(set(st["confirmed"]) | {full})

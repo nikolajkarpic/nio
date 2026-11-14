@@ -205,7 +205,7 @@ def test_state_table_cells():
             d = root / ".nio/project"
             tpl = Path(__file__).parent.parent / "src/nio/templates/project"
             for n in ("product", "personas", "principles"):
-                (d / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled"))
+                (d / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled (source: dev, 2026-11-14)"))
                 nio(root, "confirm", n)
         return root
     cells = {
@@ -330,7 +330,7 @@ def test_confirm_checks_docs_and_finishes():
     assert r.returncode == 1, (r.stdout, r.stderr)
     tpl = Path(__file__).parent.parent / "src/nio/templates/project"
     for n in ("product", "personas", "principles"):
-        (d / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled"))
+        (d / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled (source: dev, 2026-11-14)"))
         r = nio(root, "confirm", n)
         assert r.returncode == 0, (n, r.stdout, r.stderr)
     assert "done" in r.stdout, r.stdout
@@ -340,6 +340,24 @@ def test_confirm_checks_docs_and_finishes():
         nio(root, *a.split())
     assert json.loads((d / "onboarding.json").read_text())["state"] == "done"
     assert newspec(root, "full").returncode == 0
+
+
+def test_confirm_refuses_missing_source_and_secret():
+    root = repo({"README.md": "hi\n"})
+    d = root / ".nio/project"
+    assert nio(root, "start", "--empty").returncode == 0
+    tpl = Path(__file__).parent.parent / "src/nio/templates/project"
+    base = (tpl / "product.md").read_text().replace("NEEDS CLARIFICATION", "x (source: dev, 2026-11-14)")
+    (d / "product.md").write_text(base.replace("x (source: dev, 2026-11-14)", "no record", 1))
+    r = nio(root, "confirm", "product")
+    assert r.returncode == 1 and "line 5" in r.stdout + r.stderr and "source" in r.stdout + r.stderr, (r.stdout, r.stderr)
+    key = "ghp_" + "a" * 36
+    (d / "product.md").write_text(base.replace("x (source: dev, 2026-11-14)", f"k {key} (source: dev, 2026-11-14)", 1))
+    r = nio(root, "confirm", "product")
+    out = r.stdout + r.stderr
+    assert r.returncode == 1 and "line 5" in out and "secret" in out and key not in out, (r.stdout, r.stderr)
+    (d / "product.md").write_text(base)
+    assert nio(root, "confirm", "product").returncode == 0
 
 
 def test_onboard_from_subdirectory_uses_repo_root():
@@ -551,7 +569,7 @@ def test_six_docs_with_headings():
     d = root / ".nio/project"
     tpl = Path(__file__).parent.parent / "src/nio/templates/project"
     for doc in onboard.DOCS:
-        text = (tpl / f"{doc}.md").read_text().replace("NEEDS CLARIFICATION", "answered")
+        text = (tpl / f"{doc}.md").read_text().replace("NEEDS CLARIFICATION", "answered (source: dev, 2026-11-14)")
         if doc == "personas":
             text = text.replace("Who:", "Who: a dev").replace("Wants:", "Wants: speed").replace("Allowed to:", "Allowed to: all").replace("How often:", "How often: daily")
         (d / f"{doc}.md").write_text(text)
@@ -624,7 +642,7 @@ def test_apps_start_and_confirm():
     tpl = Path(__file__).parent.parent / "src/nio/templates/project"
     for a in ("web", "api"):
         for n in ("product", "personas", "principles"):
-            (d / a / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled"))
+            (d / a / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled (source: dev, 2026-11-14)"))
             r = nio(root, "confirm", n, "--app", a)
             assert r.returncode == 0, (a, n, r.stdout, r.stderr)
     assert "done" in r.stdout and json.loads((d / "onboarding.json").read_text())["state"] == "done"
@@ -721,7 +739,7 @@ if __name__ == "__main__":
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
-                    test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes,
+                    test_skip_lets_spec_start, test_skip_stays_visible, test_confirm_checks_docs_and_finishes, test_confirm_refuses_missing_source_and_secret,
                     test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed,
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
