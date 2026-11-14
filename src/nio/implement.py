@@ -566,9 +566,9 @@ def closes(root, slug, task, lines):
 def review(root, slug, task, lines):
     """The review line of a green task, checks only and no model call (CT-8, FR-14, FR-15, FR-17, FR-25, FR-36), in the
     order of the decision table Review; the first failing row decides. Files outside the task's list are recorded:
-    changed, and in neither `Files:` nor the red line's `frozen`. Tests beyond the task's own run only for the task
-    closing an epic, so that task answers for a failure any of the epic's tasks caused: `tests.epic` when set, and the
-    full suite for the last epic or when it isn't."""
+    changed, and in neither `Files:` nor the red line's `frozen`. The task closing an epic also re-runs the own test of
+    every task of the epic (each one's green command), so it answers for a failure any of them caused; no whole suite
+    runs here: it runs once, at the pr gate (2026-11-14-effort-jury FR-1, D-261106-ltsr)."""
     tid = task["id"]
     mine = since_claim(lines, tid)
     # a wave task's changes are applied on HEAD, which may hold a sibling's commit since its claim (CT-5)
@@ -580,31 +580,21 @@ def review(root, slug, task, lines):
                if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
     reasons = reasons or [f"{p} changed since red" for p, h in frozen.items() if digest(root, p) != h]
     new, still, ran = [], [], {}
-    # #66: the full suite took about half the worker time on every task; the task's own test already ran at green
-    epic_closes, all_close = closes(root, slug, task, lines)
-    if not reasons and epic_closes:
-        base = next((x["evidence"] for x in reversed(lines) if x["kind"] == "baseline"), {})
-        cfg = records.config(root)
-        quick = None if all_close else (cfg.get("tests") or {}).get("epic")  # a slow suite runs in full only at the end
-        r = suite(root, cfg, quick)
-        ran = {"suite": {"command": r["command"], "code": r["code"]}}
-        if r["broken"]:
-            reasons.append(f"the suite is broken: {r['cause'] or wrong_reason(r['runner'], r['code'], r['output'])}")
-        elif r["runner"] == "self-check" and r["code"] and not r["failing"]:
-            reasons.append(f"new failure: the suite exits {r['code']} and names no failing test")
-        # ponytail: counts tracebacks against FAIL lines; a test that prints a traceback of its own can mask a crash
-        elif r["runner"] == "self-check" and r["code"] and \
-                r["output"].count("Traceback (most recent call last)") > len(r["failing"]):
-            reasons.append(f"new failure: the suite exits {r['code']} and a file crashed before its result lines")
-        elif r["runner"] is None or r["failing"] is None:
-            if r["code"] != 0:
-                reasons.append(f"new failure: the suite exits {r['code']} and its runner is unknown")
-        new = [f for f in r["failing"] or [] if f not in (base.get("failing") or [])]
-        still = [f for f in r["failing"] or [] if f in (base.get("failing") or [])]
-        if new:
-            reasons.append("new failures: " + ", ".join(new))
-        if not quick and r["collected"] is not None and base.get("collected") is not None and r["collected"] < base["collected"]:
-            reasons.append(f"{r['collected']} tests collected against the baseline's {base['collected']}")
+    # #66: the task's own test already ran at green; the epic's close re-runs its tasks' own tests, never the suite
+    if not reasons and closes(root, slug, task, lines)[0]:
+        mine = {t["id"] for t in tasks_of(root, slug) if t["epic"] == task["epic"]}
+        latest = {x["evidence"]["task"]: x["evidence"]["command"] for x in lines if x["kind"] == "green" and x["evidence"].get("task") in mine}
+        cmds = dict.fromkeys(latest.values())  # each task's latest green only: an earlier claim's command may be obsolete
+        ran = {"epic_tests": []}
+        for command in cmds:
+            code, out_, cause = run(root, command, limit(root))
+            ran["epic_tests"].append({"command": command, "code": code})
+            if code != 0:
+                name = runner(command, out_)
+                named = re.findall(SUMMARY[name][0], out_, re.M) if name in SUMMARY else []
+                new += named
+                reasons.append(f"an epic task's own test fails: {command}" + (f" ({cause})" if cause else "")
+                               + (f": {', '.join(named)}" if named else ""))
     out = [p for p in outside(slug, paths) if p not in task["files"] and p not in frozen]
     return entry("review", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out, **ran)
 
@@ -662,10 +652,10 @@ def commits_of(root, slug):
 
 def epic_end(root, slug, task, review):
     """CT-13 (FR-27 to FR-31): after the task's `task_done` line, when every task of its epic (fix tasks included) is
-    done and its review found no new failure: no line is written (`nio flow done implementation-E-n` writes `epic`
-    and `pass`, CT-17). Returns ([], the report: each done task with its commit, the files outside
-    each task's list, the baseline failures still failing, a `notify:` line ); ([], [])
-    otherwise. The task being committed has no commit yet: its line names THIS."""
+    done and its review found no failing own test, the epic closes with no jury (2026-11-14 FR-1). Returns (the lines
+    owed: the `pass` to the pr gate once nothing is left, else none; the report: each done task with its commit, the
+    files outside each task's list, the `next:` and `notify:` lines); ([], []) otherwise. The task being committed has
+    no commit yet: its line names THIS."""
     ev = review.get("evidence") or {}
     lines = flow.load(root, slug)[1]
     st, ts = status(root, slug, lines), tasks_of(root, slug)
@@ -680,9 +670,12 @@ def epic_end(root, slug, task, review):
     for t in mine:
         report.append(f"  {t['id']} {THIS if t['id'] == task['id'] else shas.get(t['id'], '(no commit found)')} {t['title']}")
         report += [f"  outside {t['id']}'s files: {p}" for p in (reviews.get(t["id"]) or {}).get("outside", [])]
-    report += [f"  baseline failure still failing: {f}" for f in ev.get("still") or []]
-    report += [f"next: run @nio:jury on implementation-{eid}", f"notify: the human: {eid} is finished; its epic gate is open"]
-    return [], report
+    if left(root, slug, lines):  # FR-1: the epic closed on its tasks' own tests; the next epic's tasks follow
+        return [], report + [f"next: nio flow claim {slug}"]
+    # the last task of the last epic: the effort moves to the pr gate, a new unit in a fresh driver (FR-2, FR-8)
+    return [{"kind": "pass", "from": "implementing", "to": "pr", "evidence": {"paths": [f".nio/specs/{slug}/tasks.md"]}}], \
+        report + [f"next: end this unit; the pr gate runs in a fresh driver started from `nio flow brief {slug}` alone",
+                  f"notify: the human: every task of {slug} is done; the pr gate judges the whole effort diff next"]
 
 
 NEEDS = {"split": "red, green and review", "single": "red, green and review", "direct": "green and review"}
@@ -690,23 +683,30 @@ NEEDS = {"split": "red, green and review", "single": "red, green and review", "d
 
 def left(root, slug, lines):
     """What keeps implementing's guard from passing (CT-14): each task not done with what it still needs, then each
-    epic with no `epic` line; [] when the stage is finished."""
+    epic still in its old implementation jury with no `epic` line; [] when the stage is finished."""
     st, ts = status(root, slug, lines), tasks_of(root, slug)
     needs = {"red": "green and review", "green": "its review", "blocked": "the human to unblock it"}
     out = [f"{t['id']} is {st[t['id']]}: needs {needs.get(st[t['id']], NEEDS[t['mode']])}" for t in ts if st[t["id"]] != "done"]
     shut = {x["evidence"].get("epic") for x in lines if x["kind"] == "epic"}
-    return out + [f"{e} has no epic line" for e in dict.fromkeys(t["epic"] for t in ts) if e not in shut]
+    return out + [f"{e} has no epic line" for e in dict.fromkeys(t["epic"] for t in ts) if e not in shut and in_jury(root, slug, e)]
+
+
+def in_jury(root, slug, epic):
+    """An epic already in its old implementation jury when per-epic gates went away: its ledger has a round. It finishes
+    that jury, findings kept; any other epic closes on its tasks' own tests (2026-11-14-effort-jury FR-12)."""
+    from nio import jury
+    return bool(jury.load(root, slug, f"implementation-{epic}")["round"])
 
 
 def open_gate(root, slug, lines):
-    """The first epic whose tasks are all done and that has no `epic` line (an old skipped one counts as closed): its gate
-    is open (CT-17); None when there is none, or when an earlier epic has work left (a fix task reopened it)."""
+    """The first epic whose tasks are all done, with no `epic` line, still in its old implementation jury: its gate is
+    open (CT-17); None when there is none, or when an earlier epic has work left (a fix task reopened it)."""
     st, ts = status(root, slug, lines), tasks_of(root, slug)
     shut = {x["evidence"].get("epic") for x in lines if x["kind"] == "epic"}
     for e in dict.fromkeys(t["epic"] for t in ts):
         if any(st[t["id"]] != "done" for t in ts if t["epic"] == e):
             return None
-        if e not in shut:
+        if e not in shut and in_jury(root, slug, e):
             return e
     return None
 

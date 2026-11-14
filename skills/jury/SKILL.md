@@ -1,6 +1,6 @@
 ---
 name: jury
-description: Take a settled NIO spec, or its plan, to a verdict. Independent lens subagents judge it, the refuter validates their findings, and `nio jury` composes the outcome. Use after @nio:grill or @nio:plan finishes, when the human asks to run the jury, judge or approve a spec or a plan, or to continue a jury after fixes.
+description: Take a settled NIO spec, its plan, its tasks, or a finished effort's whole diff (the pr gate) to a verdict. Independent lens subagents judge it, the refuter validates their findings, and `nio jury` composes the outcome. Use after @nio:grill or @nio:plan finishes, when the human asks to run the jury, judge or approve a spec or a plan, or to continue a jury after fixes.
 ---
 
 # @nio:jury
@@ -43,8 +43,8 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Drivers and waiting
 
-An effort runs one unit of work at a time: one gate (spec, plan or tasks), or one epic with its tasks and its
-implementation jury. Each unit runs in a **driver**, a fresh agent that runs that one unit and then ends. The main
+An effort runs one unit of work at a time: one gate (spec, plan, tasks or pr), or one epic with its tasks; the
+pr gate, on the whole effort diff, is always its own unit, so its driver built none of the effort. Each unit runs in a **driver**, a fresh agent that runs that one unit and then ends. The main
 session, the one the human talks to, only routes.
 
 **The main session** does only this:
@@ -168,7 +168,7 @@ wait for it like this:
 ## At the round cap
 
 Every gate stops after `jury.max_rounds` rounds (in `.nio/config.json`, default 2; anything but a whole number of at
-least 1 stops the step with an error). The implementation gate counts per epic. Below the cap nothing changes: only a
+least 1 stops the step with an error). The pr gate counts its own rounds; an old implementation gate counts per epic. Below the cap nothing changes: only a
 confirmed blocker starts another round. When a round at or over the cap ends with findings open, the step decides:
 - **two or more confirmed blockers, the first time:** one automatic round, on those blockers' lenses only. The outcome
   is `rejected`: dispose and fix as usual, then call the step again; it starts that round by itself. Never a second one;
@@ -180,7 +180,7 @@ confirmed blocker starts another round. When a round at or over the cap ends wit
   raised it check the fix once). Record each answer, one call per ruling, with their words as the note:
   `nio jury rule <slug> <gate> J-a,J-b accept|fix|again --note "<their words>"`. It is refused while a round runs or
   before the cap. For `fix` and `again`, the driver makes the fix, never the main session: it edits the spec, plan or
-  tasks (at the implementation gate the ruling appends the fix task; run it through the implement stage: the gate
+  tasks (at the pr gate the ruling appends the fix task; run it through the implement stage: the gate
   waits until it is done). Until the artefact differs from the version the capped round judged, the step prints
   `waiting: edit the <gate> for J-a (ruled fix by the human)` and `nio flow brief` lists the owed fixes, and the gate
   doesn't close. Then call the step again: while a finding of
@@ -218,28 +218,39 @@ the estimate, commit `tasks.md` and the tasks verdict record as one `nio: approv
 --approved` is what the implement stage reads. Fix tasks appended under `#### Fixes` later, and fix tasks retired with
 `nio task retire <slug> T-n --reason "<why>" --by <human|agent>`, don't withdraw it; the retired task's finding closes as accepted risk.
 
-## At the implementation gate
+## At the pr gate
 
-Run this for one epic (`implementation-E-n`) once every task of it is done. The lenses judge the epic's diff and its
-test results, not the spec text alone. In order:
-1. Run `nio jury next <slug> implementation-E-n`. It starts the run and says to run
-   `nio jury evidence <slug> E-n --run <run>`, which runs the epic's tests, checks, attacks and journeys in a throwaway
-   copy and writes the run's `results.json`. Over the cap, show the human the planned runs and let them pick, then call
-   again with `--pick <lens,lens>`. Conformance and correctness always run.
-2. Run `nio jury next <slug> implementation-E-n --run <run>`: it writes each lens its pack. Then loop as in step 2
-   above until it prints an outcome, running the refuter when it says so.
-3. When the outcome is `approved` or the human closed the gate, run the `nio flow done implementation-E-n <slug> --by
-   "<role / host / model>"` command the step prints.
+An epic closes when its tasks are done: the task closing it re-runs its tasks' own tests, with no jury. Once every task
+is done, the effort is at the `pr` gate, the one implementation jury of the effort, on the whole effort diff
+(`main...HEAD`, where main is the remote's default branch: commits made outside the flow included). It is its own unit:
+run it only in a fresh driver started from `nio flow brief <slug>` alone, never in the driver that built the tasks. In
+order:
+1. Run `nio jury next <slug> pr`. It pushes `nio/<slug>` and opens its pull request (or reuses the open one), then says
+   to run `nio jury evidence <slug> pr --run <run>`, which runs the whole test suite once, the checks, attacks and
+   journeys in a throwaway copy. A failing suite is an ordinary finding, with a fix task like any other. Correctness,
+   conformance, adversary, consistency and integration always run, plus the lenses the spec's risk flags add; the cap
+   is `jury.max_runs`, 7 by default here.
+2. Run `nio jury next <slug> pr --run <run>`: it writes each lens its pack. Over `jury.split_lines` changed lines (1,500
+   by default; exactly 1,500 is not over), every lens but integration gets one pack per epic (`<lens>~E1`, ...) plus
+   one, `<lens>~rest`, for the commits outside any epic (out-of-flow ones and the `PR fixes` epic), all run in
+   parallel; integration gets the whole change at summary level: the stat of every changed file, then the full diff
+   of the files two or more parts touch. Loop as in step 2 above until it prints an outcome.
+3. Each recorded outcome edits the pull request's one verdict comment (posted the first time), whose first word is
+   `APPROVED` or `REQUEST_CHANGES`, then the head commit judged, the verdict and the findings: fixed, open, ruled by
+   the human, closed by the system. Show the human that outcome in one message. A push, pull request or comment that
+   fails stops the step with a message naming it; tell the human, the gate stays open. A verdict comment that failed
+   waits: the gate can't be approved until it is posted, and the next `nio jury next <slug> pr` posts it again.
+4. **rejected:** the confirmed findings' fix tasks go into the closing `PR fixes` epic, made on the first one. End the
+   unit: they are built through @nio:implement, and once they are done the next `nio jury next <slug> pr` (a fresh
+   driver again) pushes, which updates the pull request, and runs the gate's fix check. The round cap applies as above.
+5. **approved,** or closed by the human's rulings: stop. Only the human approves the gate, at a terminal, with
+   `nio flow approve <slug>` (it types the slug back); `nio flow done pr` refuses everyone, whatever the auto flag.
+   It refuses while a finding is unruled, or once a commit lands after the head the verdict judged (stale: run the
+   step again). Merging the pull request records nothing; nio never merges.
 
-Other outcomes:
-- **rejected:** the epic goes back to the implement stage. Its fix tasks are appended under `#### Fixes`; run
-  `nio flow next <slug>` and show the human its `next:` line. A finding whose ACs `tasks.md` serves only in a later
-  epic not built yet gets no fix task: the system closes it out of scope, naming the serving task, and the gate summary
-  (`closed by the system:`) lists it. Show it to the human as one line.
-- **waiting on a change request:** the epic waits. Show the human each change request and wait for their ruling on
-  each one before you call the step again.
-- **a noted major:** a major the jury raised after the first review is a note, not a blocker. Show it to the human, who
-  decides whether it goes to a fix. Never fix it yourself.
+An epic already in its old `implementation-E-n` jury when the pr gate came in finishes that jury first, findings
+kept: run `nio jury next <slug> implementation-E-n` as before, then the `nio flow done implementation-E-n <slug> --by
+"<role / host / model>"` command it prints. Its fix tasks go under that epic's `#### Fixes`.
 
 ## When to stop
 
