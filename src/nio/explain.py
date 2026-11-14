@@ -298,3 +298,21 @@ def stale(root):
                     out += ["stale: explainer.md (spec, plan or contracts changed)", f"  in .nio/specs/{e.parent.name}/: re-run @nio:explain"]
                     break
     return out
+
+
+def topic(root, text, today=None):
+    """CT-6: `continue: <path>` for the file storing this topic, else `new: <path>` for the first free name."""
+    import datetime
+    name = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40]
+    if not name:
+        raise ValueError(f'the topic "{text}" gives an empty file name')
+    day = today or datetime.date.today().isoformat()
+    n = 1
+    while True:
+        rel = f".nio/research/{day}-{name}-explainer{'' if n == 1 else f'-{n}'}.md"
+        p = root / rel
+        if not p.exists():
+            return f"new: {rel}"
+        if f"(topic: {text})" in p.read_text().splitlines():
+            return f"continue: {rel}"
+        n += 1
