@@ -1,4 +1,5 @@
 import hashlib
+import re
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -60,6 +61,22 @@ def check_doc(doc, text):
         return [f"persona entry lacks {k}:" for p in parts for k in ("Who", "Wants", "Allowed to", "How often") if k + ":" not in p]
     have = {l[3:].strip() for l in text.splitlines() if l.startswith("## ")}
     return [h for h in HEADINGS[doc] if h not in have]
+
+
+SOURCE = re.compile(r"\(source: ([^@()\s]+)@([0-9a-f]{12})\)")
+
+
+def stale(root="."):
+    """(doc, source path, "changed" | "deleted") per recorded source whose file differs or is gone (CT-7)."""
+    root, seen, out = Path(root), {}, []
+    for f in sorted((root / ".nio/project").rglob("*.md")):
+        for src, h in SOURCE.findall(f.read_text()):
+            if src not in seen:
+                p = root / src
+                seen[src] = hashlib.sha256(p.read_bytes()).hexdigest()[:12] if p.is_file() else None
+            if seen[src] != h:
+                out.append((str(f.relative_to(root / ".nio/project")), src, "deleted" if seen[src] is None else "changed"))
+    return out
 
 
 def progress(root="."):
