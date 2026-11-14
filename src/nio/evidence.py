@@ -213,11 +213,17 @@ def gate_of(epic):
 
 
 def default_branch(root):
-    """The remote's default branch as the pre-push hook finds it, else a local main or master: the effort diff's base."""
+    """The remote's default branch as the pre-push hook finds it, else a local main or master, else the branch's upstream
+    (not its own pushed copy, which `publish` sets): the effort diff's base."""
     for ref in ("origin/HEAD", "main", "master"):
         if records.git(root, "rev-parse", "-q", "--verify", f"{ref}^{{commit}}"):
             return (records.git(root, "rev-parse", "--abbrev-ref", ref) or [ref])[0]
-    raise ValueError("no default branch to diff the effort against: set origin/HEAD (`git remote set-head origin -a`)")
+    code, up, _ = records.git(root, "rev-parse", "--abbrev-ref", "@{upstream}", full=True)
+    up, me = up.strip(), records.git(root, "branch", "--show-current")
+    if not code and up and up not in me and not any(up.endswith("/" + b) for b in me):
+        return up
+    raise ValueError("the pr gate has no default branch to diff the effort against: set origin/HEAD "
+                     "(`git remote set-head origin -a`), or the branch's upstream to it")
 
 
 def span(root, slug, epic):
@@ -227,7 +233,10 @@ def span(root, slug, epic):
     if epic != "pr":
         commits = commits_of(root, slug, epic)
         return parent_of(root, commits[-1]), commits[0]
-    base = records.git(root, "merge-base", default_branch(root), "HEAD")[0]
+    ref = default_branch(root)
+    base = (records.git(root, "merge-base", ref, "HEAD") or [None])[0]
+    if not base:
+        raise ValueError(f"the pr gate can't diff the effort: {ref} and HEAD share no commit")
     return base, (records.git(root, "log", "-1", "--format=%H", f"{base}..HEAD", "--", ".", *PRIVATE) or [base])[0]
 
 
@@ -247,10 +256,14 @@ def split(root, slug):
     base, head = span(root, slug, "pr")
     last = pr_fixes(root, slug)
     epic = {t["id"]: t["epic"].replace("-", "") for t in implement.tasks_of(root, slug) if t["epic"] != last}
+    rows = records.git(root, "log", "--reverse", "--format=%H %s", f"{base}..{head}")
+    added = records.git(root, "log", "-1", "--format=%H", "--diff-filter=A", "--", f".nio/specs/{slug}/tasks.md")
+    ours = not any(x.startswith(f"{a} ") for a in added for x in rows)  # a `T-n:` before this tasks.md is an earlier effort's
     out = {}
-    for x in records.git(root, "log", "--reverse", "--format=%H %s", f"{base}..{head}"):
+    for x in rows:
         sha, _, subject = x.partition(" ")
-        out.setdefault(epic.get(subject.split(":")[0], "rest"), []).append(sha)
+        out.setdefault(epic.get(subject.split(":")[0], "rest") if ours else "rest", []).append(sha)
+        ours = ours or [sha] == added
     return {p: out[p] for p in sorted(out, key=lambda p: (p == "rest", int(p[1:]) if p != "rest" else 0))}
 
 

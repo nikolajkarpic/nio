@@ -1233,8 +1233,19 @@ def check(root, slug, gate, record=False, human=""):
                 lines += flow.commit_gate(root, slug, "implementing", [], None, None, [], gate, f"nio: jury {gate} round {led['round']}")[1]
     if record and gate == "pr" and outcome in ("approved", "rejected", "human"):  # FR-11, FR-16: the human's one message
         text = outcome_text(led, outcome, bool(closed))
-        lines += ["outcome for the human:", *text, *publish(root, slug, "\n".join(text))]
+        lines += ["outcome for the human:", *text, *post(root, slug, led, "\n".join(text))]
     return outcome, lines
+
+
+def post(root, slug, led, body):
+    """Publish the pr gate's verdict comment; until it is on the pull request it waits in the ledger as `unposted`, which
+    keeps the gate from approval and which the next `nio jury next <slug> pr` posts again (FR-16)."""
+    led["unposted"] = body
+    save(root, led)
+    out = publish(root, slug, body)
+    led.pop("unposted")
+    save(root, led)
+    return out
 
 
 def outcome_text(led, outcome, closed=False):
@@ -1577,6 +1588,11 @@ def step(root, slug, gate, run="", add=(), pick=None):
     if run and not (root / ".nio/runs" / run).is_dir():
         raise ValueError(f"no run {run} under .nio/runs/")
     led = load(root, slug, gate)
+    if gate == "pr" and not run and led.get("unposted"):  # a verdict comment that failed: post it before anything else
+        return post(root, slug, led, led["unposted"]) + [{
+            "rejected": f"next: nio flow next {slug}",
+            "human": "next: show the human the listed findings and wait for their ruling"}.get(
+            "closed" if led.get("closed") else led.get("outcome"), APPROVE.format(slug=slug))]
     if pick is None and "picked" not in led and any(x.startswith("choices:") for x in lines):
         return lines + [f"next: show the human the planned runs and let them choose, then nio jury next {slug} {gate} --pick <lens,lens>"]
     names = lines.lenses

@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -648,6 +649,7 @@ def red_one(**kw):
 
 def code_with(root, body="def refund(x):\n    return x\n"):
     (root / "app.py").write_text(body)
+    shutil.rmtree(root / "__pycache__", ignore_errors=True)  # a same-size edit in the same second would reuse the stale .pyc
 
 
 def sha_of(root, name=TEST):

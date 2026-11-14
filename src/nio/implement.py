@@ -583,7 +583,8 @@ def review(root, slug, task, lines):
     # #66: the task's own test already ran at green; the epic's close re-runs its tasks' own tests, never the suite
     if not reasons and closes(root, slug, task, lines)[0]:
         mine = {t["id"] for t in tasks_of(root, slug) if t["epic"] == task["epic"]}
-        cmds = dict.fromkeys(x["evidence"]["command"] for x in lines if x["kind"] == "green" and x["evidence"].get("task") in mine)
+        latest = {x["evidence"]["task"]: x["evidence"]["command"] for x in lines if x["kind"] == "green" and x["evidence"].get("task") in mine}
+        cmds = dict.fromkeys(latest.values())  # each task's latest green only: an earlier claim's command may be obsolete
         ran = {"epic_tests": []}
         for command in cmds:
             code, out_, cause = run(root, command, limit(root))

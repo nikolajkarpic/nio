@@ -366,7 +366,10 @@ def guard(root, slug, stage, evidence=True):
             paths = rel("spec.md", "tasks.md", "jury/pr.json")
             led = jury.load(root, slug, "pr")
             now = jury.standing(root, slug, "pr") if led["round"] else "not run"
-            if now == "closed":
+            unposted = [f"the verdict comment is not posted yet: nio jury next {slug} pr posts it"] * bool(led.get("unposted"))
+            if unposted:  # FR-16: no approval before the human's one message is on the pull request
+                output = unposted
+            elif now == "closed":
                 result, output = "closed", [led["closed"][2]]
                 vid = verdict(root, slug, "pr", led["round"], "human") if evidence else ""
             else:
@@ -696,10 +699,12 @@ def where(root, slug, state=None, lines=None):
         return passes(s) in ("pass", "closed") and gate_passed(s, ledger(s), lines, approved[0])
 
     order, off = list(STAGES), skips(root, slug)
+    last = next((x for x in reversed(lines) if x["kind"] == "back" or x["kind"] in ("pass", "override") and x["from"] == "implementing"), {})
+    old_done = last.get("kind") in ("pass", "override") and last["to"] == "done"  # a later `back` builds it again, to the pr gate
     for s in STAGES:
         if s == "done" or s in off:
             continue
-        if s == "pr" and any(x["kind"] in ("pass", "override") and (x["from"], x["to"]) == ("implementing", "done") for x in lines):
+        if s == "pr" and old_done:
             continue  # done before the pr gate existed (2026-11-14-effort-jury FR-12)
         if s in GATES:
             gate, led = GATES[s][0], ledger(s)
@@ -1171,10 +1176,10 @@ def at_terminal(slug):
     """The human typed the effort's slug back at the controlling terminal, which an agent's shell doesn't have (FR-9).
     ponytail: a terminal, not an identity; a human-run agent session with a pty could still type it."""
     try:
-        with open("/dev/tty", "r+") as tty:
-            tty.write(f"Approve the pr gate of {slug}? Type its slug to approve: ")
-            tty.flush()
-            return tty.readline().strip() == slug
+        with open("/dev/tty") as r, open("/dev/tty", "w") as w:  # a tty can't seek: no "r+" text file over it
+            w.write(f"Approve the pr gate of {slug}? Type its slug to approve: ")
+            w.flush()
+            return r.readline().strip() == slug
     except OSError:
         return False
 
