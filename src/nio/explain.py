@@ -283,3 +283,18 @@ def finish(root, path):
 def new_title(lines):
     """The title of the last `## ` heading in lines."""
     return next((l[3:].strip() for l in reversed(lines) if l.startswith("## ")), "")
+
+
+def stale(root):
+    """CT-7: status lines for each spec explainer whose recorded sources are gone or changed."""
+    from nio import implement
+    out = []
+    for e in sorted((root / ".nio/specs").glob("*/explainer.md")):
+        for l in e.read_text().splitlines():
+            m = REC.match(l.strip())
+            if m and m[1] == "source":
+                f, _, h = m[2].rpartition("@")
+                if implement.digest(root, f)[:12] != h:
+                    out += ["stale: explainer.md (spec, plan or contracts changed)", f"  in .nio/specs/{e.parent.name}/: re-run @nio:explain"]
+                    break
+    return out

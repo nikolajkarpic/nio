@@ -561,8 +561,118 @@ def test_ac33_unique_names():
         plan.approved = keep
 
 
+def status(root):
+    import subprocess
+    import sys
+    code = "import sys; sys.argv = ['nio', 'status']; from nio.cli import main; main()"
+    r = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True)
+    return r.returncode, r.stdout + r.stderr
+
+
+STALE = "stale: explainer.md (spec, plan or contracts changed)"
+HINT = "  in .nio/specs/checkout-refunds/: re-run @nio:explain"
+
+
+def stale_repo(edit="plan.md"):
+    """(root, finish) with the explainer finished, then one source file appended to."""
+    root, fin = fin_repo()
+    fin()
+    f = root / ".nio/specs/checkout-refunds" / edit
+    f.write_text(f.read_text() + "\nchanged\n")
+    return root, fin
+
+
+def test_ac21_stale():
+    # TC-28
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, _ = stale_repo()
+        code, out = status(root)
+        assert code == 0, out
+        assert STALE + "\n" + HINT in out, out
+    finally:
+        plan.approved = keep
+
+
+def test_ac22_rerun_clears():
+    # TC-29
+    from nio import implement, plan
+    keep = plan.approved
+    try:
+        root, fin = stale_repo()
+        assert STALE in status(root)[1]
+        ex = root / ".nio/specs/checkout-refunds/explainer.md"
+        ex.write_text(ex.read_text().replace("```\n\nMap walk.", '    b --> c["CT-2 retry"]\n```\n\nMap walk.', 1))
+        fin()
+        code, out = status(root)
+        assert "stale: explainer.md" not in out, out
+        h = implement.digest(root, ".nio/specs/checkout-refunds/plan.md")[:12]
+        assert f"(source: .nio/specs/checkout-refunds/plan.md@{h})" in ex.read_text(), ex.read_text()
+    finally:
+        plan.approved = keep
+
+
+def test_ac31_sources():
+    # TC-31
+    from nio import plan
+    keep = plan.approved
+    try:
+        def fresh():
+            r, fin = fin_repo()
+            fin()
+            return r, r / ".nio/specs/checkout-refunds"
+        root, d = fresh()
+        for n in ("quickstart.md", "tests.md"):
+            (d / n).write_text((d / n).read_text() + "\nx\n" if (d / n).exists() else "x\n")
+            assert STALE not in status(root)[1], n
+        (d / "contracts.md").write_text((d / "contracts.md").read_text() + "\nx\n")
+        assert STALE in status(root)[1]
+        root, d = fresh()
+        (d / "spec.md").write_text((d / "spec.md").read_text() + "\nx\n")
+        assert STALE in status(root)[1]
+        root, d = fresh()
+        (d / "contracts.md").unlink()
+        assert STALE in status(root)[1]
+    finally:
+        plan.approved = keep
+
+
+def test_uj1_outgrown():
+    # TC-40
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, _ = stale_repo()
+        ex = root / ".nio/specs/checkout-refunds/explainer.md"
+        before = ex.read_bytes()
+        for _ in range(2):
+            assert STALE in status(root)[1]
+        assert ex.read_bytes() == before
+    finally:
+        plan.approved = keep
+
+
+def test_ac21_finish_alone_keeps_stale():
+    # TC-44
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, fin = stale_repo()
+        ex = root / ".nio/specs/checkout-refunds/explainer.md"
+        src = lambda: [l for l in ex.read_text().splitlines() if "(source:" in l]
+        before = src()
+        out = fin()
+        assert "still stale: no diagram changed since the last finish; redraw the diagrams to clear the stale line" in out, out
+        assert src() == before
+        assert STALE in status(root)[1]
+    finally:
+        plan.approved = keep
+
+
 if __name__ == "__main__":
     selfcheck.main([test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
-                    test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines])
+                    test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines,
+                    test_ac21_stale, test_ac22_rerun_clears, test_ac31_sources, test_uj1_outgrown, test_ac21_finish_alone_keeps_stale])

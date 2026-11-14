@@ -428,7 +428,7 @@ def main():
             ob = onboard.status_lines(root)
         except ValueError as e:
             ob = [f"onboarding: error: {e}"]
-        print("\n".join(query.status(root) + ob))
+        print("\n".join(query.status(root) + ob + explain.stale(root)))
     elif a.cmd == "index":
         count, embedded = index.build(root)
         print(f"indexed {count} records, embedded {embedded}")
