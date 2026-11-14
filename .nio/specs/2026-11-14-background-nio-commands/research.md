@@ -1,0 +1,11 @@
+# Research: 2026-11-14-background-nio-commands
+
+Facts the grill looked up instead of asking.
+
+## Grill session 1 (2026-11-14)
+
+- **RF-1** The 2026-11-08 onboarding (#49) and full-auto (#122) runs spent about 267 minutes in wait loops; they came from orchestrator and driver agents (main sessions and subagents) waiting on long nio commands: jury runs and green suite-plus-review runs of 15–39 minutes. Source: earlier transcript analysis of the 2026-11-08 sessions, recorded in issue #130: "Those loops took about 267 minutes of onboarding (#49) and full-auto (#122) time on 2026-11-08."
+- **RF-2** Claude Code mods hook Bash calls with the `tool.call` event (`on('tool.call', { tool: 'Bash' }, hook)`); a hook may rewrite the input with `next({ ...e, input: { ...e.input, run_in_background: true } })`. The Bash input has `command`, `timeout?`, `description?` and `run_in_background?: boolean`. Source: /tmp/claude-1000/bundled-skills/2.1.325/a4fdbf23f226d8035ee74196908a3023/plugin-authoring/types/claude-code.d.ts:4275 and :18500: "run_in_background?: boolean"
+- **RF-3** An agent's loop status `waiting` means it is held on background work it owns, so a session or subagent that issued a background command is held, woken when it finishes, and gets the task's notification with its output. Source: /tmp/claude-1000/bundled-skills/2.1.325/a4fdbf23f226d8035ee74196908a3023/plugin-authoring/types/claude-code.d.ts:582 (`AgentStatus`): "`waiting` is on background work it owns, on a plan's approval or, in a background subagent, on an Agent call alone."
+- **RF-4** A foreground Bash call can run at most 10 minutes (600000 ms), while `jury.run_timeout` in `.nio/config.json` is 1800 s, so a jury run can't reliably finish in the foreground; the 2026-11-08 analysis found foreground nio commands moved to the background after about 3 minutes, which led to the wait loops. Source: /tmp/claude-1000/bundled-skills/2.1.325/a4fdbf23f226d8035ee74196908a3023/plugin-authoring/types/claude-code.d.ts:18495: "Optional timeout in milliseconds (max 600000 for a foreground command)"; .nio/config.json: "\"run_timeout\": 1800"
+- **RF-5** The test-suite command is `tests.suite` in `.nio/config.json`. Agents also run single test files (`uv run python tests/test_x.py`); those are short. Source: .nio/config.json: "\"suite\": \"printf '%s\\n' tests/test_*.py | xargs -P8 …\""
