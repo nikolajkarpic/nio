@@ -593,6 +593,29 @@ def test_skills_keep_skip_with_dev():
         assert "never run `nio onboard skip`" in text, name
         assert re.search(r"no doc is (recorded as )?confirmed and no patch (is )?applied without the dev's answer in that session", text), name
 
+def test_apps_start_and_confirm():
+    import json
+    root = repo({"README.md": "hi\n"})
+    d = root / ".nio/project"
+    r = nio(root, "start", "--empty", "--app", "web=web/", "--app", "api=api/,lib/")
+    assert r.returncode == 0 and "next: web/product" in r.stdout, (r.stdout, r.stderr)
+    assert json.loads((d / "onboarding.json").read_text())["apps"] == {"web": ["web/"], "api": ["api/", "lib/"]}
+    assert nio(root, "confirm", "product").returncode == 1  # --app required
+    assert nio(root, "confirm", "product", "--app", "nope").returncode == 1
+    tpl = Path(__file__).parent.parent / "src/nio/templates/project"
+    for a in ("web", "api"):
+        for n in ("product", "personas", "principles"):
+            (d / a / f"{n}.md").write_text((tpl / f"{n}.md").read_text().replace("NEEDS CLARIFICATION", "filled"))
+            r = nio(root, "confirm", n, "--app", a)
+            assert r.returncode == 0, (a, n, r.stdout, r.stderr)
+    assert "done" in r.stdout and json.loads((d / "onboarding.json").read_text())["state"] == "done"
+
+
+def test_app_slug_not_a_doc_name():
+    root = repo({"README.md": "hi\n"})
+    assert nio(root, "start", "--app", "stack=x/").returncode == 1
+    assert not (root / ".nio/project/onboarding.json").exists()
+
 
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
@@ -604,4 +627,4 @@ if __name__ == "__main__":
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
-                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev])
+                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name])

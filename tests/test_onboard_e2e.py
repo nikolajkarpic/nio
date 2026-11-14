@@ -168,5 +168,96 @@ def test_ac11_done_points_to_reconcile():
     assert "reconcile" in out.lower(), out
 
 
+STALE = "# Contributing\n\nRun `make test` before a pull request.\n"
+ASK = "Run @nio:onboard. The CLI here is `" + " ".join(NIO) + "`. You play both roles: "
+
+
+def stale_repo():
+    root = fresh_repo()
+    (root / "pyproject.toml").write_text("[project]\nname = 'shop'\ndependencies = ['flask']\n[tool.pytest.ini_options]\ntestpaths = ['tests']\n")
+    (root / "CONTRIBUTING.md").write_text(STALE)
+    return root
+
+
+def scan_hash(root, path):
+    scan = nio(root, "scan")
+    return next(l.split()[2] for l in scan.splitlines() if l.split()[1:2] == [path])
+
+
+@e2e
+def test_ac9_patch_only_on_yes():
+    today = datetime.date.today().isoformat()
+    base = ASK + ("confirm every doc as written; when the grill finds CONTRIBUTING.md's test command out of date "
+                  "(`make test`, but the project uses pytest and has no Makefile), offer a patch to it; to that patch answer `%s`; "
+                  "answer `no` to every agent file update. Do not stop early.")
+    no, yes = stale_repo(), stale_repo()
+    run_skill(no, "onboard", base % "no")
+    assert (no / "CONTRIBUTING.md").read_text() == STALE
+    run_skill(yes, "onboard", base % "yes")
+    got = (yes / "CONTRIBUTING.md").read_text()
+    assert got != STALE and "pytest" in got, got
+    assert (yes / ".nio/backup" / today / "CONTRIBUTING.md").read_text() == STALE
+
+
+@e2e
+def test_ac33_two_apps():
+    root = fresh_repo()
+    for f, t in {"web/package.json": '{"name": "web"}', "web/vercel.json": "{}",
+                 "api/pyproject.toml": "[project]\nname = 'api'\n", "api/cloudbuild.yaml": "steps: []\n"}.items():
+        (root / f).parent.mkdir(exist_ok=True)
+        (root / f).write_text(t)
+    run_skill(root, "onboard", ASK + "the repo has two apps: web (`web/`) and api (`api/`); confirm those, then confirm every doc of both apps as written. "
+              "web is deployed to Vercel and api to Cloud Run. Do not stop early.")
+    import json
+    for a in ("web", "api"):
+        assert sorted(f.name for f in (root / ".nio/project" / a).glob("*.md")) == sorted(
+            f"{d}.md" for d in ["product", "personas", "stack", "architecture", "infra", "principles"]), a
+    assert json.loads((root / ".nio/project/onboarding.json").read_text())["apps"] == {"web": ["web/"], "api": ["api/"]}
+    w, a = [(root / ".nio/project" / x / "infra.md").read_text() for x in ("web", "api")]
+    assert "Vercel" in w and "Cloud Run" not in w, w
+    assert "Cloud Run" in a and "Vercel" not in a, a
+
+
+def agent_repo(files):
+    root = fresh_repo()
+    (root / "pyproject.toml").write_text("[project]\nname = 'shop'\ndependencies = ['flask']\n")
+    for f in files:
+        (root / f).write_text(f"# {f}\n\nUse tabs.\n")
+    return root
+
+
+@e2e
+def test_ac36_agent_files_untouched_on_no():
+    root = agent_repo(["CLAUDE.md", "AGENTS.md"])
+    before = {f: (root / f).read_bytes() for f in ("CLAUDE.md", "AGENTS.md")}
+    run_skill(root, "onboard", ASK + "confirm every doc as written; answer `no` to updating each agent file. Do not stop early.")
+    assert {f: (root / f).read_bytes() for f in before} == before
+    assert not (root / ".nio/backup").exists()
+
+
+@e2e
+def test_ac37_backup_before_change():
+    import shutil
+    root = agent_repo(["CLAUDE.md"])
+    orig = (root / "CLAUDE.md").read_bytes()
+    run_skill(root, "onboard", ASK + "confirm every doc as written; answer `yes` to updating CLAUDE.md. Do not stop early.")
+    bak = root / ".nio/backup" / datetime.date.today().isoformat() / "CLAUDE.md"
+    assert bak.read_bytes() == orig
+    assert (root / "CLAUDE.md").read_bytes() != orig
+    shutil.copy(bak, root / "CLAUDE.md")
+    assert (root / "CLAUDE.md").read_bytes() == orig
+
+
+@e2e
+def test_ac43_patch_rehash():
+    root = stale_repo()
+    run_skill(root, "onboard", ASK + "answer `yes` to the patch of CONTRIBUTING.md (its `make test` is out of date, the project uses pytest); "
+              "confirm every doc as written; answer `no` to agent files. Do not stop early.")
+    h = scan_hash(root, "CONTRIBUTING.md")
+    assert f"(source: CONTRIBUTING.md@{h})" in (root / ".nio/project/stack.md").read_text()
+    st = subprocess.run(NIO + ["status"], cwd=root, capture_output=True, text=True).stdout
+    assert "stale:" not in st, st
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_ac") and callable(f)])
