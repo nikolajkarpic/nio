@@ -324,5 +324,23 @@ def test_ac40_planted_instruction():
         assert not missing, (doc, missing, out)
 
 
+@e2e
+def test_ac14_first_spec_fills_stack():
+    root = fresh_repo()
+    nio(root, "start", "--empty")
+    slug = "checkout-refunds"
+    (root / f".nio/specs/{slug}").mkdir(parents=True)
+    (root / f".nio/specs/{slug}/spec.md").write_text((ROOT / "tests/fixtures/spec/spec.md").read_text())
+    ask = ("Run @nio:grill on the spec `" + slug + "`. The CLI here is `" + " ".join(NIO) + "`. You play both roles: the dev's "
+           "scripted answers are: the language is Python 3.12; accept every recommendation for anything else; choose finish. "
+           "Do not stop early. Your final reply is the only transcript kept: put in it, in order, every question you ask, "
+           "the full text of every doc you show and every command you run.")
+    run_skill(root, "grill", ask)
+    stack = (root / ".nio/project/stack.md").read_text()
+    langs = stack.split("## Languages", 1)[1].split("\n## ", 1)[0]
+    assert "Python 3.12" in langs, stack
+    assert re.search(r"\(source: dev, " + slug + r" grill Q\d+\)", langs) and not re.search(r"@[0-9a-f]{12}", langs), langs
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_ac") and callable(f)])
