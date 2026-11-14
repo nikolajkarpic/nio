@@ -5,9 +5,7 @@
     "T-9": 1
   },
   "auto": false,
-  "claims": {
-    "task": "T-9"
-  },
+  "claims": {},
   "pause": null,
   "run": "R-261108-atqe",
   "waiting": null
