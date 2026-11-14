@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-project-onboarding
-retired: [T-8, T-11, T-17, T-20]
+retired: [T-8, T-11, T-17, T-20, T-24]
 ---
 # Tasks: project onboarding
 
@@ -513,15 +513,18 @@ retired: [T-8, T-11, T-17, T-20]
 - Effort: low
 - Mode: single: skill and its check together
 
-### T-24 Reconcile e2e: changed files, nothing to do, declines and deletions
-- Files: `skills/reconcile-onboarding/SKILL.md`, `tests/test_onboard_e2e.py`
+#### Fixes
+
+### T-70 Fix: land T-24's tests as regression guards (T-24 retired, already delivered)
+- From: C-261114-tdzo
+- Files: `tests/test_onboard_e2e.py`
 - Serves: AC-23, AC-42, AC-44
 - Test: TC-38, TC-40, TC-41, TC-43
-- Depends on: T-23
+- Depends on: none
 - Parallel: no
-- Tier: strong: four e2e cases, skill wording
+- Tier: cheap: tests over existing behaviour
 - Effort: low
-- Mode: single: e2e test and skill fix together
+- Mode: direct: the behaviour exists; the tests guard it
 
 ## E-7 An effort's changes reach the project docs (US-7)
 
