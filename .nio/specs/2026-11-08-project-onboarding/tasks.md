@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-project-onboarding
-retired: [T-8, T-11]
+retired: [T-8, T-11, T-17]
 ---
 # Tasks: project onboarding
 
@@ -323,16 +323,6 @@ retired: [T-8, T-11]
 - Effort: low
 - Mode: single: e2e test and skill fix together
 
-### T-17 Onboard e2e: secrets and planted instructions
-- Files: `skills/onboard/SKILL.md`, `tests/test_onboard_e2e.py`
-- Serves: AC-12, AC-39, AC-40
-- Test: TC-12, TC-20, TC-21
-- Depends on: T-15
-- Parallel: no
-- Tier: max: secrets and prompt-injection handling in a skill
-- Effort: med
-- Mode: single: e2e test and skill fix together
-
 ### T-18 Onboard e2e: patches, agent files and several apps
 - Files: `skills/onboard/SKILL.md`, `tests/test_onboard_e2e.py`
 - Serves: AC-9, AC-33, AC-36, AC-37, AC-43
@@ -350,6 +340,17 @@ retired: [T-8, T-11]
 - Files: `tests/test_onboard.py`
 - Serves: AC-34, AC-35, AC-46
 - Test: TC-15, TC-16, TC-47
+- Depends on: none
+- Parallel: no
+- Tier: cheap: tests over existing behaviour
+- Effort: low
+- Mode: direct: the behaviour exists; the tests guard it
+
+### T-59 Fix: land T-17's tests as regression guards (T-17 retired, already delivered)
+- From: C-261114-oon7
+- Files: `tests/test_onboard_e2e.py`
+- Serves: AC-12, AC-39, AC-40
+- Test: TC-12, TC-20, TC-21
 - Depends on: none
 - Parallel: no
 - Tier: cheap: tests over existing behaviour
