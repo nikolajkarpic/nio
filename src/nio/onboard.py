@@ -137,11 +137,11 @@ def _feeds(root):
 
 def changed(root, ref):
     """(path, docs it feeds) per file `git diff --name-only <ref>` lists that a project doc records (CT-11)."""
-    code, out, err = records.git(root, "diff", "--name-only", ref, full=True)
+    code, out, err = records.git(root, "diff", "--name-only", "-z", ref, full=True)  # -z: paths unquoted, like scan
     if code:
         raise ValueError(f"git diff {ref} failed: {err.strip()}")
     feeds = _feeds(root)
-    return [(f, feeds[f]) for f in sorted(set(out.splitlines())) if f in feeds]
+    return [(f, feeds[f]) for f in sorted(set(out.split("\0")) - {""}) if f in feeds]
 
 
 def to_reconcile(root="."):
