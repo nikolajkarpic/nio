@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import re
+import shlex
 import sys
 from importlib import resources
 
@@ -144,6 +145,9 @@ def main():
     fd.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
     fd.add_argument("--commit", action="store_true", help="at a gate: make the `nio: approve <gate>` commit")
     fd.add_argument("--human", metavar="REASON", help="the human passes a failing check, with their reason")
+    fbr = fsub.add_parser("brief", help="what a fresh driver starts from: the state, the next command, a running long command, open tasks and findings")
+    fbr.add_argument("slug")
+    fbr.add_argument("--all", action="store_true", help="list every open task and finding, past the 80-line cap")
     fsub.add_parser("status", help="one line per effort, newest activity first")
     fp = fsub.add_parser("park", help="park an effort, with the reason")
     fa = fsub.add_parser("abandon", help="abandon an effort until `nio flow start` resumes it, with the reason")
@@ -173,6 +177,10 @@ def main():
         usage.record(a.host)
         return
     root = records.repo_root()
+
+    def long(call):  # a long command is recorded as running while it runs (#128 FR-17)
+        with flow.running(root, a.slug, shlex.join(["nio", *sys.argv[1:]])):
+            return call()
     if a.cmd == "new":
         try:
             if a.type == "spec":
@@ -297,7 +305,7 @@ def main():
             if getattr(a, "gate", "").startswith("implementation"):  # a ruling needn't wait for the fix tasks; a round does
                 jury.epic_gate(root, a.slug, a.gate, finished=a.jury_cmd in ("plan", "collect", "next"))
             if a.jury_cmd == "evidence":
-                print("\n".join(evidence.collect(root, a.slug, a.epic, a.run)))
+                print("\n".join(long(lambda: evidence.collect(root, a.slug, a.epic, a.run))))
             elif a.jury_cmd == "answers":
                 print("\n".join(jury.answers(root, a.slug)))
             elif a.jury_cmd == "template":
@@ -346,7 +354,8 @@ def main():
                 "seen": lambda: flow.seen(root, a.slug, by=a.by),
                 "claim": lambda: implement.claim(root, a.slug, by=a.by),
                 "red": lambda: implement.red(root, a.slug, a.task, a.run, by=a.by),
-                "green": lambda: implement.green(root, a.slug, a.task, a.run, by=a.by),
+                "brief": lambda: flow.brief(root, a.slug, a.all),
+                "green": lambda: long(lambda: implement.green(root, a.slug, a.task, a.run, by=a.by)),
                 "block": lambda: implement.block(root, a.slug, a.task, a.handoff, by=a.by),
                 "unblock": lambda: implement.unblock(root, a.slug, a.task, a.human, by=a.by),
             }[a.flow_cmd]()

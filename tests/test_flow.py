@@ -348,7 +348,7 @@ def test_lock():
         msg = refused(root)
         assert msg == f"{S} is being written by another nio flow call (pid {os.getpid()} on {host}); try again", msg
     assert not path.exists()
-    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\n"
+    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\nrunning.json\n"
     try:
         with flow.lock(root, S):
             raise KeyError("boom")
@@ -369,7 +369,7 @@ def test_lock():
             assert f"(pid {pid} on {other})" in refused(root) and path.read_bytes() == before
             path.unlink()
         assert sorted(p.name for p in folder.iterdir() if p.name.startswith("flow.lock")) == []
-    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\n"  # written once
+    assert (folder / ".gitignore").read_text() == "flow.lock*\nstate.json.new\nrunning.json\n"  # written once
     print("ok")
 
 
@@ -2823,6 +2823,77 @@ def test_ac27_mixed_fix_edit_and_outside_fixes_reopen():
     tasks_md = root / ".nio/specs" / S / "tasks.md"
     tasks_md.write_text(tasks_md.read_text() + "\n" + T5.replace("T-5", "T-4"))
     assert "state: tasks_jury" in nxt(root)
+    print("ok")
+
+
+# --- 2026-11-14-short-lived-drivers: `nio flow brief` and the running record (#128) ---
+
+def with_findings(n, slug=S):
+    """An effort at the spec gate whose ledger holds `n` open findings, J-1 first."""
+    root = effort("spec_jury", slug=slug)
+    led = jury.load(root, slug, "spec")
+    led.update(round=1, findings=[{"id": f"J-{i}", "title": f"finding {i}", "severity": "major", "status": "open"}
+                                  for i in range(1, n + 1)])
+    jury.folder(root, slug).mkdir(parents=True, exist_ok=True)
+    (jury.folder(root, slug) / "spec.json").write_text(json.dumps(led))
+    return root
+
+
+def test_drivers_ac15_brief_names_state_findings_tasks_and_next():
+    root = with_findings(2)
+    code, out = cli(root, "brief", S)
+    assert code == 0 and "state: spec_jury" in out and "skill: @nio:jury" in out and "next: run" in out, out
+    assert "open findings (spec): 2" in out and "J-1 major: finding 1" in out and "J-2 major: finding 2" in out, out
+    assert len(out.splitlines()) <= 80 and cli(root, "brief", S) == (code, out)  # from saved state: the same again
+    root = effort("implementing")
+    code, out = cli(root, "brief", S)
+    assert code == 0 and "state: implementing" in out and "skill: @nio:implement" in out and "claim: nio flow claim" in out, out
+    assert "open tasks: 3" in out and "T-1 Refund a paid order in full (ready)" in out and "  T-2 Reject a second refund" in out, out
+    assert len(out.splitlines()) <= 80 and cli(root, "brief", S) == (code, out)
+    print("ok")
+
+
+def test_drivers_ac17_brief_over_80_lines_counts_and_names_the_rest():
+    root = with_findings(100)
+    code, out = cli(root, "brief", S)
+    rows = out.splitlines()
+    listed = [r.split()[0] for r in rows if r.startswith("  J-")]
+    assert code == 0 and len(rows) <= 80 and "open findings (spec): 100" in out, out
+    assert listed == [f"J-{i}" for i in range(1, len(listed) + 1)] and 50 < len(listed) < 100, listed
+    assert rows[-1] == f"rest: nio flow brief {S} --all", rows[-1]
+    code, out = cli(root, "brief", S, "--all")
+    assert code == 0 and "  J-100 major" in out and "rest:" not in out
+    print("ok")
+
+
+def test_drivers_ac18_brief_unknown_slug():
+    root = effort("drafting")
+    code, out, err = run_main(root, "flow", "brief", "no-such-slug")
+    assert (code, out, err.strip()) == (1, "", "error: no effort no-such-slug"), (code, out, err)
+    print("ok")
+
+
+def test_drivers_ac20_brief_shows_a_running_long_command():
+    from nio import evidence, implement
+    root = effort("implementing")
+    with flow.running(root, S, "nio flow green x T-1"):
+        code, out = cli(root, "brief", S)
+        assert re.search(r"^running: nio flow green x T-1, started \d{4}-\d\d-\d\d \d\d:\d\d UTC$", out, re.M), out
+    assert "running:" not in cli(root, "brief", S)[1] and not (root / ".nio/specs" / S / "running.json").exists()
+    seen, real = [], (implement.green, evidence.collect)  # the CLI records `nio flow green` and `nio jury evidence`
+    implement.green = lambda *a, **k: (seen.append(cli(root, "brief", S)[1]), (0, []))[1]
+    evidence.collect = lambda *a, **k: (seen.append(cli(root, "brief", S)[1]), [])[1]
+    try:
+        run_main(root, "flow", "green", S, "T-1", "--run", "pytest -q", "--by", BY)
+        run_main(root, "jury", "evidence", S, "E-1", "--run", "R-1")
+    finally:
+        implement.green, evidence.collect = real
+    assert f"running: nio flow green {S} T-1 --run 'pytest -q' --by '{BY}', started" in seen[0], seen
+    assert f"running: nio jury evidence {S} E-1 --run R-1, started" in seen[1], seen
+    assert "running:" not in cli(root, "brief", S)[1]
+    (root / ".nio/specs" / S / "running.json").write_text(json.dumps(  # a killed run's record is not shown
+        {"command": "nio flow green", "at": "2026-11-14T10:00:00Z", "pid": 999999, "host": socket.gethostname()}))
+    assert "running:" not in cli(root, "brief", S)[1]
     print("ok")
 
 
