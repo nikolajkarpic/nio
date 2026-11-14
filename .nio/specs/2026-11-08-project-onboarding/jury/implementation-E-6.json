@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-6",
   "subject": "2026-11-08-project-onboarding",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -16,7 +16,10 @@
     "R-261114-sqvb/implementation-E-6-consistency.md": "0299049448c8ce09f5699ab1e633969244635bd1dd5b9bdb9ad7e3d0d7d17753",
     "R-261114-sqvb/implementation-E-6-correctness.md": "df5ba8836e627362e5afd9c4ee2b702eed0061cbac336738af97c01a2680de60",
     "R-261114-sqvb/implementation-E-6-security.md": "f4de78a11a10f0bb59f4ad342d0a47e381e3a4b7f56f40aa3f7d628d1db3cadc",
-    "R-261114-sqvb/implementation-E-6-refuter.md": "f688055da0c065986080bee62c4ea5c90871e83da4901d086e1308d11cf7e7dc"
+    "R-261114-sqvb/implementation-E-6-refuter.md": "f688055da0c065986080bee62c4ea5c90871e83da4901d086e1308d11cf7e7dc",
+    "R-261114-ohhp/implementation-E-6-adversary.md": "a109f82e7369cc1654171351db9c843f06f09b07363f054b303dfc8ac05b5945",
+    "R-261114-ohhp/implementation-E-6-correctness.md": "7a5605637ad961f37b8d94164deaf9375315604bd5b31627516b4b17f07c5c50",
+    "R-261114-ohhp/implementation-E-6-security.md": "493b001ec8ad2829c7bb6d682abf04997c6670632d3565cd457dbcad9ed5e3d5"
   },
   "jurors": {
     "implementation-E-6-adversary": {
@@ -26,9 +29,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c",
-      "judged": 1
+      "round": 2,
+      "version": "ca38940e75cedb90fa375c63e594b3e49c200313",
+      "judged": 2
     },
     "implementation-E-6-conformance": {
       "attempts": 1,
@@ -59,9 +62,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c",
-      "judged": 1
+      "round": 2,
+      "version": "ca38940e75cedb90fa375c63e594b3e49c200313",
+      "judged": 2
     },
     "implementation-E-6-security": {
       "attempts": 1,
@@ -70,9 +73,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c",
-      "judged": 1
+      "round": 2,
+      "version": "ca38940e75cedb90fa375c63e594b3e49c200313",
+      "judged": 2
     }
   },
   "findings": [
@@ -109,17 +112,18 @@
       ],
       "validation": "confirmed",
       "reason": "onboard.py `reconciled` overwrites `seen` from the whole scan with no reviewed-paths argument, and `to_reconcile` treats anything in `seen` as known. SKILL.md step 6 says \"Run `nio onboard reconciled`\" and does not say to skip it when the dev stops early, so an unreached new file is lost.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-71",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/onboard.py:reconciled, skills/reconcile-onboarding/SKILL.md step 6",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -146,17 +150,18 @@
       ],
       "validation": "confirmed",
       "reason": "`changed` uses plain `git diff --name-only` through `records.git`, which sets no `core.quotepath=off` and no `-z`. A quoted path never matches the `feeds` keys, so `if f in feeds` drops it silently. `scan` already uses `-z` for this reason.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-72",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/onboard.py:changed",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -189,17 +194,18 @@
       ],
       "validation": "confirmed",
       "reason": "`changed` passes `ref` straight to `git diff --name-only` with no `--end-of-options`, no `--` and no check for a leading `-`. A ref such as `--output=<file>` is read as a git option.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-73",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/onboard.py:changed, src/nio/cli.py",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-4",
@@ -581,15 +587,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c"
+    "1": "539385ecb6a30d1ad9ed7e3d9b26bf5b24d0f61c",
+    "2": "ca38940e75cedb90fa375c63e594b3e49c200313"
   },
   "matched": {
     "AC-21": [

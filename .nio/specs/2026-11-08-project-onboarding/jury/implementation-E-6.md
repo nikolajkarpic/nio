@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-6
 subject: 2026-11-08-project-onboarding
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-6 jury: 2026-11-08-project-onboarding
 
@@ -10,9 +10,9 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | CT-14, FR-21 | adversary, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | CT-11, FR-23 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | risk | CT-11 | adversary, security | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | CT-14, FR-21 | adversary, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | gap | CT-11, FR-23 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-3 | major | risk | CT-11 | adversary, security | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-4 | minor | ambiguity | CT-14, AC-42, AC-44 | adversary | grounded | open |  | new, 0 |
 | J-5 | major | gap | AC-23, AC-25, AC-42, AC-44 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-6 | major | gap | AC-23, AC-25 | correctness | merged | merged |  | new, 0 |
@@ -112,8 +112,8 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-6-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-6-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-6-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-6-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 2 | 1 |
-| implementation-E-6-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-6-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-6-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-6-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
