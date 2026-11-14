@@ -423,6 +423,17 @@ retired: [T-8, T-11, T-17]
 - Effort: med
 - Mode: single: a fix from a jury finding
 
+### T-66 Fix: confirm refuses a doc holding a value from a secrets file
+- From: J-3 (implementation-E-4, round 2)
+- Files: `src/nio/onboard.py`, `tests/test_onboard.py`
+- Serves: CT-4, AC-8, J-3
+- Test: new: with a `.env` (listed by the scan as secrets) holding `DB_PASSWORD=hunter2hunter2`, `nio onboard confirm infra` refuses a doc whose line contains `hunter2hunter2`, naming the line but not the value; short values (under 8 chars) are ignored (CT-4, FR-24)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: low
+- Mode: single: a fix from a jury finding
+
 ## E-5 Onboard an empty repo (US-3)
 
 ### T-19 The first full spec's grill fills blank tech fields
