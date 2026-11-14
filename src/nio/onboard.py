@@ -278,7 +278,8 @@ def next_doc(p):
 
 def status_lines(root="."):
     st = progress(root)
-    return ["onboarding: " + st["state"] + (": " + st["reason"] if st["state"] == "skipped" else "")]
+    return ["onboarding: " + st["state"] + (": " + st["reason"] if st["state"] == "skipped" else "")] + \
+        [f"stale: {d} ({s} {w})" for d, s, w in stale(root)]
 
 
 READERS = {"spec": ["product", "personas"], "scope": ["product", "personas"], "plan": ["stack", "architecture", "infra", "principles"],
@@ -313,8 +314,7 @@ def doc_paths(root, reader, slug=""):
 
 
 def docs_for(root, reader, slug=""):
-    """## Project docs for a reader: the mapped docs that exist, then size, missing and state lines (CT-9).
-    ponytail: no stale line yet, it needs the docs' source records (CT-7)."""
+    """## Project docs for a reader: the mapped docs that exist, then size, missing and state lines (CT-9)."""
     try:
         st = progress(root)
     except ValueError:  # docs only help a reader; a damaged file must not block the stage
@@ -329,6 +329,8 @@ def docs_for(root, reader, slug=""):
     out += [f"not onboarded: {a}" for a in _named(root, slug) if a not in (st.get("apps") or {})]
     for n, p in have:
         out += [f"### {n}", ""] + ["##" + l if l.startswith("#") else l for l in p.read_text().splitlines()] + [""]
+    mine = {n for n, _ in have}
+    out += [f"stale: {d} ({s} {w})" for d, s, w in stale(root) if d in mine]
     out += [f"over 16 KB: {n} ({-(-p.stat().st_size // 1024)} KB)" for n, p in have if p.stat().st_size > LIMIT]
     out += [f"missing: {n} (symlink or outside the repo, not read)" for n in sorted(bad)]
     if st["state"] == "done":
