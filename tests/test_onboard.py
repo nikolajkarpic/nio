@@ -581,6 +581,19 @@ def test_fact_names_file_and_hash():
     assert onboard.stale(root) == [("stack.md", "pyproject.toml", "changed")]
 
 
+def test_skills_keep_skip_with_dev():
+    import re
+    root = Path(__file__).resolve().parent.parent
+    for name in ("onboard", "reconcile-onboarding"):
+        f = root / "skills" / name / "SKILL.md"
+        if name != "onboard" and not f.exists():
+            continue  # written by T-23; its check runs once the file exists
+        assert f.exists(), f"{f} missing"
+        text = " ".join(f.read_text().split())
+        assert "never run `nio onboard skip`" in text, name
+        assert re.search(r"no doc is (recorded as )?confirmed and no patch (is )?applied without the dev's answer in that session", text), name
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -591,4 +604,4 @@ if __name__ == "__main__":
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
-                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash])
+                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev])
