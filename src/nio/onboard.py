@@ -27,7 +27,7 @@ def category(path):
             return cat
 
 
-SECRETS = [".env", ".env.*", "*.pem", "*.key", "id_rsa", "id_ed25519", "*.p12", "*.pfx", "credentials*", ".npmrc", ".pypirc", "*.tfvars", "secrets.*"]
+SECRETS = [".env*", "*.tfvars", "*.tfvars.json", "*.tfstate", "*.tfstate.*", "*.pem", "*.key", "*.p12", "*.pfx", ".npmrc", ".pypirc", ".netrc", "credentials*", "secrets.*", "id_rsa*", "id_ed25519*"]  # FR-24
 
 
 def scan(root="."):
