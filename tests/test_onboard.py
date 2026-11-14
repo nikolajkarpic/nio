@@ -623,8 +623,6 @@ def test_skills_keep_skip_with_dev():
     root = Path(__file__).resolve().parent.parent
     for name in ("onboard", "reconcile-onboarding"):
         f = root / "skills" / name / "SKILL.md"
-        if name != "onboard" and not f.exists():
-            continue  # written by T-23; its check runs once the file exists
         assert f.exists(), f"{f} missing"
         text = " ".join(f.read_text().split())
         assert "never run `nio onboard skip`" in text, name
