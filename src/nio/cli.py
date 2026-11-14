@@ -35,7 +35,7 @@ def main():
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
     c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
     ob = sub.add_parser("onboard", help="`onboard scan`: list the project's docs, manifests, IaC and CI files with a content hash")
-    ob.add_argument("action", choices=["scan", "start", "confirm", "pause", "skip"])
+    ob.add_argument("action", choices=["scan", "start", "confirm", "pause", "skip", "backup"])
     ob.add_argument("arg", nargs="*", help="skip: the reason; confirm: the doc")
     ob.add_argument("--empty", action="store_true", help="start: write blank docs")
     t = sub.add_parser("task", help="`task show <slug> T-n`: one task's section and its epic's title, for a worker's pack")
@@ -173,6 +173,12 @@ def main():
     if a.cmd == "onboard":  # before repo_root: outside a git repo it says so instead of a traceback
         if records.git(".", "rev-parse", "--is-inside-work-tree", full=True)[0]:
             sys.exit(f"nio onboard {a.action} needs a git repository")
+        if a.action == "backup":
+            try:
+                print(onboard.backup(a.arg[0] if a.arg else "", records.repo_root()))
+            except ValueError as e:
+                sys.exit(f"error: {e}")
+            return
         if a.action != "scan":
             try:
                 print(onboard.act(a.action, " ".join(a.arg), a.arg[0] if a.arg else "", a.empty, root=records.repo_root()))
