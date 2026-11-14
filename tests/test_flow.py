@@ -2728,5 +2728,103 @@ def test_lite_skill_texts():
     assert any(all(k in ln for k in ("one line", "by what it means", "can change")) for ln in s1.splitlines()), "TC-15"
 
 
+
+# --- fix tasks don't reopen the tasks gate (#126), spec 2026-11-14-jury-round-cap ---
+
+FIX_T4 = ("\n#### Fixes\n\n### T-4 Fix the finding\n- From: J-1 (implementation-E-1, round 1)\n- Files: `app.py`\n- Serves: AC-1\n"
+          "- Test: TC-1\n- Depends on: none\n- Parallel: no\n- Tier: strong: a fix\n- Effort: med\n- Mode: single: a fix\n")
+
+
+def with_fix(finding=False):
+    """An effort at implementing whose tasks.md has fix task T-4 appended; with `finding`, J-1 open in E-1's ledger."""
+    root = effort("implementing")
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    tasks_md.write_text(tasks_md.read_text() + FIX_T4)
+    if finding:
+        led = jury.load(root, S, "implementation-E-1")
+        led["findings"] = [{"id": "J-1", "title": "Refund twice", "kind": "gap", "severity": "major", "cites": ["AC-1"],
+                            "evidence": "observed", "quotes": [], "fix": "pay once", "sources": [{"juror": "j", "lens": "correctness", "situation": "paid twice", "severity": "major"}],
+                            "validation": "confirmed", "reason": "", "status": "open", "disposition": "", "by": "", "note": "",
+                            "baseline": "new", "rounds": 0, "first_round": 1, "last_round": 1}]
+        jury.save(root, led)
+    return root, tasks_md
+
+
+def approved_exit(root):
+    return run_main(root, "check", "tasks", S, "--approved")[0]
+
+
+def test_ac8_appended_fix_task_keeps_implementing():
+    root, _ = with_fix()
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    print("ok")
+
+
+def test_ac9_retired_fix_task_keeps_implementing():
+    root, tasks_md = with_fix()
+    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "covered by T-1")
+    assert code == 0 and "### T-4" not in tasks_md.read_text() and "retired: [T-4]" in tasks_md.read_text(), (out, err)
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    print("ok")
+
+
+def test_ac11_retired_fix_task_closes_its_finding():
+    root, _ = with_fix(finding=True)
+    assert run_main(root, "task", "retire", S, "T-4", "--reason", "not worth it", "--by", "human")[0] == 0
+    led = jury.load(root, S, "implementation-E-1")
+    f = led["findings"][0]
+    assert (f["status"], f["disposition"], f["by"], f["note"]) == ("disposed", "accepted-risk", "human", "not worth it"), f
+    again = {"title": "Refund twice", "kind": "gap", "severity": "major", "cites": ["AC-1"], "evidence": "observed",
+             "quotes": [], "fix": "pay once", "situation": "still twice"}
+    jury.add(led, again, "implementation-E-1-correctness", "correctness", 2, "AC-1")  # the next round raises it again
+    assert f["disposition"] == "accepted-risk" and not jury.to_task(f) and len(led["findings"]) == 1, led["findings"]
+    print("ok")
+
+
+def test_ac28_retire_without_reason_is_refused():
+    root, tasks_md = with_fix(finding=True)
+    before = tasks_md.read_text()
+    code, _, err = run_main(root, "task", "retire", S, "T-4")
+    assert code != 0 and "reason" in err and tasks_md.read_text() == before, err
+    assert jury.load(root, S, "implementation-E-1")["findings"][0]["status"] == "open"
+    print("ok")
+
+
+T5 = "### T-5 Log each refund\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: T-3\n- Parallel: no\n" \
+     "- Tier: cheap: a log line\n- Effort: low\n- Mode: single: small\n\n"
+
+
+def test_ac10_planned_task_change_reopens():
+    root = effort("implementing")
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    tasks_md.write_text(tasks_md.read_text().replace("- Effort: high", "- Effort: med", 1))  # T-3 edited: frozen, so tasking
+    assert re.search(r"state: (tasking|tasks_jury)", nxt(root))
+    root = effort("implementing")
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    text = tasks_md.read_text()
+    tasks_md.write_text(text.replace("### T-3", T5 + "### T-3", 1))  # a planned task added
+    assert "state: tasks_jury" in nxt(root)
+    start, end = text.index("### T-3"), len(text)  # a planned task retired: the gate reopens (its tests now orphaned: tasking)
+    tasks_md.write_text(text[:start].replace("retired: []", "retired: [T-3]") + text[end:])
+    assert re.search(r"state: (tasking|tasks_jury)", nxt(root))
+    print("ok")
+
+
+def test_ac27_mixed_fix_edit_and_outside_fixes_reopen():
+    root, tasks_md = with_fix()  # a fix appended together with a planned-task edit
+    tasks_md.write_text(tasks_md.read_text().replace("(US-1)\n", "(US-1)\nRefunds are paid in EUR.\n", 1))
+    assert "state: tasks_jury" in nxt(root)
+    root, tasks_md = with_fix()  # an existing fix task (approved with the list) edited
+    approve(root, S, "tasks", run="R-T2")
+    assert "state: implementing" in nxt(root)
+    tasks_md.write_text(tasks_md.read_text().replace("- Tier: strong: a fix", "- Tier: max: a fix"))
+    assert "state: tasks_jury" in nxt(root)
+    root = effort("implementing")  # a task added outside `#### Fixes` counts as planned
+    tasks_md = root / ".nio/specs" / S / "tasks.md"
+    tasks_md.write_text(tasks_md.read_text() + "\n" + T5.replace("T-5", "T-4"))
+    assert "state: tasks_jury" in nxt(root)
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
