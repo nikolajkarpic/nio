@@ -709,7 +709,7 @@ def where(root, slug, state=None, lines=None):
         if s in GATES:
             gate, led = GATES[s][0], ledger(s)
             judged = jury.version(led, led["round"])
-            if STAGES[s][1] and led.get("outcome") == "rejected" and judged and jury.blob(root, jury.artefact(root, slug, gate)) == judged:
+            if STAGES[s][1] and led.get("outcome") == "rejected" and judged and jury.version_now(root, slug, gate) == judged:
                 stage, why, sent_by = STAGES[s][1], f"the {gate} jury rejected round {led['round']}", s
                 break
             if cleared(s):
