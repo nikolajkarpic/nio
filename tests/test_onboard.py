@@ -741,6 +741,34 @@ def test_labelled_unknown_is_not_a_fact():
     assert "line 2" in onboard.check_facts("### P-1 Owner\nWho: shop owner\n")
 
 
+def test_apps_line_keeps_template_comment():
+    root = repo({})
+    two_apps(root, "apps: [api]  # the apps this spec touches, when the project has docs per app")
+    r = pack_slug(root, "task", "worker", "two")
+    assert r.returncode == 0, (r.stdout, r.stderr)
+    assert "web/" not in r.stdout and "not onboarded" not in r.stdout and "### api/stack.md" in r.stdout, r.stdout
+    two_apps(root, "apps: []  # the apps this spec touches, when the project has docs per app")
+    r = pack_slug(root, "task", "worker", "two")
+    assert "not onboarded" not in r.stdout and "### web/stack.md" in r.stdout and "### api/stack.md" in r.stdout, r.stdout
+    two_apps(root, "apps: [ghost]")
+    r = pack_slug(root, "task", "worker", "two")
+    assert "not onboarded: ghost" in r.stdout and "### web/" not in r.stdout and "### api/" not in r.stdout, r.stdout
+
+
+def test_check_spec_apps_only_onboarded():
+    root = repo({})
+    two_apps(root, "apps: []")
+    (root / ".nio/project/other").mkdir()
+    assert newspec(root, "full").returncode == 0
+    f = next((root / ".nio/specs").glob("*/spec.md"))
+    for val in ("[other]", "[..]"):
+        body = "".join(ln for ln in f.read_text().splitlines(keepends=True) if not ln.startswith("apps:"))
+        f.write_text(body.replace("---\n", f"---\napps: {val}\n", 1))
+        r = subprocess.run(["uv", "run", "--project", str(Path(__file__).parent.parent), "nio", "check", "spec", f.parent.name],
+                           cwd=root, capture_output=True, text=True)
+        assert f"app {val[1:-1]} has no project docs" in r.stdout + r.stderr, (val, r.stdout, r.stderr)
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -752,4 +780,4 @@ if __name__ == "__main__":
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
                     test_backup_keeps_first_copy, test_backup_failed_copy_leaves_no_partial, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
-                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact])
+                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded])
