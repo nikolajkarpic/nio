@@ -1083,8 +1083,27 @@ def test_stale_never_reads_outside_the_repo():
     assert sorted(w for _, _, w in onboard.stale(root)) == ["deleted"] * 3, onboard.stale(root)
 
 
+def test_confirm_refuses_value_from_ignored_env_files():
+    """J-3: values in a gitignored .env and in a .env.example are refused at confirm, never printed; an ignored folder is
+    never walked, so a secret file inside node_modules isn't read."""
+    pw, ex, dep = "hunter2" + "hunter2", "example" + "Pass123!", "deppass" + "word99"
+    root = repo({"README.md": "hi\n", ".env": f"DB_PASSWORD={pw}\nNODE_ENV=production\n", ".env.example": f"API_KEY={ex}\n",
+                 "node_modules/pkg/.env": f"X={dep}\n"}, ignore=".env\nnode_modules/\n")
+    d = root / ".nio/project"
+    assert nio(root, "start", "--empty").returncode == 0
+    tpl = Path(__file__).parent.parent / "src/nio/templates/project"
+    base = (tpl / "product.md").read_text().replace("NEEDS CLARIFICATION", "x (source: dev, 2026-11-14)")
+    for value in (pw, ex):
+        (d / "product.md").write_text(base.replace("x (source: dev", f"value {value} (source: dev", 1))
+        r = nio(root, "confirm", "product")
+        out = r.stdout + r.stderr
+        assert r.returncode == 1 and "secret" in out and value not in out, (value, r.stdout, r.stderr)
+    (d / "product.md").write_text(base.replace("x (source: dev", f"runs in production, dep {dep} (source: dev", 1))
+    assert nio(root, "confirm", "product").returncode == 0  # plain settings pass; node_modules was never read
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_scan_never_walks_ignored_files, test_stale_never_reads_outside_the_repo, test_changed_sources_listed, test_no_source_changed, test_close_lines_trunk_and_unchecked, test_changed_lists_renamed_source, test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
+    selfcheck.main([test_confirm_refuses_value_from_ignored_env_files, test_scan_never_walks_ignored_files, test_stale_never_reads_outside_the_repo, test_changed_sources_listed, test_no_source_changed, test_close_lines_trunk_and_unchecked, test_changed_lists_renamed_source, test_nothing_to_reconcile_with_secrets, test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
                     test_skip_needs_reason, test_project_templates_match_headings, test_empty_start_writes_blank_docs, test_empty_start_keeps_existing_docs, test_state_table_cells,
                     test_spec_waits_for_onboarding, test_lite_spec_starts, test_torn_progress_file, test_torn_progress_file_status,
