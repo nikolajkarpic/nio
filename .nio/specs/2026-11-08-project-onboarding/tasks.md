@@ -250,17 +250,6 @@ retired: [T-8]
 - Effort: med
 - Mode: single: a fix from a jury finding
 
-### T-56 Fix: AC-32 is proved only by a model-run test that the suite skips
-- From: J-5 (implementation-E-3, round 2)
-- Files: `tests/test_onboard_e2e.py`, `skills/spec/SKILL.md`, `src/nio/agents/spec-drafter.md`
-- Serves: AC-32
-- Test: TC-30
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
 ### T-57 Fix: Quotes from project docs never ground
 - From: J-8 (implementation-E-3, round 2)
 - Files: `src/nio/jury.py`, `tests/test_onboard.py`
