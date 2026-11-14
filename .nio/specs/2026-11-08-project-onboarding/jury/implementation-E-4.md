@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-4
 subject: 2026-11-08-project-onboarding
-round: 1
-outcome: rejected
+round: 2
+outcome: human
 ---
 # Implementation-e-4 jury: 2026-11-08-project-onboarding
 
@@ -10,18 +10,18 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | risk | CT-17 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | AC-38 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | gap | CT-4, AC-8 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | risk | CT-17 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-2 | major | gap | AC-38 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-3 | major | gap | CT-4, AC-8 | adversary | confirmed | open |  | unchanged, 1 |
 | J-4 | minor | risk | CT-6, AC-45 | adversary, correctness | grounded | open |  | new, 0 |
 | J-5 | minor | risk | CT-7 | adversary | grounded | open |  | new, 0 |
-| J-6 | major | gap | AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40, AC-43 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-6 | major | gap | AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40, AC-43 | conformance | confirmed | open |  | unchanged, 1 |
 | J-7 | minor | gap | AC-41 | conformance | grounded | open |  | new, 0 |
-| J-8 | major | contradiction | CT-9, AC-35, CT-6 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-8 | major | contradiction | CT-9, AC-35, CT-6 | consistency | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-9 | minor | contradiction | CT-17, AC-37 | consistency | grounded | open |  | new, 0 |
 | J-10 | minor | inconsistency | CT-3, CT-4 | consistency | grounded | open |  | new, 0 |
 | J-11 | minor | inconsistency | CT-4, CT-3 | consistency | grounded | open |  | new, 0 |
-| J-12 | major | gap | AC-39, CT-13 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-12 | major | gap | AC-39, CT-13 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-13 | minor | risk | AC-40 | correctness | grounded | open |  | new, 0 |
 | J-14 | minor | gap | AC-37 | correctness | grounded | open |  | new, 0 |
 | J-15 | minor | gap | AC-33, CT-4 | correctness | grounded | open |  | new, 0 |
@@ -49,8 +49,7 @@ outcome: rejected
 - quote: "confirm in `in progress` when the doc file `.nio/project/[<app>/]<doc>.md` is missing or fails CT-12's check"
 - situation (adversary): `check_doc` only looks at headings. A doc whose facts have no `(source: ...)`, carry an invented hash, or contain the `.env` value passes `confirm`. A made-up hash only shows later as `stale`. A missing record or a pasted secret is never detected, and the dev's yes is the only gate. The e2e tests for AC-8, AC-12, AC-39 and AC-40 are the only guards, and they print `skipped` and pass without `NIO_E2E`. The suite result "passed" therefore says nothing about the prompt-injection and secret rules.
 - fix: have `confirm` refuse a fact line without a source record or `NEEDS CLARIFICATION`. Have it refuse any doc holding a value from a scan secrets file. Make the skipped e2e tests show up as skipped in the gate, not as passed.
-- validation: confirmed: `check_doc` checks headings only, and `act` confirm adds only a NEEDS CLARIFICATION check. Nothing checks source records or secret values, so only the dev's yes and the e2e tests guard them.
-- disposition: fix-task by agent: fix task T-62
+- validation: confirmed: implementation-E-4-adversary: the source-record half is done (`check_facts` refuses a fact line without `(source: ...)` and names the line). The secret half is only a regex for known token shapes (`ghp_`, `AKIA`, `-----BEGIN`, `xox`, `sk-`). A plain password or connection string copied from a `.env` passes `confirm` unchecked. Nothing compares a doc against values from the scan's secrets files. The asked-for change to show skipped e2e tests as skipped is not in the diff.
 
 ### J-4 `check spec` accepts any directory name as an app, including `..`, and a spec can drop `apps:` to bypass the check
 - quote: "for a in named if not (root / ".nio/project" / str(a)).is_dir()"
@@ -68,8 +67,7 @@ outcome: rejected
 - quote: "Without NIO_E2E they print `skipped` and pass."
 - situation (conformance): twelve ACs have only e2e tests, and every per-test result is `unknown`. The suite's pass is reused, and without NIO_E2E these tests skip and still pass. Nothing in the pack shows any of them ran against a model.
 - fix: run the e2e file with NIO_E2E=1 and put the per-test results in the evidence, or record a human waiver for the costly runs.
-- validation: confirmed: The pack's own quote says e2e tests print `skipped` and pass without NIO_E2E, and it shows no run evidence for these ACs. Nothing in the artefact settles it.
-- disposition: fix-task by agent: fix task T-63
+- validation: confirmed: implementation-E-4-conformance: the pack's evidence list is empty and every e2e test result is `unknown`. No NIO_E2E=1 run results are recorded for AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40 or AC-43. The diff holds no human waiver. T-63 is only a task entry; the diff to tests/test_onboard_e2e.py edits test inputs and does not record a run.
 
 ### J-7 AC-41's reconcile half is not proved
 - quote: "continue"
@@ -145,8 +143,8 @@ outcome: rejected
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-4-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-4-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
-| implementation-E-4-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
-| implementation-E-4-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
+| implementation-E-4-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-4-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| implementation-E-4-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
+| implementation-E-4-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-4-security | security | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |

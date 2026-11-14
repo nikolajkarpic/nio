@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-4",
   "subject": "2026-11-08-project-onboarding",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -16,7 +16,11 @@
     "R-261114-tapy/implementation-E-4-consistency.md": "c8ea7b048ec52886830b0607c64d9c3603878d094c3714b0703f8595f6c3d25e",
     "R-261114-tapy/implementation-E-4-correctness.md": "e731b98111ba098cee1d5247e60c6e77c778a3ea3613ffaa0a919eefa5027bae",
     "R-261114-tapy/implementation-E-4-security.md": "0f1c81746be931b1754e271e45dc35c9be274f0100764f3f214e2039350db43e",
-    "R-261114-tapy/implementation-E-4-refuter.md": "7e2f38671ea76e4f3d77d39e9aa176fdae19f42c8f8485385fb00da364878ef3"
+    "R-261114-tapy/implementation-E-4-refuter.md": "7e2f38671ea76e4f3d77d39e9aa176fdae19f42c8f8485385fb00da364878ef3",
+    "R-261114-sxwg/implementation-E-4-adversary.md": "f7abb9558b23691923257b3fc63c603d6fa41250e2f25a596a6a3c07b4c4f8a4",
+    "R-261114-sxwg/implementation-E-4-conformance.md": "17293c30edc51585d7dc6b960df88c587fed8d86142dd0d08ffc7f38b80638d6",
+    "R-261114-sxwg/implementation-E-4-consistency.md": "0f6f5aa9a4ff1dcd76131265c0e609d76c0f5c614abfe2676044fecc8b53f42d",
+    "R-261114-sxwg/implementation-E-4-correctness.md": "82d532be17d8c3cf78acf7b3fb8375b2e48c95ef6bb83407fe9f03124495b1fe"
   },
   "jurors": {
     "implementation-E-4-adversary": {
@@ -26,9 +30,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
-      "judged": 1
+      "round": 2,
+      "version": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce",
+      "judged": 2
     },
     "implementation-E-4-conformance": {
       "attempts": 1,
@@ -37,9 +41,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
-      "judged": 1
+      "round": 2,
+      "version": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce",
+      "judged": 2
     },
     "implementation-E-4-consistency": {
       "attempts": 1,
@@ -48,9 +52,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
-      "judged": 1
+      "round": 2,
+      "version": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce",
+      "judged": 2
     },
     "implementation-E-4-correctness": {
       "attempts": 1,
@@ -59,9 +63,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
-      "judged": 1
+      "round": 2,
+      "version": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce",
+      "judged": 2
     },
     "implementation-E-4-security": {
       "attempts": 1,
@@ -101,17 +105,18 @@
       ],
       "validation": "confirmed",
       "reason": "`backup` in src/nio/onboard.py copies with `shutil.copy2` straight to `dst` and skips whenever `dst.exists()`. A partial file is therefore kept and reported, and `OSError` is not caught.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-60",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/onboard.py:backup",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-2",
@@ -138,17 +143,18 @@
       ],
       "validation": "confirmed",
       "reason": "`scan` tests SECRETS first and appends `(\"secrets\", f, \"\")`, so `secrets.tf` never reaches `category`. The SKILL rule forbids opening secrets entries. The SECRETS list has no `id_ecdsa`, `*.jks`, `.htpasswd` and similar, and `fnmatch` is case-sensitive on Linux.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-61",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/onboard.py:SECRETS",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-3",
@@ -174,15 +180,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "`check_doc` checks headings only, and `act` confirm adds only a NEEDS CLARIFICATION check. Nothing checks source records or secret values, so only the dev's yes and the e2e tests guard them.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-62",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "implementation-E-4-adversary: the source-record half is done (`check_facts` refuses a fact line without `(source: ...)` and names the line). The secret half is only a regex for known token shapes (`ghp_`, `AKIA`, `-----BEGIN`, `xox`, `sk-`). A plain password or connection string copied from a `.env` passes `confirm` unchecked. Nothing compares a doc against values from the scan's secrets files. The asked-for change to show skipped e2e tests as skipped is not in the diff.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "missing",
       "where": "src/nio/onboard.py:act (confirm), tests/test_onboard_e2e.py",
       "tampering": false
@@ -302,15 +308,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "The pack's own quote says e2e tests print `skipped` and pass without NIO_E2E, and it shows no run evidence for these ACs. Nothing in the artefact settles it.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-63",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "implementation-E-4-conformance: the pack's evidence list is empty and every e2e test result is `unknown`. No NIO_E2E=1 run results are recorded for AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40 or AC-43. The diff holds no human waiver. T-63 is only a task entry; the diff to tests/test_onboard_e2e.py edits test inputs and does not record a run.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "partial",
       "where": "tests/test_onboard_e2e.py",
       "tampering": false
@@ -380,17 +386,18 @@
       ],
       "validation": "confirmed",
       "reason": "The templates ship `apps: []",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-64",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/onboard.py `_named`, `_pairs` and `docs_for`; the line the diff adds to src/nio/templates/spec.md, spec-epic.md and spec-bugfix.md",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-9",
@@ -531,17 +538,18 @@
       ],
       "validation": "confirmed",
       "reason": "SKILL.md rules line 46-47 ties \"that file\" to files listed under `secrets`, which are never opened. No rule covers an inline secret in a file the agent legitimately reads, such as AC-39's deploy.yml.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-65",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "skills/onboard/SKILL.md",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-13",
@@ -765,15 +773,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "human",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "human"
     ]
   ],
   "versions": {
-    "1": "d087184e704a82641b4d9f031d7d4bd9d88f725e"
+    "1": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
+    "2": "f7134b585eeadd254e7c2e4fd54237b071b7c6ce"
   },
   "matched": {
     "AC-5": [
@@ -909,5 +922,14 @@
       ]
     ]
   },
-  "asked": {}
+  "asked": {},
+  "list": {
+    "round": 2,
+    "ids": [
+      "J-3",
+      "J-6"
+    ],
+    "final": null,
+    "flagged": []
+  }
 }
