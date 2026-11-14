@@ -776,6 +776,22 @@ def test_skill_inline_secret_rule():
     assert "never write, quote or show the value" in text, "inline-secret rule missing"
 
 
+def test_confirm_refuses_value_from_secrets_file():
+    """J-3: a value copied from a file the scan lists as secrets is refused at confirm, without printing it."""
+    pw = "hunter2" + "hunter2"
+    root = repo({"README.md": "hi\n", ".env": f"DB_PASSWORD={pw}\nDEBUG=on\n"}, ignore=".env\n")
+    d = root / ".nio/project"
+    assert nio(root, "start", "--empty").returncode == 0
+    tpl = Path(__file__).parent.parent / "src/nio/templates/project"
+    base = (tpl / "product.md").read_text().replace("NEEDS CLARIFICATION", "x (source: dev, 2026-11-14)")
+    (d / "product.md").write_text(base.replace("x (source: dev", f"db password {pw} (source: dev", 1))
+    r = nio(root, "confirm", "product")
+    out = r.stdout + r.stderr
+    assert r.returncode == 1 and "line 5" in out and "secret" in out and pw not in out, (r.stdout, r.stderr)
+    (d / "product.md").write_text(base.replace("x (source: dev", "debug is on (source: dev", 1))  # `on` is too short to count
+    assert nio(root, "confirm", "product").returncode == 0
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_more_secret_patterns, test_backup_refuses_symlink_out_of_repo, test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -787,4 +803,4 @@ if __name__ == "__main__":
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
                     test_backup_keeps_first_copy, test_backup_failed_copy_leaves_no_partial, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
-                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded, test_skill_inline_secret_rule])
+                    test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps, test_labelled_unknown_is_not_a_fact, test_apps_line_keeps_template_comment, test_check_spec_apps_only_onboarded, test_skill_inline_secret_rule, test_confirm_refuses_value_from_secrets_file])
