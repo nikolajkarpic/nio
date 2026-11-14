@@ -847,12 +847,12 @@ def test_phases():
     root = setup()
     lens(root, "R-1", "logic", MAJOR)
     jury.collect(root, "refunds", "spec", "R-1")
-    lens(root, "R-1", "logic-2", MAJOR, lens_name="logic")  # an escalation juror: round 2, still the first review
+    lens(root, "R-1", "logic-2", MAJOR, lens_name="logic")  # an escalation juror joins its round (#129 FR-4)
     jury.collect(root, "refunds", "spec", "R-1")
     (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
     jury.collect(root, "refunds", "spec", "R-1")
     led = jury.load(root, "refunds", "spec")
-    assert led["round"] == 2 and jury.phase(led) == "first"
+    assert led["round"] == 1 and jury.phase(led) == "first"
     assert jury.check(root, "refunds", "spec", record=True)[0] == "rejected"
     fix(root, "J-1")
     lens(root, "R-2", "logic", verdicts=verdicts(J_1="not fixed"))
@@ -1731,6 +1731,11 @@ def test_over_cap_step_waits_for_the_human():
     print("ok")
 
 
+def set_cap(root, n):
+    cfg = root / ".nio/config.json"
+    cfg.write_text(json.dumps({**json.loads(cfg.read_text()), "jury": {"max_rounds": n}}))
+
+
 def cli(root, *argv):
     return cli_run(root, *argv)
 
@@ -1951,7 +1956,8 @@ def test_ac14_outcome_next_lines():
     (root / f".nio/runs/{run}/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
     lines = step(root, run)
     assert "outcome: rejected" in lines and "nio jury dispose" in next_of(lines), lines
-    root, run = rejected_state()  # (b) the human's list
+    root, run = rejected_state()  # (b) the human's list, below the round cap
+    set_cap(root, 3)
     new = run_of(step(root, run))
     out(root, new, "spec", "testability", verdicts="- J-1: not fixed - still there")
     lines = step(root, new)
@@ -2249,5 +2255,424 @@ def test_refuter_answering_its_batch_applies_both():
     assert any(l.startswith("confirmed J-1") for l in lines) and any(l.startswith("refuted J-2") for l in lines), lines
 
 
+
+# --- the round cap (#129) and fix tasks (#126), spec 2026-11-14-jury-round-cap ---
+
+MINOR_G = """### F1 AC-2 names no amount check
+- cites: AC-2
+- kind: untestable
+- severity: minor
+- evidence: observed
+- quote: "it is refunded in full"
+- situation: a test can't tell a full refund from a partial one
+- fix: name the amount
+"""
+BLOCK_T = FINDING.replace("major", "blocker")
+BLOCK_L = LOGIC_FINDING.replace("major", "blocker")
+
+
+def edit_spec(root, n):
+    sp = root / f".nio/specs/{GSLUG}/spec.md"
+    sp.write_text(sp.read_text() + f"\nEdit {n}.\n")
+
+
+def at_cap(majors=("testability",), minor=False, verdict="not fixed", cap=None):
+    """Round 1 raises a confirmed major per lens in `majors` (and a minor from adversary); the agent fixes the majors;
+    round 2's jurors give `verdict` on theirs. Returns (root, round-2 run), round 2 collected by no step yet."""
+    root = gate_spec()
+    if cap:
+        set_cap(root, cap)
+    run = run_of(step(root))
+    text = {"testability": FINDING, "logic": LOGIC_FINDING}
+    for name in ("testability", "logic", "adversary"):
+        out(root, run, "spec", name, text.get(name, "") * (name in majors) + MINOR_G * (minor and name == "adversary") or "none")
+    step(root, run)
+    ids = [f["id"] for f in ledger(root)["findings"] if f["severity"] == "major"]
+    refuter_file(root, run, "".join(CONFIRM.format(n=i[2:]) for i in ids))
+    assert "outcome: rejected" in step(root, run)
+    jury.dispose(root, GSLUG, "spec", ",".join(ids), "spec-fix", "agent", "fixed")
+    edit_spec(root, 1)
+    new = run_of(step(root, run))
+    for f in ledger(root)["findings"]:
+        if f["id"] in ids:
+            out(root, new, "spec", f["sources"][0]["lens"], verdicts=f"- {f['id']}: {verdict} - checked")
+    return root, new
+
+
+def fid(root, lens, severity=None):
+    """The ID of the finding `lens` raised (of `severity`): IDs follow the order lens outputs are collected in."""
+    return next(f["id"] for f in ledger(root)["findings"] if f["sources"][0]["lens"] == lens and severity in (None, f["severity"]))
+
+
+def ids_in(lines):
+    return set(re.findall(r"^- (J-\d+) \[", "\n".join(lines), re.M))
+
+
+def test_ac1_cap_prints_the_batch():
+    root, run = at_cap(minor=True)
+    n = run_count(root)
+    lines = step(root, run)
+    assert any(l.startswith("capped: round 2") for l in lines) and ids_in(lines) == {fid(root, "testability")}, lines  # not the minor
+    assert run_count(root) == n and ledger(root)["round"] == 2 and "nio jury rule" in next_of(lines), lines
+    assert step(root)[-1] == lines[-1] and run_count(root) == n  # a call without a run starts no round 3 either
+    print("ok")
+
+
+def test_ac2_max_rounds_3_runs_round_3():
+    root, run = at_cap(cap=3)
+    assert "outcome: human" in step(root, run)  # today's list, below the cap
+    jury.dispose(root, GSLUG, "spec", "J-1", "spec-fix", "human", "fixed")
+    edit_spec(root, 2)
+    new = run_of(step(root, run))
+    assert (root / f".nio/runs/{new}/jury/packs/testability.md").exists()
+    print("ok")
+
+
+def two_blockers_round_two():
+    """Round 1: blockers J-1 (testability) and J-2 (logic), each escalated (its -2 juror re-raises it), fixed by the
+    agent; round 2: both not fixed and confirmed again. Returns (root, run) after the step that ends round 2."""
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", BLOCK_T)
+    out(root, run, "spec", "logic", BLOCK_L)
+    out(root, run, "spec", "adversary")
+    step(root, run)
+    refuter_file(root, run, CONFIRM.format(n=1) + CONFIRM.format(n=2))
+    for _ in range(2):
+        name = next_of(step(root, run)).split()[1].rstrip(":")
+        text = {"testability": BLOCK_T, "logic": BLOCK_L}[name]
+        out(root, run, "spec", f"{name}-2", text, lens_name=name)
+        out(root, run, "spec", f"{name}-3", text, lens_name=name)
+    assert ledger(root)["round"] == 1  # the escalation jurors joined round 1 (FR-4)
+    assert "outcome: rejected" in step(root, run)
+    jury.dispose(root, GSLUG, "spec", "J-1,J-2", "spec-fix", "agent", "fixed")
+    edit_spec(root, 1)
+    new = run_of(step(root, run))
+    for name in ("testability", "logic"):
+        out(root, new, "spec", name, verdicts=f"- {fid(root, name)}: not fixed - still there")
+    step(root, new)
+    refuter_file(root, new, CONFIRM.format(n=1) + CONFIRM.format(n=2))
+    return root, new, step(root, new)
+
+
+def test_ac21_escalation_counts_since_the_blocker_was_raised():
+    root, run, lines = two_blockers_round_two()
+    led = ledger(root)
+    j = next(f for f in led["findings"] if f["id"] == fid(root, "testability"))
+    assert jury.escalation(led, j, "testability") == 3, led["jurors"]  # round 2's juror and round 1's -2 and -3
+    assert not any(l.startswith("next: escalate") for l in lines), lines
+    print("ok")
+
+
+def test_ac14_two_blockers_start_the_automatic_round():
+    root, run, lines = two_blockers_round_two()
+    assert "outcome: rejected" in lines and not any(l.startswith("capped") for l in lines), lines
+    jury.dispose(root, GSLUG, "spec", "J-1,J-2", "spec-fix", "agent", "fixed again")
+    edit_spec(root, 2)
+    lines = step(root)
+    packs = root / f".nio/runs/{run_of(lines)}/jury/packs"
+    assert sorted(p.stem for p in packs.glob("*.md")) == ["logic", "testability"], lines  # not adversary
+    print("ok")
+
+
+def test_ac15_no_round_after_the_automatic_one():
+    root, run, _ = two_blockers_round_two()
+    jury.dispose(root, GSLUG, "spec", "J-1,J-2", "spec-fix", "agent", "fixed again")
+    edit_spec(root, 2)
+    r3 = run_of(step(root))
+    for name in ("testability", "logic"):
+        out(root, r3, "spec", name, verdicts=f"- {fid(root, name)}: not fixed - still there")
+    step(root, r3)
+    refuter_file(root, r3, CONFIRM.format(n=1) + CONFIRM.format(n=2))
+    n = run_count(root)
+    lines = step(root, r3)
+    assert ledger(root)["round"] == 3 and ids_in(lines) == {"J-1", "J-2"} and any(l.startswith("capped") for l in lines), lines
+    assert run_count(root) == n and step(root)[-1] == lines[-1] and run_count(root) == n  # no round 4
+    print("ok")
+
+
+def test_ac17_one_blocker_goes_to_the_batch():
+    root, run, _ = two_blockers_round_two()
+    led = ledger(root)  # as if round 2 had left one blocker: logic's accepted before the round ended
+    led.pop("cap")
+    next(f for f in led["findings"] if f["id"] == fid(root, "logic")).update(status="disposed", disposition="accepted-risk", by="human", note="ok")
+    jury.save(root, led)
+    n = run_count(root)
+    lines = step(root, run)
+    assert ids_in(lines) == {fid(root, "testability")} and any(l.startswith("capped") for l in lines) and run_count(root) == n, lines
+    print("ok")
+
+
+def test_ac3_escalation_jurors_join_round_two():
+    root, run = at_cap()
+    new_blocker = """### F1 AC-2 never says what full means
+- cites: AC-2
+- kind: gap
+- severity: blocker
+- evidence: observed
+- quote: "it is refunded in full"
+- situation: a partial refund passes AC-2
+- fix: say full means the order total
+"""
+    out(root, run, "spec", "testability", new_blocker, verdicts="- J-1: not fixed - still there")
+    step(root, run)
+    refuter_file(root, run, CONFIRM.format(n=2))
+    assert next_of(step(root, run)).startswith("escalate testability")
+    out(root, run, "spec", "testability-2", lens_name="testability")
+    out(root, run, "spec", "testability-3", lens_name="testability")
+    lines = step(root, run)
+    assert ledger(root)["round"] == 2 and not next_of(lines).startswith("escalate"), lines
+    assert any(l.startswith("capped: round 2") for l in lines), lines  # the cap applies after it
+    print("ok")
+
+
+def test_ac4_one_more_round_on_the_human_s_ask():
+    root, run = at_cap(majors=("testability", "logic"))
+    step(root, run)
+    t, l = fid(root, "testability"), fid(root, "logic")
+    jury.rule(root, GSLUG, "spec", t, "again", "check it once more")
+    assert any(x.startswith("capped") for x in step(root))  # logic's finding still unruled: no round yet
+    jury.rule(root, GSLUG, "spec", l, "accept", "fine")
+    r3 = run_of(step(root))
+    assert sorted(p.stem for p in (root / f".nio/runs/{r3}/jury/packs").glob("*.md")) == ["testability"]
+    out(root, r3, "spec", "testability", verdicts=f"- {t}: not fixed - still there")
+    n = run_count(root)
+    lines = step(root, r3)
+    assert ids_in(lines) == {t} and step(root)[-1] == lines[-1] and run_count(root) == n, lines  # no round by itself
+    jury.rule(root, GSLUG, "spec", t, "again", "once more")
+    assert (root / f".nio/runs/{run_of(step(root))}/jury/packs/testability.md").exists()
+    print("ok")
+
+
+def test_ac5_accept_closes_the_gate():
+    root, run = at_cap()
+    step(root, run)
+    jury.rule(root, GSLUG, "spec", "J-1", "accept", "we live with it")
+    f = ledger(root)["findings"][0]
+    assert (f["disposition"], f["by"]) == ("accepted-risk", "human"), f
+    step(root)
+    assert jury.standing(root, GSLUG, "spec") in ("approved", "closed") and not [g for g in ledger(root)["findings"] if g["status"] == "open"]
+    print("ok")
+
+
+def test_ac6_bad_max_rounds_stops():
+    for bad in (0, -1, 1.5, "2"):
+        root = gate_spec()
+        set_cap(root, bad)
+        code, _, err = cli_run(root, "jury", "next", GSLUG, "spec")
+        assert code != 0 and "jury.max_rounds" in err and not (root / ".nio/runs").exists(), (bad, code, err)
+    print("ok")
+
+
+def test_ac7_nothing_open_no_batch():
+    root, run = at_cap(verdict="fixed")
+    lines = step(root, run)
+    assert "outcome: approved" in lines and not any(l.startswith("capped") for l in lines) and "cap" not in ledger(root), lines
+    print("ok")
+
+
+def test_ac16_minor_skipped_and_in_the_summary():
+    root, run = at_cap(minor=True)
+    lines = step(root, run)
+    m = next(f for f in ledger(root)["findings"] if f["severity"] == "minor")
+    assert (m["disposition"], m["by"], m["note"]) == ("accepted-risk", "system", jury.SKIPPED), m
+    assert m["id"] not in "\n".join(lines), lines
+    jury.rule(root, GSLUG, "spec", fid(root, "testability"), "accept", "fine")
+    lines = step(root)
+    assert "closed by the system:" in lines and any(x.startswith(f"- {m['id']} ") for x in lines), lines
+    print("ok")
+
+
+def test_ac18_fix_at_the_cap_is_not_rechecked():
+    root, run = at_cap()
+    step(root, run)
+    jury.rule(root, GSLUG, "spec", "J-1", "fix", "say per order")
+    edit_spec(root, 2)
+    n = run_count(root)
+    lines = step(root)
+    assert jury.standing(root, GSLUG, "spec") == "closed" and run_count(root) == n, lines
+    assert ledger(root)["findings"][0]["by"] == "human" and "closed by their rulings" in next_of(lines), lines
+    print("ok")
+
+
+def test_ac22_only_minors_close_the_gate():
+    root, run = at_cap(minor=True, verdict="fixed")
+    lines = step(root, run)
+    assert "outcome: approved" in lines and not any(l.startswith("capped") for l in lines), lines
+    assert "closed by the system:" in lines and fid(root, "adversary", "minor") in "\n".join(lines), lines
+    print("ok")
+
+
+def test_ac23_round_one_below_the_cap_as_today():
+    root = gate_spec()
+    run = run_of(step(root))
+    out(root, run, "spec", "testability", FINDING)
+    out(root, run, "spec", "logic")
+    out(root, run, "spec", "adversary", MINOR_G)
+    step(root, run)
+    refuter_file(root, run, CONFIRM.format(n=fid(root, "testability")[2:]))
+    lines = step(root, run)
+    assert "outcome: rejected" in lines and "- unresolved: J-1, J-2" in lines and run_count(root) == 1, lines
+    print("ok")
+
+
+def test_ac24_ruling_refused_before_the_cap_or_in_a_round():
+    root, run = at_cap(majors=("testability", "logic"))
+    code, _, err = cli_run(root, "jury", "rule", GSLUG, "spec", "J-1", "accept", "--note", "early")  # round 2 not stepped yet
+    assert code != 0 and (ledger(root)["findings"][0]["disposition"], ledger(root)["findings"][0]["by"]) == ("spec-fix", "agent"), err
+    step(root, run)
+    jury.rule(root, GSLUG, "spec", "J-1,J-2", "again", "once more")
+    n = run_count(root)
+    code, _, err = cli_run(root, "jury", "rule", GSLUG, "spec", "J-1", "accept", "--note", "late")  # the round is on
+    assert code != 0 and ledger(root)["findings"][0]["disposition"] == "spec-fix" and run_count(root) == n, err
+    print("ok")
+
+
+def test_ac25_one_ruled_keeps_the_gate_capped():
+    root, run = at_cap(majors=("testability", "logic"))
+    assert ids_in(step(root, run)) == {"J-1", "J-2"}
+    jury.rule(root, GSLUG, "spec", "J-1", "accept", "fine")
+    lines = step(root)
+    assert ids_in(lines) == {"J-2"} and jury.standing(root, GSLUG, "spec") != "closed", lines
+    print("ok")
+
+
+def test_ac12_ac13_ac26_later_epic_out_of_scope():
+    root = setup()
+    (root / ".nio/specs/refunds/tasks.md").write_text("---\nslug: refunds\nretired: []\n---\n## E-1 First (US-1)\n\n"
+                                                      "### T-1 a\n- Serves: AC-1, AC-3\n\n## E-2 Second (US-2)\n\n### T-2 b\n- Serves: AC-2, AC-3\n")
+    led = jury.load(root, "refunds", "implementation-E-1")
+    blank = {"status": "open", "disposition": "", "by": "", "note": ""}
+    led["findings"] = [{**blank, "id": f"J-{n}", "cites": c} for n, c in enumerate([["AC-2"], ["AC-1"], ["FR-1"], ["AC-3"]], 1)]
+    jury.later_epic(root, "refunds", "implementation-E-1", led)
+    j1, *rest = led["findings"]
+    assert (j1["disposition"], j1["by"]) == ("out-of-scope", "system") and "T-2" in j1["note"], j1  # AC-12
+    assert all(f["status"] == "open" and not f["disposition"] for f in rest), rest  # AC-13 (AC-1), AC-26 (no AC; AC-3 in both)
+    print("ok")
+
+
+def test_agent_cannot_dispose_of_the_capped_batch():
+    """Only the human rules a capped batch: an agent's disposition is refused, and one already made (an older ledger)
+    doesn't close the gate."""
+    root, run = at_cap()
+    step(root, run)
+    try:
+        jury.dispose(root, GSLUG, "spec", "J-1", "spec-fix", "agent", "I fixed it myself")
+        raise AssertionError("an agent disposed of a capped finding")
+    except ValueError as e:
+        assert "only the human" in str(e), e
+    led = ledger(root)
+    led["findings"][0].update(status="disposed", disposition="spec-fix", by="agent", note="I fixed it myself")
+    jury.save(root, led)
+    edit_spec(root, 9)
+    lines = step(root)
+    assert ids_in(lines) == {"J-1"} and jury.standing(root, GSLUG, "spec") != "closed", lines
+    jury.rule(root, GSLUG, "spec", "J-1", "accept", "fine")
+    assert "closed by their rulings" in next_of(step(root)) and jury.standing(root, GSLUG, "spec") == "closed"
+    print("ok")
+
+
+# --- the round cap at the implementation gate, driven through the step ---
+
+IG = "implementation-E-1"
+
+
+def impl_at_cap(*findings, later=False):
+    """Epic E-1 of spec `s` built (T-1, T-2), its jury at round 2 after a rejected round 1, with `findings` open;
+    `later` adds epic E-2, not built, whose T-9 serves AC-9."""
+    from test_evidence import gate_repo
+    root, _ = gate_repo()
+    if later:
+        with open(root / ".nio/specs/s/tasks.md", "a") as f:
+            f.write("\n## E-2 Later (Next)\n\n### T-9 Later\n- Files: `a.py`\n- Serves: AC-9\n- Test: TC-1\n- Depends on: none\n"
+                    "- Parallel: no\n- Tier: cheap: x\n- Effort: low\n")
+        subprocess.run(["git", "commit", "-qam", "E-2 planned"], cwd=root, check=True)
+    led = jury.load(root, "s", IG)
+    led.update(round=2, recorded=[[1, "rejected"]], findings=[
+        {"id": f"J-{n}", "title": f"Finding {n}", "kind": "gap", "severity": sev, "cites": [cite], "evidence": "observed",
+         "quotes": [], "fix": "fix it", "where": "`a.py`", "sources": [{"juror": lens, "lens": lens, "situation": "x", "severity": sev}],
+         "validation": "confirmed", "reason": "", "status": "open", "disposition": "", "by": "", "note": "", "baseline": "new",
+         "rounds": 1, "first_round": 1, "last_round": 2} for n, (lens, sev, cite) in enumerate(findings, 1)])
+    jury.save(root, led)
+    return root
+
+
+def impl_step(root):
+    return jury.step(root, "s", IG)
+
+
+def build_fix(root, tid):
+    """The fix task done as the implement stage leaves it: its commit, and its steps in the history."""
+    with open(root / ".nio/specs/s/history.jsonl", "a") as f:
+        f.writelines(json.dumps({"kind": k, "from": "implementing", "to": "implementing", "end": True,
+                                 "evidence": {"task": tid, "commit": "c", "passed": True}}) + "\n"
+                     for k in ("claim", "red", "green", "review", "task_done"))
+    (root / "a.py").write_text("a = 2\n")
+    subprocess.run(["git", "commit", "-qam", f"{tid}: fix"], cwd=root, check=True)
+
+
+def test_impl_cli_blockers_at_the_cap_rerun_conformance():
+    """Two failing-test blockers at the cap start the automatic round on conformance, not a round with no lens."""
+    root = impl_at_cap(("cli", "blocker", "AC-1"), ("cli", "blocker", "AC-2"))
+    lines = impl_step(root)
+    assert jury.load(root, "s", IG)["cap"]["lenses"] == ["conformance"], jury.load(root, "s", IG)["cap"]
+    assert not any("no lens has a fix to check" in l for l in lines) and "nio jury evidence" in lines[-1], lines
+    print("ok")
+
+
+def test_impl_cli_finding_ruled_again_reruns_conformance():
+    """`again` on a failing-test finding: its round, once the fix task is built, re-runs conformance."""
+    root = impl_at_cap(("cli", "major", "AC-1"))
+    assert ids_in(impl_step(root)) == {"J-1"}
+    jury.rule(root, "s", IG, "J-1", "again", "check it once more")
+    assert jury.load(root, "s", IG)["cap"]["lenses"] == ["conformance"]
+    build_fix(root, "T-3")
+    lines = impl_step(root)
+    assert not any("no lens has a fix to check" in l for l in lines) and "nio jury evidence" in lines[-1], lines
+    print("ok")
+
+
+def test_impl_fix_ruling_waits_for_its_fix_task():
+    """`fix` at the implementation gate: the batch says to build the fix task, the gate waits until it's done, then
+    closes with no round."""
+    root = impl_at_cap(("correctness", "major", "AC-1"))
+    lines = impl_step(root)
+    assert "build it through the implement stage" in lines[-1] and "edit the implementation" not in lines[-1], lines
+    jury.rule(root, "s", IG, "J-1", "fix", "pay once")
+    try:
+        impl_step(root)
+        raise AssertionError("the gate went on with its fix task not done")
+    except ValueError as e:
+        assert "T-3 not done" in str(e), e
+    assert not jury.load(root, "s", IG).get("closed")
+    build_fix(root, "T-3")
+    n = run_count(root)
+    lines = impl_step(root)
+    assert jury.standing(root, "s", IG) == "closed" and run_count(root) == n, lines
+    print("ok")
+
+
+def test_impl_later_epic_before_the_cap():
+    """A finding a later epic serves is out of scope before the cap counts it: not in the human's batch."""
+    root = impl_at_cap(("correctness", "major", "AC-9"), ("correctness", "major", "AC-1"), later=True)
+    lines = impl_step(root)
+    j1 = jury.load(root, "s", IG)["findings"][0]
+    assert ids_in(lines) == {"J-2"} and (j1["disposition"], j1["by"]) == ("out-of-scope", "system"), (lines, j1)
+    print("ok")
+
+
+def test_fix_ruling_waits_for_the_edit():
+    """A `fix` ruling at the spec gate: the gate waits until the spec is edited (the brief's part: test_flow)."""
+    root, run = at_cap()
+    step(root, run)
+    jury.rule(root, GSLUG, "spec", "J-1", "fix", "pin it down")
+    lines = step(root)
+    assert lines[0] == "waiting: edit the spec for J-1 (ruled fix by the human), then call the step again", lines
+    assert jury.standing(root, GSLUG, "spec") != "closed" and not ledger(root).get("closed"), lines
+    edit_spec(root, 2)
+    assert "closed by their rulings" in next_of(step(root)) and jury.standing(root, GSLUG, "spec") == "closed"
+    print("ok")
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_skill_sends_state_through_the_step, test_escalate_copies_are_unmistakable, test_grill_deferred_blocker_falls_through_to_check, test_add_reason_with_parens_invents_no_lens, test_over_cap_step_waits_for_the_human, test_ac1_step_writes_the_refuter_batch, test_ac2_rerun_writes_fix_check_packs, test_ac7_accepted_risk_and_edit_reruns_voters, test_ac8_whitespace_edit_shows_the_human, test_ac3_step_prints_no_finding_body, test_ac4_missing_and_invalid_lenses_rerun, test_ac5_repeated_step_changes_nothing, test_ac12_first_review_packs, test_ac13_needs_more_is_rerun, test_ac14_outcome_next_lines, test_ac16_unplanned_lens_file_stops_the_step, test_misuse_separate_calls_beside_the_step, test_ac11_scenario_a_in_at_most_15_calls, test_nfr1_skill_names_the_step, test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_consistency_pack_memory_is_for_a_juror, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged, test_ac1_refuter_before_its_batch_is_refused, test_ac2_refuter_only_for_its_batch, test_ac3_refuter_after_its_batch_applies, test_ac13_spec_changed_while_jurors_ran, test_misuse_forged_refuter_on_a_peer_is_refused, test_misuse_forged_refuter_in_a_later_run, test_misuse_forged_refuter_during_a_redo, test_forged_refuter_after_escalation_is_refused, test_reraised_finding_goes_back_to_pending, test_refuter_answering_its_batch_applies_both])
+    selfcheck.main([test_fix_ruling_waits_for_the_edit, test_agent_cannot_dispose_of_the_capped_batch, test_impl_cli_blockers_at_the_cap_rerun_conformance, test_impl_cli_finding_ruled_again_reruns_conformance, test_impl_fix_ruling_waits_for_its_fix_task, test_impl_later_epic_before_the_cap, test_ac1_cap_prints_the_batch, test_ac2_max_rounds_3_runs_round_3, test_ac21_escalation_counts_since_the_blocker_was_raised, test_ac14_two_blockers_start_the_automatic_round, test_ac15_no_round_after_the_automatic_one, test_ac17_one_blocker_goes_to_the_batch, test_ac3_escalation_jurors_join_round_two, test_ac4_one_more_round_on_the_human_s_ask, test_ac5_accept_closes_the_gate, test_ac6_bad_max_rounds_stops, test_ac7_nothing_open_no_batch, test_ac16_minor_skipped_and_in_the_summary, test_ac18_fix_at_the_cap_is_not_rechecked, test_ac22_only_minors_close_the_gate, test_ac23_round_one_below_the_cap_as_today, test_ac24_ruling_refused_before_the_cap_or_in_a_round, test_ac25_one_ruled_keeps_the_gate_capped, test_ac12_ac13_ac26_later_epic_out_of_scope, test_skill_sends_state_through_the_step, test_escalate_copies_are_unmistakable, test_grill_deferred_blocker_falls_through_to_check, test_add_reason_with_parens_invents_no_lens, test_over_cap_step_waits_for_the_human, test_ac1_step_writes_the_refuter_batch, test_ac2_rerun_writes_fix_check_packs, test_ac7_accepted_risk_and_edit_reruns_voters, test_ac8_whitespace_edit_shows_the_human, test_ac3_step_prints_no_finding_body, test_ac4_missing_and_invalid_lenses_rerun, test_ac5_repeated_step_changes_nothing, test_ac12_first_review_packs, test_ac13_needs_more_is_rerun, test_ac14_outcome_next_lines, test_ac16_unplanned_lens_file_stops_the_step, test_misuse_separate_calls_beside_the_step, test_ac11_scenario_a_in_at_most_15_calls, test_nfr1_skill_names_the_step, test_ac6_dispose_three_in_one_call, test_ac7_refused_dispose_changes_nothing, test_ac15_notes_per_finding_in_order, test_ac9_file_name_gives_the_lens, test_ac10_escalation_file_counts_as_its_lens, test_none_slips_mean_no_findings, test_field_labels_in_any_case, test_malformed_output_stays_invalid, test_none_with_findings_is_invalid, test_review_scenarios, test_plan_gate_versions, test_needs_more_doesnt_fix, test_cli_dispose_order, test_escalation_is_not_a_fix, test_answers_for_scope, test_plan_and_changed, test_deferred_points_need_the_human, test_format_template_parses, test_template_shows_gap_and_where, test_consistency_pack_memory_is_for_a_juror, test_gate, test_persisting_finding_goes_to_the_human, test_majority_overrules_one_juror, test_versions_decide_fixed, test_stop_rule, test_final_check, test_fix_verdicts, test_retry_after_another_lens_fixed_a_shared_finding, test_final_check_sees_cites_and_human_overrules, test_changed_and_fixcheck, test_phases, test_old_ledgers, test_skill_and_cards, test_implementation_review, test_ac1_it_plans_the_two_core_lenses, test_ac2_no_lens_is_planned, test_ac3_the_spec_check_is_not_what_decides_it, test_ac4_logic_runs_with_its_reason, test_ac5_logic_does_not_run, test_ac6_security_runs_with_its_reason, test_ac53_security_runs_with_its_reason, test_ac54_risk_rollback_runs_with_its_reason, test_ac48_risk_rollback_runs_with_its_reason, test_ac7_the_gate_is_blocked_naming_the_missing_card, test_ac8_it_is_the_plan_gate_s_own_ledger, test_ac9_it_holds_all_four_plan_files, test_uj1_juror_files_hold_all_plan_files, test_ac44_the_first_is_kept_and_the_second_dropped, test_ac45_they_hold_the_plan_files_the_spec_claude, test_ac10_it_is_invalid_as_at_the_spec_gate, test_ac33_the_ledger_records_it, test_ac34_the_disposition_is_refused, test_ac35_a_change_request_on_the_spec_is_written, test_ac43_the_ledger_records_it_with_its_change_re, test_ac37_the_plan_does_not_state_its_own_limit_fo, test_ac36_only_fr_4_and_the_items_around_it_are_in, test_ac38_it_tells_the_juror_not_to_raise_j_2_agai, test_ac51_j_1_goes_to_the_refuter_before_any_outco, test_ac52_no_new_round_is_asked_for_and_the_majors, test_ac59_it_is_refused_and_the_tasks_stage_refuse, test_ac42_it_proceeds_given_a_plan_gate_handed_to, test_ac39_one_nio_approve_plan_commit_holds_the_pl, test_ac56_the_plan_gate_is_no_longer_approved_and, test_ac57_j_6_joins_c_1, test_ac58_the_plan_jury_resumes_and_j_3_is_open_ag, test_uj2_spec_change_blocks_plan_fix, test_uj1_plan_gate_needs_lens_outputs, test_nfr1_plan_gate_makes_no_model_call, test_escaped_quotes_ground, test_ac41_it_plans_executability_as_the_core_lens, test_ac38_it_sits_next_to_the_spec_gate_s_ledger_n, test_ac8_fixcheck_shows_fixes, test_ac24_fixes_only_no_rerun, test_ac8_fixcheck_shows_fixes_misuse, test_ac9_changed_lists_fixes, test_ac11_no_fixes_unchanged, test_ac1_refuter_before_its_batch_is_refused, test_ac2_refuter_only_for_its_batch, test_ac3_refuter_after_its_batch_applies, test_ac13_spec_changed_while_jurors_ran, test_misuse_forged_refuter_on_a_peer_is_refused, test_misuse_forged_refuter_in_a_later_run, test_misuse_forged_refuter_during_a_redo, test_forged_refuter_after_escalation_is_refused, test_reraised_finding_goes_back_to_pending, test_refuter_answering_its_batch_applies_both])
