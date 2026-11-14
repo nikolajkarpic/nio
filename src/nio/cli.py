@@ -177,7 +177,7 @@ def main():
         if a.action == "backup":
             try:
                 print(onboard.backup(a.arg[0] if a.arg else "", records.repo_root()))
-            except ValueError as e:
+            except (ValueError, OSError) as e:
                 sys.exit(f"error: {e}")
             return
         if a.action != "scan":

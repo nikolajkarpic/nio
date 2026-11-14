@@ -661,6 +661,42 @@ def test_drafting_pack_all_apps():
     assert sorted(headings(r.stdout)) == sorted(want), headings(r.stdout)
 
 
+def test_backup_failed_copy_leaves_no_partial():
+    import datetime
+    import shutil
+    import os
+    from nio import onboard
+    root = repo({"CLAUDE.md": "rules v1 full"})
+    real = shutil.copy2
+
+    def broken(s, d, **k):
+        Path(d).write_bytes(b"rul")
+        raise OSError("disk full")
+    shutil.copy2 = broken
+    try:
+        try:
+            onboard.backup(str(root / "CLAUDE.md"), root)
+            raise AssertionError("copy failure not raised")
+        except OSError:
+            pass
+    finally:
+        shutil.copy2 = real
+    day = f".nio/backup/{datetime.date.today().isoformat()}"
+    assert not (root / day / "CLAUDE.md").exists(), "truncated file at the backup path"
+    assert nio(root, "backup", "CLAUDE.md").returncode == 0
+    assert (root / day / "CLAUDE.md").read_bytes() == b"rules v1 full"
+    root = repo({"CLAUDE.md": "x"})
+    (root / ".nio/backup").mkdir(parents=True)
+    (root / day).write_text("in the way")
+    r = nio(root, "backup", "CLAUDE.md")
+    assert r.returncode == 1 and "error:" in r.stdout + r.stderr and "Traceback" not in r.stderr, (r.returncode, r.stderr)
+    root = repo({"AGENTS.md": "agents", ".env.md": "s"})
+    os.symlink("AGENTS.md", root / "CLAUDE.md")
+    r = nio(root, "backup", "CLAUDE.md")
+    assert r.returncode == 0 and (root / day / "CLAUDE.md").read_bytes() == b"agents", (r.stdout, r.stderr)
+    assert nio(root, "backup", ".env.md").returncode == 1
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_more_secret_names, test_scan_skips_symlink, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -671,5 +707,5 @@ if __name__ == "__main__":
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs, test_doc_quote_grounds_for_its_lens,
                     test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only, test_check_spec_apps,
-                    test_backup_keeps_first_copy, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
+                    test_backup_keeps_first_copy, test_backup_failed_copy_leaves_no_partial, test_six_docs_with_headings, test_fact_names_file_and_hash, test_skills_keep_skip_with_dev, test_apps_start_and_confirm, test_app_slug_not_a_doc_name,
                     test_plan_pack_two_apps, test_worker_pack_one_app, test_drafting_pack_all_apps])
