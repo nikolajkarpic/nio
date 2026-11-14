@@ -2531,7 +2531,7 @@ def test_planned_and_plan_files_come_from_their_modules():
     assert [f for f, g in flow.JUDGED_BY.items() if g == "plan_jury"] == list(plan.FILES)
     root = effort("tasks_jury")
     real = jury.planned
-    jury.planned = lambda name, text_, **_: "planned:" + name
+    jury.planned = lambda name, text_: "planned:" + name
     try:
         assert "planned:tasks.md" in jury.artefact(root, S, "tasks")
     finally:
@@ -2770,10 +2770,15 @@ def test_tasks_ledger_judged_before_126_stays_approved():
     text = re.sub(r"^retired:.*$", "retired: [T-4]", text, flags=re.M) if re.search(r"^retired:", text, re.M) else "retired: [T-4]\n" + text
     tasks_md.write_text(text)
     led = jury.load(root, S, "tasks")
-    led["versions"][str(led["round"])] = jury.blob(root, jury.artefact(root, S, "tasks", legacy=True), write=True)
+    legacy = jury.artefact(root, S, "tasks").replace("retired: []", "retired: [T-4]", 1)  # tasks.md comes first
+    assert "retired: [T-4]" in legacy and legacy != jury.artefact(root, S, "tasks")
+    led["versions"][str(led["round"])] = jury.blob(root, legacy, write=True)
     jury.save(root, led)
-    assert jury.artefact(root, S, "tasks", legacy=True) != jury.artefact(root, S, "tasks")
     assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    tasks_md.write_text(tasks_md.read_text().replace("retired: [T-4]", "retired: [T-4, T-5]"))  # another fix task retired
+    assert "state: implementing" in nxt(root) and approved_exit(root) == 0
+    tasks_md.write_text(tasks_md.read_text() + "\nA real edit.\n")
+    assert approved_exit(root) != 0
     print("ok")
 
 
