@@ -357,6 +357,72 @@ retired: [T-8, T-11, T-17]
 - Effort: low
 - Mode: direct: the behaviour exists; the tests guard it
 
+### T-60 Fix: A failed copy leaves a truncated backup that the next call reports as the kept original
+- From: J-1 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`
+- Serves: CT-17, J-1
+- Test: TC-18
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-61 Fix: SECRETS hides secret-named IaC from the iac category, and the pattern list has gaps
+- From: J-2 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`
+- Serves: AC-38
+- Test: TC-19
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-62 Fix: Nothing in the CLI checks that a confirmed doc has source records or is free of secret values
+- From: J-3 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`, `tests/test_onboard_e2e.py`
+- Serves: CT-4, AC-8
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-63 Fix: E2E-only ACs have no run evidence
+- From: J-6 (implementation-E-4, round 1)
+- Files: `tests/test_onboard_e2e.py`
+- Serves: AC-5, AC-7, AC-9, AC-10, AC-11, AC-12, AC-33, AC-36, AC-37, AC-39, AC-40, AC-43
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-64 Fix: A spec's apps line that keeps the template comment names the wrong apps, so a one-app worker pack gets every app's docs
+- From: J-8 (implementation-E-4, round 1)
+- Files: `src/nio/onboard.py`, `src/nio/templates/spec.md`
+- Serves: CT-9, AC-35, CT-6
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-65 Fix: Skill rule for an inline secret only covers files the agent never opens
+- From: J-12 (implementation-E-4, round 1)
+- Files: `skills/onboard/SKILL.md`
+- Serves: AC-39, CT-13
+- Test: TC-20
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-5 Onboard an empty repo (US-3)
 
 ### T-19 The first full spec's grill fills blank tech fields

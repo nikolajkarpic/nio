@@ -1,0 +1,913 @@
+{
+  "gate": "implementation-E-4",
+  "subject": "2026-11-08-project-onboarding",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "security"
+  ],
+  "collected": {
+    "R-261114-tapy/implementation-E-4-adversary.md": "a06a29fd97c8fd9843b61627c580e9be91448dc2e05e53b170712ff4086f9fe4",
+    "R-261114-tapy/implementation-E-4-conformance.md": "a948f3a13b568f66ebfc1b891d33b058c96df175387fbabf2059c82b3839f632",
+    "R-261114-tapy/implementation-E-4-consistency.md": "c8ea7b048ec52886830b0607c64d9c3603878d094c3714b0703f8595f6c3d25e",
+    "R-261114-tapy/implementation-E-4-correctness.md": "e731b98111ba098cee1d5247e60c6e77c778a3ea3613ffaa0a919eefa5027bae",
+    "R-261114-tapy/implementation-E-4-security.md": "0f1c81746be931b1754e271e45dc35c9be274f0100764f3f214e2039350db43e",
+    "R-261114-tapy/implementation-E-4-refuter.md": "7e2f38671ea76e4f3d77d39e9aa176fdae19f42c8f8485385fb00da364878ef3"
+  },
+  "jurors": {
+    "implementation-E-4-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
+      "judged": 1
+    },
+    "implementation-E-4-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
+      "judged": 1
+    },
+    "implementation-E-4-consistency": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
+      "judged": 1
+    },
+    "implementation-E-4-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
+      "judged": 1
+    },
+    "implementation-E-4-security": {
+      "attempts": 1,
+      "lens": "security",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d087184e704a82641b4d9f031d7d4bd9d88f725e",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A failed copy leaves a truncated backup that the next call reports as the kept original",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-17"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "A second backup of the same file on the same day keeps the first copy and prints its path.",
+        "    if not dst.exists():"
+      ],
+      "fix": "copy to a temp name and `os.replace` it, as `save` does for progress. Compare sizes or bytes when the destination already exists. Catch `OSError`.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`shutil.copy2` is interrupted (disk full, killed process, permission error). That leaves a partial `.nio/backup/<date>/CLAUDE.md`. The skill retries, `dst.exists()` is true, nothing is copied, and the truncated path is printed as success. The agent then patches the original on the dev's yes. FR-29's promise (\"copying it back gives back the original bytes\") is gone, and nothing says so. Plain `OSError` also escapes as a traceback instead of the `error:` exit.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`backup` in src/nio/onboard.py copies with `shutil.copy2` straight to `dst` and skips whenever `dst.exists()`. A partial file is therefore kept and reported, and `OSError` is not caught.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-60",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:backup",
+      "tampering": false
+    },
+    {
+      "id": "J-2",
+      "title": "SECRETS hides secret-named IaC from the iac category, and the pattern list has gaps",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-38"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a name matching `SECRETS` gets only `(\"secrets\", path, \"\")`, whatever else it matches.",
+        "\"credentials*\", \"secrets.*\", \"id_rsa*\", \"id_ed25519*\"]"
+      ],
+      "fix": "for IaC-looking secret names, either list them as secrets and also surface a path-only pointer to the iac category, or have the skill name them without opening them. Extend the patterns and match case-insensitively.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`secrets.tf` and `credentials.tf` are common Terraform names that define the secret manager. They match both `*.tf` and `secrets.*`, so they are listed under secrets only. The skill forbids opening secrets entries, so infra.md \"Secrets\" never learns where secrets live. The result is a silent `NEEDS CLARIFICATION` or a guess, which undercuts AC-12. Names such as `id_ecdsa`, `id_dsa`, `*.keystore`, `*.jks`, `.htpasswd` and `service-account*.json` are in no list. Upper-case variants (`Credentials.json`, `.ENV`) don't match, because `fnmatch` is case-sensitive on Linux. A `secrets.tf` is neither read nor warned about, and a missed key file is simply not named as a secret.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`scan` tests SECRETS first and appends `(\"secrets\", f, \"\")`, so `secrets.tf` never reaches `category`. The SKILL rule forbids opening secrets entries. The SECRETS list has no `id_ecdsa`, `*.jks`, `.htpasswd` and similar, and `fnmatch` is case-sensitive on Linux.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-61",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:SECRETS",
+      "tampering": false
+    },
+    {
+      "id": "J-3",
+      "title": "Nothing in the CLI checks that a confirmed doc has source records or is free of secret values",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "AC-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "confirm in `in progress` when the doc file `.nio/project/[<app>/]<doc>.md` is missing or fails CT-12's check"
+      ],
+      "fix": "have `confirm` refuse a fact line without a source record or `NEEDS CLARIFICATION`. Have it refuse any doc holding a value from a scan secrets file. Make the skipped e2e tests show up as skipped in the gate, not as passed.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`check_doc` only looks at headings. A doc whose facts have no `(source: ...)`, carry an invented hash, or contain the `.env` value passes `confirm`. A made-up hash only shows later as `stale`. A missing record or a pasted secret is never detected, and the dev's yes is the only gate. The e2e tests for AC-8, AC-12, AC-39 and AC-40 are the only guards, and they print `skipped` and pass without `NIO_E2E`. The suite result \"passed\" therefore says nothing about the prompt-injection and secret rules.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`check_doc` checks headings only, and `act` confirm adds only a NEEDS CLARIFICATION check. Nothing checks source records or secret values, so only the dev's yes and the e2e tests guard them.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-62",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:act (confirm), tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-4",
+      "title": "`check spec` accepts any directory name as an app, including `..`, and a spec can drop `apps:` to bypass the check",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-6",
+        "AC-45"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "for a in named if not (root / \".nio/project\" / str(a)).is_dir()"
+      ],
+      "fix": "require each named app to be a key of `progress[\"apps\"]`, and reject names that fail the slug regex. Decide whether a missing `apps` key is still allowed once the project has apps.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "`apps: [../..]` resolves to an existing directory and passes. `apps: [stray]` passes if any directory named `stray` exists under `.nio/project/`, even though it is not in `progress[\"apps\"]`. The pack reader then builds paths from the same unvalidated name. Deleting the `apps:` line skips the whole check, and `docs_for` then gives that spec every app's docs, including apps it should not see (CT-9). The `str(a)` also hides non-string entries.",
+          "severity": "minor",
+          "round": 1
+        },
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "`progress` raises ValueError on a torn `onboarding.json`. This is a new unguarded call in `check`, so a spec check that never read onboarding state before now fails with that error, or a traceback if the caller does not catch ValueError. `docs_for` deliberately catches the same error.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/spec.py:check",
+      "tampering": false
+    },
+    {
+      "id": "J-5",
+      "title": "`stale` follows any path a doc records and crashes on an undecodable doc",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "p = root / src",
+        "for src, h in SOURCE.findall(f.read_text()):"
+      ],
+      "fix": "resolve the source and ignore or flag it when it is outside the repo or a symlink. Read with `errors=\"replace\"` or skip the unreadable doc with a visible line.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-adversary",
+          "lens": "adversary",
+          "situation": "a record such as `(source: /etc/passwd@...)` or `(source: ../../x@...)` makes `stale` hash a file outside the repo, and a symlink is followed because `is_file()` is used. A single non-UTF-8 `.md` under `.nio/project/` raises `UnicodeDecodeError`. `nio status` and every pack that calls `stale` then fail instead of flagging one doc.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py:stale",
+      "tampering": false
+    },
+    {
+      "id": "J-6",
+      "title": "E2E-only ACs have no run evidence",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "AC-7",
+        "AC-9",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-33",
+        "AC-36",
+        "AC-37",
+        "AC-39",
+        "AC-40",
+        "AC-43"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Without NIO_E2E they print `skipped` and pass."
+      ],
+      "fix": "run the e2e file with NIO_E2E=1 and put the per-test results in the evidence, or record a human waiver for the costly runs.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "twelve ACs have only e2e tests, and every per-test result is `unknown`. The suite's pass is reused, and without NIO_E2E these tests skip and still pass. Nothing in the pack shows any of them ran against a model.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The pack's own quote says e2e tests print `skipped` and pass without NIO_E2E, and it shows no run evidence for these ACs. Nothing in the artefact settles it.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-63",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-7",
+      "title": "AC-41's reconcile half is not proved",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-41"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "continue"
+      ],
+      "fix": "accept as covered when T-23 lands, since the test activates then. Otherwise leave AC-41 open at this epic.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-conformance",
+          "lens": "conformance",
+          "situation": "AC-41 requires both the onboard and reconcile skills to carry the rules. The test skips `reconcile-onboarding` when its SKILL.md is absent, so only the onboard skill is checked. The reconcile skill is a later task (T-23).",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard.py (test_skills_keep_skip_with_dev)",
+      "tampering": false
+    },
+    {
+      "id": "J-8",
+      "title": "A spec's apps line that keeps the template comment names the wrong apps, so a one-app worker pack gets every app's docs",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-9",
+        "AC-35",
+        "CT-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the apps this spec touches, when the project has docs per app",
+        "the apps are those the slug's spec names in `apps`",
+        "Given a spec that names only `api`, when a worker pack is built, then it holds no doc from `web`.",
+        "re.split(r\"[,\\n]\", m.group(1).strip(\"[] \\n\"))"
+      ],
+      "fix": "read the apps line the way `spec.check` does (`records.parse`, the YAML front matter), or strip a trailing `#` comment before splitting. Do not fall back to every app when the spec names apps and none of them matches. Add a pack test whose spec keeps the template's comment line.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "Case A, a project with no apps. The dev runs `nio new spec`, which copies the template line as it is. For a plan or worker pack with that slug, `docs_for` then prints `not onboarded: # the apps this spec touches` and `not onboarded: when the project has docs per app`, because `_named` returns those two phrases as app names. Case B, a project with `web` and `api`. The dev writes `apps: [api]` and keeps the comment. `_named` returns `api]",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The templates ship `apps: []",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-64",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py `_named`, `_pairs` and `docs_for`; the line the diff adds to src/nio/templates/spec.md, spec-epic.md and spec-bugfix.md",
+      "tampering": false
+    },
+    {
+      "id": "J-9",
+      "title": "`nio onboard backup` on a symlinked agent file stores the target under the target's name",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "CT-17",
+        "AC-37"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "(today's date, the file's repo path)",
+        "src = Path(file).resolve()"
+      ],
+      "fix": "keep the path as given, relative to the repo, for the destination name and take the bytes from the target; or refuse a symlink with a message that names it. Add a test with a symlinked CLAUDE.md.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "CLAUDE.md is a symlink to AGENTS.md, a common setup. `nio onboard backup CLAUDE.md` resolves the link, copies AGENTS.md to `.nio/backup/<date>/AGENTS.md` and prints that path. No `.nio/backup/<date>/CLAUDE.md` is written, so the AC-37 observable (`.nio/backup/<date>/CLAUDE.md` holds the original bytes) cannot hold for this setup. The test uses a regular file, so it does not catch this.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/onboard.py `backup`",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "A progress file without an `apps` key passes the reader and crashes `confirm` with a traceback",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-3",
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a file that isn't valid JSON raises",
+        "if st[\"apps\"] and app not in st[\"apps\"]:"
+      ],
+      "fix": "give `apps` the default `{}` in `progress()` after loading, or require it in the validator and report the file as not valid.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "a `.nio/project/onboarding.json` written before this diff has state `in progress` and no `apps` key, since the old `start` never saved one. `progress()` checks only `state`, `reason`, `empty`, `confirmed` and `seen`, so it accepts the file. After this diff, `nio onboard confirm product` raises `KeyError` at `st[\"apps\"]`. The CLI catches only `ValueError`, so the dev sees a traceback, not a refusal. The same unguarded `st[\"apps\"]` is read in `start` when `--empty` is given.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py `progress` and `act`",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "The functions CT-4 names are not in the code, and the code's `act` takes a different shape",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-4",
+        "CT-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "functions `start`, `confirm`, `pause` and `skip` in `onboard.py`",
+        "def act(action, reason=\"\", doc=\"\", empty=False, root=\".\", apps=None, app=\"\"):"
+      ],
+      "fix": "either rename the spec's shape to `act` with its action argument, or split the four functions and the `save` helper as CT-3 and CT-4 name them. Pick one and make the two documents agree.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-consistency",
+          "lens": "consistency",
+          "situation": "a reader who follows CT-4 looks for `onboard.start`, `onboard.confirm`, `onboard.pause` and `onboard.skip` and finds none; one dispatch function `act(action, ...)` does all four. CT-3 names `save(root, p)`, and the code has a nested `save()` with no arguments. Tests that go through the CLI pass, but a test written from the spec's shape fails with `AttributeError`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/onboard.py `act` and `save`",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "Skill rule for an inline secret only covers files the agent never opens",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-39",
+        "CT-13"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Write only where it is kept, never the value, and tell the dev that"
+      ],
+      "fix": "add a sentence: \"a secret found inline in any file you read is never written or quoted; name the file in the doc where secrets live and tell the dev that file holds an inline secret\"",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "AC-39's `deploy.yml` is a ci file, not a `secrets` entry. The agent must open it, find the inline token, name the workflow in infra.md, never write the value, and warn the dev. The rule hangs on \"Never open a file the scan lists under `secrets`\", so \"that file\" reads as a secrets-listed file the agent never opened. Nothing tells the agent what to do on finding an inline secret in a file it legitimately read. The e2e test is the only guard and it was not run.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SKILL.md rules line 46-47 ties \"that file\" to files listed under `secrets`, which are never opened. No rule covers an inline secret in a file the agent legitimately reads, such as AC-39's deploy.yml.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-65",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/onboard/SKILL.md",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "AC-40 e2e slice start can go negative and silently empty the check",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-40"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "out[out.index(line) - 400:"
+      ],
+      "fix": "use `max(0, out.index(line) - 400)`",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "when the planted line appears in the first 400 characters of the transcript, `out.index(line) - 400` is negative. The slice then counts from the end of the string and is empty, so the \"instruction / will not / not follow\" regex fails although the agent did flag the line. The test fails falsely.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard_e2e.py:test_ac40_planted_instruction",
+      "tampering": false
+    },
+    {
+      "id": "J-14",
+      "title": "Backup test's outside-the-repo case never reaches the outside-repo branch",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-37"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`for bad in (\"missing.md\", \"../outside.md\"):`"
+      ],
+      "fix": "create a real file outside the repo (a temp file) and pass its path",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "`../outside.md` is never created, so `backup` refuses it through `not src.is_file()`. The `is_relative_to(r)` condition could be dropped and the test would still pass. CT-17 requires that a file outside the repo is refused.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_onboard.py:test_backup_keeps_first_copy",
+      "tampering": false
+    },
+    {
+      "id": "J-15",
+      "title": "`--app` without `=<path>` is accepted and saved with an empty path",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-33",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`st_apps = dict((k, v.split(\",\")) for k, _, v in (x.partition(\"=\") for x in a.app)) if a.action == \"start\" else None`"
+      ],
+      "fix": "refuse an `--app` with no `=` or an empty path, and refuse a repeated slug",
+      "sources": [
+        {
+          "juror": "implementation-E-4-correctness",
+          "lens": "correctness",
+          "situation": "`nio onboard start --app web` gives `{\"web\": [\"\"]}`. A duplicate slug silently overwrites the earlier one. CT-4's shape is `<slug>=<path>[,<path>...]`, and only the slug is validated.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/cli.py",
+      "tampering": false
+    },
+    {
+      "id": "J-16",
+      "title": "`nio onboard backup` copies a secrets file into `.nio/backup/`",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-29",
+        "FR-24",
+        "CT-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the file doesn't exist, or lies outside the repo → exit 1 naming it; nothing written"
+      ],
+      "fix": "refuse a base name that matches `SECRETS` in `backup`, with a test for it. Or state in CT-17 that a secrets file is never backed up.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-security",
+          "lens": "security",
+          "situation": "`nio onboard backup .env` (or `prod.tfvars`, `deploy.pem`) passes every check in `backup`: it is a regular file inside the repo. It is copied byte for byte to `.nio/backup/<date>/.env`, outside any ignore rule that covers `.env`. The scan hides that file, and the skill says never to open it. The copy sits in a path the scan never lists, so it is easy to commit. `test_backup_keeps_first_copy` only tries a missing file and `../outside.md`. No test tries a secrets file.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:backup",
+      "tampering": false
+    },
+    {
+      "id": "J-17",
+      "title": "The inline-secret rule says \"write\" but AC-39 needs the token kept out of the transcript too",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-30",
+        "AC-39"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Write only where it is kept, never the value, and tell the dev that file holds an inline secret."
+      ],
+      "fix": "reword it to \"Never write, quote or show the value, in a doc, a question or a patch preview\", and apply it to any file, not only `secrets` entries.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-security",
+          "lens": "security",
+          "situation": "AC-39 says the token appears \"in no grill transcript\". An inline token sits in a CI file the agent does read, such as `.github/workflows/deploy.yml`. The skill's bullet starts with files under `secrets` and only forbids writing the value. An agent can still quote the `TOKEN: ghp_...` line when it asks the dev a question, or show it in a doc preview. That puts the secret in the transcript while the rule is formally kept. Only an e2e test with a model checks this, and the skill text does not close it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "skills/onboard/SKILL.md (Rules)",
+      "tampering": false
+    },
+    {
+      "id": "J-18",
+      "title": "`stale` follows any path in a source record, including paths outside the repo",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "every source record in it whose file is gone or whose current hash differs"
+      ],
+      "fix": "in `stale`, ignore or report as `deleted` any source whose resolved path is not inside the repo, as `backup` already does.",
+      "sources": [
+        {
+          "juror": "implementation-E-4-security",
+          "lens": "security",
+          "situation": "`SOURCE` accepts `[^@()\\s]+`, so a doc line `(source: /home/u/.ssh/id_rsa@000000000000)` or `(source: ../../x@...)` passes. `stale` then runs `(root / src).read_bytes()` on it. For an absolute path the join replaces the root; a `..` path escapes it. Doc text is written by an agent from repo content. A planted file can steer it to put such a path in a doc. `nio status` and every pack then print that path with `changed` or `deleted`, which tells whether the outside file exists and whether its hash matches. The hash covers only 12 hex characters and no content is returned, so the leak is small. The scan, by contrast, deliberately never lists or follows anything outside the repo (FR-3).",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/onboard.py:stale",
+      "tampering": false
+    }
+  ],
+  "outcome": "rejected",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ]
+  ],
+  "versions": {
+    "1": "d087184e704a82641b4d9f031d7d4bd9d88f725e"
+  },
+  "matched": {
+    "AC-5": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac5_mismatch_asked"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_onboard.py",
+        "test_six_docs_with_headings"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac7_cloud_unknown"
+      ]
+    ],
+    "AC-8": [
+      [
+        "tests/test_onboard.py",
+        "test_fact_names_file_and_hash"
+      ]
+    ],
+    "AC-9": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac9_patch_only_on_yes"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac10_resume"
+      ]
+    ],
+    "AC-11": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac11_done_points_to_reconcile"
+      ]
+    ],
+    "AC-12": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac12_env_key_kept_out"
+      ]
+    ],
+    "AC-28": [
+      [
+        "tests/test_onboard.py",
+        "test_scan_secrets_path_only"
+      ]
+    ],
+    "AC-33": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac33_two_apps"
+      ]
+    ],
+    "AC-34": [
+      [
+        "tests/test_onboard.py",
+        "test_plan_pack_two_apps"
+      ]
+    ],
+    "AC-35": [
+      [
+        "tests/test_onboard.py",
+        "test_worker_pack_one_app"
+      ]
+    ],
+    "AC-36": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac36_agent_files_untouched_on_no"
+      ]
+    ],
+    "AC-37": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac37_backup_before_change"
+      ]
+    ],
+    "AC-38": [
+      [
+        "tests/test_onboard.py",
+        "test_scan_more_secret_names"
+      ]
+    ],
+    "AC-39": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac39_inline_token"
+      ]
+    ],
+    "AC-40": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac40_planted_instruction"
+      ]
+    ],
+    "AC-41": [
+      [
+        "tests/test_onboard.py",
+        "test_skills_keep_skip_with_dev"
+      ]
+    ],
+    "AC-43": [
+      [
+        "tests/test_onboard_e2e.py",
+        "test_ac43_patch_rehash"
+      ]
+    ],
+    "AC-45": [
+      [
+        "tests/test_onboard.py",
+        "test_check_spec_apps"
+      ]
+    ],
+    "AC-46": [
+      [
+        "tests/test_onboard.py",
+        "test_drafting_pack_all_apps"
+      ]
+    ],
+    "AC-48": [
+      [
+        "tests/test_onboard.py",
+        "test_scan_skips_symlink"
+      ]
+    ]
+  },
+  "asked": {}
+}
