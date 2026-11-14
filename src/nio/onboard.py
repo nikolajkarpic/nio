@@ -163,15 +163,22 @@ READERS = {"spec": ["product", "personas"], "scope": ["product", "personas"], "p
 LIMIT = 16384
 
 
+def _named(root, slug):
+    """The apps the spec's front matter names, in `[a, b]` or block-list form."""
+    import re
+    spec = Path(root) / f".nio/specs/{slug}/spec.md"
+    if not (slug and spec.is_file()):
+        return []
+    fm = re.match(r"---\n(.*?)\n---", spec.read_text(), re.S)
+    m = fm and re.search(r"^apps:[ \t]*(.*(?:\n[ \t]+-.*)*)", fm.group(1), re.M)
+    return [a for a in (x.strip(" -'\"") for x in re.split(r"[,\n]", m.group(1).strip("[] \n"))) if a] if m else []
+
+
 def _pairs(root, reader, slug=""):
     """(label, path) per mapped doc; an app's doc is `api/stack.md`, kept in .nio/project/api/stack.md."""
-    import re
     root, apps = Path(root), list(progress(root).get("apps") or {})
-    spec = root / f".nio/specs/{slug}/spec.md"
-    if slug and apps and spec.is_file():
-        m = re.search(r"^apps:\s*\[?([^\n\]]*)", spec.read_text(), re.M)
-        named = [a.strip().strip("'\"") for a in m.group(1).split(",")] if m else []
-        apps = [a for a in apps if a in named] or apps
+    named = _named(root, slug)
+    apps = [a for a in apps if a in named] or apps
     return [(f"{a}/{d}.md" if a else f"{d}.md", root / ".nio/project" / a / f"{d}.md") for a in (apps or [""]) for d in READERS[reader]]
 
 
@@ -194,6 +201,7 @@ def docs_for(root, reader, slug=""):
     if st["state"] == "not started" and not have:
         return ""
     out = ["## Project docs", ""]
+    out += [f"not onboarded: {a}" for a in _named(root, slug) if a not in (st.get("apps") or {})]
     for n, p in have:
         out += [f"### {n}", ""] + ["##" + l if l.startswith("#") else l for l in p.read_text().splitlines()] + [""]
     out += [f"over 16 KB: {n} ({-(-p.stat().st_size // 1024)} KB)" for n, p in have if p.stat().st_size > LIMIT]

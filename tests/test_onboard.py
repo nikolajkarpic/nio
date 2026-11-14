@@ -437,6 +437,24 @@ def test_symlinked_doc_not_read():
     assert "missing: stack.md" in out, out
 
 
+def test_apps_line_front_matter_only():
+    import json
+    from nio import onboard
+    root = Path(tempfile.mkdtemp())
+    (root / ".nio/project").mkdir(parents=True)
+    (root / ".nio/project/onboarding.json").write_text(json.dumps({"state": "done", "reason": "", "empty": False, "apps": {"api": {}, "web": {}}, "confirmed": [], "seen": []}))
+    sp = root / ".nio/specs/s"
+    sp.mkdir(parents=True)
+    names = lambda: [n for n, _ in onboard._pairs(root, "worker", "s")]
+    for body in ("---\napps: [api]\n---\n", "---\napps:\n  - api\n---\n"):
+        (sp / "spec.md").write_text(body)
+        assert all(n.startswith("api/") for n in names()), names()
+    (sp / "spec.md").write_text("---\ntitle: x\n---\n```\napps: web\n```\n")
+    assert any(n.startswith("api/") for n in names()), names()
+    (sp / "spec.md").write_text("---\napps: [api, ghost]\n---\n")
+    assert "not onboarded: ghost" in onboard.docs_for(root, "worker", "s")
+
+
 if __name__ == "__main__":
     selfcheck.main([test_scan_lists_each_category, test_scan_secrets_path_only, test_scan_prints_no_dependency, test_scan_skips_ignored_and_nio,
                     test_scan_empty_repo, test_scan_outside_git_repo, test_scan_keeps_non_ascii_paths, test_scan_contract_categories,
@@ -446,4 +464,4 @@ if __name__ == "__main__":
                     test_onboard_from_subdirectory_uses_repo_root, test_onboard_act_outside_git_repo, test_next_doc_first_unconfirmed,
                     test_missing_doc_named, test_skipped_pack, test_oversized_doc_flagged,
                     test_reader_packs, test_lens_sources_include_docs,
-                    test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read])
+                    test_corrupt_progress_does_not_block_docs, test_symlinked_doc_not_read, test_apps_line_front_matter_only])
