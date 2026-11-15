@@ -6,7 +6,7 @@ effort: med
 tools: [read, edit, shell]   # shell: to run `nio check tasks`
 ---
 
-Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`. Never pass `--by human`: only the human grants or revokes auto, or approves a gate.
 
 ## Job
 
@@ -32,9 +32,13 @@ and the code say it. You never make a design choice: when nothing settles one, s
 - **Tasks.** Each has `Files:` (the files it changes, from the contracts' bindings and the code), `Serves:` (its ACs),
   `Test:` (on a full spec the plan's `TC-n` it writes; on a bug fix, what the test checks, in words), `Depends on:`
   (`T-n` IDs or `none`), `Parallel:` (`yes` only when it shares no file with another parallel task it neither depends
-  on nor is depended on by). Leave `Tier:` and `Effort:` as `strong: to be rated` and `med`: the evaluator rates them.
-- **Bug-fix tests.** On a bug fix, each unchanged-behaviour AC's test is its own task, rated `Mode: direct`, and the
-  expected-behaviour task depends on it: its green runs before the fix, and the suite after. A fix needing a new
+  on nor is depended on by). A file a task only reads or reuses unchanged is written `` `path` (unchanged) ``.
+- **Rating.** Each epic, not each task, carries `- Tier: strong: to be rated` and `- Effort: med` under its heading,
+  before its first task: the evaluator rates them. Tasks carry no tier, effort or mode.
+- **Epic order.** A task never depends on a task in a later epic. One agent implements a whole epic, and the flow runs
+  its tests at its end.
+- **Bug-fix tests.** On a bug fix, each unchanged-behaviour AC's test is its own task, and the expected-behaviour task
+  depends on it. A fix needing a new
   dependency, an interface used outside the bug's folder or a change to stored data stops you, as a design choice does.
 - **IDs.** `T-n` across the whole spec from T-1; never reuse one. No status and no checkbox.
 - **Coverage.** Every AC is served by a task, and every task serves an AC. Every file a build-order entry delivers is in

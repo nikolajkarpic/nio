@@ -10,6 +10,8 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 # Tasks: <title>
 
 ## E-1 <what this epic delivers> (Foundation)
+- Tier: strong: <why this model class>   <!-- per epic: one agent implements the whole epic -->
+- Effort: med
 
 ### T-1 <what the task does>
 - Files: `<file>`, `<file>`
@@ -17,11 +19,10 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-1                     <!-- full spec: the plan's TC-n; bug-fix spec: what the test checks, in words -->
 - Depends on: none
 - Parallel: no
-- Tier: strong: <why this model class>
-- Effort: med
-- Mode: split: <why this working mode>   <!-- split | single | direct -->
 
 ## E-2 <what this story delivers> (US-1)
+- Tier: cheap: <why>
+- Effort: low
 
 ### T-2 <what the task does>
 - Files: `<file>`
@@ -29,9 +30,6 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-2
 - Depends on: T-1
 - Parallel: yes
-- Tier: cheap: <why>
-- Effort: low
-- Mode: split: <why>
 
 #### Fixes
 <!-- Tasks added after approval: an implementation-jury finding, a "justify or remove" task, or a change request. -->
@@ -42,6 +40,3 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: <what the test checks>
 - Depends on: T-2
 - Parallel: no
-- Tier: cheap: <why>
-- Effort: low
-- Mode: split: <why>

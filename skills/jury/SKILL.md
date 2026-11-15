@@ -13,7 +13,7 @@ spec yourself. The steps below are the spec gate's; the plan gate runs the same 
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
-Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`. Never pass `--by human`: only the human grants or revokes auto, or approves a gate.
 
 ## Inputs and outputs
 
@@ -62,6 +62,11 @@ session, the one the human talks to, only routes.
    counts as routing. Then start a fresh driver from `nio flow brief <slug>`.
 Read nothing else yourself: what lies past the brief and the summaries is the driver's.
 
+Under auto (the effort's auto flag, granted only by the human), the main session starts the next driver without asking
+the human, and stops only when `nio flow next <slug>` waits for the human, is suspended, or reaches the pr gate's
+approval; on a stop it tells the human the reason and the command `nio flow next` prints. Each driver first takes the
+driver claim with `nio flow drive <slug> --by`, and refreshes it with `--token` while it works.
+
 On a host without subagents, the main session runs the unit itself from `nio flow brief <slug>`, following the
 driver's rules below, and goes on without stopping for the human. Optional, on Claude Code: run each driver as a
 subagent (general-purpose) in the background.
@@ -78,8 +83,8 @@ subagent (general-purpose) in the background.
 - Your last message is the summary, at most 15 lines, in three parts: `closed:` what closed, `open:` what is open
   (each item for the human), `next:` the command to run next.
 
-**Waiting for long work.** A long command is one that can outlast the host's foreground limit: `nio flow green`,
-`nio jury evidence`, a suite run, and any subagent (a juror, a worker, a driver). The main session and the driver
+**Waiting for long work.** A long command is one that can outlast the host's foreground limit: `nio flow finish`,
+`nio jury evidence`, a suite run, and any subagent (a juror, an implementation agent, a driver). The main session and the driver
 wait for it like this:
 - **The host sends completion notices:** start it in the background, then act on its notice when it arrives. Nothing
   in between: no sleep, no loop, no status check.
@@ -89,7 +94,7 @@ wait for it like this:
   continue. Never check at an interval.
 - **Neither:** don't run the long command; end with the summary naming it as open and how to continue, for the main
   session to take to the human.
-`nio flow green` and `nio jury evidence` record themselves as running while they run, so the next brief shows them.
+`nio flow finish` and `nio jury evidence` record themselves as running while they run, so the next brief shows them.
 
 ## Steps
 
@@ -117,7 +122,7 @@ wait for it like this:
      - **Without subagents**, never play a lens in your own session. Ask the human to run the pack
        `.nio/runs/<run>/jury/packs/<lens>.md` in a fresh session (or with the host's CLI, such as `claude -p`), showing
        the exact command to copy, with `by: juror / manual session / <model>` so the verdict records the manual run.
-   - **run `nio-refuter`** on `packs/refuter.md`, writing the output path the step printed;
+   - **run `nio-refuter`** on the batch pack the step names (`packs/refuter-<n>.md`, one per batch), writing the output path the step printed;
    - **re-run a lens** on its pack with the INVALID lines added, once. A second failure goes to the human: say in
      plain words which review failed and why, with the error in `Refs:`;
    - **escalate a lens** with a confirmed blocker: run it twice more as independent jurors on copies of its pack, written as
@@ -187,6 +192,20 @@ confirmed blocker starts another round. When a round at or over the cap ends wit
   the batch is unruled it prints the batch again; once all are ruled, `again` starts one round on those findings'
   lenses, after which the step prints a new batch if anything is still open (the human may ask again), and otherwise
   the gate closes on the human's rulings with no re-check. Tell the human, then run the `next:` line.
+
+## Under auto
+
+With the effort's auto flag on, the flow approves every gate but the pr gate itself: `nio flow done <stage> <slug>`
+commits the approval of a spec, plan or tasks gate whose jury approved, naming the grant. Rulings the human gives
+today the driver gives, with `--by "<role> / <host> / <model>"` and never `--by human`: a ruling on the capped batch
+(`nio jury rule ... --by`), and minors are accepted as the gate's risk. The pr gate is the human's alone.
+
+A `rejected` round goes to one fresh fix agent (optional, on a host with subagents: a general-purpose one), given
+every confirmed blocker and major ID of the round in one batch. For each it edits the gate's files and disposes it
+with `--by auto`. It disposes a finding `held --by auto` instead of editing when the fix would change a line tagged
+`[human]`, cut scope (remove an item or add a non-goal) or change `risk:`; a held finding, or such an edit found by the
+round check, sends the gate to the human. Then the next round starts. At the pr gate the confirmed findings become the
+closing `PR fixes` epic, and its one implementation agent (@nio:implement) is that round's fix agent.
 
 ## At the plan gate
 

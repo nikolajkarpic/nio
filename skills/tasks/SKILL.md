@@ -11,7 +11,7 @@ Nothing here makes a design choice.
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
-Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`. Never pass `--by human`: only the human grants or revokes auto, or approves a gate.
 
 ## Inputs and outputs
 
@@ -48,7 +48,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    CLI command. If it stops on a design choice nothing settles, stop too: on a full spec, tell the human the plan or
    the spec needs a change request (`@nio:remember`); on a bug fix, that the spec must be re-routed to a full spec
    with a plan.
-3. **Rate.** Start a run with `nio run`. Before the evaluator, make a copy of `tasks.md` at `.nio/runs/<run>/tasks.before.md`. Then run the `nio-evaluator` subagent on `tasks.md`. It sets every `Tier:` (with a reason), `Mode:` and `Effort:`. Then run `nio check tasks <slug> --rated-from .nio/runs/<run>/tasks.before.md`. If it fails, send the errors back to the evaluator once; it may change only the rating lines. On a bug fix, a task serving only unchanged-behaviour ACs keeps `Mode: direct`.
+3. **Rate.** Start a run with `nio run`. Before the evaluator, make a copy of `tasks.md` at `.nio/runs/<run>/tasks.before.md`. Then run the `nio-evaluator` subagent on `tasks.md`. It sets every epic's `Tier:` (with a reason) and `Effort:`. Then run `nio check tasks <slug> --rated-from .nio/runs/<run>/tasks.before.md`. If it fails, send the errors back to the evaluator once; it may change only the rating lines.
 4. **Verify, don't trust the reports.** Run `nio check tasks <slug>` yourself and fix every error (send structural
    ones back to the drafter once). It prints the estimate.
    On a bug fix, stop on an `escalate:` note from the check (unless `grill.md` already holds a `## Call · escalation declined`

@@ -34,7 +34,7 @@ def main():
     c.add_argument("slug", nargs="?")
     c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
-    c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
+    c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier and Effort lines may differ")
     e = sub.add_parser("explain", help="explainer commands: `explain finish <path>` and `explain topic <text>`")
     e.add_argument("action", choices=["finish", "topic"])
     e.add_argument("target", nargs="?")
@@ -118,7 +118,7 @@ def main():
     jd.add_argument("slug")
     jd.add_argument("gate", type=jury.gate_arg, metavar="GATE")
     jd.add_argument("id")
-    jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS))
+    jd.add_argument("disposition", choices=sorted(jury.DISPOSITIONS | {"reopen"}))
     jd.add_argument("--by", required=True, choices=sorted(jury.BY))
     jd.add_argument("--note", required=True, action="append")
     jd.add_argument("--change", default="", metavar="C-ID", help="spec-change only: the change record the finding waits on")
@@ -128,6 +128,7 @@ def main():
     jr.add_argument("id")
     jr.add_argument("ruling", choices=jury.RULINGS)
     jr.add_argument("--note", required=True, help="the human's words")
+    jr.add_argument("--by", default="human", metavar="BY", help='human (the default), or the driver "<role> / <host> / <model>" under auto')
     je = jsub.add_parser("evidence", help="run an epic's tests, checks, attacks and journeys in a throwaway copy and write the run's results.json")
     je.add_argument("slug")
     je.add_argument("epic", metavar="E-n|pr", help="an epic, or pr: the whole effort diff")
@@ -158,6 +159,8 @@ def main():
     fbr = fsub.add_parser("brief", help="what a fresh driver starts from: the state, the next command, a running long command, open tasks and findings")
     fbr.add_argument("slug")
     fbr.add_argument("--all", action="store_true", help="list every open task and finding, past the 80-line cap")
+    for s in (fs, fd):
+        s.add_argument("--auto", action="store_true", help="the human's auto-mode grant")
     fsub.add_parser("status", help="one line per effort, newest activity first")
     fap = fsub.add_parser("approve", help="the human approves the pr gate at a terminal, typing the effort's slug back")
     fap.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
@@ -168,20 +171,28 @@ def main():
         s.add_argument("why")
     fe = fsub.add_parser("seen", help="the human saw the effort's overrides")
     fe.add_argument("slug")
-    fc = fsub.add_parser("claim", help="implementing: claim the next ready task; prints its mode, worker card, effort and pack")
+    fc = fsub.add_parser("claim", help="implementing: claim the next ready epic; prints its tasks, worker card, effort, pack and hand-back")
     fc.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
-    fr = fsub.add_parser("red", help="implementing: run a task's failing test; accepted, it freezes the task's test files")
-    fg = fsub.add_parser("green", help="implementing: run the red command (direct mode: --run) to pass, then review the task")
-    fu = fsub.add_parser("unblock", help="implementing: the human sets a blocked task ready again, with the reason")
-    fb = fsub.add_parser("block", help="implementing: file a worker's blocked handoff as a pending change request")
-    for s in (fr, fg, fu, fb):
-        s.add_argument("slug")
-        s.add_argument("task", metavar="T-n")
-    fr.add_argument("--run", required=True, metavar="COMMAND", help="the test command, naming the task's test file")
-    fg.add_argument("--run", metavar="COMMAND", help="red's command again, or in direct mode the command that must pass")
-    fu.add_argument("--human", required=True, metavar="REASON", help="why the task can go on")
+    fc.add_argument("epic", nargs="?", metavar="E-n", help="claim this epic, not the next ready one")
+    ff = fsub.add_parser("finish", help="implementing: the agent handed an epic back; run its tests and close it if they pass")
+    ff.add_argument("slug")
+    ff.add_argument("epic", metavar="E-n")
+    ff.add_argument("--run", metavar="COMMAND", help="the command that runs the epic's tests, when its TCs can't build it")
+    fu = fsub.add_parser("unblock", help="implementing: the human sets a blocked task or epic going again, with the reason")
+    fb = fsub.add_parser("block", help="implementing: file an agent's blocked handoff as a pending change request")
+    fu.add_argument("slug")
+    fu.add_argument("task", metavar="T-n|E-n")
+    fb.add_argument("slug")
+    fb.add_argument("task", metavar="T-n")
+    fu.add_argument("--human", required=True, metavar="REASON", help="why the task or epic can go on")
     fb.add_argument("--handoff", required=True, metavar="FILE", help="the handoff: status blocked with a change_request")
-    for s in (fs, fd, fp, fa, fe, fc, fr, fg, fu, fb):
+    fm = fsub.add_parser("manual", help="the human switches an effort's auto flag off")
+    fm.add_argument("slug")
+    fv = fsub.add_parser("drive", help="take, refresh (--token) or release (--release --token) an effort's driver claim")
+    fv.add_argument("slug")
+    fv.add_argument("--token", help="the token the first call printed")
+    fv.add_argument("--release", action="store_true", help="remove the claim when --token matches")
+    for s in (fs, fd, fp, fa, fe, fc, ff, fu, fb, fv, fm):
         s.add_argument("--by", required=True, **by)
     a = p.parse_args()
 
@@ -378,7 +389,7 @@ def main():
             elif a.jury_cmd == "collect":
                 print("\n".join(jury.collect(root, a.slug, a.gate, a.run, a.expect, a.tier)))
             elif a.jury_cmd == "rule":
-                for i in jury.rule(root, a.slug, a.gate, a.id, a.ruling, a.note):
+                for i in jury.rule(root, a.slug, a.gate, a.id, a.ruling, a.note, a.by):
                     print(f"{i}: {a.ruling} by human")
             elif a.jury_cmd == "dispose":
                 for i in jury.dispose(root, a.slug, a.gate, a.id, a.disposition, a.by, a.note, a.change):
@@ -393,17 +404,18 @@ def main():
         try:
             code, lines = {
                 "next": lambda: flow.next_step(root, a.slug, by=a.by),
-                "start": lambda: flow.start(root, a.slug, by=a.by),
-                "done": lambda: flow.done(root, a.stage, a.slug, commit=a.commit, human=a.human, by=a.by),
+                "start": lambda: flow.start(root, a.slug, by=a.by, auto=a.auto),
+                "done": lambda: flow.done(root, a.stage, a.slug, commit=a.commit, human=a.human, by=a.by, **({"auto": True} if a.auto else {})),
                 "status": lambda: flow.status(root),
                 "approve": lambda: flow.approve(root, a.slug),
                 "park": lambda: flow.park(root, a.slug, a.why, by=a.by),
                 "abandon": lambda: flow.abandon(root, a.slug, a.why, by=a.by),
                 "seen": lambda: flow.seen(root, a.slug, by=a.by),
-                "claim": lambda: implement.claim(root, a.slug, by=a.by),
-                "red": lambda: implement.red(root, a.slug, a.task, a.run, by=a.by),
+                "manual": lambda: flow.manual(root, a.slug, by=a.by),
+                "drive": lambda: flow.drive(root, a.slug, a.by, token=a.token, release=a.release),
+                "claim": lambda: implement.claim(root, a.slug, by=a.by, epic=a.epic),
                 "brief": lambda: flow.brief(root, a.slug, a.all),
-                "green": lambda: long(lambda: implement.green(root, a.slug, a.task, a.run, by=a.by)),
+                "finish": lambda: long(lambda: implement.finish(root, a.slug, a.epic, a.run, by=a.by)),
                 "block": lambda: implement.block(root, a.slug, a.task, a.handoff, by=a.by),
                 "unblock": lambda: implement.unblock(root, a.slug, a.task, a.human, by=a.by),
             }[a.flow_cmd]()
