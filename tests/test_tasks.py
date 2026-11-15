@@ -163,6 +163,16 @@ def test_ac11_it_fails():
     print("ok")
 
 
+def test_retired_dependency_after_approval_is_met():
+    """After approval a frozen task may still depend on a task retired later (pass-on-arrival, C-261115-ftot)."""
+    root = repo()
+    approve_commit(root)
+    text = TASKS.replace("retired: []", "retired: [T-2]")
+    tasks.path(root, SLUG).write_text(text[:text.index("### T-2")] + text[text.index("### T-3"):])
+    assert not [e for e in errs(root) if "which is retired" in e], errs(root)
+    print("ok")
+
+
 def test_ac12_it_fails():
     root = repo(lambda t: t + "\n" + t[t.index("### T-2"):t.index("### T-3")])
     has(errs(root), "T-2 is defined 2 times")
