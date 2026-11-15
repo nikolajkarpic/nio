@@ -16,7 +16,7 @@ Remove a section that doesn't apply; never write N/A. -->
 ### US-1 Select an effort and see its timeline
 - Depends on: Foundation
 - Delivers: CT-3
-- Tests: TC-1, TC-3, TC-4, TC-5
+- Tests: TC-1, TC-3, TC-4
 - Scenario: QS-1
 
 ### US-2 See the effort's juries
@@ -32,7 +32,7 @@ Remove a section that doesn't apply; never write N/A. -->
 ### US-4 See the cost so far
 - Depends on: Foundation, US-1, US-2, US-3, US-5
 - Delivers: CT-7
-- Tests: TC-13, TC-14, TC-16, TC-25, TC-33, TC-34
+- Tests: TC-5, TC-13, TC-14, TC-16, TC-25, TC-33, TC-34
 
 ### US-5 See the effort's memory and context use
 - Depends on: Foundation

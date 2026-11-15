@@ -1,7 +1,7 @@
 ---
 gate: plan
 subject: 2026-11-15-effort-drilldown-install
-round: 2
+round: 3
 outcome: approved
 ---
 # Plan jury: 2026-11-15-effort-drilldown-install
@@ -111,5 +111,5 @@ outcome: approved
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| plan-architecture-fit | architecture-fit | juror / claude-code / claude-opus-5-5 | sufficient | yes | 2 | 2 |
-| plan-test-proof | test-proof | juror / claude-code / opus | sufficient | yes | 1 | 2 |
+| plan-architecture-fit | architecture-fit | juror / claude-code / opus-5.5 | sufficient | yes | 1 | 3 |
+| plan-test-proof | test-proof | juror / claude-code / opus-5.5 | sufficient | yes | 1 | 3 |
