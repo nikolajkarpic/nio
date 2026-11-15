@@ -70,13 +70,14 @@ const list = (FILES: Record<string, string>, path: string) => {
 }
 
 // Stands for the engine: git, `<worktree>/.venv/bin/nio flow status` and the files; records every call that could write.
-const setup = (on: any, status: Record<string, string> = STATUS, files = FILES, porcelain = PORCELAIN) => {
+const setup = (on: any, status: Record<string, string> = STATUS, files = FILES, porcelain = PORCELAIN, show?: (cwd: string | undefined) => ReturnType<typeof result>) => {
   const FILES = files
   const seen = { argv: [] as string[], writes: [] as string[], statuses: [] as (string | undefined)[] }
   on('process.run', (_: unknown, e: { argv: string[]; init?: { cwd?: string } }) => {
     seen.argv.push(e.argv.join(' '))
     if (e.argv[0] === 'git') return { value: result(0, porcelain) }
     if (e.argv[0] === 'nio' && status.NO_NIO) throw new Error('ENOENT: nio') // no nio on PATH
+    if (e.argv.includes('show') && show) return { value: show(e.init?.cwd) }
     const out = status[e.init?.cwd ?? '']
     return { value: out === undefined ? result(1, '', 'Traceback\nValueError: boom') : result(0, out) }
   })
@@ -256,4 +257,90 @@ test('AC-5, AC-14: a run left over from a gate the effort has passed shows no ju
   setup(on, { ...STATUS, [wt]: '2026-11-14-short-lived-drivers · planning · manual · working · 2026-11-14 12:00\n' }, files)
   await start($, on)
   expect((await texts($, 'terminal')).join('\n')).toContain('2026-11-14-short-lived-drivers\nplanning · working\nnio-123 · jury - · task - · jurors -\n')
+})
+
+// The drill-down: `flow show` answers per worktree (CT-12).
+const ROW = (n: number, to: string) => ({ from: n === 1 ? 'planning' : 'plan_jury', to, role: 'orchestrator', host: 'test', model: 'test', at: `2026-11-10T1${n - 1}:00:00Z` })
+const SHOWN = {
+  timeline: [ROW(1, 'plan_jury'), ROW(2, 'tasking'), ROW(3, 'implementing')],
+  juries: [], tasks: [], memory: [], context: [],
+  cost: { stages: [], unattributed: '-', total: '-' },
+}
+const ok = () => result(0, JSON.stringify(SHOWN))
+const SLUG = '2026-11-08-e123'
+const NIO = '/w/nio-123/.venv/bin/nio'
+
+const open = async ($: any, on: any, show: (cwd: string | undefined) => ReturnType<typeof result>, status = STATUS) => {
+  const seen = setup(on, status, FILES, PORCELAIN, show)
+  const model: string[] = []
+  on('model.complete' as any, () => (model.push('call'), { value: '' }))
+  const clock = await start($, on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: SLUG })
+  await clock.settle()
+  const read = async () => ((await ui.findAll({ type: 'Text' })) ?? []).map((t: any) => t.text as string)
+  return { seen, model, ui, read, clock }
+}
+const buttons = async (ui: any) => ((await ui.findAll({ type: 'Button' })) ?? []).map((b: any) => b.key ?? b.props?.key)
+
+test('AC-1 drill-down timeline', async ($, on) => {
+  const { seen, model, read } = await open($, on, ok)
+  expect(seen.argv.filter(a => a === `${NIO} flow show ${SLUG} --json`).length).toBe(1)
+  const all = (await read()).join('\n')
+  const at = ['planning → plan_jury', 'plan_jury → tasking', 'plan_jury → implementing'].map((x, i) => `${x} · orchestrator · test · test · 2026-11-10T1${i}:00:00Z`)
+  expect(all.indexOf(at[0]!)).toBeGreaterThanOrEqual(0)
+  expect(all.indexOf(at[1]!)).toBeGreaterThan(all.indexOf(at[0]!))
+  expect(all.indexOf(at[2]!)).toBeGreaterThan(all.indexOf(at[1]!))
+  expect(model).toEqual([])
+})
+
+test('AC-5 back to the list', async ($, on) => {
+  const { ui, read, clock } = await open($, on, ok)
+  await ui.press({ key: 'back' })
+  await clock.settle()
+  const all = (await read()).join('\n')
+  expect(all).toContain('2026-11-08-e123\nimplementing · working\nnio-123 · jury 2 · task T-18 · jurors correctness')
+  expect(all).toContain('2026-11-08-e49')
+  expect(all).not.toContain('orchestrator · test · test')
+})
+
+test('AC-29 AC-30 drill-down errors', async ($, on) => {
+  let o = await open($, on, () => result(1, JSON.stringify({ error: `${SLUG} is done` })))
+  expect((await o.read()).join('\n')).toContain(`${SLUG} is done`)
+  expect(await buttons(o.ui)).toEqual(['back'])
+})
+
+test('AC-29 AC-30 drill-down errors: an old nio says to update', async ($, on) => {
+  const o = await open($, on, () => result(2, '', "nio flow: error: argument flow_cmd: invalid choice: 'show' (choose from ...)"))
+  expect((await o.read()).join('\n')).toContain('this nio has no flow show: update nio')
+  expect(await buttons(o.ui)).toEqual(['back'])
+})
+
+test('UJ-1 the drill-down only reads', async ($, on) => {
+  const { seen, ui } = await open($, on, ok)
+  expect(await buttons(ui)).toEqual(['back'])
+  expect([...new Set(seen.argv)].sort()).toEqual([
+    `${NIO} flow show ${SLUG} --json`,
+    '/w/nio-123/.venv/bin/nio flow status',
+    '/w/nio-bad/.venv/bin/nio flow status',
+    '/w/nio/.venv/bin/nio flow status',
+    'git worktree list --porcelain',
+  ])
+  expect(seen.writes).toEqual([])
+})
+
+test('AC-4 a broken effort opens', async ($, on) => {
+  const err = `${SLUG}: history.jsonl, line 2`
+  const shown = { ...SHOWN, timeline: { error: err }, cost: { error: err }, juries: [{ gate: 'spec', outcome: 'approved', rounds: [], findings: [] }] }
+  const { seen, read, ui } = await open($, on, () => result(0, JSON.stringify(shown)), {
+    ...STATUS,
+    '/w/nio-123': `${SLUG} · broken: history.jsonl, line 2\n`,
+  })
+  expect(seen.argv.filter(a => a.includes('flow show')).length).toBe(1)
+  const all = (await read()).join('\n')
+  expect(all).toContain(`error: ${err}`)
+  expect(all).toContain('spec')
+  expect(all).toContain('no tasks yet')
+  expect(all).toContain('no memory yet')
+  expect(await buttons(ui)).toContain('back')
 })

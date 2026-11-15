@@ -6,6 +6,7 @@ import type { NioRow } from '../types'
 const PANE = { id: 'nio-efforts', title: 'NIO efforts' }
 const EVERY_MS = 30_000 // NFR-3: one pass over six worktrees costs ~8 CPU-seconds (RF-9)
 const board = atom({ plugin: 'nio-status-pane', key: 'board' } as const, null)
+const drill = atom({ plugin: 'nio-status-pane', key: 'drill' } as const, null)
 // FR-10: the worktree's own venv, never uv (which creates `.venv` where none is), and no bytecode,
 // so reading the status writes nothing in the worktree.
 const NIO = '.venv/bin/nio'
@@ -18,6 +19,7 @@ type Tree = { path: string; branch: string }
 type Effort = { slug: string; stage: string; status: string; at: string; gone: boolean }
 type Line = Effort | { slug: string; error: string }
 type Ran = { out: string } | { error: string }
+type Drill = { slug: string; path: string; shown: any; context: number | null }
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err))
 const lastLine = (text: string) => text.trim().split('\n').pop() ?? ''
@@ -144,7 +146,7 @@ export const collect = async ($: $): Promise<NioRow[]> => {
     if ('error' in r) return void errors.push({ worktree: base(t.path), slug: '', error: r.error })
     for (const line of parseStatus(r.out)) {
       if ('error' in line) {
-        if (!broken.has(line.slug)) errors.push({ worktree: base(t.path), slug: line.slug, error: line.error })
+        if (!broken.has(line.slug)) errors.push({ worktree: base(t.path), slug: line.slug, error: line.error, path: t.path })
         broken.add(line.slug)
         continue
       }
@@ -158,6 +160,7 @@ export const collect = async ($: $): Promise<NioRow[]> => {
   const rows = await Promise.all(
     efforts.map(async ({ wt, line }) => ({
       worktree: base(wt),
+      path: wt,
       slug: line.slug,
       stage: line.stage,
       status: line.status,
@@ -197,6 +200,62 @@ export const report = async ($: $) => {
     .join('\n\n')
 }
 
+// CT-12: `flow show <slug> --json` in the row's worktree; every failure becomes `{ error }`.
+const show = async ($: $, slug: string, path: string): Promise<any> => {
+  let r
+  try {
+    r = await $.process.run([await nioFor($, path), 'flow', 'show', slug, '--json'], { cwd: path, env: ENV, timeoutMs: 60_000 })
+  } catch {
+    return { error: NO_NIO }
+  }
+  if (r.exitCode === 0) {
+    try {
+      return JSON.parse(r.stdout)
+    } catch {
+      return { error: lastLine(r.stdout) || 'no output' }
+    }
+  }
+  if (r.exitCode === 2 && r.stderr.includes('invalid choice')) return { error: 'this nio has no flow show: update nio' }
+  if (r.exitCode === 1) {
+    try {
+      const e = JSON.parse(r.stdout)?.error
+      if (e) return { error: String(e) }
+    } catch {}
+  }
+  return { error: lastLine(r.stderr) || lastLine(r.stdout) || `exit ${r.exitCode}` }
+}
+
+const SECTION = { timeline: 'no timeline yet', juries: 'no juries yet', tasks: 'no tasks yet', memory: 'no memory yet' } as const
+const list = (v: any, none: string, row: (x: any) => string[]): string[] =>
+  v && !Array.isArray(v) && v.error ? [`error: ${v.error}`] : !Array.isArray(v) || !v.length ? [none] : v.flatMap(row)
+
+const jury = (g: any): string[] => [
+  `${g.gate} · ${g.outcome}`,
+  ...(g.rounds ?? []).map((r: any) => `round ${r.round}: ${(r.lenses ?? []).map((l: any) => `${l.lens} ${l.verdict}`).join(', ')}`),
+  ...(g.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}${f.fix_tasks?.length ? ` → ${f.fix_tasks.join(', ')}` : ''}`),
+]
+
+const cost = (c: any): string[] => {
+  if (c?.error) return [`error: ${c.error}`]
+  const l = (name: string, x: any) => `${name}: ${x.tokens} tokens · ${x.seconds}s`
+  return [
+    ...(c?.stages ?? []).flatMap((s: any) => [l(s.stage, s), ...(s.juries ?? []).map((j: any) => `  ${l(j.gate ?? j.name, j)}`)]),
+    ...(c ? [l('unattributed', c.unattributed ?? {}), l('total', c.total ?? {})].map(x => x.replace(/\[object Object\]/, '-')) : []),
+  ]
+}
+
+// FR-21: the five sections, from the one JSON only.
+const sections = (d: any): string[] => [
+  ...list(d.timeline, SECTION.timeline, x =>
+    x.kind === 'review'
+      ? [`review ${x.from} · ${x.at} · ${x.reasons?.length ? x.reasons.join('; ') : '-'}`]
+      : [`${x.from} → ${x.to} · ${x.role} · ${x.host} · ${x.model} · ${x.at}`]),
+  ...list(d.juries, SECTION.juries, jury),
+  ...list(d.tasks, SECTION.tasks, t => [`${t.id} ${t.status} · attempts ${t.attempts} · ${t.title}`]),
+  ...cost(d.cost),
+  ...list(d.memory, SECTION.memory, r => [`${r.id} ${r.kind} ${r.standing}: ${r.title}`]),
+]
+
 let busy = false // module state: a reload starts a fresh environment, timers included
 
 // FR-4: one pass, then the pane's state and the status line; no model turn.
@@ -233,9 +292,36 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: 'nio-efforts' }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
     const b = await read($, board)
     if (!b) return <Text dimColor>Reading nio flow status...</Text>
+    const d = (await read($, drill)) as Drill | null
+    if (d) {
+      const shown = d.shown
+      return (
+        <Box flexDirection="column">
+          <Button key="back" onPress={() => update($, drill, () => null)}>
+            Back
+          </Button>
+          <Text bold>{d.slug}</Text>
+          {!shown ? (
+            <Text dimColor>Reading...</Text>
+          ) : shown.error ? (
+            <Text color="error">{shown.error}</Text>
+          ) : (
+            sections(shown).map(l => <Text>{l}</Text>)
+          )}
+          {typeof d.context === 'number' && <Text>context: {d.context}%</Text>}
+        </Box>
+      )
+    }
+    const open = (slug: string, path: string) => async () => {
+      await update($, drill, () => ({ slug, path, shown: null, context: null }))
+      const shown = await show($, slug, path)
+      const context = await $.session.usage().then(u => (typeof u?.context?.percent === 'number' ? u.context.percent : null), () => null)
+      await update($, drill, cur => (cur && cur.slug === slug ? { slug, path, shown, context } : cur))
+    }
+    const brokenSlugs = new Set(b.rows.flatMap(r => ('error' in r && r.slug && r.path ? [r.slug] : [])))
     return (
       <Box flexDirection="column">
         <Text dimColor>
@@ -243,13 +329,25 @@ export const register: Register = on => {
         </Text>
         {b.rows.map(r =>
           'error' in r ? (
-            <Text color="error">
-              {r.worktree}
-              {r.slug ? ` ${r.slug}` : ''}: {r.error}
-            </Text>
+            r.slug && r.path ? (
+              <Button key={r.slug} onPress={open(r.slug, r.path)}>
+                <Text color="error">{`${r.worktree} ${r.slug}: ${r.error}`}</Text>
+              </Button>
+            ) : (
+              <Text color="error">
+                {r.worktree}
+                {r.slug ? ` ${r.slug}` : ''}: {r.error}
+              </Text>
+            )
           ) : (
             <Box flexDirection="column" marginTop={1}>
-              <Text bold>{r.slug}</Text>
+              {brokenSlugs.has(r.slug) ? (
+                <Text bold>{r.slug}</Text>
+              ) : (
+                <Button key={r.slug} onPress={open(r.slug, r.path!)}>
+                  <Text bold>{r.slug}</Text>
+                </Button>
+              )}
               <Text>
                 {r.stage} · {r.status}
               </Text>

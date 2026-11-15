@@ -7,6 +7,6 @@ export type NioBoard = { at: string; rows: NioRow[] }
 
 declare module 'claude-code' {
   interface PluginState {
-    'nio-status-pane': { board: NioBoard | null; drill: { path: string; slug: string } | null }
+    'nio-status-pane': { board: NioBoard | null; drill: { slug: string; path: string; shown: any; context: number | null } | null }
   }
 }
