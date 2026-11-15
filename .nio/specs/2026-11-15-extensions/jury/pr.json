@@ -1,0 +1,2010 @@
+{
+  "gate": "pr",
+  "subject": "2026-11-15-extensions",
+  "round": 1,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness",
+    "integration",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261116-2g2d/pr-adversary.md": "7dec28da687b67feb59f77194fbc366454a0de5c1db1204fbedcbc1c6f43e0a1",
+    "R-261116-2g2d/pr-conformance.md": "1523a2d0c6c6a8a09f2a099985148050b120091a6d59b59aa9d0d1dc074bb603",
+    "R-261116-2g2d/pr-consistency.md": "244663a77803ec884c88aa8405587c13c83e82561bb888844dd63c0121d4cb5b",
+    "R-261116-2g2d/pr-correctness.md": "4eabe485677551c58b7a80146f0878ba1f64b4e76337a3caef7abc6889b96a2c",
+    "R-261116-2g2d/pr-integration.md": "df943fa0f43a97fef7898af2e01a580015559dda2ed84c69b2321b5d32766157",
+    "R-261116-2g2d/pr-test-proof.md": "310338d86ffee30a1335826325808aba03bac7e5549fc42e0dd9a35362654fa2",
+    "R-261116-2g2d/pr-refuter-1.md": "ba8234b47f4183346d68b47c87a2a5bae540051e1e31bc1c3bb1131518c0fcf5",
+    "R-261116-2g2d/pr-conformance-2.md": "7273d5933089d7aae12599d4eb0e46d64a539fe0eabf0fa2951ac55673887d69",
+    "R-261116-2g2d/pr-conformance-3.md": "e03580c60db464907e4795fba61d61bbdb301a1bd3a1bfc9849ac841fa24c8bb"
+  },
+  "jurors": {
+    "pr-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    },
+    "pr-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    },
+    "pr-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    },
+    "pr-correctness": {
+      "attempts": 2,
+      "lens": "correctness",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    },
+    "pr-integration": {
+      "attempts": 2,
+      "lens": "integration",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    },
+    "pr-test-proof": {
+      "attempts": 2,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": false,
+      "errors": [
+        "every finding is ungrounded"
+      ],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    },
+    "pr-conformance-2": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    },
+    "pr-conformance-3": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "limited",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-6: tests/test_spec.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-12",
+        "AC-13",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-6 names tests/test_spec.py, which no commit of the epic changed",
+      "where": "tests/test_spec.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-6 names tests/test_spec.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-2",
+      "title": "T-7: tests/test_implement.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-15",
+        "AC-16",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-7 names tests/test_implement.py, which no commit of the epic changed",
+      "where": "tests/test_implement.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-7 names tests/test_implement.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-3",
+      "title": "T-11: tests/test_jury.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-23"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-11 names tests/test_jury.py, which no commit of the epic changed",
+      "where": "tests/test_jury.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-11 names tests/test_jury.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-4",
+      "title": "T-13: tests/test_agents.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-13 names tests/test_agents.py, which no commit of the epic changed",
+      "where": "tests/test_agents.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-13 names tests/test_agents.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-5",
+      "title": "T-16: tests/test_tasks.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-32"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-16 names tests/test_tasks.py, which no commit of the epic changed",
+      "where": "tests/test_tasks.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-16 names tests/test_tasks.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-6",
+      "title": "T-17: tests/test_implement.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-32",
+        "AC-33",
+        "AC-34",
+        "AC-36"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-17 names tests/test_implement.py, which no commit of the epic changed",
+      "where": "tests/test_implement.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-17 names tests/test_implement.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-7",
+      "title": "T-18: pyproject.toml isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-3",
+        "AC-37"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-18 names pyproject.toml, which no commit of the epic changed",
+      "where": "pyproject.toml",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-18 names pyproject.toml, which no commit of the epic changed",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-8",
+      "title": "the test suite failed",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "`printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:\nwarning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: warning`VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\n: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead",
+      "where": ".nio/specs/2026-11-15-extensions/architecture.md, .nio/specs/2026-11-15-extensions/contracts.md, .nio/specs/2026-11-15-extensions/grill.md, .nio/specs/2026-11-15-extensions/intake.md, .nio/specs/2026-11-15-extensions/plan.md, .nio/specs/2026-11-15-extensions/quickstart.md, .nio/specs/2026-11-15-extensions/research.md, .nio/specs/2026-11-15-extensions/spec.md, .nio/specs/2026-11-15-extensions/tasks.md, .nio/specs/2026-11-15-extensions/tests.md, src/nio/agents.py, src/nio/cli.py, src/nio/evidence.py, src/nio/extensions.py, src/nio/flow.py, src/nio/implement.py, src/nio/jury.py, src/nio/plan.py, src/nio/shipped/e2e/agents/e2e-tester.md, src/nio/shipped/e2e/check.py, src/nio/shipped/e2e/manifest.json, src/nio/shipped/e2e/skills/e2e/SKILL.md, src/nio/spec.py, src/nio/tasks.py, tests/fixtures/e2e-app/.gitignore, tests/fixtures/e2e-app/e2e/fail.spec.ts, tests/fixtures/e2e-app/e2e/pass.spec.ts, tests/fixtures/e2e-app/index.html, tests/fixtures/e2e-app/package.json, tests/fixtures/e2e-app/playwright.config.ts, tests/test_evidence.py, tests/test_extensions.py, tests/test_extensions_e2e.py, tests/test_flow.py, tests/test_talk.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "`printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:\nwarning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: warning`VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\n: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-9",
+      "title": "A hold set by a failing command fires no waiting-on-human hook",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "fire the events `step-passed`, `step-skipped`, `gate-approved`, `gate-rejected`, `epic-closed`, `waiting-on-human` and `effort-done`",
+        "return 1, talk(slug, stopped(here, stop, slug) if stop else here)",
+        "if result[0] == 0:"
+      ],
+      "fix": "fire `after` whenever the history grew or the hold changed, whatever the exit code. Alternatively, have the stop path return 0, or state in the spec that the event fires only from successful commands.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "an auto effort hits a stop-list rule in `_done`. The code writes the pause line with `write(root, slug, [line], new, w, here[\"stage\"])` and returns code 1, so `hooked` skips `extensions.after`. The effort is now waiting for the human, but the notify hook registered on `waiting-on-human` never runs and nothing is recorded. The silent case is the one the event exists for. The same applies to any other command that sets a hold and exits 1.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "flow.py `hooked` calls `extensions.after` only when `result[0] == 0`, and the `_done` stop-list path writes the pause line then returns `1, talk(...)`, so no waiting-on-human fires for that hold.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/flow.py (hooked, _done stop path)",
+      "tampering": false
+    },
+    {
+      "id": "J-10",
+      "title": "`nio extensions add` runs a command from the source argument, which breaks \"runs none of its commands\"",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "FR-37"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "run none of its commands and print every check and hook command it brings",
+        "code, _, err = records.git(tmp, \"clone\", \"--depth\", \"1\", source, tmp + \"/c\", full=True)"
+      ],
+      "fix": "refuse a source that starts with `-`, and pass `--` before it in the clone call.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "a source is routed to `git clone` when it contains `://`, starts with `git@` or ends with `.git`. It is passed to git as a bare argument with no `--`. A string like `--upload-pack=<cmd> ://x.git` is read by git as an option, so `<cmd>` runs at add time. That includes a command copied from a README line \"nio extensions add ...\". Extensions come from third parties, so the add is the trust boundary FR-37 protects.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "extensions.py line 263 passes `tmp + \"/c\"` as the next positional, so an option-shaped source swallows no repository. The positional left is the nonexistent local path, so git fails before running any upload-pack command. Missing `--` is hygiene, not the described command execution.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/extensions.py (resolve)",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "A step name is not validated, so a step can be unreachable or silently replaced",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "lacks a required field",
+        "[\\w-]+\\.[\\w-]+(\\.jury)?",
+        "name must be a word of letters, digits, - and _"
+      ],
+      "fix": "validate step names with NAME, and refuse a name that repeats within a manifest.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "only the extension name is checked against NAME. A step `name` need only be a non-empty string. A step named `run e2e` or `a.b` becomes a stage that `stage_arg` rejects, so `nio flow done` can never pass it. An effort reaching it is stuck, and `remove` refuses while an effort sits there. Two steps with the same name in one manifest pass `check`. `table` keys on `<ext>.<step>`, so the second silently replaces the first, and the first check never runs. A step named `s.jury` also collides with the jury stage of step `s`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`check` only requires step `name` to be a non-empty string (lines 76-80). NAME is applied to the extension name only (line 61). The duplicate-step test at line 146 compares against other extensions, never within `own`, so same-named steps pass and `table` keys collide.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/extensions.py (check), src/nio/flow.py (stage_arg, table)",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "A project folder named like a shipped extension shadows it",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-3"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN `nio extensions add` is given the name of a shipped extension THE SYSTEM SHALL copy the shipped extension",
+        "if Path(source).is_dir():"
+      ],
+      "fix": "resolve a bare word, one with no `/`, as a name first, and a path only when it has a separator or `./`. Alternatively, refuse when both exist.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "`resolve` tries a directory at the relative path first. A Playwright project usually has its own `e2e/` folder, so `nio extensions add e2e` in the exact project that wants the shipped e2e extension resolves to `./e2e`. The result is the refusal \"manifest.json is missing\", or worse, a user folder that happens to hold a manifest is added with the source label `e2e`. The shipped extension is unreachable by name there.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/extensions.py (resolve)",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "A hook's timeout has no upper bound, so a failing or slow hook can block the flow",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-27"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "a failing hook never stops or blocks the flow",
+        "timeout must be a whole number of seconds of at least 1",
+        "ponytail: a hook line is written under its own short lock, one per hook; batch them if hooks get many."
+      ],
+      "fix": "cap the per-hook timeout and the total hook time per command. Document that hooks block for up to that time, or run them detached.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "hooks run in the foreground inside `nio flow done`, one after another, for every event. Each defaults to 300 seconds and the manifest can set any integer. One command can fire `gate-approved`, `step-passed` and `effort-done`, and each of those can fire several hooks. A hook that hangs (a network call, say) holds the command for hours, and the human or the driver sees a hung flow command. The `after` hook run also reads the history window `lines[n:]`. A concurrent command's lines can therefore fire the same event twice.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/extensions.py (check, fire, after)",
+      "tampering": false
+    },
+    {
+      "id": "J-14",
+      "title": "Three e2e ACs have only tests that were skipped",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-29",
+        "AC-34",
+        "AC-35"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "skipped test_app_started_and_stopped (set NIO_E2E=1)",
+        "skipped test_failure_keeps_trace_and_screenshot (set NIO_E2E=1)",
+        "skipped test_tester_writes_one_test_per_e2e_ac (set NIO_E2E=1)"
+      ],
+      "fix": "run them with NIO_E2E=1, Playwright, Chromium and a model, and put the passing results in the evidence; or the human accepts these three ACs as unproven.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "AC-29 (the tester writes one test per e2e AC), AC-34 (the app is started and stopped around the run) and AC-35 (trace and screenshots are kept) are covered only by tests/test_extensions_e2e.py. In the evidence run all three printed skip and the pack lists them as failed. There is no passing result for any of the three. TC-29 also calls `check.py` directly, not `nio flow done e2e.tests`.",
+          "severity": "blocker",
+          "round": 1
+        },
+        {
+          "juror": "pr-conformance-2",
+          "lens": "conformance",
+          "situation": "test_tester_writes_one_test_per_e2e_ac, test_app_started_and_stopped and test_failure_keeps_trace_and_screenshot (tests/test_extensions_e2e.py:77, 41, 59) are the only tests for these ACs and each is reported as failed. The file's header says they run only with NIO_E2E and otherwise print skipped and pass, so these results most likely come from an environment problem (npm install, Chromium, or the claude model). The cause is not visible in the pack. As it stands, the Playwright webServer start and stop (FR-32), the trace and screenshots (FR-33) and the tester writing the tests (FR-29) have no passing evidence.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The three e2e tests in tests/test_extensions_e2e.py skip without NIO_E2E=1, and the evidence run did not set it. No passing result exists for AC-29, AC-34 or AC-35.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_extensions_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-15",
+      "title": "The no-extensions test fails in the evidence copy",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-48"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "FAIL tests/test_extensions.py::test_no_extensions_changes_nothing"
+      ],
+      "fix": "make the unchanged-tests check not depend on a `main` ref in the copy, for example by comparing a recorded hash of the expected stage table, or by running it where `main` exists. Then re-collect.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "AC-48 (NFR-3, existing flow tests pass unchanged) is proven by this test. In the evidence run it failed on the `git diff main -- tests/test_flow.py` assertion. The test inspects git history in the throwaway copy, so it depends on the checkout and not only on the code. The pack result for it is failed.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tests/test_extensions.py line 249 runs `git diff main -- tests/test_flow.py` and line 251 requires a changed `test_status_speed_with_three_extensions` line. In a copy without a `main` ref the diff is empty, so the assert fails. After the branch merges it breaks the same way.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_extensions.py:242",
+      "tampering": false
+    },
+    {
+      "id": "J-16",
+      "title": "AC-8's test is recorded failed although its output line reads ok",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "is_appended_andok tests/test_extensions.py::test_shipped_off_until_added"
+      ],
+      "fix": "re-collect the evidence with output kept per file, so the AC-8 result is read as passed.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "tests/test_extensions.py:254 is recorded as failed, but in the suite output its line reads `ok`. It sits glued to another file's unfinished line because parallel files write to one stream. The output is garbled and the failed label looks like a parse artefact. The test body does exercise AC-8: it checks that the table is `flow.STAGES`, that the stage is `tasking`, and that `e2e.` appears nowhere in the status or history.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The test at tests/test_extensions.py:254 does exercise AC-8, and the recorded failure comes from garbled interleaved output. It is a real evidence inconsistency that needs re-collection, although it is not a code defect.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_extensions.py:254",
+      "tampering": false
+    },
+    {
+      "id": "J-17",
+      "title": "The hook history line records the effort's stage, not the event's",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "CT-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "It appends one `hook` line per hook through `flow.record`"
+      ],
+      "fix": "change the contract to say the line records the effort's current stage, or put the event's stage in the evidence.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "CT-11 gives the line as from: stage, to: stage, where stage is the event's stage. `extensions.fire` writes `flow.last_to(lines)` for both. For `gate-approved plan_jury`, the line records the effort's current stage, not `plan_jury`. The code's choice keeps `where` from moving the effort, since a hook moves nothing. The event's stage is still recoverable from the command and event fields of the evidence.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/extensions.py:fire",
+      "tampering": false,
+      "right": "code"
+    },
+    {
+      "id": "J-18",
+      "title": "AC-5 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-5"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-5",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-5: test_manifest_missing_or_bad_field no assertion",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-19",
+      "title": "AC-8 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-8"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-8",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-8: test_shipped_off_until_added failed",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "AC-11 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-11",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-11: test_after_unknown_step_refused no assertion",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-21",
+      "title": "AC-20 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-20"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-20",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-20: test_add_only_rule no assertion",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-22",
+      "title": "AC-22 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-22"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-22",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-22: test_card_named_like_shipped_refused no assertion",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-23",
+      "title": "AC-28 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-28"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-28",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-28: test_unknown_event_refused no assertion",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-24",
+      "title": "AC-29 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-29"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-29",
+      "gap": "missing",
+      "where": "tests/test_extensions_e2e.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-29: test_tester_writes_one_test_per_e2e_ac failed",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-25",
+      "title": "AC-34 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-34"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-34",
+      "gap": "missing",
+      "where": "tests/test_extensions_e2e.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-34: test_app_started_and_stopped failed",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-26",
+      "title": "AC-35 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-35"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-35",
+      "gap": "missing",
+      "where": "tests/test_extensions_e2e.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-35: test_failure_keeps_trace_and_screenshot failed",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-27",
+      "title": "AC-38 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-38"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-38",
+      "gap": "missing",
+      "where": "src/nio/shipped/e2e/skills/e2e/SKILL.md, src/nio/shipped/e2e/agents/e2e-tester.md, tests/test_talk.py, tests/test_extensions_e2e.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-38: no test no match",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-28",
+      "title": "AC-46 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-46"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-46",
+      "gap": "missing",
+      "where": "src/nio/flow.py, src/nio/cli.py, src/nio/extensions.py, tests/test_flow.py, tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-46: no test no match",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-29",
+      "title": "AC-48 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-48"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-48",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-48: test_no_extensions_changes_nothing failed",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-30",
+      "title": "The hook line records the effort's stage, not the event's stage",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "CT-11",
+        "FR-27"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "from\": stage, \"to\": stage"
+      ],
+      "fix": "decide which stage the line carries. If it is the event's stage, write `from`/`to` from the `stage` argument in `fire`. If it is the effort's stage, change CT-11's shape and the `fire` docstring to say so and drop the `stage` argument's use for the record.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "an extension step `e2e.tests` passes. `extensions.after` calls `fire(root, slug, \"step-passed\", f, ...)` with `f` = `e2e.tests`, so the event's stage is the step. Inside `fire`, `here = flow.last_to(lines)` (`src/nio/extensions.py` line 381) is the stage the flow moved to, `tasking`, and the `hook` line is written with `from` and `to` set to `tasking`. CT-11 says the line is `{\"from\": stage, \"to\": stage, ...}` with `stage` the event's stage, so the line should read `e2e.tests`. The effort's timeline (FR-18, CT-6) then puts the hook at the wrong stage. The `stage` argument is also passed to `NIO_STAGE`, so the hook's env and its record disagree.",
+          "severity": "major",
+          "round": 1
+        },
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "CT-11 writes the hook line as from: stage, to: stage with the event's stage. fire() ignores its `stage` argument for the line, using the effort's current stage. After step-passed for plan_jury the line says the effort is at e2e.tests, and a gate-rejected line names the step it was sent back to. A reader cannot tell which stage the hook fired for, since NIO_STAGE is not stored. The code's choice is plausible (a line with from not equal to to might move where()), but it departs from the contract and no test pins it.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "contracts.md line 110 says the hook line is `{\"from\": stage, \"to\": stage, ...}`. `fire` ignores `stage` for the record and writes `here = flow.last_to(lines)` into from/to (extensions.py lines 381-384), so the contract and the code differ.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/extensions.py (fire, line 381)",
+      "tampering": false
+    },
+    {
+      "id": "J-31",
+      "title": "A task's e2e test check is not limited to full specs",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-12",
+        "FR-31"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "on a full spec, a task whose `Serves:` holds an AC at `Level: e2e` (CT-17) must cite in `Test:` a TC aimed at that AC",
+        "if full and \"Test\" in f and not ids(f[\"Test\"]):"
+      ],
+      "fix": "wrap the new check in `if full and ...`, as the `Test:` check beside it is, or amend CT-12 if the error is meant for lite specs too.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "CT-12 applies only on a full spec. In `src/nio/tasks.py` the new `errs += [f\"{t} serves {ac} (Level: e2e) ...\"]` line sits outside any `full` test, while the neighbouring `Test:` check is `if full and ...`. On a lite spec, `aimed` stays `{}` (it is built only when `full`), so a task serving an AC whose own `Level:` is `e2e` and whose `Test:` names no TC gets the error, which CT-12 does not allow. Reachability depends on whether a lite spec can carry `Level: e2e`, which I did not confirm.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/tasks.py (check, the e2e Serves check)",
+      "tampering": false
+    },
+    {
+      "id": "J-32",
+      "title": "nio fails to import on Python 3.11",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "FR-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "{join([f'{m['name']}.{s['name']} (after {s['after']})' for s in m['steps']], ', ')}"
+      ],
+      "fix": "build the step, card and hook strings before the f-string, or use different quote characters, so the file parses on 3.11; or raise requires-python to 3.12.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "pyproject.toml says requires-python >=3.11, but listing() reuses the same quote inside an f-string, which is only legal from Python 3.12. On 3.11 extensions.py is a SyntaxError. cli.py imports it at the top, so every nio command fails, not only `nio extensions list`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "extensions.py lines 340 and 342 nest `f'{m['name']}...'` inside an f-string using the same single quote, which parses only from Python 3.12 (PEP 701). pyproject.toml says `requires-python = \">=3.11\"`, and cli.py line 9 imports extensions at the top, so 3.11 fails every nio command.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/extensions.py (listing)",
+      "tampering": false
+    },
+    {
+      "id": "J-33",
+      "title": "`nio extensions remove` deletes whatever path the name resolves to",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-4",
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "rec, d = read_record(root), folder(root) / name"
+      ],
+      "fix": "refuse a name that is not a plain extension name (no slash, not starting with a dot) before touching the filesystem. Also require `name in rec` or a real folder directly under .nio/extensions.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "the name is never checked against the extension name pattern. `nio extensions remove .` gives d = .nio/extensions, which is a directory, so the \"not added\" refusal is skipped. `sitting` and `followers` find nothing, then `shutil.rmtree(d)` wipes every extension and the record. `..` gives .nio, so the same call would wipe the whole .nio folder.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`remove` never matches `name` against NAME and cli.py passes `a.name` straight through. With `.`, `d` is `.nio/extensions`, which is a directory, so the not-added refusal is skipped. `sitting` and `followers` find nothing, and line 360 runs `shutil.rmtree(d)`.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/extensions.py (remove)",
+      "tampering": false
+    },
+    {
+      "id": "J-34",
+      "title": "The run report leaves out extension gate approvals",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-19",
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "each gate's approval (under auto, with its grant line)"
+      ],
+      "fix": "read the gates from table(root, False)[1] in report.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "under auto the pull-request body is flow.report, which lists each gate's approval and its grant line. It loops over the built-in GATES, so an approved or auto-approved extension gate (for example e2e.tests.jury) never appears. The human reviewing the PR does not see that the flow approved it under auto. The GATES lookups in report should have moved to table(root) with the other readers.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/flow.py (report)",
+      "tampering": false
+    },
+    {
+      "id": "J-35",
+      "title": "Self-check depends on a local main ref",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-6"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "def test_no_extensions_changes_nothing():"
+      ],
+      "fix": "drop the git-diff assertions, or make them skip when main is missing; keep the table identity check and the test_flow.py run.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "this test asserts that the diff of tests/test_flow.py against `main` has only added lines and holds test_status_speed_with_three_extensions. In a copy with no main ref, or once the branch is merged, the diff is empty or errors, the any(...) is false and the test fails (as the evidence run in a throwaway copy showed). The check is about the repo's history, not about the code, so it breaks on any checkout that is not this branch. The identity assert on flow.table above it already covers the no-extension case of CT-6.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_extensions.py (test_no_extensions_changes_nothing)",
+      "tampering": false
+    },
+    {
+      "id": "J-36",
+      "title": "The run report ignores extension jury gates",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-19"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "if x[\"kind\"] in (\"pass\", \"override\") and x[\"from\"] in GATES:"
+      ],
+      "fix": "in `report`, use `table(root, False)[1]` in both loops, the same table `used` already reads.",
+      "sources": [
+        {
+          "juror": "pr-integration",
+          "lens": "integration",
+          "situation": "an effort with an extension step that declares a jury gate (for example `ext.step.jury`) is approved. `flow.used` and `stops` count that gate through `table(root)[1]`. `flow.report`, the run report and the PR body under auto, still loops only over the built-in `GATES`. The gate's approval, accepted risks and fixes never appear in the report.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/flow.py",
+      "tampering": false
+    },
+    {
+      "id": "J-37",
+      "title": "The new `nio extensions` command and its tests are named in no doc",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-1",
+        "FR-6",
+        "FR-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "add, list or remove extensions: folders that add steps, cards and hooks"
+      ],
+      "fix": "add one README row for `nio extensions add|list|remove` and the two test commands to the CLAUDE.md list.",
+      "sources": [
+        {
+          "juror": "pr-integration",
+          "lens": "integration",
+          "situation": "the diff adds the `nio extensions` command (the help text quoted above), but the README command table (the `nio agents sync|verify` row) and the CLAUDE.md self-check list were not touched. Neither lists `nio extensions add|list|remove`, `tests/test_extensions.py` or `NIO_E2E=1 tests/test_extensions_e2e.py`. A maintainer or agent following those docs does not learn the command or the checks exist. No skill mentions extensions either.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "README.md, CLAUDE.md",
+      "tampering": false
+    },
+    {
+      "id": "J-38",
+      "title": "The e2e check re-implements the AC-level rule that `spec.level` now holds",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-31",
+        "FR-30"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "found = re.findall(r\"Level:\\s*([a-z0-9]+)\", block[max(block.find(\"Observable:\"), 0):])"
+      ],
+      "fix": "leave the copy and add a test asserting `e2e_acs` and `spec.level` agree on the same blocks, or accept the duplication as deliberate and comment it in `check.py`.",
+      "sources": [
+        {
+          "juror": "pr-integration",
+          "lens": "integration",
+          "situation": "CT-17 introduced `spec.level` so `plan.py` and `tasks.py` agree on an AC's own level. `src/nio/shipped/e2e/check.py::e2e_acs` repeats the same regex and slicing. It does the same job for the e2e step's AC selection. `tests_of` also repeats the `### TC-n ... (AC-n; level)` heading parse that `tasks.py` does. If the rule changes, the e2e step silently disagrees with `nio check tasks`. The extension is stdlib-only by design, which explains a copy, but nothing ties the two together.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "unrequested",
+      "where": "src/nio/shipped/e2e/check.py, src/nio/spec.py",
+      "tampering": false
+    },
+    {
+      "id": "J-39",
+      "title": "`flow.moves` keeps a built-in-only branch nothing reaches",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "stages = table(root)[0] if root is not None else STAGES"
+      ],
+      "fix": "make `root` and `slug` required and drop the `else STAGES` branch.",
+      "sources": [
+        {
+          "juror": "pr-integration",
+          "lens": "integration",
+          "situation": "`moves` gained `root=None, slug=None` defaults and an `else STAGES` fallback. The only caller, `flow._done`, passes `root` and `slug` (a grep found no other call). When `root` is None the trigger branch would also crash on `extensions.applies(None, ...)`. So the fallback is dead, and the defaults hide that `root` and `slug` are required.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "unrequested",
+      "where": "src/nio/flow.py",
+      "tampering": false
+    },
+    {
+      "id": "J-40",
+      "title": "The shipped e2e step is never run through the flow; TC-29 calls check.py directly",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-29",
+        "AC-29"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`nio flow done e2e.tests` exits 0",
+        "r = subprocess.run([sys.executable, str(SHIPPED / \"check.py\")], cwd=root, capture_output=True, text=True, env={**os.environ, \"NIO_SLUG\": S})"
+      ],
+      "fix": "in test_tester_writes_one_test_per_e2e_ac, `pass_plan` first, assert the effort is at `e2e.tests`, then assert `nio flow done e2e.tests <slug> --by <driver>` exits 0 instead of calling check.py directly.",
+      "sources": [
+        {
+          "juror": "pr-test-proof",
+          "lens": "test-proof",
+          "situation": "the shipped manifest's check line, trigger or card is wrong (for example a typo in `$NIO_EXTENSION_DIR/check.py`, or a trigger that skips the step). TC-29 runs check.py by path and skips `pass_plan`, and no other test names `e2e.tests`, so every test still passes.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "TC-29 not defined by the spec or contracts",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_extensions_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-41",
+      "title": "TC-48 fails once merged, or wherever there is no local main ref",
+      "kind": "risk",
+      "severity": "blocker",
+      "cites": [
+        "TC-48",
+        "AC-48"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "diff = subprocess.run([\"git\", \"diff\", \"main\", \"--\", \"tests/test_flow.py\"], cwd=here.parent, capture_output=True, text=True).stdout",
+        "assert all(x.startswith(\"+\") for x in changed) and any(\"def test_status_speed_with_three_extensions\" in x for x in changed), diff"
+      ],
+      "fix": "drop the git-diff assert and keep the `is` check plus the test_flow.py run. If the \"test_flow.py unchanged\" rule matters, check it once at this gate rather than in a permanent test.",
+      "sources": [
+        {
+          "juror": "pr-test-proof",
+          "lens": "test-proof",
+          "situation": "after this PR merges, `git diff main` on main is empty, so the `any(...)` is False and test_extensions.py fails on main for good. It already failed in the evidence suite's throwaway copy, which had no `main` ref. The assert checks the test file's own history, not code the diff decides.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "TC-48 not defined by the spec or contracts",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_extensions.py",
+      "tampering": false
+    },
+    {
+      "id": "J-42",
+      "title": "The three real-browser and real-model tests never ran; the evidence lists them as failed",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-29",
+        "TC-34",
+        "TC-35",
+        "AC-29",
+        "AC-34",
+        "AC-35"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Without NIO_E2E they print `skipped` and pass."
+      ],
+      "fix": "run `NIO_E2E=1 uv run python tests/test_extensions_e2e.py` with Node and Chromium installed, and attach its output to the pr evidence before approval.",
+      "sources": [
+        {
+          "juror": "pr-test-proof",
+          "lens": "test-proof",
+          "situation": "the webServer is left running after a run, the trace or screenshot is not kept, or the tester card writes two tests per AC. Nothing at this gate catches any of these, because the bodies of test_app_started_and_stopped, test_failure_keeps_trace_and_screenshot and test_tester_writes_one_test_per_e2e_ac never executed.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "TC-29, TC-34, TC-35 not defined by the spec or contracts",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_extensions_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-43",
+      "title": "TC-46's speed limit was never asserted in the evidence",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "TC-46",
+        "AC-46"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "under `NIO_PERF=1` it takes under the same 2 seconds as `test_nfr3_status_speed`"
+      ],
+      "fix": "run `NIO_PERF=1 uv run python tests/test_flow.py` (CLAUDE.md asks for this after a status change) and record it as evidence.",
+      "sources": [
+        {
+          "juror": "pr-test-proof",
+          "lens": "test-proof",
+          "situation": "with three extensions, status re-reads or re-hashes each extension once per effort and goes over 2 seconds. The evidence run lacks NIO_PERF=1, so the test checks only the 20 rows and reports passed.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "TC-46 not defined by the spec or contracts",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_flow.py",
+      "tampering": false
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      1,
+      "human"
+    ]
+  ],
+  "versions": {
+    "1": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac"
+  },
+  "matched": {
+    "AC-1": [
+      [
+        "tests/test_extensions.py",
+        "test_add_from_folder"
+      ]
+    ],
+    "AC-2": [
+      [
+        "tests/test_extensions.py",
+        "test_add_from_git_url"
+      ]
+    ],
+    "AC-3": [
+      [
+        "tests/test_extensions.py",
+        "test_add_shipped_e2e"
+      ]
+    ],
+    "AC-4": [
+      [
+        "tests/test_extensions.py",
+        "test_add_again_replaces"
+      ]
+    ],
+    "AC-5": [
+      [
+        "tests/test_extensions.py",
+        "test_manifest_missing_or_bad_field"
+      ]
+    ],
+    "AC-6": [
+      [
+        "tests/test_extensions.py",
+        "test_list_shows_each"
+      ]
+    ],
+    "AC-7": [
+      [
+        "tests/test_extensions.py",
+        "test_remove_drops_the_step"
+      ]
+    ],
+    "AC-8": [
+      [
+        "tests/test_extensions.py",
+        "test_shipped_off_until_added"
+      ]
+    ],
+    "AC-9": [
+      [
+        "tests/test_extensions.py",
+        "test_step_runs_after_its_gate"
+      ]
+    ],
+    "AC-10": [
+      [
+        "tests/test_extensions.py",
+        "test_two_steps_run_in_name_order"
+      ]
+    ],
+    "AC-11": [
+      [
+        "tests/test_extensions.py",
+        "test_after_unknown_step_refused"
+      ]
+    ],
+    "AC-12": [
+      [
+        "tests/test_extensions.py",
+        "test_trigger_not_applying_skips"
+      ]
+    ],
+    "AC-13": [
+      [
+        "tests/test_extensions.py",
+        "test_spec_level_trigger"
+      ]
+    ],
+    "AC-14": [
+      [
+        "tests/test_extensions.py",
+        "test_plan_path_trigger"
+      ]
+    ],
+    "AC-15": [
+      [
+        "tests/test_extensions.py",
+        "test_check_zero_passes"
+      ]
+    ],
+    "AC-16": [
+      [
+        "tests/test_extensions.py",
+        "test_check_failing_records_tail"
+      ]
+    ],
+    "AC-17": [
+      [
+        "tests/test_extensions.py",
+        "test_misplaced_step_fails_at_check"
+      ]
+    ],
+    "AC-18": [
+      [
+        "tests/test_extensions.py",
+        "test_status_shows_the_step"
+      ]
+    ],
+    "AC-19": [
+      [
+        "tests/test_extensions.py",
+        "test_auto_extension_gate"
+      ]
+    ],
+    "AC-20": [
+      [
+        "tests/test_extensions.py",
+        "test_add_only_rule"
+      ]
+    ],
+    "AC-21": [
+      [
+        "tests/test_extensions.py",
+        "test_hand_edit_skipping_gate_stops_flow"
+      ]
+    ],
+    "AC-22": [
+      [
+        "tests/test_extensions.py",
+        "test_card_named_like_shipped_refused"
+      ]
+    ],
+    "AC-23": [
+      [
+        "tests/test_extensions.py",
+        "test_extension_gate_runs_its_jury"
+      ]
+    ],
+    "AC-24": [
+      [
+        "tests/test_extensions.py",
+        "test_extension_gate_rejected_goes_back"
+      ]
+    ],
+    "AC-25": [
+      [
+        "tests/test_extensions.py",
+        "test_agents_sync_renders_extension_cards"
+      ]
+    ],
+    "AC-26": [
+      [
+        "tests/test_extensions.py",
+        "test_gate_approved_hook_runs_once"
+      ]
+    ],
+    "AC-27": [
+      [
+        "tests/test_extensions.py",
+        "test_hooks_run_in_name_order"
+      ]
+    ],
+    "AC-28": [
+      [
+        "tests/test_extensions.py",
+        "test_unknown_event_refused"
+      ]
+    ],
+    "AC-29": [
+      [
+        "tests/test_extensions_e2e.py",
+        "test_tester_writes_one_test_per_e2e_ac"
+      ]
+    ],
+    "AC-30": [
+      [
+        "tests/test_extensions.py",
+        "test_e2e_check_wants_assertion_failures"
+      ]
+    ],
+    "AC-31": [
+      [
+        "tests/test_extensions.py",
+        "test_e2e_check_app_not_started"
+      ]
+    ],
+    "AC-32": [
+      [
+        "tests/test_extensions.py",
+        "test_tasks_name_the_e2e_test"
+      ]
+    ],
+    "AC-33": [
+      [
+        "tests/test_extensions.py",
+        "test_failing_e2e_keeps_epic_open"
+      ]
+    ],
+    "AC-34": [
+      [
+        "tests/test_extensions_e2e.py",
+        "test_app_started_and_stopped"
+      ]
+    ],
+    "AC-35": [
+      [
+        "tests/test_extensions_e2e.py",
+        "test_failure_keeps_trace_and_screenshot"
+      ]
+    ],
+    "AC-36": [
+      [
+        "tests/test_extensions.py",
+        "test_pr_evidence_lists_e2e_tests"
+      ]
+    ],
+    "AC-37": [
+      [
+        "tests/test_extensions.py",
+        "test_nothing_names_the_e2e_extension"
+      ]
+    ],
+    "AC-38": [],
+    "AC-39": [
+      [
+        "tests/test_extensions.py",
+        "test_add_runs_nothing_lists_commands"
+      ]
+    ],
+    "AC-40": [
+      [
+        "tests/test_extensions.py",
+        "test_failing_hook_never_blocks"
+      ]
+    ],
+    "AC-41": [
+      [
+        "tests/test_extensions.py",
+        "test_hand_edited_check_needs_add_again"
+      ]
+    ],
+    "AC-42": [
+      [
+        "tests/test_extensions.py",
+        "test_followed_steps_and_names_protected"
+      ]
+    ],
+    "AC-43": [
+      [
+        "tests/test_extensions.py",
+        "test_plan_trigger_before_plan_gate_refused"
+      ]
+    ],
+    "AC-44": [
+      [
+        "tests/test_extensions.py",
+        "test_remove_at_step_and_past_step"
+      ]
+    ],
+    "AC-45": [
+      [
+        "tests/test_extensions.py",
+        "test_e2e_check_failure_kinds"
+      ]
+    ],
+    "AC-46": [],
+    "AC-47": [
+      [
+        "tests/test_extensions.py",
+        "test_timeouts_stop_commands"
+      ]
+    ],
+    "AC-48": [
+      [
+        "tests/test_extensions.py",
+        "test_no_extensions_changes_nothing"
+      ]
+    ]
+  },
+  "batches": {
+    "R-261116-2g2d": 1
+  },
+  "asked": {},
+  "notes": [
+    {
+      "juror": "pr-conformance-2",
+      "title": "AC-8 test failed: shipped e2e extension not shown to be off until added",
+      "round": 1
+    },
+    {
+      "juror": "pr-conformance-2",
+      "title": "AC-48 test failed: existing flow tests not shown to pass unchanged",
+      "round": 1
+    },
+    {
+      "juror": "pr-conformance-2",
+      "title": "AC-20 test covers only some kinds of change",
+      "round": 1
+    }
+  ]
+}
