@@ -26,36 +26,36 @@ outcome: human
 | J-14 | blocker | gap | AC-16, AC-17 | conformance | merged | merged |  | new, 0 |
 | J-15 | blocker | gap | AC-24 | conformance | merged | merged |  | new, 0 |
 | J-16 | blocker | gap | AC-29, AC-30 | conformance | merged | merged |  | new, 0 |
-| J-17 | blocker | gap | AC-5 | cli, conformance | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-18 | blocker | gap | AC-13 | cli, conformance | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-19 | blocker | gap | AC-16 | cli, conformance | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-20 | blocker | gap | AC-17 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-17 | blocker | gap | AC-5 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-18 | blocker | gap | AC-13 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-19 | blocker | gap | AC-16 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-20 | blocker | gap | AC-17 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-21 | blocker | gap | AC-18 | cli, conformance | confirmed | fixed |  | absent, 0 |
 | J-22 | blocker | gap | AC-19 | cli | confirmed | fixed |  | absent, 0 |
-| J-23 | blocker | gap | AC-24 | cli, conformance | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-24 | blocker | gap | AC-30 | cli, conformance | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-23 | blocker | gap | AC-24 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-24 | blocker | gap | AC-30 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-25 | blocker | gap | AC-1, AC-5, AC-13 | conformance | merged | merged |  | new, 0 |
 | J-26 | blocker | gap | AC-16, AC-17 | conformance | confirmed | fixed |  | absent, 0 |
-| J-27 | blocker | gap | AC-29, AC-30, AC-24 | conformance | confirmed | disposed | accepted-risk (agent) | unchanged, 1 |
+| J-27 | blocker | gap | AC-29, AC-30, AC-24 | conformance | confirmed | disposed | accepted-risk (human) | unchanged, 1 |
 | J-28 | blocker | gap | AC-1, AC-5, AC-13, AC-16, AC-17, AC-24, AC-30 | conformance | merged | merged |  | new, 0 |
 | J-29 | blocker | gap | AC-18, AC-19, AC-20 | conformance | merged | merged |  | new, 0 |
 | J-30 | major | contradiction | CT-12, CT-4 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
-| J-31 | major | contradiction | CT-2, FR-13 | adversary | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-31 | major | contradiction | CT-2, FR-13 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-32 | major | contradiction | CT-8, CT-10, FR-22 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
 | J-33 | minor | risk | CT-10, CT-11, FR-25 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-34 | minor | scope | CT-17 | adversary, integration | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-35 | blocker | gap | AC-5, AC-13, AC-16, AC-17 | conformance | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-35 | blocker | gap | AC-5, AC-13, AC-16, AC-17 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-36 | major | gap | AC-1, AC-2, AC-4, AC-9, AC-11 | conformance | merged | merged |  | new, 0 |
 | J-37 | minor | risk | AC-26, AC-13 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-38 | major | contradiction | CT-8 | correctness | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-39 | major | contradiction | FR-5, CT-12 | correctness | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-38 | major | contradiction | CT-8 | correctness | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-39 | major | contradiction | FR-5, CT-12 | correctness | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-40 | minor | contradiction | CT-12, FR-2 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-41 | blocker | gap | AC-9 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-42 | blocker | gap | AC-11 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-43 | blocker | contradiction | CT-8, AC-18 | consistency | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-41 | blocker | gap | AC-9 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-42 | blocker | gap | AC-11 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-43 | blocker | contradiction | CT-8, AC-18 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-44 | major | contradiction | CT-12, AC-10 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
 | J-45 | minor | inconsistency | CT-14, CT-12 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-47 | minor | risk | CT-2, NFR-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
 
 ### J-1 test tampering: AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) in tools/claude-mods/nio-status-pane/hooks/register.test.tsx is deleted
@@ -163,27 +163,27 @@ outcome: human
 - situation (conformance): every test in tools/claude-mods/nio-status-pane/hooks/register.test.tsx (lines 207, 215, 286, 297, 309, 319, 325, 344, 360, 368, 386, 391, 398) has result "didn't run". The pane side of AC-1, AC-2, AC-4, AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29 and AC-30 has no passing test. AC-5, AC-13, AC-16, AC-17, AC-24 and AC-30 are proven nowhere else. The UJ-1 misuse test is also "not configured".
 - fix: add or fix a test that proves AC-5
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-18 AC-13 has no passing evidence
 - situation (cli): no passing test proves AC-13: no test no match
 - situation (conformance): "AC-13 cost as the CLI gives it" at register.test.tsx:368 did not run, so the pane-equals-CLI claim is unproven
 - fix: add or fix a test that proves AC-13
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-19 AC-16 has no passing evidence
 - situation (cli): no passing test proves AC-16: no test no match
 - situation (conformance): the context line is drawn only in the pane. All three "AC-16 AC-17 context line" tests (register.test.tsx:386 and the two after it) did not run
 - fix: add or fix a test that proves AC-16
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-20 AC-17 has no passing evidence
 - situation (cli): no passing test proves AC-17: no test no match
 - fix: add or fix a test that proves AC-17
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-21 AC-18 has no passing evidence
 - situation (cli): no passing test proves AC-18: no test no match
@@ -201,14 +201,14 @@ outcome: human
 - situation (conformance): the tests at register.test.tsx:207 and :215 are reported as "AC-24 nio on PATH" at line 0 and did not run. The hints say the suite's runner can't address them
 - fix: add or fix a test that proves AC-24
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-24 AC-30 has no passing evidence
 - situation (cli): no passing test proves AC-30: no test no match
 - situation (conformance): AC-30 is proven only by "AC-29 AC-30 drill-down errors" at register.test.tsx:319 and :325, and those did not run. Python covers only the CLI exit-1 half of AC-29 (test_flow.py:3006)
 - fix: add or fix a test that proves AC-30
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-25 Drill-down render, back and cost-in-pane have no test result
 - quote: "the drill-down lists the three changes in order"
@@ -231,7 +231,7 @@ outcome: human
 - situation (conformance): AC-24 and AC-30 are tested only by "AC-24 nio on PATH" and "AC-29 AC-30 drill-down errors", both "didn't run". AC-29's pane half ("the pane shows that reason with a Back button") is unproven. Only its CLI half passed (test_show_unknown_or_done_slug).
 - fix: run the pane TSX suite and attach the results; give the AC-24 test a real line so it can be addressed
 - validation: confirmed: The AC-29/AC-30 pane tests (register.test.tsx:319, :325) and the AC-24 tests (:207, :215) are reported as "didn't run", and Python covers only the CLI half of AC-29.
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-28 Pane drill-down tests did not run
 - quote: "Given the drill-down is open, when the human goes back, then the effort list is shown again."
@@ -260,7 +260,7 @@ outcome: human
 - situation (adversary): CT-2 says "one section's failure never stops the others" and a failing section returns `{"error": ...}`. The juries try catches only ValueError and OSError. A ledger that is valid JSON but lacks `sources`, `round` or `jurors` raises KeyError or TypeError. The timeline try catches only `Broken`, so a history line that is not an object raises AttributeError. Either one escapes `show` as a traceback with exit 1 and empty stdout. The pane then shows the last stderr line and no sections, and a hand-edited or merge-damaged committed ledger hides all five sections.
 - fix: use `except Exception` for timeline and juries, as the tasks, cost and memory blocks already do.
 - validation: confirmed: flow.py:1050-1053 catches only ValueError/OSError, and jury.load (jury.py:101) does no validation. A ledger that is valid JSON but lacks `round`, `sources` or `jurors` raises KeyError in juries() and escapes show(). The tasks, cost and memory blocks use `except Exception`.
-- disposition: accepted-risk by agent: named test TC-1 passes on arrival; replaced by direct fix task T-37 carrying a real J-31 test (C-261115-hkrz, pass-on-arrival rule)
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-37 (46f89e5, a malformed ledger or history line fails only its section); accepted only because re-ruling would spawn duplicate tasks.
 
 ### J-32 `mods_dir()` has no checkout fallback, so install fails in the editable dev checkout
 - quote: "return Path(__file__).parent / "mods""
@@ -291,7 +291,7 @@ outcome: human
 - situation (conformance): the only tests for these ACs are "AC-5 back to the list", "AC-13 cost as the CLI gives it" and the two "AC-16 AC-17 context line" tests in register.test.tsx. All four have result "didn't run", so none of the four ACs has run evidence.
 - fix: run the pane test suite so its results reach the evidence file, or name the run that does.
 - validation: confirmed: tests.md maps AC-5, AC-13, AC-16 and AC-17 only to register.test.tsx tests. The ledger records them as "didn't run", and nothing else proves them.
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-36 Rendered drill-down halves of the timeline, empty-section and broken-effort ACs are unproven
 - quote: "Observable: the rendered drill-down holds three timeline rows matching the history entries field by field, and no model call is made."
@@ -311,14 +311,14 @@ outcome: human
 - situation (correctness): CT-8 says to return the packaged `mods` folder when it exists, else `tools/claude-mods` in the checkout, else raise ValueError. The code only returns `src/nio/mods`. The glob finds no such folder in the repo. In an editable install, which is how a NIO checkout and the pane's `.venv/bin/nio` run, `--marketplace` points at a missing path. Every mod then reports `failed`. The ValueError for "no NIO mods" is never raised.
 - fix: in `mods_dir`, return the packaged folder if it is a dir, else `Path(__file__).parents[2] / "tools/claude-mods"` if that exists, else raise `ValueError("no NIO mods in this nio install")`.
 - validation: confirmed: hooks.py:38 has only the packaged path, and `src/nio/mods` is absent in the checkout, so the `--marketplace` argument points at a missing folder.
-- disposition: accepted-risk by agent: duplicate of T-17, fixed there
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-17 (5624169, mods_dir falls back to the checkout); accepted only because re-ruling would spawn duplicate tasks.
 
 ### J-39 Pane never draws the findings of a jury round
 - quote: "...(g.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}"
 - situation (correctness): CT-4 puts findings inside each round (`rounds[].findings`). The `jury` renderer reads `g.findings` at the gate level, which is always undefined. The `?? []` hides the mismatch, so no finding row, validation or fix task is drawn. Only the gate line and the round lens lines appear. The test fixtures may use the same wrong shape and so pass.
 - fix: draw each round's findings from `r.findings`, after that round's line.
 - validation: confirmed: register.tsx:235 reads gate-level `g.findings`, but CT-4 and flow.py:987 nest findings in `rounds[]`. `?? []` hides the mismatch, so FR-5's finding and fix-task rows never draw.
-- disposition: accepted-risk by agent: duplicate of T-32, fixed there
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-32 (eb8071c, the pane draws each round's findings); accepted only because re-ruling would spawn duplicate tasks.
 
 ### J-40 Timeline draws a stage-changing review as a failed review
 - quote: "x.kind === 'review'"
@@ -330,13 +330,13 @@ outcome: human
 - situation (cli): no passing test proves AC-9: no test didn't run
 - fix: add or fix a test that proves AC-9
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-42 AC-11 has no passing evidence
 - situation (cli): no passing test proves AC-11: no test didn't run
 - fix: add or fix a test that proves AC-11
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: duplicate of T-36 (C-261115-lncp): the pane test already passes; the gap is that the pr gate's evidence run never runs or reads the pane tests
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
 
 ### J-43 mods_dir has no checkout fallback, contrary to CT-8
 - quote: "else the checkout's `tools/claude-mods` (`Path(__file__).parents[2] / "tools/claude-mods"`, an editable install)."
@@ -346,7 +346,7 @@ outcome: human
 - situation (consistency): a NIO checkout installed with `uv sync` (editable) has no `src/nio/mods` folder. `src/nio/hooks.py` `mods_dir()` returns `Path(__file__).parent / "mods"` unchanged, so the path does not exist. `nio mods install` passes that path to `claude plugin install --marketplace` for both mods, and AC-18 cannot pass in the checkout. CT-8 names `tools/claude-mods` as the fallback and the `ValueError` for the neither-exists case, and the code does neither.
 - fix: make `mods_dir()` try `resources.files("nio") / "mods"`, then `Path(__file__).parents[2] / "tools/claude-mods"`, else raise `ValueError("no NIO mods in this nio install")`, as CT-8 says.
 - validation: confirmed: hooks.py:38 returns `Path(__file__).parent / "mods"` unconditionally, with no `tools/claude-mods` fallback and no ValueError, as CT-8 requires. `src/nio/mods` does not exist in the checkout.
-- disposition: accepted-risk by agent: duplicate of T-17, fixed there
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-17 (5624169, mods_dir falls back to the checkout); accepted only because re-ruling would spawn duplicate tasks.
 
 ### J-44 Tasks rows in the drill-down are not drawn per task
 - quote: "a task `<id> <status> · attempts <attempts> · <title>` under its epic"
@@ -370,7 +370,7 @@ outcome: human
 - situation (integration): `mods_dir()` returns `src/nio/mods`, which only exists in a built wheel because `force-include` copies `tools/claude-mods` there. No `src/nio/mods` exists in the checkout, so an editable install (the NIO repo itself and `uv run nio`) passes a non-existent marketplace path to `claude plugin install`, and every mod reports `failed`. CT-8 asked for the fallback and a `ValueError` when neither folder exists. The planned test asserts `mods_dir()` is the checkout's `tools/claude-mods`, but the code can't return that.
 - fix: make `mods_dir` return `src/nio/mods` when it is a directory, else `Path(__file__).parents[2] / "tools/claude-mods"` when that is a directory, else raise `ValueError("no NIO mods in this nio install")`. Catch the error in `mods_install` so it still never raises.
 - validation: confirmed: src/nio/hooks.py:36-38 returns only `Path(__file__).parent / "mods"`, and no `src/nio/mods` exists in the checkout (Glob found none). contracts.md CT-8 (line 90) and grill.md line 188 require the `tools/claude-mods` fallback, so an editable install passes a missing marketplace path to `claude plugin install`.
-- disposition: accepted-risk by agent: duplicate of T-17, fixed there
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-17 (5624169, mods_dir falls back to the checkout); accepted only because re-ruling would spawn duplicate tasks.
 
 ### J-47 flow.show reloads state and history once per section
 - quote: "tl = timeline(load(root, slug)[1])"
