@@ -1,27 +1,27 @@
 ---
 name: implement
-description: Build an effort's approved tasks one at a time, each by a fresh worker from its own pack, with the CLI proving every test failed before the code and passes after it. Use when `nio flow next` names @nio:implement, or when the human asks to implement or continue implementing an approved task list.
+description: Build an effort's approved tasks one epic at a time, one agent per epic from one pack, with the CLI running the epic's tests itself and closing it only when they pass. Use when `nio flow next` names @nio:implement, or when the human asks to implement or continue implementing an approved task list.
 ---
 
 # @nio:implement
 
-Takes an effort at implementing, whose `tasks.md` the human approved, through its epics: one task at a time, each in a
-fresh worker that sees only that task's pack. You orchestrate and report; `nio flow` decides. It runs the test itself
-to accept red (the test fails, for the right reason, before the code) and green (it passes after), then reviews and
-commits the task on the effort branch `nio/<slug>`. A worker's handoff never counts as proof.
+Takes an effort at implementing, whose `tasks.md` the human approved, through its epics: one agent per epic, a fresh
+one that sees only that epic's pack and writes its tasks' tests and code. You orchestrate and report; `nio flow`
+decides. When the agent hands the epic back, `nio flow finish` runs the tests its tasks name itself and closes the epic
+only if they pass, with one commit on the effort branch `nio/<slug>`. An agent's hand-off never counts as proof.
 
 Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`). Below, `--by` is `--by "orchestrator / <host> / <model>"`.
 
-Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`. Never pass `--by human`: only the human grants or revokes auto, or approves a gate.
 
-A worker runs no `nio flow` command, except in single mode `nio flow red` and `nio flow green` on its own task.
+An implementation agent runs no `nio flow` command.
 
 ## Inputs and outputs
 
 - **Input:** the slug of an effort at implementing (`nio flow next` names this skill), with a `nio: approve tasks`
-  commit and `tests.suite` set in `.nio/config.json` (the command that runs the whole test suite: it runs at the baseline and once at the pr gate; each task runs only its own test, and the task closing an epic re-runs its epic's tasks' own tests).
-- **Outputs:** one `T-n: <title>` commit per done task on `nio/<slug>`, never merged; the task lines `nio flow` keeps;
-  a change request for each spec problem a worker finds; the epic reports and notices passed on to the human.
+  commit and `tests.suite` set in `.nio/config.json` (the command that runs the whole test suite: it runs at the baseline and once at the pr gate; each epic runs only the tests its tasks name, once, when it is handed back).
+- **Outputs:** one `E-n: <heading>` commit per closed epic on `nio/<slug>`, never merged; the epic lines `nio flow`
+  keeps; a change request for each spec problem an agent finds; the notices passed on to the human.
 
 ## Talking to the human
 Every message to the human (question, report, error or hand-off):
@@ -51,7 +51,8 @@ session, the one the human talks to, only routes.
 2. Start a fresh driver for it whose first input is what `nio flow brief <slug>` prints, and nothing else: no note
    from an earlier driver, nothing from an earlier unit. One epic may take several drivers one after another; a unit
    resumed after a hand-back gets a new one.
-3. Start a driver only once the previous one for this effort has ended; never two at once. A driver that ended
+3. Start a driver only once the previous one for this unit has ended: one driver per claimed epic may run at once,
+   each with its own epic, and none beside a gate's. A driver that ended
    without a summary counts as ended: go on from `nio flow brief <slug>` alone.
 4. Relay the driver's summary: what needs the human goes to them from the summary alone, in the shape above. When
    it holds nothing for the human (a gate approved, an epic done), start the next unit's fresh driver from
@@ -60,6 +61,11 @@ session, the one the human talks to, only routes.
    `nio jury dispose ... --by human`, `nio flow unblock ... --human` and the like), their words as the note: that
    counts as routing. Then start a fresh driver from `nio flow brief <slug>`.
 Read nothing else yourself: what lies past the brief and the summaries is the driver's.
+
+Under auto (the effort's auto flag, granted only by the human), the main session starts the next driver without asking
+the human, and stops only when `nio flow next <slug>` waits for the human, is suspended, or reaches the pr gate's
+approval; on a stop it tells the human the reason and the command `nio flow next` prints. Each driver first takes the
+driver claim with `nio flow drive <slug> --by`, and refreshes it with `--token` while it works.
 
 On a host without subagents, the main session runs the unit itself from `nio flow brief <slug>`, following the
 driver's rules below, and goes on without stopping for the human. Optional, on Claude Code: run each driver as a
@@ -70,15 +76,15 @@ subagent (general-purpose) in the background.
   earlier driver: wait on that run (below), never start it again. If it shows `running on <host>, can't check:
   <command>, ...`, the run is on another machine: end with the summary asking the human whether that run is still
   alive, and start the command again only once they say it is gone.
-- Where a step says to show or ask the human (a human-only disposition, a ruling at the round cap, a blocked task, a
-  change request, a refusal it can't settle), end there with the summary naming that item and the command to
+- Where a step says to show or ask the human (a human-only disposition, a ruling at the round cap, a blocked task or
+  epic, a change request, a refusal it can't settle), end there with the summary naming that item and the command to
   continue. Never make the human's decision yourself.
 - End once the unit is closed or handed back; never go on into the next unit.
 - Your last message is the summary, at most 15 lines, in three parts: `closed:` what closed, `open:` what is open
   (each item for the human), `next:` the command to run next.
 
-**Waiting for long work.** A long command is one that can outlast the host's foreground limit: `nio flow green`,
-`nio jury evidence`, a suite run, and any subagent (a juror, a worker, a driver). The main session and the driver
+**Waiting for long work.** A long command is one that can outlast the host's foreground limit: `nio flow finish`,
+`nio jury evidence`, a suite run, and any subagent (a juror, an implementation agent, a driver). The main session and the driver
 wait for it like this:
 - **The host sends completion notices:** start it in the background, then act on its notice when it arrives. Nothing
   in between: no sleep, no loop, no status check.
@@ -88,45 +94,44 @@ wait for it like this:
   continue. Never check at an interval.
 - **Neither:** don't run the long command; end with the summary naming it as open and how to continue, for the main
   session to take to the human.
-`nio flow green` and `nio jury evidence` record themselves as running while they run, so the next brief shows them.
+`nio flow finish` and `nio jury evidence` record themselves as running while they run, so the next brief shows them.
 
 ## Steps
 
-1. **Claim.** Run `nio flow claim <slug> --by`. It prints `task:`, `mode:`, `card:` (`nio-worker-<tier>`), `effort:`
-   and `pack:`. The first claim also switches to `nio/<slug>` and records the suite's baseline. If it refuses
-   (uncommitted changes, a task already claimed, no ready task, the wrong branch), or prints a waiting message, stop and
-   tell the human in the shape above, except that while a wave is open, `is claimed` means wait for the other wave
-   workers, not stop; claim again only once every wave task is done or blocked.
-2. **Start the worker** as a fresh subagent of the named card, on the pack's path, with the mode, and the effort where
-   the host takes one per call. For a wave, start one worker per claimed task at the same time, each with
-   the task's worktree as its working directory. Report each red and green by its own ID. By mode:
-   - **split:** a test-phase worker writes the test and hands off `status: red-ready` with its command. Report it:
-     `nio flow red <slug> T-n --run "<command>" --by`. Give the code-phase worker the `output:` lines `nio flow red` printed, with the pack. Then a fresh code-phase worker, given the same pack, writes the
-     code and hands off `status: done`. Report it: `nio flow green <slug> T-n --by`.
-   - **single:** one worker writes the test, runs `nio flow red` itself, writes the code and runs `nio flow green`
-     itself. When it hands off `done`, check with `nio flow next <slug>` that the task is done, not its word.
-   - **direct:** one worker writes the code and hands off `status: done` with a command. Report it:
-     `nio flow green <slug> T-n --run "<command>" --by`.
-3. **On a refusal** of red or green, or a failed review, start a fresh worker for that phase, giving it the refusal's
-   text. Each one uses an attempt; at the third the CLI blocks the task and the effort waits for the human. A `try again`
-   from `nio flow` is retried after a few seconds, not counted as a refusal. A `nio flow green` started in the
-   background that refuses (exits non-zero) comes here too, on its completion notice, with the text it printed, exactly.
+1. **Claim.** Run `nio flow claim <slug> --by`. It prints `epic:`, `tasks:`, `card:` (`nio-worker-<tier>`), `effort:`,
+   `pack:` and `then:`, the command that hands the epic back. The first claim also switches to `nio/<slug>` and records
+   the suite's baseline. If it refuses (uncommitted changes, an epic already claimed, no epic ready, a blocked epic, the
+   wrong branch), or prints a waiting message, stop and tell the human in the shape above. An epic whose tasks were all
+   done before (`every task done: run its tests`) has nothing to build: run its `then:` command at once.
+2. **Start one agent per claimed epic**: a fresh subagent of the named card, on the pack's path, with the effort where
+   the host takes one per call. A second epic claimed while one runs prints `worktree:`; its agent gets that worktree
+   as its working directory. The agent writes every task's tests and code, in task order, and hands back
+   `status: done` with `command:`, the one command that runs the epic's tests.
+3. **Hand the epic back.** On `done`, run the `then:` line: `nio flow finish <slug> E-n --by` (when the line asks for
+   `--run`, pass the agent's `command:`). It runs the epic's tests once itself; a pass closes the epic with one commit.
+   A failed run (a failing test, a test file that doesn't import, no test run, or past 30 minutes) keeps the epic open:
+   claim it again and start a fresh agent; the new pack holds the failing tests and the run's last lines. The third
+   failed run blocks the epic for the human. A `try again` from `nio flow` is retried after a few seconds, not counted
+   as a failed run. A `nio flow finish` started in the background that fails (exits non-zero) comes here too, on its
+   completion notice, with the text it printed, exactly.
 4. **On a `blocked` handoff** (a spec problem), save it to a file and run
-   `nio flow block <slug> T-n --handoff <file> --by`. It files the change request and the effort waits for the human.
+   `nio flow block <slug> T-n --handoff <file> --by`, naming the task it is about. It files the change request and the
+   effort waits for the human; the epic keeps its claim. Once the human unblocks the task, a fresh driver's
+   `nio flow brief <slug>` prints the epic's `pack:` and `then:` again, and a fresh agent resumes it.
    Never edit the spec, plan or tasks yourself. On a bug fix, when the handoff names a new dependency, a change to an interface used outside the bug's folder or to stored data, or a fix task whose non-test files sit in a second folder, also offer the full flow (`@nio:spec`, "Escalating a bug fix") alongside the change request.
-5. **Pass everything on.** After green, the CLI prints the review, `done: T-n <commit>`, and when an epic ends its
-   report: the epic closed on its tasks' own tests, with no jury. When the last task is done, the report says the pr
-   gate is next and prints a `notify:` line: end your unit there; the pr gate runs in a fresh driver (@nio:jury). Tell
-   the human each `notify:` and every `waiting_for_human` in the shape above, with the command that clears it. Never
-   merge the branch: the human does. The pr gate's fix tasks, in the closing `PR fixes` epic, are built like any other.
-6. **Next task.** Go back to step 1 until the claim refuses, the effort waits for the human, or it is done.
+5. **Pass everything on.** `nio flow finish` prints `closed: E-n <commit>`: the epic closed on its own tests, with no
+   jury. When the last epic closes, it says the pr gate is next and prints a `notify:` line: end your unit there; the pr
+   gate runs in a fresh driver (@nio:jury), and its jury judges the whole effort diff. Tell the human each `notify:`
+   and every `waiting_for_human` in the shape above, with the command that clears it. Never merge the branch: the human
+   does. The pr gate's fix tasks, in the closing `PR fixes` epic, are built like any other epic.
+6. **Next epic.** Go back to step 1 until the claim refuses, the effort waits for the human, or it is done.
 
 ## When to stop
 
-Stop when `nio flow next <slug>` names the pr gate (every task is done: the next unit is @nio:jury's), when it says
+Stop when `nio flow next <slug>` names the pr gate (every epic is closed: the next unit is @nio:jury's), when it says
 `waiting_for_human`, or when a claim is refused, and show the human what it prints.
 
 ## When `nio` is missing or fails
 
-Don't build anything by hand: red, green and the review exist so that no agent's word decides them. Tell the human, in
+Don't close an epic by hand: `nio flow finish` runs its tests so that no agent's word decides them. Tell the human, in
 the shape above, what failed, and stop.

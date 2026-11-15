@@ -41,7 +41,7 @@ def link(root, text):
 
 
 def label(command):
-    """A shell call's name: `nio flow red` for NIO's own commands, plain `bash` for the rest, whose text may hold secrets."""
+    """A shell call's name: `nio flow finish` for NIO's own commands, plain `bash` for the rest, whose text may hold secrets."""
     m = NIO.match(command)
     return " ".join(["nio", *filter(None, m.groups())]) if m else "bash"
 

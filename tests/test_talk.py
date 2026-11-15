@@ -104,9 +104,11 @@ def test_drivers_ac5_hand_back_never_decide_for_the_human():
 
 
 def test_drivers_ac6_one_driver_at_a_time():
+    """One driver at a time for a gate; one per claimed epic at once at the implement stage (2026-11-15 CT-8)."""
+    assert "only once the previous one for this effort has ended; never two at once" in drivers("jury")[2]
+    assert "only once the previous one for this unit has ended: one driver per claimed epic may run at once" in drivers("implement")[2]
     for name in BOTH:
         main = drivers(name)[2]
-        assert "only once the previous one for this effort has ended; never two at once" in main, name
         assert "ended without a summary counts as ended: go on from `nio flow brief <slug>` alone" in main, name
 
 
@@ -152,7 +154,7 @@ def wait(name):
 def test_drivers_ac9_background_and_completion_notice():
     for name in BOTH:
         w = wait(name)
-        assert "`nio flow green`, `nio jury evidence`, a suite run, and any subagent" in w, name
+        assert "`nio flow finish`, `nio jury evidence`, a suite run, and any subagent" in w, name
         assert "start it in the background, then act on its notice when it arrives" in w and "no sleep, no loop, no status check" in w, name
 
 
@@ -165,10 +167,10 @@ def test_drivers_ac10_ac11_blocking_wait_three_times():
         assert "Never check at an interval" in w and "every few" not in w and "poll " not in w, name
 
 
-def test_drivers_ac12_refused_background_green_goes_to_step_3():
+def test_drivers_ac12_failed_background_finish_goes_to_step_3():
     text = drivers("implement")[0]
-    step3 = text.split("3. **On a refusal**")[1].split("4. **")[0]
-    assert "A `nio flow green` started in the background that refuses" in step3 and "with the text it printed, exactly" in step3
+    step3 = text.split("3. **Hand the epic back.**")[1].split("4. **")[0]
+    assert "A `nio flow finish` started in the background that fails" in step3 and "with the text it printed, exactly" in step3
 
 
 def test_drivers_ac13_host_neutral():
@@ -196,8 +198,28 @@ def test_drivers_ac20_running_brief_means_wait():
     for name in BOTH:
         _, sec, _, drv = drivers(name)
         assert "If it shows `running: <command>, started <time>`" in drv and "wait on that run (below), never start it again" in drv, name
-        assert "`nio flow green` and `nio jury evidence` record themselves as running" in sec, name
+        assert "`nio flow finish` and `nio jury evidence` record themselves as running" in sec, name
+
+
+def test_drivers_waiting_has_no_poll_loop():
+    """TC-56: without the mod, the skills still name the long commands and forbid a poll loop."""
+    for name in BOTH:
+        w = wait(name)
+        assert "`nio flow finish`" in w and "`nio jury evidence`" in w and "no sleep, no loop" in w, name
+        assert "nio flow green" not in w, name
+
+
+def test_implement_is_per_epic():
+    """TC-8: NORTH_STAR's Implement section and the implement skill describe per-epic work, with no red/green step."""
+    north = (ROOT / "NORTH_STAR.md").read_text().split("### Implement\n")[1].split("\n## ")[0]
+    skill = (ROOT / "skills/implement/SKILL.md").read_text()
+    for name, text in (("NORTH_STAR.md", north), ("implement", skill)):
+        assert "one agent per epic" in text.lower(), name
+        for word in ("TDD", "test writer", "builder"):
+            assert word not in text, (name, word)
+        assert not re.search(r"\b(red|green)\b", text, re.I), (name, re.search(r"\b(red|green)\b", text, re.I))
+    print("ok")
 
 
 if __name__ == "__main__":
-    selfcheck.main([check] + [f for n, f in list(globals().items()) if n.startswith("test_drivers") and callable(f)])
+    selfcheck.main([check, test_implement_is_per_epic] + [f for n, f in list(globals().items()) if n.startswith("test_drivers") and callable(f)])

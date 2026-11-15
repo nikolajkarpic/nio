@@ -6,7 +6,7 @@ agent when the command exits instead of the agent sitting in a `sleep`/poll wait
 
 Long commands:
 
-- `nio jury run …` and `nio flow green …`, also as `uv run nio …` and after `cd <dir> &&`;
+- `nio jury evidence …` and `nio flow finish …`, also as `uv run nio …` and after `cd <dir> &&`;
 - the exact `tests.suite` command from `.nio/config.json` (also after `cd <dir> &&`).
 
 It only sets `run_in_background: true` and adds no text. A call that already sets

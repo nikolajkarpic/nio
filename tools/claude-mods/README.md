@@ -4,7 +4,7 @@ Claude-only dev tooling for working on this repo. They are not part of the NIO p
 
 | Mod | What it does |
 | --- | --- |
-| [background-nio-commands](background-nio-commands/) | Runs `nio jury run`, `nio flow green` and the test suite in the background, so agents stop polling (#130) |
+| [background-nio-commands](background-nio-commands/) | Runs `nio jury evidence`, `nio flow finish` and the test suite in the background, so agents stop polling (#130) |
 | [nio-status-pane](nio-status-pane/) | A side pane, a status line and `/nio` showing where every effort in the repo's worktrees stands, with no model turn (#131, #132) |
 
 ## Install (once)

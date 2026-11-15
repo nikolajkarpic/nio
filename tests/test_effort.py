@@ -8,7 +8,7 @@ import re
 
 import selfcheck
 import test_flow
-from test_implement import DIRECT, RUN, S, TWO, code_with, commit_all, finish, flow, impl, lines, with_modes, write_test
+from test_implement import REFUNDS, RUN, S, TWO, close_epic, code_with, commit_all, flow, impl, lines, write_test
 
 from nio import evidence, flow as nio_flow, implement, jury, tasks
 from nio import records
@@ -46,11 +46,22 @@ def fake_hub(fail=None, prs=None, comments=None):
 
 
 def built(tasks_text=TWO, **kw):
-    """Every task of a two-epic effort done (T-1, T-2 in E-1; T-3 in E-2), each closing on its own test: at the pr gate."""
+    """Both epics of a two-epic effort (T-1, T-2 in E-1; T-3 in E-2) closed on their own test runs: at the pr gate."""
     root = impl(tasks=tasks_text, **kw)
-    for tid in ("T-1", "T-2", "T-3"):
-        finish(root, tid)
+    for eid in ("E-1", "E-2"):
+        close_epic(root, eid)
     return root
+
+
+def fix_epic(root, body="def refund(x):\n    return x  # fixed\n"):
+    """Build the closing `PR fixes` epic as any other: claim it, change the code, finish it; finish's output."""
+    code, out = flow(root, "claim", S)
+    assert code == 0 and " PR fixes" in out, out
+    eid = next(x.split()[1] for x in out.splitlines() if x.startswith("epic: "))
+    code_with(root, body)
+    code, out = flow(root, "finish", S, eid)
+    assert code == 0, out
+    return out
 
 
 def step(root, run=""):
@@ -84,8 +95,9 @@ def gate_round(root, findings=None):
         juror(root, run, name, (findings or {}).get(name, "none"))
     out += step(root, run)
     if any("run nio-refuter" in x for x in out):
-        ids = re.findall(r"^### (J-\d+)", (root / f".nio/runs/{run}/jury/packs/refuter.md").read_text(), re.M)
-        (root / f".nio/runs/{run}/jury/pr-refuter.md").write_text("".join(f"### {i}\n- result: confirmed\n- reason: so\n\n" for i in ids))
+        pack = re.search(r"run nio-refuter on (\S+)", out[-1])[1]
+        ids = re.findall(r"^### (J-\d+)", (root / pack).read_text(), re.M)
+        (root / f".nio/runs/{run}/jury/pr-{Path(pack).stem}.md").write_text("".join(f"### {i}\n- result: confirmed\n- reason: so\n\n" for i in ids))
         out += step(root, run)
     return run, out
 
@@ -105,38 +117,31 @@ def subjects(root):
 
 # --- US-1 ---
 
-def test_effort_ac1_epic_closes_on_its_tasks_own_tests_no_jury():
+def test_effort_ac1_epic_closes_on_its_own_tests_no_jury():
     root = impl(tasks=TWO)
-    finish(root, "T-1")
-    out = finish(root, "T-2")
-    review = [x for x in lines(root) if x["kind"] == "review" and x["evidence"]["task"] == "T-2"][-1]["evidence"]
-    assert review["epic_tests"] == [{"command": RUN, "code": 0}] and "suite" not in review, review
+    out = close_epic(root, "E-1")
     assert not (root / f".nio/specs/{S}/jury/implementation-E-1.json").exists() and "implementation-E-1" not in out, out
-    assert "task: T-3 " in flow(root, "next", S)[1] and stage(root) == "implementing"
+    assert "task: E-2 " in flow(root, "next", S)[1] and stage(root) == "implementing"
     print("ok")
 
 
-def test_effort_ac16_failing_own_test_keeps_the_epic_open():
-    root = impl(tasks=TWO)
-    finish(root, "T-1")
-    assert flow(root, "claim", S)[0] == 0
-    (root / "tests/test_other.py").write_text("import unittest\n\n\nclass O(unittest.TestCase):\n    def test_o(self):\n        pass\n")
-    code_with(root, "def refund(x):\n    return 0\n")  # breaks T-1's own test
-    code, out = flow(root, "green", S, "T-2", "--run", "python -m unittest tests/test_other.py")
-    assert code == 1 and "review: failed" in out and f"an epic task's own test fails: {RUN}" in out and "test_refund" in out, out
-    assert stage(root) == "implementing" and "T-3" not in flow(root, "next", S)[1]
-    print("ok")
-
-
-def test_effort_ac16_epic_close_reruns_only_each_tasks_latest_green():
-    root = impl(tasks=TWO)
-    gone = "python -m unittest tests/test_gone.py"  # an earlier claim's green command, its test since removed
-    for kind, ev in (("claim", {}), ("green", {"command": gone}), ("review", {"passed": False}), ("unblock", {})):
-        test_flow.history(root, S, implement.entry(kind, "T-1", **ev))  # that claim failed and was unblocked
-    finish(root, "T-1")
-    out = finish(root, "T-2")
-    review = [x for x in lines(root) if x["kind"] == "review" and x["evidence"]["task"] == "T-2"][-1]["evidence"]
-    assert review["passed"] and review["epic_tests"] == [{"command": RUN, "code": 0}], (review, out)
+def test_epics_close_without_a_jury_then_one_pr_gate():
+    """TC-6: epics close on their test runs with no jury; the pr gate is the one jury, and its findings become the
+    `PR fixes` epic, rated per epic, which the next claim takes."""
+    root = built()
+    flow(root, "next", S)
+    folder = root / f".nio/specs/{S}"
+    assert not list(folder.glob("jury/implementation-E-*")), list(folder.glob("jury/*"))
+    assert (lines(root)[-1]["kind"], lines(root)[-1]["from"], lines(root)[-1]["to"]) == ("pass", "implementing", "pr")
+    fake_hub()
+    errors = tasks.check(root, S)[0]  # the two-epic fixture's own
+    _, out = gate_round(root, {"correctness": [{"title": "Refund pays twice"}]})
+    assert "outcome: rejected" in out and (folder / "jury/pr.json").exists() and not list(folder.glob("jury/implementation-*")), out
+    text = (folder / "tasks.md").read_text()
+    assert "## E-3 PR fixes\n- Tier: strong: fixes from the pr jury\n- Effort: med\n" in text, text[-600:]
+    assert tasks.check(root, S)[0] == errors
+    code, out = flow(root, "claim", S)
+    assert code == 0 and "epic: E-3 PR fixes" in out and "card: nio-worker-strong" in out, out
     print("ok")
 
 
@@ -145,8 +150,8 @@ def test_effort_ac2_last_task_moves_to_the_pr_gate_and_the_suite_runs_once_there
     assert lines(root)[-1]["to"] == "pr" and stage(root) == "pr", lines(root)[-1]
     out = flow(root, "next", S)[1]
     assert "state: pr (working)" in out and "@nio:jury" in out, out
-    reviews = [x["evidence"] for x in lines(root) if x["kind"] == "review"]
-    assert not any("suite" in r for r in reviews), reviews
+    runs = [x["evidence"] for x in lines(root) if x["kind"] == "epic_test"]
+    assert len(runs) == 2 and not any(r["command"] == implement.records.config(root)["tests"]["suite"] for r in runs), runs
     fake_hub()
     run = next(x[5:] for x in step(root) if x.startswith("run: "))
     evidence.collect(root, S, "pr", run)
@@ -170,7 +175,7 @@ def test_effort_ac3_out_of_flow_commit_is_judged():
 def test_effort_ac4_core_lenses_and_refuter():
     root = built()
     out, ok = jury.plan(root, S, "pr")
-    assert ok and out.lenses == jury.PR_CORE and "runs: 5 of 7" in out[2], out
+    assert ok and out.lenses == jury.PR_CORE and "runs: 6 of 8" in out[2], out
     assert "refuter" in jury.agents.load(root) and "integration" in jury.agents.load(root)
     print("ok")
 
@@ -180,7 +185,7 @@ def test_effort_ac5_risk_flags_add_their_lenses():
     sp = root / f".nio/specs/{S}/spec.md"
     sp.write_text(re.sub(r"^risk: .*$", "risk: [auth, migration]", sp.read_text(), count=1, flags=re.M))
     out, ok = jury.plan(root, S, "pr")
-    assert ok and out.lenses == jury.PR_CORE + ["security", "risk-rollback"] and "runs: 7 of 7" in out[2], out
+    assert ok and out.lenses == jury.PR_CORE + ["security", "risk-rollback"] and "runs: 8 of 8" in out[2], out
     print("ok")
 
 
@@ -196,15 +201,8 @@ def test_effort_ac6_blocker_becomes_a_pr_fixes_task_then_suite_and_fix_check():
     fix = parsed["tasks"][last["tasks"][0]]
     assert fix["fix"] and fix["fields"]["From"] == "J-1 (pr, round 1)", fix
     assert tasks.check(root, S)[0] == errors and stage(root) == "implementing"
-    tid = last["tasks"][0]
-    code, o = flow(root, "claim", S)
-    assert code == 0 and f"task: {tid} " in o, o
-    write_test(root)
-    code_with(root)
-    code, o = flow(root, "red", S, tid, "--run", RUN)  # single mode: its test passes already, so green it directly
-    test_flow.history(root, S, implement.entry("red", tid, command=RUN, frozen={}))
-    code, o = flow(root, "green", S, tid)
-    assert code == 0 and stage(root) == "pr", o
+    fix_epic(root)
+    assert stage(root) == "pr"
     led = jury.load(root, S, "pr")
     run2 = next(x[5:] for x in step(root) if x.startswith("run: "))
     evidence.collect(root, S, "pr", run2)
@@ -306,12 +304,7 @@ def test_effort_ac27_hand_fix_and_pr_fixes_task_only_in_the_rest_pack():
     root = split_root(2501)
     fake_hub()
     gate_round(root, {"correctness~E1": [{"title": "Refund pays twice"}]})
-    tid = tasks.parse("\n".join(records.parse(tasks.path(root, S))[1]))["epics"][-1]["tasks"][0]
-    assert flow(root, "claim", S)[0] == 0
-    (root / "fixed.py").write_text("PR_FIX_MARK = 1\n")
-    code_with(root)
-    test_flow.history(root, S, implement.entry("red", tid, command=RUN, frozen={}))
-    assert flow(root, "green", S, tid)[0] == 0
+    fix_epic(root, "def refund(x):\n    return x\n\n\nPR_FIX_MARK = 1\n")
     run = records.new_run(root)
     evidence.collect(root, S, "pr", run)
     jury.save(root, {**jury.load(root, S, "pr"), "recorded": []})  # the full-review packs, not round 2's fix check
@@ -352,9 +345,8 @@ def approved(root):
 
 def test_effort_ac10_pr_gate_is_its_own_unit_from_the_brief():
     root = impl(tasks=TWO)
-    finish(root, "T-1")
-    finish(root, "T-2")
-    out = finish(root, "T-3")
+    close_epic(root, "E-1")
+    out = close_epic(root, "E-2")
     assert "fresh driver started from `nio flow brief" in out, out
     nxt = flow(root, "next", S)[1]
     assert "state: pr" in nxt and "skill: @nio:jury" in nxt, nxt
@@ -506,11 +498,7 @@ def test_effort_ac24_reused_pr_and_one_edited_comment():
     st = fake_hub(prs=[7])
     gate_round(root, {"correctness": [{"title": "Refund pays twice"}]})
     first = dict(st["comments"])
-    tid = tasks.parse("\n".join(records.parse(tasks.path(root, S))[1]))["epics"][-1]["tasks"][0]
-    assert flow(root, "claim", S)[0] == 0
-    code_with(root, "def refund(x):\n    return x  # fixed\n")
-    test_flow.history(root, S, implement.entry("red", tid, command=RUN, frozen={}))
-    assert flow(root, "green", S, tid)[0] == 0
+    fix_epic(root)
     run = next(x[5:] for x in step(root) if x.startswith("run: "))
     evidence.collect(root, S, "pr", run)
     out = step(root, run)
@@ -563,11 +551,8 @@ def test_effort_ac20_pr_fixes_done_push_updates_the_pr_and_fix_check_runs():
     root = built()
     st = fake_hub()
     gate_round(root, {"correctness": [{"title": "Refund pays twice"}]})
-    tid = tasks.parse("\n".join(records.parse(tasks.path(root, S))[1]))["epics"][-1]["tasks"][0]
-    assert flow(root, "claim", S)[0] == 0
-    code_with(root, "def refund(x):\n    return x  # fixed\n")
-    test_flow.history(root, S, implement.entry("red", tid, command=RUN, frozen={}))
-    assert flow(root, "green", S, tid)[0] == 0 and lines(root)[-1]["to"] == "pr"
+    fix_epic(root)
+    assert lines(root)[-1]["to"] == "pr"
     pushes = sum(c[:2] == ("git", "push") for c in HUB)
     run = next(x[5:] for x in step(root) if x.startswith("run: "))
     assert sum(c[:2] == ("git", "push") for c in HUB) == pushes + 1 and st["prs"] == [1]
@@ -581,18 +566,27 @@ def test_effort_ac20_pr_fixes_done_push_updates_the_pr_and_fix_check_runs():
 
 # --- US-4: efforts in flight ---
 
+def old_done(root, *tids):
+    """Tasks done under the per-task flow: their `task_done` lines and code, committed."""
+    write_test(root)
+    code_with(root)
+    test_flow.git(root, "checkout", "-q", "-B", f"nio/{S}")
+    test_flow.history(root, S, {"kind": "baseline", "from": "implementing", "to": "implementing", "evidence": {}},
+                      *[implement.entry("task_done", t, commit="c") for t in tids])
+    commit_all(root, f"{tids[-1]}: old flow")
+
+
 def test_effort_ac15_in_flight_effort_switches_at_the_next_epic():
     root = impl(tasks=TWO)
-    finish(root, "T-1")
-    finish(root, "T-2")
+    old_done(root, "T-1", "T-2")
     # E-1's old jury approved and closed before this change: its ledger and `epic` line
     led = jury.load(root, S, "implementation-E-1")
     led.update(round=1, outcome="approved", recorded=[[1, "approved"]])
     jury.save(root, led)
     test_flow.history(root, S, {"kind": "epic", "from": "implementing", "to": "implementing", "reason": "approved", "evidence": {"epic": "E-1"}})
     before = (root / f".nio/specs/{S}/history.jsonl").read_bytes()
-    assert "task: T-3 " in flow(root, "next", S)[1]
-    finish(root, "T-3")
+    assert "task: E-2 " in flow(root, "next", S)[1]
+    close_epic(root, "E-2")
     assert (root / f".nio/specs/{S}/history.jsonl").read_bytes().startswith(before) and stage(root) == "pr"
     fake_hub()
     run = next(x[5:] for x in step(root) if x.startswith("run: "))
@@ -604,8 +598,7 @@ def test_effort_ac15_in_flight_effort_switches_at_the_next_epic():
 
 def test_effort_ac28_epic_in_its_old_jury_finishes_it_first():
     root = impl(tasks=TWO)
-    finish(root, "T-1")
-    finish(root, "T-2")
+    old_done(root, "T-1", "T-2")
     led = jury.load(root, S, "implementation-E-1")  # mid-round, a finding open
     led.update(round=1, outcome="rejected", recorded=[[1, "rejected"]], findings=[{
         "id": "J-1", "status": "open", "title": "x", "severity": "major", "kind": "gap", "cites": ["AC-1"], "quotes": [], "fix": "y",
@@ -613,7 +606,7 @@ def test_effort_ac28_epic_in_its_old_jury_finishes_it_first():
         "validation": "confirmed", "reason": "", "disposition": "", "by": "", "note": "", "baseline": "new", "rounds": 0}])
     jury.save(root, led)
     out = flow(root, "next", S)[1]
-    assert "implementation-E-1 is open" in out and "T-3" not in out, out
+    assert "implementation-E-1 is open" in out and "E-2" not in out, out
     assert jury.load(root, S, "implementation-E-1")["findings"][0]["status"] == "open"
     code, o = flow(root, "claim", S)
     assert code == 1 and "implementation-E-1" in o, o
@@ -621,8 +614,8 @@ def test_effort_ac28_epic_in_its_old_jury_finishes_it_first():
 
 
 def test_effort_done_before_the_pr_gate_stays_done():
-    root = impl(tasks=with_modes(modes=DIRECT).split("### T-2")[0])
-    finish(root, "T-1")
+    root = impl(tasks=REFUNDS.split("### T-2")[0])
+    close_epic(root, "E-1")
     test_flow.history(root, S, {"kind": "pass", "from": "implementing", "to": "done"})
     assert stage(root) == "done"
     test_flow.history(root, S, {"kind": "back", "from": "done", "to": "implementing", "change": "C-1"})  # sent back later

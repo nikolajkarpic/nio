@@ -7,7 +7,7 @@ description: Set NIO up in a repo: install its git hooks, render its agents, and
 
 Sets NIO up in the current repo. Run the CLI as `nio` (inside the NIO repo itself: `uv run nio`).
 
-Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`. Never pass `--by human`: only the human grants or revokes auto, or approves a gate.
 
 ### Talking to the human
 Every message to the human (question, report, error or hand-off):
@@ -42,8 +42,8 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
      the settings file must be committed.
    - **Keep every prompt:** runs nothing. Stages stop for each command.
 
-   Either way approvals, overrides and other human decisions still prompt, and so do `nio flow red` and `green`,
-   because they run any command they are given.
+   Either way approvals, overrides and other human decisions still prompt, and so does `nio flow finish`,
+   because it runs any command it is given.
 
 ## When to stop
 

@@ -1,5 +1,6 @@
 """Self-check for nio new spec / nio check spec. Run: uv run python tests/test_spec.py"""
 import subprocess
+import tempfile
 from pathlib import Path
 
 from test_records import repo
@@ -198,6 +199,15 @@ def test_edge_cases():
     print("ok")
 
 
+def test_auto_tag_passes_gate():
+    """[auto] items are settled at the gate, whatever the auto flag says."""
+    root = repo()
+    slug = put(root, "spec.md", lambda t: t.replace("[default]", "[auto]").replace(
+        "- **OP-1** (decision; FR-1) Can support refund an order after 30 days?\n", "").replace("retired: []", "retired: [OP-1]"))
+    errs, _ = spec.check(root, slug, gate=True)
+    assert errs == [], errs
+
+
 def test_grill_provenance():
     """What the grill writes: agent calls, derived items and deferred points pass the gate and are listed for the human."""
     root = repo()
@@ -254,5 +264,14 @@ def test_secrets_flag_brings_in_security():
     print("ok")
 
 
+def test_flow_start_done_parse_auto():
+    """T-29 (AC-17, AC-18): `flow start` and `flow done` accept --auto."""
+    from test_flow import run_main
+    with tempfile.TemporaryDirectory() as d:
+        for args in (("start", "x"), ("done", "spec", "x")):
+            _, _, err = run_main(d, "flow", *args, "--auto", "--by", "a / b / c")
+            assert "unrecognized arguments" not in err, (args, err)
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_lite_unchanged_required, test_secrets_flag_brings_in_security, test_grill_provenance, test_edge_cases, test_examples_pass, test_templates_need_filling, test_broken_specs, test_ids_are_permanent])
+    selfcheck.main([test_auto_tag_passes_gate, test_lite_unchanged_required, test_secrets_flag_brings_in_security, test_grill_provenance, test_edge_cases, test_examples_pass, test_templates_need_filling, test_broken_specs, test_ids_are_permanent, test_flow_start_done_parse_auto])

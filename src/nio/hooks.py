@@ -54,7 +54,7 @@ def install(root, nio=None):
     return out
 
 
-# stage work an agent may run unprompted; red and green are left out because they run any command they are given
+# stage work an agent may run unprompted; finish is left out because it runs any command it is given (--run)
 ALLOW = ["check", "query", "get", "pack", "status", "index", "new", "run", "task", "agents sync", "agents verify",
          "flow next", "flow status", "flow start", "flow park", "flow done", "flow claim", "flow block",
          "jury template", "jury answers", "jury plan", "jury changed", "jury fixcheck", "jury collect", "jury dispose",

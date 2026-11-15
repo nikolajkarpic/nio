@@ -241,7 +241,7 @@ def span(root, slug, epic):
 
 
 def e2e_greens(root, slug):
-    """{(file, test)}: the tests an accepted `nio flow green` ran with NIO_E2E=1 by name, which a suite run without it
+    """{(file, test)}: the tests a passing epic run (`nio flow finish`, or an old accepted green) ran with NIO_E2E=1 by name, which a suite run without it
     skips; the pr gate counts them as passing so it doesn't raise a missing-evidence blocker per e2e test.
     ponytail: trusts the green run even if the test changed after it; re-run e2e at the gate if that matters."""
     from nio import flow
@@ -252,10 +252,11 @@ def e2e_greens(root, slug):
 
 
 def e2e_from(lines):
-    """The (file, test) pairs that accepted green lines ran by name with NIO_E2E=1."""
+    """The (file, test) pairs that passing epic_test lines (or old accepted green ones) ran by name with NIO_E2E=1."""
     out = set()
     for ln in lines:
-        cmd = (ln.get("evidence") or {}).get("command", "") if ln.get("kind") == "green" else ""
+        ev = ln.get("evidence") or {}
+        cmd = ev.get("command", "") if ln.get("kind") == "green" or ln.get("kind") == "epic_test" and ev.get("passed") else ""
         for part in cmd.split("&&") if "NIO_E2E=1" in cmd else []:
             words = shlex.split(part)
             files = [w for w in words if w.endswith(".py")]
@@ -280,7 +281,7 @@ def split(root, slug):
         return {}
     base, head = span(root, slug, "pr")
     last = pr_fixes(root, slug)
-    epic = {t["id"]: t["epic"].replace("-", "") for t in implement.tasks_of(root, slug) if t["epic"] != last}
+    epic = {k: t["epic"].replace("-", "") for t in implement.tasks_of(root, slug) if t["epic"] != last for k in (t["id"], t["epic"])}  # `T-n:` or, per epic, `E-n:`
     rows = records.git(root, "log", "--reverse", "--format=%H %s", f"{base}..{head}")
     added = records.git(root, "log", "-1", "--format=%H", "--diff-filter=A", "--", f".nio/specs/{slug}/tasks.md")
     ours = not any(x.startswith(f"{a} ") for a in added for x in rows)  # a `T-n:` before this tasks.md is an earlier effort's
@@ -310,9 +311,9 @@ def part_diff(root, commits, *flags):
 
 
 def commits_of(root, slug, epic):
-    """The commits named `T-n: ...` for a task of the epic, newest first. The walk stops at the commit that added the
+    """The commits named `T-n: ...` for a task of the epic, or `E-n: ...` for the epic, newest first. The walk stops at the commit that added the
     spec's tasks.md, since an earlier effort has its own T-1."""
-    mine = {t["id"] for t in members(root, slug, epic)}
+    mine = {k for t in members(root, slug, epic) for k in (t["id"], t["epic"])}
     added = records.git(root, "log", "-1", "--format=%H", "--diff-filter=A", "--", f".nio/specs/{slug}/tasks.md")
     out = []
     for x in records.git(root, "log", "--format=%H %s", "HEAD"):
@@ -361,7 +362,7 @@ def phantoms(root, tasks, base, head):
                 if t.get("fix"):  # ponytail: an old fix task's `Files:` may hold a juror's free text; a missing file in a fix task goes unreported
                     continue
                 out.append(finding(f"{t['id']}: {f} doesn't exist", f"{t['id']} names {f}, which is not in the repo at {head[:8]}", cite, f))
-            elif f not in in_diff:
+            elif f not in in_diff and f not in (t.get("reused") or []):  # `path` (unchanged): read, not changed (FR-40)
                 out.append(finding(f"{t['id']}: {f} isn't in the epic's diff", f"{t['id']} names {f}, which no commit of the epic changed", cite, f))
     defined, file = [], ""
     for line in code_diff(root, base, head, "-U0"):
@@ -789,6 +790,18 @@ def pack(root, slug, gate, lens, run, part=None):
         except Exception:  # no memory or no index yet
             found = ""
         decisions = ["## Decisions", "", found if "Memory has nothing" not in found and found else "None found.", ""]
+    if lens == "test-proof":  # FR-41: each test the diff adds, to judge whether it passes with its code left out
+        added, file = [], ""
+        for line in code_diff(root, base, head, "-U0"):
+            if line.startswith("+++ "):
+                file = line[6:] if line.startswith("+++ b/") else ""
+            elif line.startswith("@@"):
+                at = int(re.search(r"\+(\d+)", line)[1])
+            elif line.startswith("+") and (m := re.match(r"\s*(?:async\s+)?def (test_\w+)", line[1:])):
+                added.append(f"- `{file}:{at}` {m[1]}")
+            if line.startswith("+") and not line.startswith("+++ "):
+                at += 1
+        decisions += ["## Tests the effort added", "", *(added or ["None."]), ""]
     text, bound = items(root, slug)
     serves = {s for t in mine for s in t["serves"]}
     touched = serves | {c for c, f in bound.items() if f in names}

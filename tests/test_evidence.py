@@ -1408,7 +1408,7 @@ def test_the_output_is_invalid():
 
 def test_it_is_dropped_as_ungrounded():
     said, found = finding_collected(cites="FR-99")
-    assert not any("INVALID" in x for x in said), said
+    assert "INVALID implementation-E-1-conformance.md: every finding is ungrounded" in said, said  # 2026-11-15 FR-24: re-run
     (f,) = found
     assert f["status"] == "dropped" and "FR-99" in f["reason"], f
     print("ok")
@@ -2205,8 +2205,7 @@ def test_a_fix_task_holds_each_field_of_its_contract_and_passes_the_check():
         assert f["Test"] == tests[fid], (fid, f["Test"])
         assert cites[fid] in tasks.ids(f["Serves"]), (fid, f["Serves"])
         assert tasks.files(f["Files"]) == ["src/two.py" if fid == "J-2" else "src/one.py"], f["Files"]
-        assert (f["Depends on"], f["Parallel"], f["Effort"]) == ("none", "no", "med"), f
-        assert f["Tier"] == "strong: a fix from a jury finding" and f["Mode"] == "single: a fix from a jury finding", f
+        assert (f["Depends on"], f["Parallel"]) == ("none", "no") and not {"Tier", "Effort", "Mode"} & set(f), f  # rated per epic
         assert "justify or remove" not in " ".join(task["block"]).lower(), f"{fid} isn't unrequested: {task['block']}"
     tasks_pass(root)
     print("ok")
@@ -2435,7 +2434,7 @@ def test_it_is_rejected_and_a_fix_task_is_appended():
     tid = tasks[0]["id"]
     assert tid in out, f"the outcome doesn't name the new task: {out}"
     assert jury.load(root, "s", GATE)["outcome"] == "rejected"
-    assert implement.next_ready(root, "s", flow.read(root, "s")[1])["id"] == tid, "the epic isn't back with the implement stage"
+    assert tid in undone(root), "the epic isn't back with the implement stage"
     done = nio(root, "jury", "evidence", "s", "E-1", "--run", "R-2")
     assert done.returncode and tid in done.stderr and "Traceback" not in done.stderr, f"the gate ran with {tid} not done: {done.stderr}"
     print("ok")
@@ -2640,13 +2639,13 @@ def test_a_fix_tasks_pack_says_what_to_fix():
     rejected_round(root, {"title": "a missing one", "situation": "SITUATION-MARK-3 is wrong", "fix": "FIX-MARK-4 instead"},
                    {"title": "cites a contract", "cites": "CT-2", "where": "src/two.py", "quote": '"TWO_MARK"', "situation": "SITUATION-MARK-5 is wrong"})
     by_id = {t["id"]: t for t in implement.tasks_of(root, "s")}
-    text = implement.worker_pack(root, "s", by_id["T-6"])
-    assert "SITUATION-MARK-5" in implement.worker_pack(root, "s", by_id["T-7"]), "a task serving a CT has to pack too"
+    text = implement.worker_pack(root, "s", by_id["T-6"]["epic"], "", [by_id["T-6"]])
+    assert "SITUATION-MARK-5" in implement.worker_pack(root, "s", by_id["T-7"]["epic"], "", [by_id["T-7"]]), "a task serving a CT has to pack too"
     assert "SITUATION-MARK-3" in text and "FIX-MARK-4" in text, f"the worker can't see what to fix:\n{text}"
     assert len(re.findall(r"^## ", text, re.M)) == 5, f"a worker pack has exactly five parts:\n{text}"
-    plain = implement.worker_pack(root, "s", by_id["T-1"])
+    plain = implement.worker_pack(root, "s", by_id["T-1"]["epic"], "", [by_id["T-1"]])
     assert "SITUATION-MARK-3" not in plain and "FIX-MARK-4" not in plain, f"a planned task got a finding's text:\n{plain}"
-    implement.worker_pack(root, "s", by_id["T-5"])  # its From: names J-11, which no ledger holds: it still packs
+    implement.worker_pack(root, "s", by_id["T-5"]["epic"], "", [by_id["T-5"]])  # its From: names J-11, which no ledger holds: it still packs
     print("ok")
 
 
@@ -2655,7 +2654,7 @@ def test_a_fix_tasks_pack_holds_the_errors_of_the_check_it_fixes():
     root = broken_repo()
     tasks = cli_round(root)
     task = next(t for t in implement.tasks_of(root, "s") if t["id"] == tasks["J-1"])
-    text = implement.worker_pack(root, "s", task)
+    text = implement.worker_pack(root, "s", task["epic"], "", [task])
     assert "LINT-ERROR-7" in text, f"a CLI finding has no `fix`: its errors are what the worker has to go on:\n{text}"
     print("ok")
 
@@ -2707,6 +2706,13 @@ def waiting_repo(*findings):
     return root, before
 
 
+def undone(root):
+    """The tasks not done yet, read from the effort's history."""
+    from nio import flow, implement
+    st = implement.status(root, "s", flow.read(root, "s")[1])
+    return [t["id"] for t in implement.tasks_of(root, "s") if st[t["id"]] != "done"]
+
+
 def test_the_epic_waits_on_the_change_request_and_no():
     from nio import flow, implement
     root = fix_repo()
@@ -2720,7 +2726,7 @@ def test_the_epic_waits_on_the_change_request_and_no():
     path = cr_one(root)
     assert path.name[:13] in out, f"the outcome doesn't name the change request it waits on: {out}"
     assert task_file(root).read_bytes() == tasks and not fix_tasks_for(root), "a fix task was appended while a change request is open"
-    assert implement.next_ready(root, "s", flow.read(root, "s")[1]) is None, "the epic is back with the implement stage"
+    assert undone(root) == [], "the epic is back with the implement stage"
     code, out = recorded(root)  # asked again with the change request still pending: held, never approved
     assert code != 0 and "outcome: approved" not in out and cr_state(out) == "waiting-on-change", (code, out)
     print("ok")
@@ -2737,7 +2743,7 @@ def test_a_fix_task_citing_the_finding_is_appended_and():
     assert sorted(by) == ["J-1"] and len(by["J-1"]) == 1, f"exactly one new task, citing J-1, not {by}"
     tasks_pass(root)
     tid = by["J-1"][0]["id"]
-    assert tid in out and implement.next_ready(root, "s", flow.read(root, "s")[1])["id"] == tid, "the epic isn't back with the implement stage"
+    assert tid in out and tid in undone(root), "the epic isn't back with the implement stage"
     recorded(root)  # a repeat appends no second task
     assert len(fix_tasks_for(root)["J-1"]) == 1 and len(cr_files(root)) == 1, "a repeat appended a second task or raised a second request"
     print("ok")
@@ -3025,9 +3031,6 @@ def test_the_last_epics_gate_ends_the_effort():
     root, _ = approved_with_minors()
     old_jury(root)
     assert epic_done(root).returncode == 0
-    task = next(t for t in implement.tasks_of(root, "s") if t["id"] == "T-4")
-    entries, report = implement.epic_end(root, "s", task, {})
-    assert not [e for e in entries if e["kind"] in ("epic", "pass")], entries
     fix_gate(root, epic="E-2")
     code, out = recorded(root, "implementation-E-2")
     assert code == 0 and "outcome: approved" in out and "merge:" not in out, (code, out)
@@ -3046,16 +3049,118 @@ def test_an_old_skipped_epic_stays_closed():
     import test_implement as ti
     from nio import implement
     root = ti.impl(tasks=ti.TWO)
-    ti.finish(root, "T-1")
-    ti.finish(root, "T-2")
-    if not ti.epics(root):
-        test_flow.history(root, ti.S, {"kind": "epic", "from": "implementing", "to": "implementing",
-                                       "reason": "skipped: not built", "evidence": {"epic": "E-1"}})
+    ti.write_test(root)
+    ti.code_with(root)
+    test_flow.git(root, "checkout", "-q", "-b", f"nio/{ti.S}")
+    test_flow.history(root, ti.S, {"kind": "baseline", "from": "implementing", "to": "implementing", "evidence": {}},
+                      implement.entry("task_done", "T-1"), implement.entry("task_done", "T-2"),
+                      {"kind": "epic", "from": "implementing", "to": "implementing", "reason": "skipped: not built", "evidence": {"epic": "E-1"}})
+    ti.commit_all(root, "T-2: old flow")
     out = ti.flow(root, "next", ti.S)[1]
     assert "E-1" in out and "never reviewed" in out, out
     code, out = ti.flow(root, "claim", ti.S)
-    assert code == 0 and "task: T-3 " in out, out
+    assert code == 0 and "epic: E-2 " in out, out
     assert not any("E-1" in x for x in implement.left(root, ti.S, ti.lines(root))), implement.left(root, ti.S, ti.lines(root))
+    print("ok")
+
+
+# --- 2026-11-15-faster-flow: existing tests, reused files and the test-proof lens at the pr gate (CT-27, CT-30, CT-31) ---
+
+def pr_run(root):
+    """Start a pr round, collect its evidence and make its packs; (run, the step's lines)."""
+    import test_effort as te
+    te.fake_hub()
+    run = next(x[5:] for x in te.step(root) if x.startswith("run: "))
+    from nio import evidence as ev
+    ev.collect(root, te.S, "pr", run)
+    return run, te.step(root, run)
+
+
+def test_existing_passing_test_is_evidence():
+    """TC-36: an AC proved by an existing test that passes has that test as its evidence, and no missing-evidence
+    finding; once the test fails, the finding is raised."""
+    import json
+    import test_effort as te
+    import test_implement as ti
+    from nio import evidence as ev, jury as jy
+    old = lambda t: t.replace("- File: `tests/test_refund.py:T.test_refund` (new)", "- File: `tests/test_base.py:B.test_base` (existing)")
+    for broken in (False, True):
+        root = te.built(tests_md=old)
+        if broken:
+            (root / "tests/test_base.py").write_text((root / "tests/test_base.py").read_text().replace("assertTrue(True)", "assertTrue(False)"))
+            ti.commit_all(root, "a later change breaks the old test")
+        run, _ = pr_run(root)
+        line = lambda f, n: next(i for i, x in enumerate((root / f).read_text().splitlines(), 1) if f"def {n}" in x)
+        for name in json.loads((root / f".nio/runs/{run}/jury/packs/step.json").read_text())["lenses"]:
+            te.juror(root, run, name, matches=False)
+        conf = root / f".nio/runs/{run}/jury/pr-conformance.md"
+        conf.write_text(conf.read_text().replace("## Findings", f"## Matches\n- AC-1 -> tests/test_base.py:{line('tests/test_base.py', 'test_base')}\n"
+                                                 f"- AC-2 -> {ti.TEST}:{line(ti.TEST, 'test_second_refund')}\n\n## Findings"))
+        before = (root / f".nio/specs/{ti.S}/tasks.md").read_text()
+        te.step(root, run)
+        titles = [f["title"] for f in jy.load(root, ti.S, "pr")["findings"]]
+        mine = [e for e in ev.load(root, run)["evidence"] if e["ac"] == "AC-1"]
+        if broken:
+            assert "AC-1 has no passing evidence" in titles, titles
+        else:
+            assert mine and mine[0]["file"] == "tests/test_base.py" and mine[0]["result"] == "passed", mine
+            assert "AC-1 has no passing evidence" not in titles, titles
+            assert (root / f".nio/specs/{ti.S}/tasks.md").read_text() == before
+    print("ok")
+
+
+def test_unchanged_file_is_no_phantom():
+    """TC-39: a file a task lists as reused unchanged raises no "isn't in the epic's diff" finding; unmarked, it does."""
+    import test_effort as te
+    import test_implement as ti
+    from nio import jury as jy
+    for mark in (" (unchanged)", ""):
+        root = te.built(tasks_text=ti.TWO.replace("- Files: `app.py`\n", f"- Files: `app.py`, `tests/test_base.py`{mark}\n", 1))
+        pr_run(root)
+        titles = [f["title"] for f in jy.load(root, ti.S, "pr")["findings"]]
+        hit = "T-1: tests/test_base.py isn't in the epic's diff" in titles
+        assert hit == (not mark), (mark, titles)
+    print("ok")
+
+
+def test_pr_gate_plans_test_proof():
+    """TC-40: the pr gate's jury runs the test-proof lens, whose card has a section for it."""
+    import test_effort as te
+    from pathlib import Path
+    root = te.built()
+    _, out = pr_run(root)
+    assert any(x.startswith("run test-proof: card nio-test-proof") for x in out), out
+    assert "## At the pr gate" in (Path(__file__).parent.parent / "src/nio/agents/test-proof.md").read_text()
+    print("ok")
+
+
+def test_pr_test_proof_pack_lists_added_tests():
+    """TC-51: a trivially passing test the effort adds is named in the test-proof pack, to be judged."""
+    import test_effort as te
+    import test_implement as ti
+    root = te.built()
+    (root / "tests/test_t.py").write_text("def test_t():\n    assert True\n")
+    ti.commit_all(root, "a test that proves nothing")
+    run, _ = pr_run(root)
+    text = (root / f".nio/runs/{run}/jury/packs/test-proof.md").read_text()
+    added = text.split("## Tests the effort added")[1].split("\n## ")[0]
+    assert "- `tests/test_t.py:1` test_t" in added and "test_second_refund" in added, added
+    print("ok")
+
+
+def test_plan_rooted_pr_finding_is_no_fix_task():
+    """TC-38: a confirmed pr finding rooted in tests.md asks for a change to tests.md, not a code fix task."""
+    import test_effort as te
+    import test_implement as ti
+    from nio import records as rec
+    root = te.built()
+    te.fake_hub()
+    before = (root / f".nio/specs/{ti.S}/tasks.md").read_text()
+    _, out = te.gate_round(root, {"correctness": [{"title": "TC-3 asserts nothing", "where": f".nio/specs/{ti.S}/tests.md", "cites": "AC-1"}]})
+    assert "outcome: rejected" in out and "change asked: J-1" in out and not any(x.startswith("fix task") for x in out), out
+    assert (root / f".nio/specs/{ti.S}/tasks.md").read_text() == before
+    asked = [p for p in (root / ".nio/memory").rglob("C-*.md") if rec.parse(p)[0].get("against") == f".nio/specs/{ti.S}/tests.md"]
+    assert len(asked) == 1 and rec.parse(asked[0])[0]["outcome"] == "pending", asked
     print("ok")
 
 

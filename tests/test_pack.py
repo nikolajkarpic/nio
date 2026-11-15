@@ -201,5 +201,37 @@ def test_worker_pack_leaves_out_the_closing_instructions():
     print("ok")
 
 
+def test_missing_record_and_whole_old_index():
+    """TC-30: a record the index names but whose file is gone is skipped, not a crash; a rebuild stopped half-way leaves
+    the whole old index in place and no half-built copy."""
+    import sqlite3
+    from nio import query
+    root, id = memory()
+    index.build(root)
+    gone = next((root / ".nio/memory").glob(f"*/{id['s']}-*.md"))
+    gone.unlink()  # deleted after the index was built: a claim during the rebuild
+    real = index.build
+    index.build = lambda r: (0, 0)  # the reader comes before the rebuild that would drop it
+    try:
+        out, _ = pack.build(root, "add a session store", paths=["src/session/store.py"])
+    finally:
+        index.build = real
+    assert id["s"] not in out.split("## Related")[0], out
+    db = root / ".nio/cache/index.db"
+    rows = lambda: sqlite3.connect(db).execute("select count(*) from nodes").fetchone()[0]
+    before, fill = rows(), index.fill
+    index.fill = lambda *a: (_ for _ in ()).throw(RuntimeError("stopped half-way"))
+    try:
+        index.build(root)
+        raise AssertionError("the rebuild must stop")
+    except RuntimeError:
+        pass
+    finally:
+        index.fill = fill
+    assert rows() == before and not (root / ".nio/cache/index.db.new").exists()
+    assert query.search(root, "webhooks") is not None
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
