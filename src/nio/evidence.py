@@ -539,7 +539,7 @@ def collect(root, slug, epic, run):
     # without a reader gives "unknown" (exit code and output stay in `suite`)
     name = implement.runner(t.get("suite") or "", suite["output"])
     sc = name == "self-check"
-    oks = re.findall(r"^ok (\S+)::(\S+)", suite["output"], re.M) if sc else []
+    oks = re.findall(r"^ok (\S+)::(.+)$", suite["output"], re.M) if sc else []
     green = e2e_greens(root, slug)
     oks += [(f, n) for f, n in (re.findall(r"^skip (\S+)::(\S+)", suite["output"], re.M) if sc else []) if (f, n) in green]
     fail, _ = implement.SUMMARY.get(name, (None, None))
@@ -554,7 +554,7 @@ def collect(root, slug, epic, run):
         def on(x):  # a `<file>::<name>` entry needs both; any other entry matches by name
             f, _, n = x.partition("::")
             return (f == file or f.endswith("/" + file)) and n.split("::")[-1] == short if n else bool(re.search(rf"\b{re.escape(short)}\b", x))
-        if sc and line:
+        if sc and (line or any(on(f"{f}::{n}") for f, n in oks)):  # a non-Python test has no def line; its ok line still counts
             result = ("failed" if any(on(x) for x in failing) else "passed" if any(on(f"{f}::{n}") for f, n in oks)
                       else "didn't run" if code_ok else "failed")
             tests.append({"name": tname, "file": file, "line": line, "result": result})
