@@ -58,9 +58,19 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 Run `nio explain topic "<topic>"`.
 - `continue:` shows an existing explainer: show its overview and go to the drill-down.
 - `new:` write `# <topic>`, a `(topic: <text as typed>)` line and a `## Overview` section, then run
-  `nio explain finish <path>`. When the file name ends `-explainer-<n>.md`, say which file you wrote.
+  `nio explain finish <path>`. When the file name ends `-explainer-<n>.md`, say which file you wrote. Then go to the
+  drill-down: end every topic run with its three offers, even when images were not rendered.
 
 Topic mode needs no other skill.
+
+## Drill-down
+
+After an overview (a plan explainer's diagrams, or a topic's `## Overview`), offer exactly three items to zoom into: a
+component, a flow and a decision, each named concretely from the file and never one already drilled into in this file.
+Label them `component`, `flow` and `decision`, then wait for the human.
+- On a pick, append `## Drill-down: <item>` to the same file, with one diagram and its walk-through. Run
+  `nio explain finish <path>`, then offer three new items again.
+- On `stop`, offer nothing more: the file ends with the last section.
 
 ## Mermaid cheat-sheet
 
@@ -85,8 +95,8 @@ Credit: diagram sizing and one-purpose-per-diagram rules adapted from https://ag
 
 ## When to stop
 
-Stop when `nio explain finish` printed `finished: <path>` and `nio check explainer` shows `0 errors`. Tell the human which
-file you wrote. A failed render is a note, not an error; do not install Node for it.
+The file is done when `nio explain finish` printed `finished: <path>` (and, in plan mode, `nio check explainer` shows
+`0 errors`). Tell the human which file you wrote, then make the drill-down offers; stop when the human says `stop`. A failed render is a note, not an error; do not install Node for it.
 
 ## When `nio` is missing or fails
 

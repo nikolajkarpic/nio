@@ -221,6 +221,8 @@ def finish(root, path):
                 keep.append(m[1])
                 kept_titles.add(new_title(new))
             else:
+                if new and not new[-1].strip():  # the blank line finish wrote before it goes too, or reruns add blanks
+                    new.pop()
                 continue
         new.append(l)
     # step 6, drawing: name and render each other Mermaid section's first block
@@ -273,7 +275,8 @@ def finish(root, path):
         f.unlink()
         out.append(f"deleted: {f.name}")
     i = text.find("## ") if text.startswith("## ") else text.find("\n## ") + 1  # records sit above the first section
-    _put(p, text[:i] + "\n".join(recs) + "\n\n" + text[i:])
+    head = text[:i].rstrip("\n")
+    _put(p, (head + "\n\n" if head else "") + "\n".join(recs) + "\n\n" + text[i:])
     if qtext is not None:
         _put(q, qtext)
     out.append(f"finished: {path}")
