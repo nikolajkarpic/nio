@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: [T-4]                      # task IDs removed from this file; never reused
+retired: [T-4, T-18, T-19, T-20]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -179,39 +179,6 @@ retired: [T-4]                      # task IDs removed from this file; never reu
 - From: J-32 (pr, round 3)
 - Files: `src/nio/hooks.py`
 - Serves: CT-8, CT-10, FR-22, J-32
-- Test: TC-20
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-18 Fix: mods_dir has no checkout fallback, so `nio mods install` fails from an editable install
-- From: J-38 (pr, round 3)
-- Files: `src/nio/hooks.py`
-- Serves: CT-8, J-38
-- Test: TC-20
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-19 Fix: mods_dir has no checkout fallback, contrary to CT-8
-- From: J-43 (pr, round 3)
-- Files: `src/nio/hooks.py`
-- Serves: CT-8, AC-18
-- Test: TC-20
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-20 Fix: mods_dir has no checkout fallback, so mods install fails on an editable install
-- From: J-46 (pr, round 3)
-- Files: `src/nio/hooks.py`, `pyproject.toml`
-- Serves: CT-8, CT-9, FR-22, J-46
 - Test: TC-20
 - Depends on: none
 - Parallel: no
