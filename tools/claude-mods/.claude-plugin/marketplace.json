@@ -1,6 +1,6 @@
 {
   "name": "nio-mods",
-  "description": "Claude Code mods for developing NIO",
+  "description": "Optional Claude Code mods for NIO",
   "owner": { "name": "nikolajkarpic" },
   "plugins": [
     { "name": "background-nio-commands", "source": "./background-nio-commands" },

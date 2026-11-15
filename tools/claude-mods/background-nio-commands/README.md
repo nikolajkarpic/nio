@@ -28,8 +28,7 @@ or set the variable in your own shell profile:
 export CLAUDE_CODE_PLUGIN_DIRS=/path/to/nio/tools/claude-mods/background-nio-commands
 ```
 
-Leave it out to get today's behaviour. Don't turn it on in a target project: NIO must behave the
-same on every host.
+Leave it out to get today's behaviour. It is optional: NIO behaves the same on every host without it.
 
 ## Checks
 

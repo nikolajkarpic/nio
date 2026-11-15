@@ -353,8 +353,17 @@ def test_readmes_call_mods_optional():
     print("ok")
 
 
+def test_mods_texts_offer_mods_to_target_projects():
+    readme = (ROOT / "tools/claude-mods/background-nio-commands/README.md").read_text()
+    assert "Don't turn it on in a target project" not in readme
+    desc = json.loads((ROOT / "tools/claude-mods/.claude-plugin/marketplace.json").read_text())["description"]
+    assert "for developing NIO" not in desc and "Optional" in desc
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
                     test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_times_out, test_mods_install_without_claude,
                     test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope, test_mods_install_from_subfolder, test_mods_dir_fallback,
-                    test_readmes_call_mods_optional])
+                    test_readmes_call_mods_optional,
+                    test_mods_texts_offer_mods_to_target_projects])
