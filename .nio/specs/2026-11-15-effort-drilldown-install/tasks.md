@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: []                      # task IDs removed from this file; never reused
+retired: [T-4]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -36,15 +36,18 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: med
 - Mode: split: behaviour a test can lead
 
-### T-4 Pane drill-down: empty sections, cost lines, context line from the host
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`, `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
+#### Fixes
+
+### T-16 Fix: land T-4's pane tests as regression guards (T-4 retired, already delivered by T-3)
+- From: C-261115-duou
+- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
 - Serves: AC-9, AC-11, AC-13, AC-16, AC-17
 - Test: TC-10, TC-12, TC-15, TC-18, TC-19
-- Depends on: T-3
+- Depends on: none
 - Parallel: no
-- Tier: strong: rendering lines following the T-3 pattern
+- Tier: cheap: tests over existing behaviour
 - Effort: low
-- Mode: split: behaviour a test can lead
+- Mode: direct: the behaviour exists; the tests guard it
 
 ## E-2 Select an effort and see its timeline (US-1)
 
@@ -62,7 +65,7 @@ retired: []                      # task IDs removed from this file; never reused
 - Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`, `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
 - Serves: AC-1, AC-5, AC-24, AC-29, AC-30
 - Test: TC-2
-- Depends on: T-4, T-5
+- Depends on: T-16, T-5
 - Parallel: no
 - Tier: strong: rendering real output, follows existing pane pattern
 - Effort: low
@@ -74,7 +77,7 @@ retired: []                      # task IDs removed from this file; never reused
 - Files: `src/nio/flow.py`, `tests/test_flow.py`
 - Serves: AC-6, AC-7, AC-8, AC-9
 - Test: TC-7, TC-8, TC-9, TC-38
-- Depends on: T-4, T-5
+- Depends on: T-16, T-5
 - Parallel: no
 - Tier: strong: ledger parsing across rounds and lenses, clear tests
 - Effort: med
@@ -86,7 +89,7 @@ retired: []                      # task IDs removed from this file; never reused
 - Files: `src/nio/flow.py`, `tests/test_flow.py`
 - Serves: AC-10, AC-11
 - Test: TC-11, TC-39
-- Depends on: T-4, T-7
+- Depends on: T-16, T-7
 - Parallel: no
 - Tier: strong: ordinary section build with clear tests
 - Effort: low
@@ -108,7 +111,7 @@ retired: []                      # task IDs removed from this file; never reused
 - Files: `src/nio/flow.py`, `tests/test_flow.py`
 - Serves: AC-13, AC-23
 - Test: TC-5, TC-25, TC-33, TC-34
-- Depends on: T-4, T-8, T-9, T-11
+- Depends on: T-16, T-8, T-9, T-11
 - Parallel: no
 - Tier: strong: wiring plus no-write and speed checks, clear tests
 - Effort: low
@@ -120,7 +123,7 @@ retired: []                      # task IDs removed from this file; never reused
 - Files: `src/nio/flow.py`, `tests/test_flow.py`
 - Serves: AC-15, AC-16, AC-17
 - Test: TC-17
-- Depends on: T-4, T-8
+- Depends on: T-16, T-8
 - Parallel: no
 - Tier: strong: front-matter reading with a clear test
 - Effort: low
