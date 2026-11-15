@@ -10,14 +10,14 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-5 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-6 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-7 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-8 | major | gap |  | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-2 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-3 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-4 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-5 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-6 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-7 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-8 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-9 | major | gap | FR-27, AC-34 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-10 | minor | risk | FR-14, CT-6 | adversary | grounded | open |  | new, 0 |
 | J-11 | minor | risk | FR-27, AC-34 | adversary | grounded | open |  | new, 0 |
@@ -25,60 +25,60 @@ outcome: rejected
 | J-13 | blocker | gap | AC-18, AC-19, AC-35 | conformance | refuted | refuted |  | new, 0 |
 | J-14 | minor | risk | CT-4 | correctness | grounded | open |  | new, 0 |
 | J-15 | minor | gap | AC-20 | correctness | grounded | open |  | new, 0 |
-| J-16 | blocker | gap | AC-18 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-17 | blocker | gap | AC-19 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-18 | blocker | gap | AC-34 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-19 | blocker | gap | AC-35 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-20 | major | contradiction | CT-3, FR-11 | consistency | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-16 | blocker | gap | AC-18 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-17 | blocker | gap | AC-19 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-18 | blocker | gap | AC-34 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-19 | blocker | gap | AC-35 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-20 | major | contradiction | CT-3, FR-11 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-21 | minor | inconsistency | AC-34 | consistency | grounded | open |  | new, 0 |
 
 ### J-1 test tampering: test_ac16_new_failure_only in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac16_new_failure_only from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-31
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-2 test tampering: test_ac35_unknown_runner_review in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac35_unknown_runner_review from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-32
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-3 test tampering: test_ac44_broken_or_fewer in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac44_broken_or_fewer from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-33
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-4 test tampering: test_full_suite_waits_for_the_epic_to_close in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_full_suite_waits_for_the_epic_to_close from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-34
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-5 test tampering: test_tests_epic_replaces_the_suite_until_the_last_epic in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_tests_epic_replaces_the_suite_until_the_last_epic from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-35
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-6 test tampering: test_review_fails_a_crashed_self_check_suite in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_review_fails_a_crashed_self_check_suite from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-36
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-7 test tampering: test_review_fails_a_crash_beside_a_baseline_failure in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_review_fails_a_crash_beside_a_baseline_failure from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-37
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-8 test tampering: test_ac15_review_still_fails in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac15_review_still_fails from tests/test_implement.py
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-38
+- disposition: accepted-risk by human: False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)
 
 ### J-9 A multi-line or padded topic never continues, and silently spawns a new file every run
 - quote: "if f"(topic: {text})" in p.read_text().splitlines():"
@@ -124,25 +124,25 @@ outcome: rejected
 - situation (cli): no passing test proves AC-18: test_ac18_topic_path didn't run
 - fix: add or fix a test that proves AC-18
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-40
+- disposition: accepted-risk by human: Standing rule: e2e AC evidence skipped only because jury evidence runs without NIO_E2E; T-30's green run R-261115-52ya used NIO_E2E=1 and passed (refuter refuted J-13) (orchestrator, delegated human authority)
 
 ### J-17 AC-19 has no passing evidence
 - situation (cli): no passing test proves AC-19: test_ac19_no_research_skill didn't run
 - fix: add or fix a test that proves AC-19
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-41
+- disposition: accepted-risk by human: Standing rule: e2e AC evidence skipped only because jury evidence runs without NIO_E2E; T-30's green run R-261115-52ya used NIO_E2E=1 and passed (refuter refuted J-13) (orchestrator, delegated human authority)
 
 ### J-18 AC-34 has no passing evidence
 - situation (cli): no passing test proves AC-34: no test no match
 - fix: add or fix a test that proves AC-34
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-42
+- disposition: accepted-risk by human: AC-34's e2e test TC-26 is owned by T-15 in E-8 (refuter refuted J-12); unit-covered by test_ct6_topic (orchestrator, delegated human authority)
 
 ### J-19 AC-35 has no passing evidence
 - situation (cli): no passing test proves AC-35: test_ac35_clash didn't run
 - fix: add or fix a test that proves AC-35
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-43
+- disposition: accepted-risk by human: Standing rule: e2e AC evidence skipped only because jury evidence runs without NIO_E2E; T-30's green run R-261115-52ya used NIO_E2E=1 and passed (refuter refuted J-13) (orchestrator, delegated human authority)
 
 ### J-20 Renderer failures other than a parse error are reported as broken
 - quote: "`"unreachable"` for any other failure"
@@ -150,7 +150,7 @@ outcome: rejected
 - situation (consistency): `npx` is on the PATH and exits 1 with a message that is neither a parse error nor on COULD_NOT_RUN (for example a registry error such as `npm error code E403`, inferred). `render` then returns `broken: npm error code E403`, and `check` prints `broken diagram: <title>` and exits 1. CT-3 says this is `unreachable`, which gives `render skipped: the renderer could not be fetched` with the check still passing (FR-11: only a diagram that fails to render fails the check; NFR-2: text-only is allowed). The marker list is written as the exceptions to `broken`, which inverts the contract's default.
 - fix: return `broken` only when the output holds "Parse error", and return `unreachable` for every other non-zero exit. If the marker list is wanted as the default, that is a change request against CT-3 first.
 - validation: confirmed: In `render`, any non-zero exit whose output holds none of the `COULD_NOT_RUN` markers returns `"broken: " + lines[0]`. The `COULD_NOT_RUN` list is case-sensitive "npm ERR", which the lowercase "npm error" of newer npm would not match. CT-3 (contracts.md line 33) says `unreachable` for "any other failure", so code and contract disagree. The divergence was introduced deliberately by T-18 and CT-3 lags it, which the caller says issue #127 records. It is real, but it sits outside E-7's own code.
-- disposition: fix-task by agent: fix task T-44
+- disposition: accepted-risk by human: Known accepted risk: CT-3 broken-vs-unreachable wording lags the deliberate T-18 change; tracked in issue #127, fix at next plan change (orchestrator, delegated human authority)
 
 ### J-21 TC-26 is claimed by T-13 but its test is not delivered in E-7
 - quote: "Test: TC-25, TC-42, TC-23 (its `nio explain topic` calls), TC-26, TC-27"
