@@ -1,0 +1,624 @@
+{
+  "effort": "2026-11-15-effort-drilldown-install",
+  "started": "2026-11-15T13:02:14.580144+00:00",
+  "ended": "2026-11-15T18:13:37.500516+00:00",
+  "wall_seconds": 18682.920372,
+  "waiting_for_human_seconds": 19127.898813,
+  "agents_seconds": 8346.071146999999,
+  "shell_seconds": 1666.5685270000001,
+  "orchestrator_thinking_seconds": 0.0,
+  "orchestrator_tokens": {
+    "cache_read_input_tokens": 105455385,
+    "cache_creation_input_tokens": 649496,
+    "input_tokens": 1060,
+    "output_tokens": 230214,
+    "thinking": 42918
+  },
+  "by_agent": {
+    "nio-spec-drafter claude-opus-5-5 medium": {
+      "agents": 1,
+      "seconds": 107.657641,
+      "tokens": {
+        "input_tokens": 16,
+        "cache_read_input_tokens": 175918,
+        "output_tokens": 11992,
+        "thinking": 2071,
+        "cache_creation_input_tokens": 35996
+      }
+    },
+    "general-purpose claude-opus-5-5 medium": {
+      "agents": 47,
+      "seconds": 4651.138457000001,
+      "tokens": {
+        "cache_read_input_tokens": 210963210,
+        "cache_creation_input_tokens": 4101005,
+        "input_tokens": 3186,
+        "output_tokens": 764595,
+        "thinking": 255008
+      }
+    },
+    "nio-testability claude-sonnet-5-5 medium": {
+      "agents": 2,
+      "seconds": 37.374669,
+      "tokens": {
+        "cache_read_input_tokens": 41017,
+        "cache_creation_input_tokens": 46016,
+        "input_tokens": 10,
+        "output_tokens": 4360,
+        "thinking": 1287
+      }
+    },
+    "nio-logic claude-sonnet-5-5 medium": {
+      "agents": 6,
+      "seconds": 208.22758600000003,
+      "tokens": {
+        "cache_read_input_tokens": 731401,
+        "cache_creation_input_tokens": 259063,
+        "input_tokens": 54,
+        "output_tokens": 23245,
+        "thinking": 10753
+      }
+    },
+    "nio-consistency claude-haiku-5-5 medium": {
+      "agents": 8,
+      "seconds": 759.5679680000001,
+      "tokens": {
+        "cache_read_input_tokens": 5583687,
+        "cache_creation_input_tokens": 548159,
+        "input_tokens": 208,
+        "output_tokens": 140444,
+        "thinking": 100228
+      }
+    },
+    "nio-scope claude-haiku-5-5 medium": {
+      "agents": 2,
+      "seconds": 108.387221,
+      "tokens": {
+        "cache_read_input_tokens": 70523,
+        "cache_creation_input_tokens": 64948,
+        "input_tokens": 12,
+        "output_tokens": 21687,
+        "thinking": 15919
+      }
+    },
+    "nio-refuter claude-sonnet-5-5 medium": {
+      "agents": 9,
+      "seconds": 183.42836799999998,
+      "tokens": {
+        "cache_read_input_tokens": 993292,
+        "cache_creation_input_tokens": 272619,
+        "input_tokens": 98,
+        "output_tokens": 21087,
+        "thinking": 3271
+      }
+    },
+    "nio-architecture-fit claude-opus-5-5 medium": {
+      "agents": 9,
+      "seconds": 492.43406099999993,
+      "tokens": {
+        "cache_read_input_tokens": 3405895,
+        "cache_creation_input_tokens": 516089,
+        "input_tokens": 134,
+        "output_tokens": 47091,
+        "thinking": 20111
+      }
+    },
+    "nio-test-proof claude-opus-5-5 medium": {
+      "agents": 9,
+      "seconds": 501.105011,
+      "tokens": {
+        "cache_read_input_tokens": 2575911,
+        "cache_creation_input_tokens": 432576,
+        "input_tokens": 124,
+        "output_tokens": 47292,
+        "thinking": 21230
+      }
+    },
+    "nio-tasks-drafter claude-sonnet-5-5 medium": {
+      "agents": 2,
+      "seconds": 146.88994100000002,
+      "tokens": {
+        "cache_read_input_tokens": 285926,
+        "cache_creation_input_tokens": 97747,
+        "input_tokens": 24,
+        "output_tokens": 18107,
+        "thinking": 8545
+      }
+    },
+    "nio-evaluator claude-sonnet-5-5 medium": {
+      "agents": 2,
+      "seconds": 78.08291299999999,
+      "tokens": {
+        "cache_read_input_tokens": 58174,
+        "cache_creation_input_tokens": 50679,
+        "input_tokens": 12,
+        "output_tokens": 11625,
+        "thinking": 1278
+      }
+    },
+    "nio-executability claude-haiku-5-5 medium": {
+      "agents": 4,
+      "seconds": 265.36614199999997,
+      "tokens": {
+        "cache_read_input_tokens": 189465,
+        "cache_creation_input_tokens": 192304,
+        "input_tokens": 26,
+        "output_tokens": 56649,
+        "thinking": 45426
+      }
+    },
+    "nio-worker-strong claude-sonnet-5-5 low": {
+      "agents": 44,
+      "seconds": 1664.5220739999997,
+      "tokens": {
+        "cache_read_input_tokens": 8959489,
+        "cache_creation_input_tokens": 1274465,
+        "input_tokens": 754,
+        "output_tokens": 131593,
+        "thinking": 13821
+      }
+    },
+    "nio-worker-cheap claude-haiku-5-5 low": {
+      "agents": 4,
+      "seconds": 167.45838,
+      "tokens": {
+        "cache_read_input_tokens": 639062,
+        "cache_creation_input_tokens": 112566,
+        "input_tokens": 60,
+        "output_tokens": 16530,
+        "thinking": 5321
+      }
+    },
+    "Explore claude-opus-5-5 medium": {
+      "agents": 1,
+      "seconds": 273.614398,
+      "tokens": {
+        "input_tokens": 62,
+        "cache_read_input_tokens": 3189133,
+        "output_tokens": 16547,
+        "thinking": 4555,
+        "cache_creation_input_tokens": 152682
+      }
+    },
+    "nio-integration claude-sonnet-5-5 medium": {
+      "agents": 4,
+      "seconds": 139.33854899999997,
+      "tokens": {
+        "cache_read_input_tokens": 809832,
+        "cache_creation_input_tokens": 160263,
+        "input_tokens": 68,
+        "output_tokens": 14992,
+        "thinking": 2513
+      }
+    },
+    "nio-conformance claude-sonnet-5-5 medium": {
+      "agents": 10,
+      "seconds": 336.610421,
+      "tokens": {
+        "cache_read_input_tokens": 1867144,
+        "cache_creation_input_tokens": 294975,
+        "input_tokens": 156,
+        "output_tokens": 37603,
+        "thinking": 6815
+      }
+    },
+    "nio-correctness claude-sonnet-5-5 medium": {
+      "agents": 3,
+      "seconds": 159.28627699999998,
+      "tokens": {
+        "cache_read_input_tokens": 1048345,
+        "cache_creation_input_tokens": 154094,
+        "input_tokens": 60,
+        "output_tokens": 17427,
+        "thinking": 7381
+      }
+    },
+    "nio-adversary claude-sonnet-5-5 medium": {
+      "agents": 4,
+      "seconds": 197.00101,
+      "tokens": {
+        "cache_read_input_tokens": 1101365,
+        "cache_creation_input_tokens": 194139,
+        "input_tokens": 70,
+        "output_tokens": 21349,
+        "thinking": 7204
+      }
+    },
+    "nio-risk-rollback claude-opus-5-5 medium": {
+      "agents": 4,
+      "seconds": 218.48883899999998,
+      "tokens": {
+        "cache_read_input_tokens": 1202259,
+        "cache_creation_input_tokens": 225429,
+        "input_tokens": 62,
+        "output_tokens": 20850,
+        "thinking": 5531
+      }
+    },
+    "general-purpose claude-sonnet-5-5 medium": {
+      "agents": 4,
+      "seconds": 883.9741959999999,
+      "tokens": {
+        "cache_read_input_tokens": 13330544,
+        "cache_creation_input_tokens": 631525,
+        "input_tokens": 244,
+        "output_tokens": 93782,
+        "thinking": 59650
+      }
+    }
+  },
+  "tasks": {
+    "T-1": {
+      "agents": 4,
+      "seconds": 110.05057000000002,
+      "tokens": {
+        "cache_read_input_tokens": 749877,
+        "cache_creation_input_tokens": 108141,
+        "input_tokens": 64,
+        "output_tokens": 10815,
+        "thinking": 1030
+      },
+      "attempts": 1
+    },
+    "T-2": {
+      "agents": 3,
+      "seconds": 63.237053,
+      "tokens": {
+        "cache_read_input_tokens": 507839,
+        "cache_creation_input_tokens": 99829,
+        "input_tokens": 54,
+        "output_tokens": 7754,
+        "thinking": 908
+      },
+      "attempts": 2
+    },
+    "T-3": {
+      "agents": 3,
+      "seconds": 61.395998999999996,
+      "tokens": {
+        "cache_read_input_tokens": 1355077,
+        "cache_creation_input_tokens": 155724,
+        "input_tokens": 84,
+        "output_tokens": 14306,
+        "thinking": 1820
+      },
+      "attempts": 2
+    },
+    "T-4": {
+      "agents": 3,
+      "seconds": 45.223804,
+      "tokens": {
+        "cache_read_input_tokens": 578808,
+        "cache_creation_input_tokens": 79650,
+        "input_tokens": 40,
+        "output_tokens": 4938,
+        "thinking": 420
+      },
+      "attempts": 1
+    },
+    "T-5": {
+      "agents": 2,
+      "seconds": 54.639029,
+      "tokens": {
+        "cache_read_input_tokens": 401128,
+        "cache_creation_input_tokens": 58865,
+        "input_tokens": 32,
+        "output_tokens": 6259,
+        "thinking": 293
+      },
+      "attempts": 2
+    },
+    "T-6": {
+      "agents": 2,
+      "seconds": 38.648403,
+      "tokens": {
+        "cache_read_input_tokens": 247074,
+        "cache_creation_input_tokens": 47782,
+        "input_tokens": 24,
+        "output_tokens": 2864,
+        "thinking": 306
+      },
+      "attempts": 1
+    },
+    "T-7": {
+      "agents": 2,
+      "seconds": 62.925664,
+      "tokens": {
+        "cache_read_input_tokens": 392771,
+        "cache_creation_input_tokens": 67715,
+        "input_tokens": 30,
+        "output_tokens": 8668,
+        "thinking": 619
+      },
+      "attempts": 1
+    },
+    "T-8": {
+      "agents": 2,
+      "seconds": 48.731778000000006,
+      "tokens": {
+        "cache_read_input_tokens": 317126,
+        "cache_creation_input_tokens": 55184,
+        "input_tokens": 28,
+        "output_tokens": 5522,
+        "thinking": 294
+      },
+      "attempts": 1
+    },
+    "T-9": {
+      "agents": 2,
+      "seconds": 59.625852,
+      "tokens": {
+        "cache_read_input_tokens": 287235,
+        "cache_creation_input_tokens": 55734,
+        "input_tokens": 26,
+        "output_tokens": 8005,
+        "thinking": 1400
+      },
+      "attempts": 1
+    },
+    "T-10": {
+      "agents": 3,
+      "seconds": 201.876214,
+      "tokens": {
+        "cache_read_input_tokens": 929286,
+        "cache_creation_input_tokens": 94114,
+        "input_tokens": 68,
+        "output_tokens": 12639,
+        "thinking": 2304
+      },
+      "attempts": 2
+    },
+    "T-11": {
+      "agents": 6,
+      "seconds": 327.396702,
+      "tokens": {
+        "cache_read_input_tokens": 2702313,
+        "cache_creation_input_tokens": 245391,
+        "input_tokens": 158,
+        "output_tokens": 21205,
+        "thinking": 2067
+      },
+      "attempts": 1
+    },
+    "T-12": {
+      "agents": 1,
+      "seconds": 60.003686,
+      "tokens": {
+        "input_tokens": 22,
+        "cache_read_input_tokens": 242249,
+        "output_tokens": 4069,
+        "thinking": 739,
+        "cache_creation_input_tokens": 29100
+      },
+      "attempts": 1
+    },
+    "T-13": {
+      "agents": 2,
+      "seconds": 65.967563,
+      "tokens": {
+        "cache_read_input_tokens": 357748,
+        "cache_creation_input_tokens": 54900,
+        "input_tokens": 30,
+        "output_tokens": 7030,
+        "thinking": 284
+      },
+      "attempts": 1
+    },
+    "T-14": {
+      "agents": 1,
+      "seconds": 60.725155,
+      "tokens": {
+        "input_tokens": 16,
+        "cache_read_input_tokens": 197009,
+        "output_tokens": 6888,
+        "thinking": 3443,
+        "cache_creation_input_tokens": 31918
+      },
+      "attempts": 1
+    },
+    "T-15": {
+      "agents": 1,
+      "seconds": 27.779801,
+      "tokens": {
+        "input_tokens": 12,
+        "cache_read_input_tokens": 107848,
+        "output_tokens": 4085,
+        "thinking": 843,
+        "cache_creation_input_tokens": 22362
+      },
+      "attempts": 1
+    },
+    "T-16": {
+      "agents": 1,
+      "seconds": 18.949738,
+      "tokens": {
+        "input_tokens": 10,
+        "cache_read_input_tokens": 91956,
+        "output_tokens": 1488,
+        "thinking": 296,
+        "cache_creation_input_tokens": 29186
+      },
+      "attempts": 1
+    },
+    "T-17": {
+      "agents": 3,
+      "seconds": 171.631009,
+      "tokens": {
+        "cache_read_input_tokens": 2033016,
+        "cache_creation_input_tokens": 108527,
+        "input_tokens": 84,
+        "output_tokens": 11270,
+        "thinking": 2481
+      },
+      "attempts": 4
+    },
+    "T-21": {
+      "agents": 1,
+      "seconds": 83.584608,
+      "tokens": {
+        "input_tokens": 22,
+        "cache_read_input_tokens": 593812,
+        "output_tokens": 3410,
+        "thinking": 467,
+        "cache_creation_input_tokens": 45187
+      },
+      "attempts": 1
+    },
+    "T-31": {
+      "agents": 1,
+      "seconds": 21.351288,
+      "tokens": {
+        "input_tokens": 12,
+        "cache_read_input_tokens": 93653,
+        "output_tokens": 1514,
+        "thinking": 274,
+        "cache_creation_input_tokens": 16934
+      },
+      "attempts": 1
+    },
+    "T-32": {
+      "agents": 1,
+      "seconds": 71.074731,
+      "tokens": {
+        "input_tokens": 18,
+        "cache_read_input_tokens": 178774,
+        "output_tokens": 2921,
+        "thinking": 156,
+        "cache_creation_input_tokens": 22264
+      },
+      "attempts": 2
+    },
+    "T-33": {
+      "agents": 1,
+      "seconds": 19.173672,
+      "tokens": {
+        "input_tokens": 12,
+        "cache_read_input_tokens": 97720,
+        "output_tokens": 1031,
+        "thinking": 92,
+        "cache_creation_input_tokens": 16897
+      },
+      "attempts": 1
+    },
+    "T-34": {
+      "agents": 3,
+      "seconds": 350.106276,
+      "tokens": {
+        "cache_read_input_tokens": 3270641,
+        "cache_creation_input_tokens": 144989,
+        "input_tokens": 126,
+        "output_tokens": 15683,
+        "thinking": 2567
+      },
+      "attempts": 1
+    },
+    "T-35": {
+      "agents": 1,
+      "seconds": 48.056939,
+      "tokens": {
+        "input_tokens": 22,
+        "cache_read_input_tokens": 241195,
+        "output_tokens": 2500,
+        "thinking": 65,
+        "cache_creation_input_tokens": 23831
+      },
+      "attempts": 1
+    },
+    "T-36": {
+      "agents": 1,
+      "seconds": 4.531319,
+      "tokens": {
+        "input_tokens": 26,
+        "cache_read_input_tokens": 402721,
+        "output_tokens": 3861,
+        "thinking": 1156,
+        "cache_creation_input_tokens": 40173
+      },
+      "attempts": 1
+    },
+    "T-37": {
+      "agents": 1,
+      "seconds": 15.058847,
+      "tokens": {
+        "input_tokens": 10,
+        "cache_read_input_tokens": 92206,
+        "output_tokens": 1840,
+        "thinking": 0,
+        "cache_creation_input_tokens": 22396
+      },
+      "attempts": 1
+    },
+    "T-38": {
+      "agents": 1,
+      "seconds": 27.842411,
+      "tokens": {
+        "input_tokens": 98,
+        "cache_read_input_tokens": 3069866,
+        "output_tokens": 8813,
+        "thinking": 2159,
+        "cache_creation_input_tokens": 72915
+      },
+      "attempts": 1
+    },
+    "T-39": {
+      "agents": 1,
+      "seconds": 3.802366,
+      "tokens": {
+        "input_tokens": 26,
+        "cache_read_input_tokens": 327967,
+        "output_tokens": 3049,
+        "thinking": 845,
+        "cache_creation_input_tokens": 29911
+      },
+      "attempts": 1
+    },
+    "T-40": {
+      "agents": 1,
+      "seconds": 56.629942,
+      "tokens": {
+        "input_tokens": 22,
+        "cache_read_input_tokens": 227175,
+        "output_tokens": 4088,
+        "thinking": 350,
+        "cache_creation_input_tokens": 22682
+      },
+      "attempts": 1
+    },
+    "T-41": {
+      "agents": 1,
+      "seconds": 51.894857,
+      "tokens": {
+        "input_tokens": 60,
+        "cache_read_input_tokens": 1912518,
+        "output_tokens": 8473,
+        "thinking": 1504,
+        "cache_creation_input_tokens": 67761
+      },
+      "attempts": 1
+    },
+    "T-43": {
+      "agents": 1,
+      "seconds": 21.907204,
+      "tokens": {
+        "input_tokens": 16,
+        "cache_read_input_tokens": 184505,
+        "output_tokens": 1730,
+        "thinking": 38,
+        "cache_creation_input_tokens": 31205
+      },
+      "attempts": 1
+    },
+    "T-44": {
+      "agents": 1,
+      "seconds": 17.316021,
+      "tokens": {
+        "input_tokens": 10,
+        "cache_read_input_tokens": 80922,
+        "output_tokens": 1652,
+        "thinking": 0,
+        "cache_creation_input_tokens": 18687
+      },
+      "attempts": 2
+    }
+  }
+}
