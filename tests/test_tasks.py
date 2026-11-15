@@ -163,6 +163,16 @@ def test_ac11_it_fails():
     print("ok")
 
 
+def test_retired_dependency_after_approval_is_met():
+    """After approval a frozen task may still depend on a task retired later (pass-on-arrival, C-261115-ftot)."""
+    root = repo()
+    approve_commit(root)
+    text = TASKS.replace("retired: []", "retired: [T-2]")
+    tasks.path(root, SLUG).write_text(text[:text.index("### T-2")] + text[text.index("### T-3"):])
+    assert not [e for e in errs(root) if "which is retired" in e], errs(root)
+    print("ok")
+
+
 def test_ac12_it_fails():
     root = repo(lambda t: t + "\n" + t[t.index("### T-2"):t.index("### T-3")])
     has(errs(root), "T-2 is defined 2 times")
@@ -325,6 +335,18 @@ def test_ac31_t_12_is_added_under_e_2_s_fixes_heading():
     retire = lambda t: t.replace("retired: []", "retired: [T-11]")
     assert errs(repo(chain(retire, fix("T-12")))) == []
     has(errs(repo(chain(retire, fix("T-8")))), "T-8: a fix task takes the next free ID, T-12")
+    print("ok")
+
+
+def test_a_committed_fix_task_survives_a_later_retired_fix_id():
+    """A fix task committed before a higher fix ID was taken and retired keeps its ID (T-29 below retired T-30)."""
+    root = repo(chain(fix("T-4"), fix("T-5", src="J-5 (implementation-E-1, round 1)", serves="J-5", file="b.py")))
+    approve_commit(root)
+    text = tasks.path(root, SLUG).read_text()
+    head = text.index("### T-5 ")
+    tasks.path(root, SLUG).write_text(text[:head].rstrip("\n").replace("retired: []", "retired: [T-5]") + "\n")
+    assert errs(root) == [], errs(root)
+    has(errs(repo(chain(lambda t: t.replace("retired: []", "retired: [T-5]"), fix("T-4")))), "T-4: a fix task takes the next free ID, T-6")
     print("ok")
 
 

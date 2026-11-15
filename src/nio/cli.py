@@ -5,7 +5,7 @@ import shlex
 import sys
 from importlib import resources
 
-from nio import agents, evidence, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
+from nio import agents, evidence, explain, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
 
 
 def report(errors, warnings, count):
@@ -30,11 +30,14 @@ def main():
     n.add_argument("--by", default="human", help="role / host / model, or human")
     n.add_argument("--run", default="", help="run ID, e.g. R-261024-a1b2; empty when written by hand")
     c = sub.add_parser("check", help="lint every record under .nio/memory, or `check spec|plan <slug>`: a spec's or its plan's mechanical checks")
-    c.add_argument("what", nargs="?", choices=["spec", "plan", "tasks"])
+    c.add_argument("what", nargs="?", choices=["spec", "plan", "tasks", "explainer"])
     c.add_argument("slug", nargs="?")
     c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
     c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
+    e = sub.add_parser("explain", help="explainer commands: `explain finish <path>` and `explain topic <text>`")
+    e.add_argument("action", choices=["finish", "topic"])
+    e.add_argument("target", nargs="?")
     ob = sub.add_parser("onboard", help="`onboard scan`: list the project's docs, manifests, IaC and CI files with a content hash")
     ob.add_argument("action", choices=["scan", "start", "confirm", "pause", "skip", "backup", "changed", "reconciled"])
     ob.add_argument("arg", nargs="*", help="skip: the reason; confirm: the doc")
@@ -261,7 +264,7 @@ def main():
         if not a.slug:
             sys.exit(f"error: give the spec's slug: nio check {a.what} <slug>")
         if a.approved:
-            if a.what == "spec":
+            if a.what not in ("plan", "tasks"):
                 sys.exit("error: --approved is for `nio check plan` and `nio check tasks`")
             try:
                 ok, why = {"plan": plan, "tasks": tasks}[a.what].approved(root, a.slug)
@@ -270,7 +273,7 @@ def main():
             print(why)
             sys.exit(0 if ok else 1)
         try:
-            errors, notes = {"spec": spec, "plan": plan, "tasks": tasks}[a.what].check(root, a.slug, a.gate, a.base)
+            errors, notes = {"spec": spec, "plan": plan, "tasks": tasks, "explainer": explain}[a.what].check(root, a.slug, a.gate, a.base)
             if a.rated_from and a.what == "tasks":
                 errors += tasks.rated_from(root, a.slug, a.rated_from)
         except ValueError as e:
@@ -408,6 +411,11 @@ def main():
             sys.exit(f"error: {e}")
         print("\n".join(lines))
         sys.exit(code)
+    elif a.cmd == "explain":
+        try:
+            print(explain.topic(root, a.target or "") if a.action == "topic" else "\n".join(explain.finish(root, a.target)))
+        except ValueError as e:
+            sys.exit(f"error: {e}")
     elif a.cmd == "task":
         try:
             print(tasks.retire(root, a.slug, a.id, a.reason, a.by) if a.action == "retire" else "\n".join(tasks.show(root, a.slug, a.id)))
@@ -418,7 +426,7 @@ def main():
             ob = onboard.status_lines(root)
         except ValueError as e:
             ob = [f"onboarding: error: {e}"]
-        print("\n".join(query.status(root) + ob))
+        print("\n".join(query.status(root) + ob + explain.stale(root)))
     elif a.cmd == "index":
         count, embedded = index.build(root)
         print(f"indexed {count} records, embedded {embedded}")

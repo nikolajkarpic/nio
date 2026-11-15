@@ -576,7 +576,7 @@ def judged_blob(root, slug, name):
     """The blob CT-7 compares a file by: git's hash of the raw file, or for tasks.md of its planned part as the jury
     reads it. The same on every side (approval commit, override line, now), so line endings never read as an edit."""
     from nio import jury
-    if name == "tasks.md":
+    if name in ("tasks.md", "quickstart.md"):
         return jury.blob(root, planned(name, (root / ".nio/specs" / slug / name).read_text()))
     return records.git(root, "hash-object", f".nio/specs/{slug}/{name}")[0]
 
@@ -640,14 +640,14 @@ def scan(root, slug, lines, found=None):
             names = [n for n in JUDGED_BY if (folder / n).exists()]
             raw = dict(zip(names, records.git(root, "hash-object", *[f"{rel}/{n}" for n in names])))
         current = raw.get(name)
-        if name == "tasks.md" and current != judged:  # compare the planned part only: a fix task appended or retired doesn't count
+        if name in ("tasks.md", "quickstart.md") and current != judged:  # compare the planned part only: a fix task appended or retired doesn't count
             now, keep = (folder / name).read_text(), ()
             if h:
                 code, text, _ = records.git(root, "show", f"{h}:{rel}/{name}", full=True)
                 if code == 0:  # ...but a fix task approved with the list, then edited, does (#126 FR-10)
                     from nio import tasks
                     fixed = lambda t: {i for i, x in tasks.parse(t)["tasks"].items() if x["fix"]}
-                    keep = sorted(fixed(text) & fixed(now))
+                    keep = sorted(fixed(text) & fixed(now)) if name == "tasks.md" else ()
                     judged = jury.blob(root, planned(name, text, keep))
             current = jury.blob(root, planned(name, now, keep))
         if current != judged:
@@ -922,6 +922,9 @@ def next_step(root, slug=None, by=None):
     if here["status"] == "working":
         out = [f"effort: {slug}", f"state: {here['stage']} (working{': ' + here['why'] if here['why'] else ''})",
                f"skill: {here['skill']}", f"next: run {typed(here['skill'])}", f"inputs: {', '.join(here['inputs']) or 'none'}", f"exit: {here['exit']}"]
+        d = root / ".nio/specs" / slug
+        if here["stage"] in ("tasking", "tasks_jury", "implementing") and (d / "plan.md").exists() and not (d / "explainer.md").exists():
+            out.append(f"suggest: run {typed('@nio:explain')} for {slug} (no explainer.md yet)")
         out += [f"task: {here['task']}"] * bool(here["task"])
         label = "claim" if here["command"].startswith("nio flow claim") else "done"
         out += [f"never reviewed: {e}" for e in never_reviewed(root, slug, lines)]

@@ -91,7 +91,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | [`@nio:tasks`](skills/tasks/SKILL.md) | Breaks the plan into epics and tasks, rates each with a model tier and an effort, and shows you the estimate. |
 | [`@nio:implement`](skills/implement/SKILL.md) | Builds the approved tasks, each by a fresh worker from its own pack; the CLI proves every test failed before the code and passes after it. Independent tasks run in parallel waves. |
 | [`@nio:jury`](skills/jury/SKILL.md) | Takes a spec, plan, tasks or a finished effort's whole diff (the pr gate) to a verdict: lens subagents judge it, the refuter validates their findings, a confirmed blocker escalates to 3 jurors, and rounds stop at a cap with your ruling. |
-| [`@nio:explain`](skills/explain/SKILL.md) | Explains an approved plan, or any topic, as a short Mermaid explainer: a component map, a build order, a flow per journey and a state diagram per table, each with a brief walk-through. |
+| [`@nio:explain`](skills/explain/SKILL.md) | Explains an approved plan, or any topic, as a short Mermaid explainer: a component map, a build order, a flow per journey and a state diagram per table, each with a brief walk-through, then three items to drill into. `explain.format` picks a host diagram skill instead. |
 | [`@nio:remember`](skills/remember/SKILL.md) | Writes memory records: decisions, lessons, change requests and jury verdicts. Any agent leaves candidates that one memory writer promotes at the end of a run. |
 | [`@nio:recall`](skills/recall/SKILL.md) | Looks memory up in three steps (find IDs, follow links, read at most 5 records) and says how to act on each record's standing. |
 
