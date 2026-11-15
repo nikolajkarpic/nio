@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-33]                      # task IDs removed from this file; never reused
+retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-33, T-34]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -197,22 +197,22 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - Effort: low
 - Mode: direct: the pane tests already pass; the fix makes the review run and read them
 
+### T-37 Fix: a malformed ledger or history line fails only its own `flow show` section (T-34 retired, its test passed on arrival)
+- From: C-261115-hkrz
+- Files: `src/nio/flow.py`, `tests/test_flow.py`
+- Serves: AC-4, CT-2, FR-13
+- Test: TC-5 (history line), plus new test_show_survives_malformed_ledger (a malformed jury ledger and a malformed history line each fail only their own section; `flow show` exits 0 with the other sections present)
+- Depends on: none
+- Parallel: no
+- Tier: strong: per-section error handling in `flow.show` with a real test
+- Effort: low
+- Mode: direct: T-34's TC-1 passed on arrival; the new test and the fix land together
+
 ### T-32 Fix: Pane drops every jury finding and fix task
 - From: J-30 (pr, round 3)
 - Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`
 - Serves: CT-12, CT-4, J-30
 - Test: TC-2
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-34 Fix: A malformed ledger or history line crashes `flow show` instead of failing one section
-- From: J-31 (pr, round 3)
-- Files: `src/nio/flow.py`
-- Serves: CT-2, FR-13, J-31
-- Test: TC-1
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
