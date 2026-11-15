@@ -42,8 +42,7 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
      the settings file must be committed.
    - **Keep every prompt:** runs nothing. Stages stop for each command.
 
-   Either way approvals, overrides and other human decisions still prompt, and so does `nio flow finish`,
-   because it runs any command it is given.
+   Either way every `nio` command runs unprompted except approvals, overrides and other human decisions.
 3. On Claude Code, ask once whether to install the Claude Code mods for this clone: a status pane and a background command runner?
    - **Install the mods (recommended):** runs `nio mods install`. Installed for this clone only (local scope), changing
      nothing to commit.

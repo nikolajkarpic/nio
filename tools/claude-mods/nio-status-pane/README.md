@@ -7,6 +7,10 @@ every NIO effort stands across this repo's git worktrees, with no model turn (is
   claimed task and running jurors, and the worktree it runs in. A field the effort's files don't
   record reads `-`. A worktree whose `nio flow status` fails, or a broken effort, shows its error;
   the rest are still listed;
+- pressing an effort (or its number, `1`–`9`) opens its drill-down in tabs: **overview** (task progress,
+  each jury's outcome, the last three moves, total cost), **history**, **juries** (a gate opens to its rounds
+  and findings; gates not yet approved start open), **tasks** (per epic, `done/total`), **cost**, **memory**.
+  Tabs answer `1`–`6`, `b` goes back;
 - a status line under the prompt: `nio: 3 active (implementing x2, spec_jury)`, or `nio: no active effort`;
 - `/nio`: prints `nio flow status` for every worktree, one block each, run in parallel.
 

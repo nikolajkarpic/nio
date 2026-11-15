@@ -58,7 +58,10 @@ def mods_install(root, skip=False, claude="claude"):
     """One outcome line per mod; never raises, one mod failing never stops the other."""
     try:
         code, out, _ = _claude(root, claude, "plugin", "list", "--json")
-        have = {e.get("id") for e in json.loads(out)} if code == 0 else set()
+        here = Path(root).resolve()
+        # `plugin list` also lists other repos' local/project installs: count only user-scope ones and this repo's
+        have = {e.get("id") for e in json.loads(out) if e.get("scope") not in ("local", "project")
+                or e.get("projectPath") and Path(e["projectPath"]).resolve() == here} if code == 0 else set()
     except (OSError, ValueError, AttributeError):
         have = set()
     lines = []
@@ -102,11 +105,6 @@ def install(root, nio=None):
     return out
 
 
-# stage work an agent may run unprompted; finish is left out: it runs the tests and commits the epic
-ALLOW = ["check", "query", "get", "pack", "status", "index", "new", "run", "task", "agents sync", "agents verify",
-         "flow next", "flow status", "flow start", "flow park", "flow done", "flow claim", "flow block",
-         "jury template", "jury answers", "jury plan", "jury changed", "jury fixcheck", "jury collect", "jury dispose",
-         "jury files", "jury check", "jury evidence", "jury pack"]
 # the human's decisions always prompt. Short flags count: argparse takes --c for --commit and --h for --human.
 # ponytail: pattern matching on the command text, a deterrent and not a boundary; the CLI's own rules still apply
 ASK = ["*human*", "flow done *--c*", "flow done *--h*", "jury check *--h*", "jury plan *--pick*"]
@@ -125,8 +123,8 @@ def allow(root, shared):
     """Merge the rules into Claude Code's settings for this repo, keeping what is there. Returns the file's path."""
     path, cfg = settings(root, shared)
     perms = cfg.setdefault("permissions", {})
-    for key, rules in (("allow", [f"{r}:*" for r in ALLOW]), ("ask", ASK)):
-        new = [f"Bash({run} {r})" for run in ("nio", "uv run nio") for r in rules]
+    for key, new in (("allow", ["Bash(nio:*)", "Bash(uv run nio:*)"]),  # every nio command, finish and hooks too
+                     ("ask", [f"Bash({run} {r})" for run in ("nio", "uv run nio") for r in ASK])):
         perms[key] = perms.get(key, []) + [r for r in new if r not in perms.get(key, [])]
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(cfg, indent=2) + "\n")
