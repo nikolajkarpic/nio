@@ -1,6 +1,8 @@
 # NIO — agent instructions
 
 Read `NORTH_STAR.md` first. Any change must serve it, and ideas that don't go to a GitHub issue (labelled `type:*` and `area:*`).
+The confirmed project docs (product, personas, stack, architecture, infra, principles) are in
+`.nio/project/`; read the ones your change touches before planning it.
 
 ## Repo layout
 

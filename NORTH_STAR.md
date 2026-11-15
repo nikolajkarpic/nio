@@ -133,7 +133,7 @@ This is a core pillar. Its design is in `MEMORY_NORTH_STAR.md`, which wins where
 - **Memory agents can reach cheaply:** specs are part of memory, but agents also need fast
   lookup of past decisions. Calibration (estimated versus actual) and replay of past jury
   decisions live here too.
-- **Team-shareable eventually:** memory must not be locked to one person's machine.
+- **Team-shareable:** memory must not be locked to one person's machine.
 - **Questions memory must answer:**
   - Was this done before, and can I reuse the solution?
   - Why was X done this way?
@@ -231,8 +231,6 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Non-goals (for now)
 
-- Multi-user or team features (NIO has a single user for now). The exception: the memory
-  design must leave room for team sharing.
 - Dry-run mode (low priority).
 - Hosted service or UI.
 - Hosts beyond Claude Code and Antigravity until both work well.
