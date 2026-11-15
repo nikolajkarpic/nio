@@ -7,7 +7,7 @@ date: 2026-11-15
 by: "jury"                # role / host / model, or human
 run: ""              # run ID; empty when written by hand
 against: ".nio/specs/2026-11-15-effort-drilldown-install/spec.md"
-outcome: pending          # pending | accepted | rejected
+outcome: rejected          # pending | accepted | rejected
 paths: []
 tags: []
 supersedes: []
@@ -20,3 +20,6 @@ J-2 at pr says the code contradicts CT-8, FR-22, AC-25, and the code is the righ
 Change CT-8, FR-22, AC-25 in spec.md to match the code. Reject it and a fix task changes the code instead.
 ## Human decision
 Pending.
+
+## Human decision
+Rejected by the human on 2026-11-15 in the orchestrator session: "Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package."
