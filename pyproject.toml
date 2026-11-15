@@ -1,7 +1,7 @@
 [project]
 name = "nio"
 version = "0.0.1"
-description = "NIO memory CLI: write, check, index and query .nio/memory records"
+description = "NIO CLI: flow, jury, memory, onboarding and agents for agent-built software"
 requires-python = ">=3.11"
 dependencies = [
     "fastembed>=0.9.0",
