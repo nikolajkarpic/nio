@@ -1,7 +1,7 @@
 {
   "gate": "plan",
   "subject": "2026-11-15-effort-drilldown-install",
-  "round": 3,
+  "round": 4,
   "tier": "low",
   "expect": [
     "architecture-fit",
@@ -14,30 +14,32 @@
     "R-261115-hjet/plan-architecture-fit.md": "70b4c646ebc2113613bb7aacebad845d43d57a420ebdb1b4a02a8ae36fd8f549",
     "R-261115-hjet/plan-test-proof.md": "c31275799af610e22279e762758066690c529fa4998d2aa1c4e9ab0cd2cf8ce2",
     "R-261115-ivry/plan-architecture-fit.md": "8cbe58f538fc46b28aa94bb79f090688c1eb6f76936bae5515197dda578bbcf5",
-    "R-261115-ivry/plan-test-proof.md": "aa6166921b55dee9dae44653c54d7483b4ac14d75b2090f713b74bfee12ca72a"
+    "R-261115-ivry/plan-test-proof.md": "aa6166921b55dee9dae44653c54d7483b4ac14d75b2090f713b74bfee12ca72a",
+    "R-261115-v26d/plan-architecture-fit.md": "76539a4988b5eea097c406bff65f261113827617835e9746fab033b7b9fb61bd",
+    "R-261115-v26d/plan-test-proof.md": "1e3523bbeda6e75608929341518188e302af0028242edb4a5785341f43d9697b"
   },
   "jurors": {
     "plan-architecture-fit": {
       "attempts": 1,
       "lens": "architecture-fit",
-      "by": "juror / claude-code / opus-5.5",
+      "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "c4c76a52fe1862b882ee902f278cacef90c4dd6c",
-      "judged": 3
+      "round": 4,
+      "version": "fedac65cebf6c2125cd19e96196c144cf12be7f1",
+      "judged": 4
     },
     "plan-test-proof": {
       "attempts": 1,
       "lens": "test-proof",
-      "by": "juror / claude-code / opus-5.5",
+      "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "c4c76a52fe1862b882ee902f278cacef90c4dd6c",
-      "judged": 3
+      "round": 4,
+      "version": "fedac65cebf6c2125cd19e96196c144cf12be7f1",
+      "judged": 4
     }
   },
   "findings": [
@@ -437,12 +439,17 @@
     [
       3,
       "approved"
+    ],
+    [
+      4,
+      "approved"
     ]
   ],
   "versions": {
     "1": "8f5a24aa2c90873d3edf6707dfe9d6e5f8318568",
     "2": "ef6238b8448e5f30ab1084d8a34f8e25b1b3cfe1",
-    "3": "c4c76a52fe1862b882ee902f278cacef90c4dd6c"
+    "3": "c4c76a52fe1862b882ee902f278cacef90c4dd6c",
+    "4": "fedac65cebf6c2125cd19e96196c144cf12be7f1"
   },
   "asked": {}
 }
