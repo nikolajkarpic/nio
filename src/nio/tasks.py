@@ -195,6 +195,7 @@ def check(root, slug, gate=False, base="HEAD"):
     full = kind == "full"
     old = approved_before(root, slug, MODE_SINCE, base)
     entries, tcs = plan_parts(root, slug) if full else ({}, set())
+    approved = records.git(root, "log", "-1", "--format=%H", "--grep=^nio: approve tasks$", base, "--", str(p.relative_to(root)))
     for t, task in tasks.items():
         f = task["fields"]
         errs += [f"{t}: needs `- {name}:`" for name in FIELDS if name not in f and not (name == "Mode" and old)]
@@ -204,8 +205,8 @@ def check(root, slug, gate=False, base="HEAD"):
             errs.append(f"{t} is retired and can't be used again")
         for name in ("Serves", "Depends on", "Test"):
             for i in ids(f.get(name, "")):
-                if i in retired:
-                    errs.append(f"{t} cites {i}, which is retired")
+                if i in retired:  # once approved, a frozen task can't drop a retired dependency; scheduling skips it as met
+                    errs += [f"{t} cites {i}, which is retired"] * (not (approved and name == "Depends on"))
                 elif i.startswith("AC-") and i not in acs:
                     errs.append(f"{t} cites {i}, which the spec doesn't define")
                 elif i.startswith("T-") and i not in tasks:
