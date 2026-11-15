@@ -307,12 +307,12 @@ def topic(root, text, today=None):
     if not name:
         raise ValueError(f'the topic "{text}" gives an empty file name')
     day = today or datetime.date.today().isoformat()
-    n = 1
+    n, want = 1, f"(topic: {' '.join(text.split())})"
     while True:
         rel = f".nio/research/{day}-{name}-explainer{'' if n == 1 else f'-{n}'}.md"
         p = root / rel
         if not p.exists():
             return f"new: {rel}"
-        if f"(topic: {text})" in p.read_text().splitlines():
+        if want in " ".join(p.read_text().split()):  # J-9: padding and line breaks don't change the topic
             return f"continue: {rel}"
         n += 1
