@@ -295,6 +295,28 @@ def test_mods_install_local_scope():
     print("ok")
 
 
+def test_mods_dir_fallback():
+    # CT-8: the packaged folder when present, else the checkout's tools/claude-mods, else ValueError; install reports it
+    assert hooks.mods_dir() == ROOT / "tools/claude-mods", hooks.mods_dir()
+    real = hooks.__file__
+    with tempfile.TemporaryDirectory() as tmp:
+        hooks.__file__ = str(Path(tmp) / "a/b/hooks.py")  # parents[2] = tmp, with no tools/claude-mods
+        try:
+            try:
+                hooks.mods_dir()
+                raise AssertionError("expected ValueError")
+            except ValueError as e:
+                assert "no NIO mods in this nio install" in str(e), e
+            fake = Path(tmp) / "claude"
+            fake.write_text("#!/bin/sh\necho '[]'\nexit 0\n")
+            fake.chmod(0o755)
+            lines = hooks.mods_install(Path(tmp), claude=str(fake))
+            assert len(lines) == 2 and all(l.startswith(f"{m}: failed: no NIO mods") for l, m in zip(lines, hooks.MODS)), lines
+        finally:
+            hooks.__file__ = real
+    print("ok")
+
+
 def test_readmes_call_mods_optional():
     texts = [(ROOT / f).read_text() for f in (
         "README.md", "tools/claude-mods/README.md",
@@ -316,5 +338,5 @@ def test_readmes_call_mods_optional():
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
                     test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_times_out, test_mods_install_without_claude,
-                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope,
+                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope, test_mods_dir_fallback,
                     test_readmes_call_mods_optional])
