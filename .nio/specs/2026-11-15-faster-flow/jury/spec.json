@@ -1,0 +1,669 @@
+{
+  "gate": "spec",
+  "subject": "2026-11-15-faster-flow",
+  "round": 4,
+  "tier": "high",
+  "expect": [
+    "logic",
+    "scope",
+    "testability"
+  ],
+  "collected": {
+    "R-261115-wanz/spec-logic.md": "bebab360518841d8813d1cc12de501f0adc164d6284078e87299ead54bcd9592",
+    "R-261115-wanz/spec-scope.md": "9dd955641262d12e66ca9cb39e2d40e3246a3819d878613a08f3926a1fa512c8",
+    "R-261115-wanz/spec-testability.md": "1026eb9c0c0b04e29381553777b8d4ed61d10efc3125faff8c937266b0b03214",
+    "R-261115-wanz/spec-refuter.md": "feeecb6f3dae7973865c3a57a423c4978a1e72f94f7698611fb7e67edc4c331c",
+    "R-261115-7o37/spec-logic.md": "5a6ac7ea1077b72cbef0d57a88a5335e6e364812db4bcbdae826e4a8e4b4e99d",
+    "R-261115-7o37/spec-scope.md": "992781c695524ea75f04131689a4f4d6ed6b013e5fb552ca8ec4e4227a6378c8",
+    "R-261115-7o37/spec-testability.md": "8b1bd23e5df90424cf99c2abf1dcfa083f993296b8390d6269b814b0cc9f35bf",
+    "R-261115-ngrq/spec-logic.md": "d1a7e2249513f57ff42ff1415615858d1da5454235e998ffb832a1ebfb01b386",
+    "R-261115-ngrq/spec-scope.md": "a97bebaadacdd3562fc6f52d7b5cdf2be59788a61efd2f28a202f3bf250bab0e",
+    "R-261115-ngrq/spec-testability.md": "d31891c06cbc4c6a3f2dbce429c7d76a33accae23c10d0734a51a490b8ca3764",
+    "R-261115-zppf/spec-logic.md": "e9410ee819c6c0d00ab920eb8ad2f0e59f9ef9611c9d00b133c97ad3a461a7c9",
+    "R-261115-zppf/spec-scope.md": "234b3ba91ea1e2f507d55f92b276b3a60a577fde1d17643a525373c22d5a3f69",
+    "R-261115-zppf/spec-testability.md": "420965f5521bc38f334c276ba1d99a2148b003b91538d50b985fa5510fa18767"
+  },
+  "jurors": {
+    "spec-logic": {
+      "attempts": 1,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "ec784cd5b0eb6fa42bdaa2c43b7749e55a2a74b4",
+      "judged": 4
+    },
+    "spec-scope": {
+      "attempts": 1,
+      "lens": "scope",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "ec784cd5b0eb6fa42bdaa2c43b7749e55a2a74b4",
+      "judged": 4
+    },
+    "spec-testability": {
+      "attempts": 1,
+      "lens": "testability",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 4,
+      "version": "ec784cd5b0eb6fa42bdaa2c43b7749e55a2a74b4",
+      "judged": 4
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "Auto commits the pr gate's approval and must not",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-22",
+        "AC-23",
+        "decision table row `on | none | approved`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the flow commits the approval and notifies the human",
+        "the pr gate stays approved only by the human"
+      ],
+      "fix": "add the pr gate as an exception in the decision table (a row, or a gate column) and in UJ-2 step 2.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "auto is on, the spec is not risky, and the pr gate's jury approves. The decision table row commits the approval by the flow. FR-22 and AC-23 say the pr gate is never approved by the flow. The table has no gate column, and UJ-2 step 2 says \"a gate whose jury approves is committed by the flow\" without exempting pr.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The decision table row `on | none | approved` has no gate column and says the flow commits the approval, while FR-22 and AC-23 say the pr gate \"stays approved only by the human\"; UJ-2 step 2 also has no pr exemption, and nothing else in the spec settles which wins.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "pr gate row + UJ-2 exception; Decisions name FR-41 as grill call OP-2; Decisions name FR-44 conversion as grill call OP-6; SC-1 names replay of #142 E-1 with 29/6 min limits; AC-32 Observable made deterministic",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "The `blocked` state is missing from the epic state table",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "FR-42",
+        "AC-43",
+        "state table row `failed`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "after its third failed run, then it is blocked for the human",
+        "failed | → claimed | reject: not claimed"
+      ],
+      "fix": "add a `blocked` state, with the transition from `failed` after the third failure and the human's way out, and show the claim from `failed` as conditional on the count.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "an epic has failed its test run 3 times and is claimed a fourth time. The table says `failed` + claim goes to `claimed`. FR-42 and AC-43 say the epic is blocked and the claim is refused. The table lists five states, so `blocked` has no row, no entry or exit, and no failure counter.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The Epic state table and the Key entities list have five states and no `blocked`; row `failed` sends a claim to `claimed`, while FR-42 and AC-43 say the claim is refused after the third failure. No failure counter or exit from `blocked` is defined.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "blocked state with human unblock (grill.md Call J-2); in-flight done epic runs the flow test run before close (Call J-3); error/no-test/30-min-timeout run counts as failed, 50-line tail, AC-47 (Call J-15)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "Migration closes an epic without a test run",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-44",
+        "FR-3",
+        "state table row `waiting`"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "close an epic whose tasks are all done",
+        "close the epic only if every one passes"
+      ],
+      "fix": "say E-1 is either run through `testing` once (a test run closes it) or is a named exception to FR-3 and AC-2, with its entry state in the table.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "an in-flight effort has E-1 whose tasks are all done under the per-task flow. FR-44 closes it with no hand-back and no flow test run. FR-3 and AC-2 allow a close only after the flow's own run passes (\"no close without that run\"). The state table reaches `closed` only through `testing`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-44 closes an epic whose tasks are all done with no hand-back or run, while FR-3 and AC-2 allow a close only after the flow's own run, and the state table reaches `closed` only through `testing`. No exception to FR-3 is named.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "blocked state with human unblock (grill.md Call J-2); in-flight done epic runs the flow test run before close (Call J-3); error/no-test/30-min-timeout run counts as failed, 50-line tail, AC-47 (Call J-15)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "A second claim is refused and also allowed",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "AC-9",
+        "AC-44",
+        "FR-9",
+        "FR-43"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "when a second driver claims work on the same effort, then the claim of that epic is refused and names it",
+        "then both can be claimed at once, each in its own worktree"
+      ],
+      "fix": "define that a claim picks the first epic that is waiting or failed and whose dependencies are closed. Refuse only when none is left, or when a named epic is already claimed.",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "E-2 is claimed and E-3 is independent of it, and a second driver runs the same claim command. The result is a refusal under AC-9, since FR-1 hands out \"the next epic\", which is E-2 again. Under AC-44 the same call hands out E-3. The spec does not say whether the claim picks the next unclaimed independent epic or the next epic.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "FR-1 claim picks the first waiting/failed epic with closed deps; FR-9 refuses a named claimed epic or none left (grill.md Call J-4)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "An epic with no test has no exit in the state table",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-10",
+        "AC-10",
+        "state table row `testing`"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THE SYSTEM SHALL refuse to close the epic and say it has no test to run",
+        "testing | reject: tests running | ignore"
+      ],
+      "fix": "add the \"no test\" outcome to the table, such as `claimed` + hand-back with no tests → stays claimed with the message. Say how the epic leaves that state (the agent adds a test, or `nio check tasks` catches it earlier).",
+      "sources": [
+        {
+          "juror": "spec-logic",
+          "lens": "logic",
+          "situation": "an epic whose tasks name no test is handed back as done. FR-10 refuses the close. The table gives only two outcomes after the hand-back (the run passes, or the run fails), and no row for a refusal with no run. The epic ends in `claimed` or `testing`, and a further claim is rejected as \"already claimed\" or \"tests running\". Nothing in the spec lets it recover short of a manual edit.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "state table gains a no-test hand-back column (stays claimed, FR-10),FR-4 sets the tail at the last 50 lines",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "A new test-proof lens on every pr gate, not confirmed by the human",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-41",
+        "FR-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "THE SYSTEM SHALL include the test-proof lens, judging for each test the effort added whether it would still pass with the code it proves left out; this replaces the proof red gave. [agent]",
+        "THE SYSTEM SHALL have no per-task red or green step in the implement stage:"
+      ],
+      "fix": "hold FR-41 as an open point until the grill picks one of the three options, or keep it [agent] and name it in Decisions as a choice the human still has to confirm.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "FR-5 is tagged [human] and removes red/green. FR-41 then adds a new juror lens to every pr gate as its replacement. The intake asked what replaces the proof red gave and listed three options (none, a mutation check at epic end, or this lens). The pack holds no answer to that question. If FR-41 is not built, the effort still drops red/green as the human asked (FR-5 holds); what is lost is only a check the human has not chosen.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-41 is tagged [agent], yet the Decisions section lists \"Red's proof is replaced by the test-proof lens\" as settled, and the grill answers hold only Q1 (risk flags), so the human has not chosen it; FR-5 stands without FR-41.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "pr gate row + UJ-2 exception; Decisions name FR-41 as grill call OP-2; Decisions name FR-44 conversion as grill call OP-6; SC-1 names replay of #142 E-1 with 29/6 min limits; AC-32 Observable made deterministic",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "A new test-proof lens is tied to a parallel-epic choice the human did not confirm",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-43",
+        "FR-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN two or more epics have no dependency between them, THE SYSTEM SHALL let them be claimed at once, each in its own worktree, through the existing waves. [agent]",
+        "One agent per epic; independent epics run in parallel; a failed epic gets a fresh agent, 3 tries (FR-1, FR-42, FR-43)."
+      ],
+      "fix": "keep FR-43 only once the grill confirms parallel epics; otherwise drop FR-43 and AC-44 and note the decision.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake's open question \"Waves: do independent epics run in parallel worktrees?\" has no recorded answer in the pack. The issue's \"What changes\" list and the spec's own Done-when items do not require parallel epic claims. The existing waves already run independent tasks in parallel, so the change is smaller than it looks, but it still moves concurrency to epic level. If FR-43 is not built, every item in US-1 still works one epic at a time.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-8",
+      "title": "Converting in-flight efforts is a scope choice the intake offered as an alternative",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-44",
+        "FR-5",
+        "AC-45"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "WHEN an effort that is already at implementing is claimed after this change, THE SYSTEM SHALL keep its done tasks done, close an epic whose tasks are all done, and claim the next epic whole with its undone tasks. [agent]",
+        "THE SYSTEM SHALL have no per-task red or green step in the implement stage:"
+      ],
+      "fix": "have the grill pick the migration path; if conversion stays, mark FR-44 as a spec choice and keep AC-45 with it; if finish-on-old-flow wins, FR-5 must say which legacy path survives.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "once FR-5 removes red and green, an effort half-way through per-task work can only be finished by converting it, which is what FR-44 and AC-45 do. The intake's open question on migration offered the other option, that efforts already at implementing finish on the current flow. The pack has no answer that picks between them. Choosing conversion adds a migration path with its own closing rule that the human did not ask for. If FR-44 is not built and the other option is picked, the old per-task code path must stay alive, which contradicts FR-5 as written.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-44 and AC-45 are [agent], the grill answers hold only Q1, and FR-5 removes the per-task path outright without naming any surviving legacy path. Conversion is therefore an unconfirmed choice between migration options.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "pr gate row + UJ-2 exception; Decisions name FR-41 as grill call OP-2; Decisions name FR-44 conversion as grill call OP-6; SC-1 names replay of #142 E-1 with 29/6 min limits; AC-32 Observable made deterministic",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "One spec covering 45 FRs with independent slices",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "US-3",
+        "US-6",
+        "AC-14",
+        "AC-32"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "One spec covering this many issues is large; the jury's scope lens will weigh splitting it. [agent]"
+      ],
+      "fix": "keep the one-spec choice, but record US-3 and US-6 as separable slices in the plan so the first can land on its own.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "US-3 (background mod, AC-14 to AC-16) and US-6 (robustness, AC-32 to AC-35) each state an independent test that does not need per-epic implementation (for example \"run a claim while the index rebuilds, a jury from a worktree session, and a hand-off without the plugin\"). They could ship as a separate slice first. The human chose one spec for everything, so this is recorded as a minor, not a request to split.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "The 3-attempt cap on a failed epic has no source in the pack",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "FR-42",
+        "AC-43"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "IF an epic's test run has failed 3 times, THEN THE SYSTEM SHALL block the epic and wait for the human. [agent]"
+      ],
+      "fix": "have the grill confirm the number 3, or mark it [agent] and name it as a default the human can change.",
+      "sources": [
+        {
+          "juror": "spec-scope",
+          "lens": "scope",
+          "situation": "the intake's open question on a failed epic offered three options (same agent retries, a fresh one, or fix tasks). FR-42 picks a fresh agent and also sets a cap of 3, and the number 3 is not in the intake or the pack. AC-43 tests the cap. If the cap is removed, the epic would loop until the human intervenes, which matters for the auto run in SC-3 but is not something the human asked to decide here.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-11",
+      "title": "SC-1 has no testable baseline",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "SC-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A comparable effort's implement stage takes at least a quarter less agent and shell time than #142's first epic"
+      ],
+      "fix": "name the fixture effort or the measure (for example the same tasks.md replayed per-task and per-epic, counting agent calls and test runs), and say which two numbers are compared.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "nobody can say which effort is \"comparable\" (size, task count, test suite) or how agent and shell time are measured. Two runs with different epics can each claim to meet or miss the quarter, so no test fails when the saving is not there.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "SC-1 is [agent] and says \"a comparable effort\" and \"agent and shell time\" with no fixture, measure or pair of numbers; nothing else in the spec defines them.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "pr gate row + UJ-2 exception; Decisions name FR-41 as grill call OP-2; Decisions name FR-44 conversion as grill call OP-6; SC-1 names replay of #142 E-1 with 29/6 min limits; AC-32 Observable made deterministic",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "\"The tail of the run's output\" has no size",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "FR-4",
+        "AC-3",
+        "AC-43"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the tail of the run's output"
+      ],
+      "fix": "state the limit, in lines or bytes.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a test asserting the recorded output tail cannot choose between the last 10 lines, 50 lines or 4 KB. A run printing 100 000 lines either bloats the history and the retry pack or is cut at an unstated point. Both pass AC-3's \"holds the output tail\".",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "state table gains a no-test hand-back column (stays claimed, FR-10),FR-4 sets the tail at the last 50 lines",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "AC-32's Observable passes even when the race is not fixed",
+      "kind": "untestable",
+      "severity": "major",
+      "cites": [
+        "AC-32",
+        "FR-31"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the claim exits zero during a concurrent rebuild."
+      ],
+      "fix": "make the Observable deterministic: for example a test that deletes or truncates one record mid-read and checks the claim skips it, and that the index file is replaced as a whole.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "a claim that reads the index in the middle of a rebuild only crashes if the timing lines up. A test that starts a rebuild and a claim at once will usually pass with the old, broken code. FR-31 also promises a skipped record rather than a crash, and the Observable does not check that.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "AC-32's Observable is only \"the claim exits zero during a concurrent rebuild\", which is timing dependent and does not check FR-31's \"skip a record missing from it\" or the whole-file swap.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "pr gate row + UJ-2 exception; Decisions name FR-41 as grill call OP-2; Decisions name FR-44 conversion as grill call OP-6; SC-1 names replay of #142 E-1 with 29/6 min limits; AC-32 Observable made deterministic",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "AC-46 checks a model's judgement, with no stated pass condition",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "AC-46",
+        "FR-45"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the juror's output holds a finding citing both task IDs."
+      ],
+      "fix": "name the fixture tasks.md and say how often the juror must flag it. Or check the card's text and the pack, which are deterministic, and keep the e2e run as a sampled check.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the check runs a real model (Level e2e) on a fixture. A run where the juror misses the dependency fails once and passes the next time, so a pass shows nothing stable. No fixture is named and no number of runs is given.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-15",
+      "title": "No failure case for the flow's own epic test run hanging or erroring",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-3",
+        "FR-42",
+        "NFR-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "THE SYSTEM SHALL run the tests the epic's tasks name itself and close the epic only if every one passes"
+      ],
+      "fix": "add a duration limit for the run and an AC where a hung or zero-test run lands in `failed` and counts as one of the 3.",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the flow now runs the tests itself. A named test hangs, the test file does not import, or the command is not found. The spec has no timeout, no rule for \"ran zero tests\", and no AC saying whether this counts as a failed run towards the 3-try limit. The state table has `testing` with no exit other than pass or fail, so an epic can sit in `testing` for good.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "FR-3 and the state table's `testing` row give only pass or fail exits; FR-10 covers an epic that names no test, but nothing covers a named test that hangs, fails to import or runs zero tests, and no AC says such a run counts toward FR-42's 3 failures.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "grill",
+      "note": "blocked state with human unblock (grill.md Call J-2); in-flight done epic runs the flow test run before close (Call J-3); error/no-test/30-min-timeout run counts as failed, 50-line tail, AC-47 (Call J-15)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-16",
+      "title": "FR-47 lists four auto steps but AC-49 tests only unblock",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "FR-47",
+        "AC-49"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "(unblock, override of a failing guard, `seen`, a ruling on a capped batch)",
+        "when the driver unblocks it, then the unblock succeeds and is recorded as auto"
+      ],
+      "fix": "add an AC (or a clause) for each remaining step, or narrow FR-47's list",
+      "sources": [
+        {
+          "juror": "spec-testability",
+          "lens": "testability",
+          "situation": "the driver's override of a failing guard, `seen` or a capped-batch ruling can stay refused under auto while AC-49 still passes, since it exercises only unblock",
+          "severity": "minor",
+          "round": 3
+        }
+      ],
+      "validation": "grounded",
+      "reason": "raised in a re-review below blocker: a note only",
+      "status": "noted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ],
+    [
+      3,
+      "approved"
+    ],
+    [
+      4,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "9427bd4578d6f1657a4fd559c8f53cffade7c756",
+    "2": "537b6447d09324952090a8179373b9ca076deb90",
+    "3": "8ed8526963a0a5228989d4f5fe5dbb6ec502d351",
+    "4": "ec784cd5b0eb6fa42bdaa2c43b7749e55a2a74b4"
+  },
+  "asked": {},
+  "cap": {
+    "round": 2,
+    "auto": false,
+    "batch": [],
+    "version": "537b6447d09324952090a8179373b9ca076deb90"
+  }
+}
