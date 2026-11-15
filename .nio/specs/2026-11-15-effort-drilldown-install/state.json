@@ -7,6 +7,10 @@
   "auto": false,
   "claims": {},
   "pause": null,
-  "run": "R-261115-5fzy",
-  "waiting": null
+  "run": "R-261115-4mav",
+  "waiting": {
+    "change": "C-261115-duou",
+    "task": "T-4",
+    "why": "spec problem in T-4"
+  }
 }
