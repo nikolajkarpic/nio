@@ -227,5 +227,17 @@ def test_ac35_clash():
     assert first.read_bytes() == before and second.name in out
 
 
+def test_ac34_topic_whitespace():
+    # J-9 (no model): a padded or multi-line topic still continues its own file
+    from test_records import repo
+    root = repo()
+    r = root / ".nio/research"
+    r.mkdir(parents=True, exist_ok=True)
+    (r / f"{today()}-auth-tokens-explainer.md").write_text("# Auth tokens\n\n(topic: Auth\n  tokens)\n")
+    want = f"continue: .nio/research/{today()}-auth-tokens-explainer.md"
+    assert explain.topic(root, "  Auth   tokens\n") == want
+    assert explain.topic(root, "Auth\n  tokens") == want
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
