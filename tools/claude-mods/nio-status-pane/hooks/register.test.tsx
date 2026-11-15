@@ -315,6 +315,16 @@ test('AC-1 drill-down timeline: findings inside each round and their fix tasks',
   expect(all).toContain('J-30 blocker confirmed: pane drops findings → T-32, T-33')
 })
 
+test('AC-10 drill-down tasks grouped by epic', async ($, on) => {
+  const shown = { ...SHOWN, tasks: [{ epic: 'E-1 first', tasks: [{ id: 'T-1', status: 'done', attempts: 1, title: 'one' }] }, { epic: 'E-2 second', tasks: [{ id: 'T-2', status: 'claimed', attempts: 2, title: 'two' }] }] }
+  const { read } = await open($, on, () => result(0, JSON.stringify(shown)))
+  const all = (await read()).join('\n')
+  expect(all).toContain('E-1 first')
+  expect(all).toContain('T-1 done · attempts 1 · one')
+  expect(all).toContain('T-2 claimed · attempts 2 · two')
+  expect(all).not.toContain('undefined undefined')
+})
+
 test('AC-5 back to the list',async ($, on) => {
   const { ui, read, clock } = await open($, on, ok)
   await ui.press({ key: 'back' })

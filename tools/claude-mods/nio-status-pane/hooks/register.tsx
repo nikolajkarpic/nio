@@ -253,7 +253,7 @@ const sections = (d: any): string[] => [
       ? [`review ${x.from} · ${x.at} · ${Array.isArray(x.reasons) && x.reasons.length ? x.reasons.join('; ') : '-'}`]
       : [`${x.from} → ${x.to} · ${x.role} · ${x.host} · ${x.model} · ${x.at}`]),
   ...list(d.juries, SECTION.juries, jury),
-  ...list(d.tasks, SECTION.tasks, t => [`${t.id} ${t.status} · attempts ${t.attempts} · ${t.title}`]),
+  ...list(d.tasks, SECTION.tasks, x => [String(x.epic), ...(x.tasks ?? []).map((t: any) => `${t.id} ${t.status} · attempts ${t.attempts} · ${t.title}`)]),
   ...cost(d.cost),
   ...list(d.memory, SECTION.memory, r => [`${r.id} ${r.kind} ${r.standing}: ${r.title}`]),
 ]
