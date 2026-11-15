@@ -34,6 +34,9 @@ can't settle, and the grill and the jury come later. Write WHAT and WHY, never H
   - two or more materially different answers, or anything about permissions, money, deletion or something
     irreversible: an open point `(decision; …)`, with no proposal.
 - **Open points:** `- **OP-n** (fact|decision; <ID or section>) <question>?`, in `## Open points`.
+- **Issue intakes:** a `Decided` comment overrides the issue body and earlier comments on the same point; a question it
+  answers is carried by the decision, not raised again. Each line under a `Still open:` becomes an `OP-n (decision)`
+  with no proposal.
 - **Actors and journeys:** the actors the intake names or clearly implies, with one-line journeys, tagged `[default]`
   unless the intake states them, plus one `(fact; Actors and journeys)` open point asking research for evidence.
   Each human actor line ends with the personas entry it is (`P-n`, from the project's personas doc in the pack) or

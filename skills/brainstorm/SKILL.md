@@ -43,23 +43,26 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    Without it, ask the human to paste the issue, comments included.
 2. **Pull the open questions:** items under "Open questions", "To decide" or "Still open", and questions in the
    latest comments that no later `Decided` comment answers. Drop any an earlier `Decided` comment already settles.
-   If none are left, say so ("Nothing needed: the issue has no open questions") and go to step 7.
 3. **Zoom out (optional).** When the issue proposes building something new, run the `nio-zoom-out` subagent on the
-   issue text alone. It challenges whether the thing is needed and names code that already does part of it. Each
+   issue's text and comments, and nothing from this conversation. It challenges whether the thing is needed and names code that already does part of it. Each
    challenge it backs with code is a fact for step 4; each one that needs a choice joins the questions. If
    `nio-zoom-out` isn't available, run `nio agents sync` first. On a host without subagents, skip this step and say
-   so: a review in your own context is not a fresh one.
-4. **Facts first.** For each question the code, the docs or memory can answer, look it up the way @nio:grill does in
-   its step 2 (`nio query`, the code, `.nio/project/`), and never guess. Show the human everything you found in one
+   so: a review in your own context is not a fresh one. If no questions are left after this step, say so ("Nothing
+   needed: the issue has no open questions") and go to step 7.
+4. **Facts first.** For each question the code, the docs or memory can answer, look it up in the same sources
+   @nio:grill's step 2 uses (`nio query`, the code, `.nio/project/`), and never guess. Record nothing in research.md,
+   grill.md or the project docs: there is no spec yet. Show the human everything you found in one
    message: how many questions there are and how many the facts answer ("7 open questions; the code answers 2"),
    then each answer with its source named in plain words, for a yes or a correction. A lookup that finds nothing
    becomes a question.
-5. **Ask the rest one at a time**, in @nio:grill's step 6 shape: the question in full, about 3 lines of why it matters,
+5. **Ask the rest one at a time** (or as numbered rounds if the human asks), in the question format of @nio:grill's
+   step 6, without its grill.md log: the question in full, about 3 lines of why it matters,
    3 options (fewer only when no real alternative exists) with the recommended one first, each saying what happens and
    what's lost, and `Refs:` last. A question whose answer depends on another waits for it. Order: what decides the
    approach first, then what's in and out, then the rest.
-6. **Post one comment** when the human stops or every question is answered, as the human's GitHub account (optional:
-   `gh issue comment <n> --body-file <file>`; without it, show the text for the human to paste):
+6. **Keep one comment up to date.** After the first answer, post the comment below; after each later answer, edit
+   it, so a session that ends early loses nothing (optional: `gh issue comment <n> --body-file <file>`, then
+   `--edit-last` to update it). Without `gh`, show the full text for the human to paste when they stop.
    ```
    **Decided (brainstorm, <YYYY-MM-DD>)**
 
@@ -69,9 +72,9 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
    Still open: <each question left, in one line>.
    ```
-   Leave out `Still open:` when nothing is. Number decisions from 1, and say who decided: `(the human)`, or
+   Its `Still open:` line lists every question not yet answered; leave it out when nothing is. Number decisions from 1, and say who decided: `(the human)`, or
    `(the code)` for a fact the human confirmed.
-7. **Stop and hand off.** Show the human the comment's link and the next step: "Next: write the spec. Run
+7. **Stop and hand off.** Show the human the comment's link, if one was posted, and the next step: "Next: write the spec. Run
    @nio:spec with this issue." @nio:spec takes the issue and its comments as the intake, so the drafter starts from
    the decisions; each `Still open` question becomes an open point of kind decision for the grill.
 
