@@ -192,3 +192,225 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Depends on: T-19
 - Parallel: no
 - Note: Plain markdown with the "Talking to the human" block word for word and no host-only tool name; the card is tier strong, effort med, tools read, edit, shell.
+
+## E-7 PR fixes
+- Tier: strong: fixes from the pr jury
+- Effort: med
+
+#### Fixes
+
+### T-21 Fix: T-6: tests/test_spec.py isn't in the epic's diff
+- From: J-1 (pr, round 1)
+- Files: `tests/test_spec.py`
+- Serves: AC-12, AC-13, AC-14
+- Test: TC-12
+- Depends on: none
+- Parallel: no
+
+### T-22 Fix: T-7: tests/test_implement.py isn't in the epic's diff
+- From: J-2 (pr, round 1)
+- Files: `tests/test_implement.py`
+- Serves: AC-15, AC-16, AC-17
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+
+### T-23 Fix: T-11: tests/test_jury.py isn't in the epic's diff
+- From: J-3 (pr, round 1)
+- Files: `tests/test_jury.py`
+- Serves: AC-23
+- Test: TC-23
+- Depends on: none
+- Parallel: no
+
+### T-24 Fix: T-13: tests/test_agents.py isn't in the epic's diff
+- From: J-4 (pr, round 1)
+- Files: `tests/test_agents.py`
+- Serves: AC-25
+- Test: TC-25
+- Depends on: none
+- Parallel: no
+
+### T-25 Fix: T-16: tests/test_tasks.py isn't in the epic's diff
+- From: J-5 (pr, round 1)
+- Files: `tests/test_tasks.py`
+- Serves: AC-32
+- Test: TC-32
+- Depends on: none
+- Parallel: no
+
+### T-26 Fix: T-17: tests/test_implement.py isn't in the epic's diff
+- From: J-6 (pr, round 1)
+- Files: `tests/test_implement.py`
+- Serves: AC-32, AC-33, AC-34, AC-36
+- Test: TC-32
+- Depends on: none
+- Parallel: no
+
+### T-27 Fix: T-18: pyproject.toml isn't in the epic's diff
+- From: J-7 (pr, round 1)
+- Files: `pyproject.toml`
+- Serves: AC-3, AC-37
+- Test: TC-3
+- Depends on: none
+- Parallel: no
+
+### T-28 Fix: A hold set by a failing command fires no waiting-on-human hook
+- From: J-9 (pr, round 1)
+- Files: `src/nio/flow.py`
+- Serves: FR-26, J-9
+- Test: new: FR-26
+- Depends on: none
+- Parallel: no
+
+### T-29 Fix: A step name is not validated, so a step can be unreachable or silently replaced
+- From: J-11 (pr, round 1)
+- Files: `src/nio/extensions.py`, `src/nio/flow.py`
+- Serves: FR-5, J-11
+- Test: new: FR-5
+- Depends on: none
+- Parallel: no
+
+### T-30 Fix: Three e2e ACs have only tests that were skipped
+- From: J-14 (pr, round 1)
+- Files: `tests/test_extensions_e2e.py`
+- Serves: AC-29, AC-34, AC-35
+- Test: TC-29
+- Depends on: none
+- Parallel: no
+
+### T-31 Fix: The no-extensions test fails in the evidence copy
+- From: J-15 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-48
+- Test: TC-48
+- Depends on: none
+- Parallel: no
+
+### T-32 Fix: AC-8's test is recorded failed although its output line reads ok
+- From: J-16 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-8
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+
+### T-33 Fix: AC-5 has no passing evidence
+- From: J-18 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+
+### T-34 Fix: AC-8 has no passing evidence
+- From: J-19 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-8
+- Test: TC-8
+- Depends on: none
+- Parallel: no
+
+### T-35 Fix: AC-11 has no passing evidence
+- From: J-20 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-11
+- Test: TC-11
+- Depends on: none
+- Parallel: no
+
+### T-36 Fix: AC-20 has no passing evidence
+- From: J-21 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-20
+- Test: TC-20
+- Depends on: none
+- Parallel: no
+
+### T-37 Fix: AC-22 has no passing evidence
+- From: J-22 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-22
+- Test: TC-22
+- Depends on: none
+- Parallel: no
+
+### T-38 Fix: AC-28 has no passing evidence
+- From: J-23 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-28
+- Test: TC-28
+- Depends on: none
+- Parallel: no
+
+### T-39 Fix: AC-29 has no passing evidence
+- From: J-24 (pr, round 1)
+- Files: `tests/test_extensions_e2e.py`
+- Serves: AC-29
+- Test: TC-29
+- Depends on: none
+- Parallel: no
+
+### T-40 Fix: AC-34 has no passing evidence
+- From: J-25 (pr, round 1)
+- Files: `tests/test_extensions_e2e.py`
+- Serves: AC-34
+- Test: TC-34
+- Depends on: none
+- Parallel: no
+
+### T-41 Fix: AC-35 has no passing evidence
+- From: J-26 (pr, round 1)
+- Files: `tests/test_extensions_e2e.py`
+- Serves: AC-35
+- Test: TC-35
+- Depends on: none
+- Parallel: no
+
+### T-42 Fix: AC-38 has no passing evidence
+- From: J-27 (pr, round 1)
+- Files: `src/nio/shipped/e2e/skills/e2e/SKILL.md`, `src/nio/shipped/e2e/agents/e2e-tester.md`, `tests/test_talk.py`, `tests/test_extensions_e2e.py`
+- Serves: AC-38
+- Test: TC-38
+- Depends on: none
+- Parallel: no
+
+### T-43 Fix: AC-46 has no passing evidence
+- From: J-28 (pr, round 1)
+- Files: `src/nio/flow.py`, `src/nio/cli.py`, `src/nio/extensions.py`, `tests/test_flow.py`, `tests/test_extensions.py`
+- Serves: AC-46
+- Test: TC-46
+- Depends on: none
+- Parallel: no
+
+### T-44 Fix: AC-48 has no passing evidence
+- From: J-29 (pr, round 1)
+- Files: `tests/test_extensions.py`
+- Serves: AC-48
+- Test: TC-48
+- Depends on: none
+- Parallel: no
+
+### T-45 Fix: The hook line records the effort's stage, not the event's stage
+- From: J-30 (pr, round 1)
+- Files: `src/nio/extensions.py`
+- Serves: CT-11, FR-27, J-30
+- Test: TC-26
+- Depends on: none
+- Parallel: no
+
+### T-46 Fix: nio fails to import on Python 3.11
+- From: J-32 (pr, round 1)
+- Files: `src/nio/extensions.py`
+- Serves: CT-3, FR-6, J-32
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+
+### T-47 Fix: `nio extensions remove` deletes whatever path the name resolves to
+- From: J-33 (pr, round 1)
+- Files: `src/nio/extensions.py`
+- Serves: CT-4, FR-7, J-33
+- Test: TC-7
+- Depends on: none
+- Parallel: no

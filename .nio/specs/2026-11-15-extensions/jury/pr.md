@@ -2,7 +2,7 @@
 gate: pr
 subject: 2026-11-15-extensions
 round: 1
-outcome: human
+outcome: rejected
 ---
 # Pr jury: 2026-11-15-extensions
 
@@ -10,39 +10,39 @@ outcome: human
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-12, AC-13, AC-14 | cli | confirmed | open |  | new, 0 |
-| J-2 | major | gap | AC-15, AC-16, AC-17 | cli | confirmed | open |  | new, 0 |
-| J-3 | major | gap | AC-23 | cli | confirmed | open |  | new, 0 |
-| J-4 | major | gap | AC-25 | cli | confirmed | open |  | new, 0 |
-| J-5 | major | gap | AC-32 | cli | confirmed | open |  | new, 0 |
-| J-6 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | open |  | new, 0 |
-| J-7 | major | gap | AC-3, AC-37 | cli | confirmed | open |  | new, 0 |
-| J-8 | major | gap |  | cli | confirmed | open |  | new, 0 |
-| J-9 | major | gap | FR-26 | adversary | confirmed | open |  | new, 0 |
+| J-1 | major | gap | AC-12, AC-13, AC-14 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-2 | major | gap | AC-15, AC-16, AC-17 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-3 | major | gap | AC-23 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-4 | major | gap | AC-25 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-5 | major | gap | AC-32 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-6 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-7 | major | gap | AC-3, AC-37 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-8 | major | gap |  | cli | confirmed | disposed | spec-change (agent) | new, 0 |
+| J-9 | major | gap | FR-26 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-10 | major | risk | FR-37 | adversary | refuted | refuted |  | new, 0 |
-| J-11 | major | gap | FR-5 | adversary | confirmed | open |  | new, 0 |
+| J-11 | major | gap | FR-5 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-12 | minor | gap | FR-3 | adversary | grounded | open |  | new, 0 |
 | J-13 | minor | risk | FR-27 | adversary | grounded | open |  | new, 0 |
-| J-14 | blocker | gap | AC-29, AC-34, AC-35 | conformance | confirmed | open |  | new, 0 |
-| J-15 | blocker | gap | AC-48 | conformance | confirmed | open |  | new, 0 |
-| J-16 | major | inconsistency | AC-8 | conformance | confirmed | open |  | new, 0 |
+| J-14 | blocker | gap | AC-29, AC-34, AC-35 | conformance, test-proof | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-15 | blocker | gap | AC-48 | conformance, test-proof | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-16 | major | inconsistency | AC-8 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-17 | minor | contradiction | CT-11 | conformance | grounded | open |  | new, 0 |
-| J-18 | blocker | gap | AC-5 | cli | confirmed | open |  | new, 0 |
-| J-19 | blocker | gap | AC-8 | cli | confirmed | open |  | new, 0 |
-| J-20 | blocker | gap | AC-11 | cli | confirmed | open |  | new, 0 |
-| J-21 | blocker | gap | AC-20 | cli | confirmed | open |  | new, 0 |
-| J-22 | blocker | gap | AC-22 | cli | confirmed | open |  | new, 0 |
-| J-23 | blocker | gap | AC-28 | cli | confirmed | open |  | new, 0 |
-| J-24 | blocker | gap | AC-29 | cli | confirmed | open |  | new, 0 |
-| J-25 | blocker | gap | AC-34 | cli | confirmed | open |  | new, 0 |
-| J-26 | blocker | gap | AC-35 | cli | confirmed | open |  | new, 0 |
-| J-27 | blocker | gap | AC-38 | cli | confirmed | open |  | new, 0 |
-| J-28 | blocker | gap | AC-46 | cli | confirmed | open |  | new, 0 |
-| J-29 | blocker | gap | AC-48 | cli | confirmed | open |  | new, 0 |
-| J-30 | major | inconsistency | CT-11, FR-27 | consistency, correctness | confirmed | open |  | new, 0 |
+| J-18 | blocker | gap | AC-5 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-19 | blocker | gap | AC-8 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-20 | blocker | gap | AC-11 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-21 | blocker | gap | AC-20 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-22 | blocker | gap | AC-22 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-23 | blocker | gap | AC-28 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-24 | blocker | gap | AC-29 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-25 | blocker | gap | AC-34 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-26 | blocker | gap | AC-35 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-27 | blocker | gap | AC-38 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-28 | blocker | gap | AC-46 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-29 | blocker | gap | AC-48 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-30 | major | inconsistency | CT-11, FR-27 | consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-31 | minor | inconsistency | CT-12, FR-31 | consistency | grounded | open |  | new, 0 |
-| J-32 | major | risk | CT-3, FR-6 | correctness | confirmed | open |  | new, 0 |
-| J-33 | major | risk | CT-4, FR-7 | correctness | confirmed | open |  | new, 0 |
+| J-32 | major | risk | CT-3, FR-6 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-33 | major | risk | CT-4, FR-7 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-34 | minor | gap | FR-19, CT-6 | correctness | grounded | open |  | new, 0 |
 | J-35 | minor | risk | CT-6 | correctness | grounded | open |  | new, 0 |
 | J-36 | minor | inconsistency | FR-19 | integration | grounded | open |  | new, 0 |
@@ -53,41 +53,52 @@ outcome: human
 | J-41 | blocker | risk | TC-48, AC-48 | test-proof | ungrounded | dropped |  | new, 0 |
 | J-42 | major | gap | TC-29, TC-34, TC-35, AC-29, AC-34, AC-35 | test-proof | ungrounded | dropped |  | new, 0 |
 | J-43 | minor | gap | TC-46, AC-46 | test-proof | ungrounded | dropped |  | new, 0 |
+| J-44 | major | gap | AC-29, CT-14, CT-16 | test-proof | confirmed | overruled |  | new, 0 |
+| J-45 | blocker | risk | AC-48, CT-5, CT-6 | test-proof | merged | merged |  | new, 0 |
+| J-46 | major | gap | AC-29, AC-34, AC-35, CT-13, CT-15, CT-16 | test-proof | merged | merged |  | new, 0 |
+| J-47 | minor | gap | AC-46, CT-5, CT-6 | test-proof | grounded | overruled |  | new, 0 |
 
 ### J-1 T-6: tests/test_spec.py isn't in the epic's diff
 - situation (cli): T-6 names tests/test_spec.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-21
 
 ### J-2 T-7: tests/test_implement.py isn't in the epic's diff
 - situation (cli): T-7 names tests/test_implement.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-22
 
 ### J-3 T-11: tests/test_jury.py isn't in the epic's diff
 - situation (cli): T-11 names tests/test_jury.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-23
 
 ### J-4 T-13: tests/test_agents.py isn't in the epic's diff
 - situation (cli): T-13 names tests/test_agents.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-24
 
 ### J-5 T-16: tests/test_tasks.py isn't in the epic's diff
 - situation (cli): T-16 names tests/test_tasks.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-25
 
 ### J-6 T-17: tests/test_implement.py isn't in the epic's diff
 - situation (cli): T-17 names tests/test_implement.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-26
 
 ### J-7 T-18: pyproject.toml isn't in the epic's diff
 - situation (cli): T-18 names pyproject.toml, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-27
 
 ### J-8 the test suite failed
 - situation (cli): `printf '%s\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:
@@ -98,6 +109,7 @@ warning: warning`VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the projec
 warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: spec-change by agent: C-261116-6jps: change asked against architecture.md
 
 ### J-9 A hold set by a failing command fires no waiting-on-human hook
 - quote: "fire the events `step-passed`, `step-skipped`, `gate-approved`, `gate-rejected`, `epic-closed`, `waiting-on-human` and `effort-done`"
@@ -106,6 +118,7 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - situation (adversary): an auto effort hits a stop-list rule in `_done`. The code writes the pause line with `write(root, slug, [line], new, w, here["stage"])` and returns code 1, so `hooked` skips `extensions.after`. The effort is now waiting for the human, but the notify hook registered on `waiting-on-human` never runs and nothing is recorded. The silent case is the one the event exists for. The same applies to any other command that sets a hold and exits 1.
 - fix: fire `after` whenever the history grew or the hold changed, whatever the exit code. Alternatively, have the stop path return 0, or state in the spec that the event fires only from successful commands.
 - validation: confirmed: flow.py `hooked` calls `extensions.after` only when `result[0] == 0`, and the `_done` stop-list path writes the pause line then returns `1, talk(...)`, so no waiting-on-human fires for that hold.
+- disposition: fix-task by agent: fix task T-28
 
 ### J-10 `nio extensions add` runs a command from the source argument, which breaks "runs none of its commands"
 - quote: "run none of its commands and print every check and hook command it brings"
@@ -121,6 +134,7 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - situation (adversary): only the extension name is checked against NAME. A step `name` need only be a non-empty string. A step named `run e2e` or `a.b` becomes a stage that `stage_arg` rejects, so `nio flow done` can never pass it. An effort reaching it is stuck, and `remove` refuses while an effort sits there. Two steps with the same name in one manifest pass `check`. `table` keys on `<ext>.<step>`, so the second silently replaces the first, and the first check never runs. A step named `s.jury` also collides with the jury stage of step `s`.
 - fix: validate step names with NAME, and refuse a name that repeats within a manifest.
 - validation: confirmed: `check` only requires step `name` to be a non-empty string (lines 76-80). NAME is applied to the extension name only (line 61). The duplicate-step test at line 146 compares against other extensions, never within `own`, so same-named steps pass and `table` keys collide.
+- disposition: fix-task by agent: fix task T-29
 
 ### J-12 A project folder named like a shipped extension shadows it
 - quote: "WHEN `nio extensions add` is given the name of a shipped extension THE SYSTEM SHALL copy the shipped extension"
@@ -141,20 +155,25 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - quote: "skipped test_tester_writes_one_test_per_e2e_ac (set NIO_E2E=1)"
 - situation (conformance): AC-29 (the tester writes one test per e2e AC), AC-34 (the app is started and stopped around the run) and AC-35 (trace and screenshots are kept) are covered only by tests/test_extensions_e2e.py. In the evidence run all three printed skip and the pack lists them as failed. There is no passing result for any of the three. TC-29 also calls `check.py` directly, not `nio flow done e2e.tests`.
 - situation (conformance): test_tester_writes_one_test_per_e2e_ac, test_app_started_and_stopped and test_failure_keeps_trace_and_screenshot (tests/test_extensions_e2e.py:77, 41, 59) are the only tests for these ACs and each is reported as failed. The file's header says they run only with NIO_E2E and otherwise print skipped and pass, so these results most likely come from an environment problem (npm install, Chromium, or the claude model). The cause is not visible in the pack. As it stands, the Playwright webServer start and stop (FR-32), the trace and screenshots (FR-33) and the tester writing the tests (FR-29) have no passing evidence.
+- situation (test-proof): the webServer is left running after a run, the trace or screenshot is not kept, or the tester card writes two tests per AC. Nothing at this gate catches any of these, because the bodies of test_app_started_and_stopped, test_failure_keeps_trace_and_screenshot and test_tester_writes_one_test_per_e2e_ac (TC-34, TC-35, TC-29) never executed.
 - fix: run them with NIO_E2E=1, Playwright, Chromium and a model, and put the passing results in the evidence; or the human accepts these three ACs as unproven.
 - validation: confirmed: The three e2e tests in tests/test_extensions_e2e.py skip without NIO_E2E=1, and the evidence run did not set it. No passing result exists for AC-29, AC-34 or AC-35.
+- disposition: fix-task by agent: fix task T-30
 
 ### J-15 The no-extensions test fails in the evidence copy
 - quote: "FAIL tests/test_extensions.py::test_no_extensions_changes_nothing"
 - situation (conformance): AC-48 (NFR-3, existing flow tests pass unchanged) is proven by this test. In the evidence run it failed on the `git diff main -- tests/test_flow.py` assertion. The test inspects git history in the throwaway copy, so it depends on the checkout and not only on the code. The pack result for it is failed.
+- situation (test-proof): after this PR merges, `git diff main` on main is empty, so the assert at tests/test_extensions.py:251 finds no added test function and test_extensions.py fails on main for good. It already failed in the evidence suite's throwaway copy, which had no `main` ref. The assert checks the test file's own history, not code the diff decides.
 - fix: make the unchanged-tests check not depend on a `main` ref in the copy, for example by comparing a recorded hash of the expected stage table, or by running it where `main` exists. Then re-collect.
 - validation: confirmed: tests/test_extensions.py line 249 runs `git diff main -- tests/test_flow.py` and line 251 requires a changed `test_status_speed_with_three_extensions` line. In a copy without a `main` ref the diff is empty, so the assert fails. After the branch merges it breaks the same way.
+- disposition: fix-task by agent: fix task T-31
 
 ### J-16 AC-8's test is recorded failed although its output line reads ok
 - quote: "is_appended_andok tests/test_extensions.py::test_shipped_off_until_added"
 - situation (conformance): tests/test_extensions.py:254 is recorded as failed, but in the suite output its line reads `ok`. It sits glued to another file's unfinished line because parallel files write to one stream. The output is garbled and the failed label looks like a parse artefact. The test body does exercise AC-8: it checks that the table is `flow.STAGES`, that the stage is `tasking`, and that `e2e.` appears nowhere in the status or history.
 - fix: re-collect the evidence with output kept per file, so the AC-8 result is read as passed.
 - validation: confirmed: The test at tests/test_extensions.py:254 does exercise AC-8, and the recorded failure comes from garbled interleaved output. It is a real evidence inconsistency that needs re-collection, although it is not a code defect.
+- disposition: fix-task by agent: fix task T-32
 
 ### J-17 The hook history line records the effort's stage, not the event's
 - quote: "It appends one `hook` line per hook through `flow.record`"
@@ -165,61 +184,73 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - situation (cli): no passing test proves AC-5: test_manifest_missing_or_bad_field no assertion
 - fix: add or fix a test that proves AC-5
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-33
 
 ### J-19 AC-8 has no passing evidence
 - situation (cli): no passing test proves AC-8: test_shipped_off_until_added failed
 - fix: add or fix a test that proves AC-8
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-34
 
 ### J-20 AC-11 has no passing evidence
 - situation (cli): no passing test proves AC-11: test_after_unknown_step_refused no assertion
 - fix: add or fix a test that proves AC-11
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-35
 
 ### J-21 AC-20 has no passing evidence
 - situation (cli): no passing test proves AC-20: test_add_only_rule no assertion
 - fix: add or fix a test that proves AC-20
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-36
 
 ### J-22 AC-22 has no passing evidence
 - situation (cli): no passing test proves AC-22: test_card_named_like_shipped_refused no assertion
 - fix: add or fix a test that proves AC-22
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-37
 
 ### J-23 AC-28 has no passing evidence
 - situation (cli): no passing test proves AC-28: test_unknown_event_refused no assertion
 - fix: add or fix a test that proves AC-28
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-38
 
 ### J-24 AC-29 has no passing evidence
 - situation (cli): no passing test proves AC-29: test_tester_writes_one_test_per_e2e_ac failed
 - fix: add or fix a test that proves AC-29
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-39
 
 ### J-25 AC-34 has no passing evidence
 - situation (cli): no passing test proves AC-34: test_app_started_and_stopped failed
 - fix: add or fix a test that proves AC-34
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-40
 
 ### J-26 AC-35 has no passing evidence
 - situation (cli): no passing test proves AC-35: test_failure_keeps_trace_and_screenshot failed
 - fix: add or fix a test that proves AC-35
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-41
 
 ### J-27 AC-38 has no passing evidence
 - situation (cli): no passing test proves AC-38: no test no match
 - fix: add or fix a test that proves AC-38
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-42
 
 ### J-28 AC-46 has no passing evidence
 - situation (cli): no passing test proves AC-46: no test no match
 - fix: add or fix a test that proves AC-46
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-43
 
 ### J-29 AC-48 has no passing evidence
 - situation (cli): no passing test proves AC-48: test_no_extensions_changes_nothing failed
 - fix: add or fix a test that proves AC-48
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-44
 
 ### J-30 The hook line records the effort's stage, not the event's stage
 - quote: "from": stage, "to": stage"
@@ -227,6 +258,7 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - situation (correctness): CT-11 writes the hook line as from: stage, to: stage with the event's stage. fire() ignores its `stage` argument for the line, using the effort's current stage. After step-passed for plan_jury the line says the effort is at e2e.tests, and a gate-rejected line names the step it was sent back to. A reader cannot tell which stage the hook fired for, since NIO_STAGE is not stored. The code's choice is plausible (a line with from not equal to to might move where()), but it departs from the contract and no test pins it.
 - fix: decide which stage the line carries. If it is the event's stage, write `from`/`to` from the `stage` argument in `fire`. If it is the effort's stage, change CT-11's shape and the `fire` docstring to say so and drop the `stage` argument's use for the record.
 - validation: confirmed: contracts.md line 110 says the hook line is `{"from": stage, "to": stage, ...}`. `fire` ignores `stage` for the record and writes `here = flow.last_to(lines)` into from/to (extensions.py lines 381-384), so the contract and the code differ.
+- disposition: fix-task by agent: fix task T-45
 
 ### J-31 A task's e2e test check is not limited to full specs
 - quote: "on a full spec, a task whose `Serves:` holds an AC at `Level: e2e` (CT-17) must cite in `Test:` a TC aimed at that AC"
@@ -239,12 +271,14 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - situation (correctness): pyproject.toml says requires-python >=3.11, but listing() reuses the same quote inside an f-string, which is only legal from Python 3.12. On 3.11 extensions.py is a SyntaxError. cli.py imports it at the top, so every nio command fails, not only `nio extensions list`.
 - fix: build the step, card and hook strings before the f-string, or use different quote characters, so the file parses on 3.11; or raise requires-python to 3.12.
 - validation: confirmed: extensions.py lines 340 and 342 nest `f'{m['name']}...'` inside an f-string using the same single quote, which parses only from Python 3.12 (PEP 701). pyproject.toml says `requires-python = ">=3.11"`, and cli.py line 9 imports extensions at the top, so 3.11 fails every nio command.
+- disposition: fix-task by agent: fix task T-46
 
 ### J-33 `nio extensions remove` deletes whatever path the name resolves to
 - quote: "rec, d = read_record(root), folder(root) / name"
 - situation (correctness): the name is never checked against the extension name pattern. `nio extensions remove .` gives d = .nio/extensions, which is a directory, so the "not added" refusal is skipped. `sitting` and `followers` find nothing, then `shutil.rmtree(d)` wipes every extension and the record. `..` gives .nio, so the same call would wipe the whole .nio folder.
 - fix: refuse a name that is not a plain extension name (no slash, not starting with a dot) before touching the filesystem. Also require `name in rec` or a real folder directly under .nio/extensions.
 - validation: confirmed: `remove` never matches `name` against NAME and cli.py passes `a.name` straight through. With `.`, `d` is `.nio/extensions`, which is a directory, so the not-added refusal is skipped. `sitting` and `followers` find nothing, and line 360 runs `shutil.rmtree(d)`.
+- disposition: fix-task by agent: fix task T-47
 
 ### J-34 The run report leaves out extension gate approvals
 - quote: "each gate's approval (under auto, with its grant line)"
@@ -302,6 +336,31 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - fix: run `NIO_PERF=1 uv run python tests/test_flow.py` (CLAUDE.md asks for this after a status change) and record it as evidence.
 - validation: ungrounded: TC-46 not defined by the spec or contracts
 
+### J-44 The shipped e2e step is never run through the flow; the TC-29 test calls check.py directly
+- quote: "`nio flow done e2e.tests` exits 0"
+- situation (test-proof): the shipped manifest's check line, trigger or card is wrong (for example a typo in `$NIO_EXTENSION_DIR/check.py`, or a trigger that skips the step). The TC-29 test (tests/test_extensions_e2e.py:96) runs check.py by path and skips `pass_plan`, and no other test names `e2e.tests`, so every test still passes.
+- fix: in test_tester_writes_one_test_per_e2e_ac, `pass_plan` first, assert the effort is at `e2e.tests`, then assert `nio flow done e2e.tests <slug> --by <driver>` exits 0 instead of calling check.py directly.
+- validation: confirmed: test-proof: 2 of 3 jurors approved (pr-test-proof-2, pr-test-proof-3)
+
+### J-45 The TC-48 test fails once merged, or wherever there is no local main ref
+- quote: "`git diff main -- tests/test_flow.py` changes only by adding `test_status_speed_with_three_extensions`"
+- quote: "then they pass unchanged"
+- situation (test-proof): after this PR merges, `git diff main` on main is empty, so the assert at tests/test_extensions.py:251 finds no added test function and test_extensions.py fails on main for good. It already failed in the evidence suite's throwaway copy, which had no `main` ref. The assert checks the test file's own history, not code the diff decides.
+- fix: drop the git-diff assert and keep the `is` check plus the test_flow.py run. If the "test_flow.py unchanged" rule matters, check it once at this gate rather than in a permanent test.
+- validation: merged: same as J-15
+
+### J-46 The three real-browser and real-model tests never ran; the evidence lists them as failed
+- quote: "Without NIO_E2E they print `skipped` and pass."
+- situation (test-proof): the webServer is left running after a run, the trace or screenshot is not kept, or the tester card writes two tests per AC. Nothing at this gate catches any of these, because the bodies of test_app_started_and_stopped, test_failure_keeps_trace_and_screenshot and test_tester_writes_one_test_per_e2e_ac (TC-34, TC-35, TC-29) never executed.
+- fix: run `NIO_E2E=1 uv run python tests/test_extensions_e2e.py` with Node and Chromium installed, and attach its output to the pr evidence before approval.
+- validation: merged: same as J-14
+
+### J-47 The TC-46 speed limit was never asserted in the evidence
+- quote: "under `NIO_PERF=1` it takes under the same 2 seconds as `test_nfr3_status_speed`"
+- situation (test-proof): with three extensions, status re-reads or re-hashes each extension once per effort and goes over 2 seconds. The evidence run lacks NIO_PERF=1, so the test checks only the 20 rows and reports passed.
+- fix: run `NIO_PERF=1 uv run python tests/test_flow.py` (CLAUDE.md asks for this after a status change) and record it as evidence.
+- validation: grounded: test-proof: 2 of 3 jurors approved (pr-test-proof-2, pr-test-proof-3)
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
@@ -313,4 +372,6 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 | pr-consistency | consistency | juror / claude-code / claude-opus-5-5 | limited | yes | 2 | 1 |
 | pr-correctness | correctness | juror / claude-code / claude-opus-5-5 | sufficient | yes | 2 | 1 |
 | pr-integration | integration | juror / claude-code / claude-opus-5-5 | sufficient | yes | 2 | 1 |
-| pr-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | no: every finding is ungrounded | 2 | 1 |
+| pr-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 3 | 1 |
+| pr-test-proof-2 | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 1 |
+| pr-test-proof-3 | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 1 |
