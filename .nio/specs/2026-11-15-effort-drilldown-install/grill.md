@@ -195,3 +195,12 @@ Delegated session: each plan-fix below takes the finding's recommended fix. [age
 - A broken effort's error row in the pane is a Button too, opening the same drill-down, so its timeline error shows beside the sections that still build (CT-12, CT-14, TC-37; J-1).
 - The two project-doc lines that call the mods dev tooling outside the product are updated in this effort to the new boundary, citing D-261115-e6nx, instead of after it (CT-17, TC-32; J-3).
 - The install skill's Inputs and Outputs name the second question and the installed mods (CT-15; J-4).
+
+## Q13 · implementing, claim blocked (#152) · 2026-11-15
+Facet: build order
+Question: `nio flow claim` refuses ("no ready task; T-10 waits on T-11") because E-5 comes before E-6 and the claim looks only at the first unfinished epic. How to unblock?
+Options:
+1. Swap parts 5 and 6: move E-6 (T-11) ahead of E-5 in tasks.md, no task changes, re-check the tasks gate
+2. Fix `next_ready` first (#152)
+Answer: 1. "Swap parts 5 and 6: move the memory part ahead of the cost-wiring part in the task list; no task changes. Reopens the task list gate: a short re-check and your re-approval, then the build resumes." [human]
+Patched: tasks.md (E-6 moved before E-5; epic IDs kept, T-9 is done under E-5)

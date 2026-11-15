@@ -95,6 +95,18 @@ retired: [T-4]                      # task IDs removed from this file; never reu
 - Effort: low
 - Mode: split: behaviour a test can lead
 
+## E-6 See the effort's memory and context use (US-5)
+
+### T-11 Build the memory section from front matter and wire it into `show`
+- Files: `src/nio/flow.py`, `tests/test_flow.py`
+- Serves: AC-15, AC-16, AC-17
+- Test: TC-17
+- Depends on: T-16, T-8
+- Parallel: no
+- Tier: strong: front-matter reading with a clear test
+- Effort: low
+- Mode: split: behaviour a test can lead
+
 ## E-5 See the cost so far (US-4)
 
 ### T-9 Add `usage.so_far`: tokens and seconds per stage window and per jury, unattributed, total, `-` when nothing recorded
@@ -114,18 +126,6 @@ retired: [T-4]                      # task IDs removed from this file; never reu
 - Depends on: T-16, T-8, T-9, T-11
 - Parallel: no
 - Tier: strong: wiring plus no-write and speed checks, clear tests
-- Effort: low
-- Mode: split: behaviour a test can lead
-
-## E-6 See the effort's memory and context use (US-5)
-
-### T-11 Build the memory section from front matter and wire it into `show`
-- Files: `src/nio/flow.py`, `tests/test_flow.py`
-- Serves: AC-15, AC-16, AC-17
-- Test: TC-17
-- Depends on: T-16, T-8
-- Parallel: no
-- Tier: strong: front-matter reading with a clear test
 - Effort: low
 - Mode: split: behaviour a test can lead
 
