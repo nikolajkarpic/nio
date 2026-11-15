@@ -2586,6 +2586,10 @@
     [
       2,
       "human"
+    ],
+    [
+      4,
+      "closed"
     ]
   ],
   "versions": {
@@ -2783,5 +2787,10 @@
       "J-54",
       "J-55"
     ]
-  }
+  },
+  "closed": [
+    4,
+    "3727b69c12ae7abd9d13ddbd33f12b15aed1b848",
+    "the human ruled every finding of the capped batch"
+  ]
 }
