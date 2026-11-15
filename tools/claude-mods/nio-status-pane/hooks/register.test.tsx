@@ -306,7 +306,16 @@ test('AC-1 drill-down timeline: a failed review shows its reasons, or - when flo
   expect(all).toContain('review tasking · 2026-11-10T12:30:00Z · -')
 })
 
-test('AC-5 back to the list', async ($, on) => {
+test('AC-1 drill-down timeline: findings inside each round and their fix tasks', async ($, on) => {
+  const f = { id: 'J-30', severity: 'blocker', validation: 'confirmed', title: 'pane drops findings', fix_tasks: ['T-32', 'T-33'] }
+  const shown = { ...SHOWN, juries: [{ gate: 'pr', outcome: 'human', rounds: [{ round: 3, lenses: [{ lens: 'adversary', verdict: 'fail' }], findings: [f] }] }] }
+  const { read } = await open($, on, () => result(0, JSON.stringify(shown)))
+  const all = (await read()).join('\n')
+  expect(all).toContain('round 3: adversary fail')
+  expect(all).toContain('J-30 blocker confirmed: pane drops findings → T-32, T-33')
+})
+
+test('AC-5 back to the list',async ($, on) => {
   const { ui, read, clock } = await open($, on, ok)
   await ui.press({ key: 'back' })
   await clock.settle()
