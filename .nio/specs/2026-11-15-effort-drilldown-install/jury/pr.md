@@ -47,15 +47,15 @@ outcome: human
 | J-35 | blocker | gap | AC-5, AC-13, AC-16, AC-17 | conformance | confirmed | disposed | fix-task (human) | new, 0 |
 | J-36 | major | gap | AC-1, AC-2, AC-4, AC-9, AC-11 | conformance | merged | merged |  | new, 0 |
 | J-37 | minor | risk | AC-26, AC-13 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-38 | major | contradiction | CT-8 | correctness | confirmed | disposed | fix-task (human) | new, 0 |
+| J-38 | major | contradiction | CT-8 | correctness | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-39 | major | contradiction | FR-5, CT-12 | correctness | confirmed | disposed | fix-task (human) | new, 0 |
 | J-40 | minor | contradiction | CT-12, FR-2 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-41 | blocker | gap | AC-9 | cli | confirmed | disposed | fix-task (human) | new, 0 |
 | J-42 | blocker | gap | AC-11 | cli | confirmed | disposed | fix-task (human) | new, 0 |
-| J-43 | blocker | contradiction | CT-8, AC-18 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
+| J-43 | blocker | contradiction | CT-8, AC-18 | consistency | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-44 | major | contradiction | CT-12, AC-10 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
 | J-45 | minor | inconsistency | CT-14, CT-12 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | fix-task (human) | new, 0 |
+| J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-47 | minor | risk | CT-2, NFR-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
 
 ### J-1 test tampering: AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) in tools/claude-mods/nio-status-pane/hooks/register.test.tsx is deleted
@@ -311,7 +311,7 @@ outcome: human
 - situation (correctness): CT-8 says to return the packaged `mods` folder when it exists, else `tools/claude-mods` in the checkout, else raise ValueError. The code only returns `src/nio/mods`. The glob finds no such folder in the repo. In an editable install, which is how a NIO checkout and the pane's `.venv/bin/nio` run, `--marketplace` points at a missing path. Every mod then reports `failed`. The ValueError for "no NIO mods" is never raised.
 - fix: in `mods_dir`, return the packaged folder if it is a dir, else `Path(__file__).parents[2] / "tools/claude-mods"` if that exists, else raise `ValueError("no NIO mods in this nio install")`.
 - validation: confirmed: hooks.py:38 has only the packaged path, and `src/nio/mods` is absent in the checkout, so the `--marketplace` argument points at a missing folder.
-- disposition: fix-task by human: Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.
+- disposition: accepted-risk by agent: duplicate of T-17, fixed there
 
 ### J-39 Pane never draws the findings of a jury round
 - quote: "...(g.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}"
@@ -346,7 +346,7 @@ outcome: human
 - situation (consistency): a NIO checkout installed with `uv sync` (editable) has no `src/nio/mods` folder. `src/nio/hooks.py` `mods_dir()` returns `Path(__file__).parent / "mods"` unchanged, so the path does not exist. `nio mods install` passes that path to `claude plugin install --marketplace` for both mods, and AC-18 cannot pass in the checkout. CT-8 names `tools/claude-mods` as the fallback and the `ValueError` for the neither-exists case, and the code does neither.
 - fix: make `mods_dir()` try `resources.files("nio") / "mods"`, then `Path(__file__).parents[2] / "tools/claude-mods"`, else raise `ValueError("no NIO mods in this nio install")`, as CT-8 says.
 - validation: confirmed: hooks.py:38 returns `Path(__file__).parent / "mods"` unconditionally, with no `tools/claude-mods` fallback and no ValueError, as CT-8 requires. `src/nio/mods` does not exist in the checkout.
-- disposition: fix-task by human: Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.
+- disposition: accepted-risk by agent: duplicate of T-17, fixed there
 
 ### J-44 Tasks rows in the drill-down are not drawn per task
 - quote: "a task `<id> <status> · attempts <attempts> · <title>` under its epic"
@@ -370,7 +370,7 @@ outcome: human
 - situation (integration): `mods_dir()` returns `src/nio/mods`, which only exists in a built wheel because `force-include` copies `tools/claude-mods` there. No `src/nio/mods` exists in the checkout, so an editable install (the NIO repo itself and `uv run nio`) passes a non-existent marketplace path to `claude plugin install`, and every mod reports `failed`. CT-8 asked for the fallback and a `ValueError` when neither folder exists. The planned test asserts `mods_dir()` is the checkout's `tools/claude-mods`, but the code can't return that.
 - fix: make `mods_dir` return `src/nio/mods` when it is a directory, else `Path(__file__).parents[2] / "tools/claude-mods"` when that is a directory, else raise `ValueError("no NIO mods in this nio install")`. Catch the error in `mods_install` so it still never raises.
 - validation: confirmed: src/nio/hooks.py:36-38 returns only `Path(__file__).parent / "mods"`, and no `src/nio/mods` exists in the checkout (Glob found none). contracts.md CT-8 (line 90) and grill.md line 188 require the `tools/claude-mods` fallback, so an editable install passes a missing marketplace path to `claude plugin install`.
-- disposition: fix-task by human: Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.
+- disposition: accepted-risk by agent: duplicate of T-17, fixed there
 
 ### J-47 flow.show reloads state and history once per section
 - quote: "tl = timeline(load(root, slug)[1])"
