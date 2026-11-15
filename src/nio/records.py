@@ -202,8 +202,13 @@ def edits(root, base):
             after = parse(root / names[-1])
         except Exception:
             continue  # a parse error is reported by the lint
-        frozen = lambda meta: {k: v for k, v in meta.items() if k not in ("paths", "outdated_by")}
-        if frozen(before[0]) != frozen(after[0]) or before[1] != after[1]:
+        # a pending change request may still be settled once: its outcome set, and the decision appended to its body
+        settle = before[0].get("type") == "change" and before[0].get("outcome") == "pending" \
+            and after[0].get("outcome") in ("pending", "accepted", "rejected")
+        keep = ("paths", "outdated_by", "outcome") if settle else ("paths", "outdated_by")
+        frozen = lambda meta: {k: v for k, v in meta.items() if k not in keep}
+        body_ok = after[1][:len(before[1])] == before[1] if settle else before[1] == after[1]
+        if frozen(before[0]) != frozen(after[0]) or not body_ok:
             errs.append(f"{names[-1]}: a committed record may only change `paths` and `outdated_by`; write a new record that supersedes it")
         elif not set(before[0].get("outdated_by") or []) <= set(after[0].get("outdated_by") or []):
             errs.append(f"{names[-1]}: `outdated_by` may only grow")
