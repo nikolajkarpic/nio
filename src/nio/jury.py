@@ -1678,6 +1678,8 @@ APPROVE = "next: stop and tell the human the outcome above; only they approve th
 def escalation(led, f, lens):
     """The jurors of `lens` that judged blocker `f`: every one since the round it was raised, escalation jurors of an
     earlier round included, so a later round never asks for them again (#105, #129 FR-4)."""
+    if any(re.search(r"-\d+$", s["juror"]) for s in f["sources"] if s["lens"] == lens):
+        return 3  # raised by escalation jurors: it was escalated already, or each escalation raises another blocker forever
     raised = {re.sub(r"-\d+$", "", s["juror"]) for s in f["sources"] if s["lens"] == lens}  # a split pr juror's part only
     return sum(j["lens"] == lens and j["round"] >= f.get("first_round", led["round"]) and (re.sub(r"-\d+$", "", n) in raised or "~" not in n)
                for n, j in led["jurors"].items())

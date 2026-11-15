@@ -230,8 +230,8 @@ order:
    journeys in a throwaway copy. A failing suite is an ordinary finding, with a fix task like any other. Correctness,
    conformance, adversary, consistency and integration always run, plus the lenses the spec's risk flags add; the cap
    is `jury.max_runs`, 7 by default here.
-2. Run `nio jury next <slug> pr --run <run>`: it writes each lens its pack. Over `jury.split_lines` changed lines (1,500
-   by default; exactly 1,500 is not over), every lens but integration gets one pack per epic (`<lens>~E1`, ...) plus
+2. Run `nio jury next <slug> pr --run <run>`: it writes each lens its pack. Over `jury.split_lines` changed lines outside `.nio/` (2,500
+   by default; exactly 2,500 is not over), every lens but integration gets one pack per epic (`<lens>~E1`, ...) plus
    one, `<lens>~rest`, for the commits outside any epic (out-of-flow ones and the `PR fixes` epic), all run in
    parallel; integration gets the whole change at summary level: the stat of every changed file, then the full diff
    of the files two or more parts touch. Loop as in step 2 above until it prints an outcome.
