@@ -3,6 +3,7 @@
   "description": "Claude Code mods for developing NIO",
   "owner": { "name": "nikolajkarpic" },
   "plugins": [
-    { "name": "background-nio-commands", "source": "./background-nio-commands" }
+    { "name": "background-nio-commands", "source": "./background-nio-commands" },
+    { "name": "nio-status-pane", "source": "./nio-status-pane" }
   ]
 }
