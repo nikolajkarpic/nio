@@ -160,3 +160,38 @@ Options:
 2. Drop it
 Answer: 1. Keep NFR-1 as written. [agent]
 Patched: none
+
+## Lookup · plan · 2026-11-15
+Facet: data, verification
+Found: RF-10 to RF-21 in research.md. No stop-list item: `nio flow show` lands in flow.py and cli.py, cost so far in usage.py, `nio mods install` in hooks.py and cli.py, the mods ship through pyproject.toml's wheel settings, the pane in its existing files; no new module, dependency or stored data.
+
+## Contradiction · plan · 2026-11-15
+Facet: change
+Question: The project architecture doc says the mods are dev tooling outside the product (RF-19); the approved spec's Q1 makes them an optional part of it. Which holds for this plan?
+Options:
+1. The approved spec (recommended): plan follows Q1; the project doc is reconciled after the effort (@nio:reconcile-onboarding), not edited by the plan
+2. The project doc: send the spec back through the spec jury
+Answer: 1. As recommended; D-261115-e6nx carries it. [agent]
+Patched: plan.md Decisions
+
+## Call · plan · 2026-11-15
+Delegated session: each call below the grill's bar takes the recommended option. [agent]
+- Timeline rows: history lines whose `from` differs from `to`, plus failed reviews; other same-stage lines left out (CT-3).
+- Juries come from the committed ledgers only, never `.nio/runs/` (gitignored, a teammate lacks it); a round's lenses from finding sources and jurors of that round; the last round's verdicts from `jury.votes`, earlier rounds `block` on a confirmed blocker or major, else `approve` (CT-4).
+- A jury's cost: the agents whose transcript's first line names an `R-<id>/jury` run with a step.json; its gate is that file's (CT-7, RF-12).
+- Cost figures: tokens are the sum of the four token counts; a stage's seconds are its windows' length, a jury's the covered span of its agents; whole seconds; no events reads `-` (CT-7).
+- Task status: `implement.status`'s state, `failing` when the task's last line is a failed review, attempts from `state.json` or `-` (CT-5).
+- Memory standing from the index, `-` for a record not in it (CT-6).
+- `--json` is required on `nio flow show`; an unknown, done or abandoned effort is a JSON error with exit 1; a damaged history fails only the timeline and cost sections (CT-1, CT-2).
+- `flow show` is not added to `nio allow`: only the pane runs it (CT-1).
+- Mods already installed: `claude plugin list --json` lists `<mod>@nio-mods`; outcome lines `<mod>: installed | skipped | already installed | already installed (left as is) | failed: <error>`; no `claude` on PATH is `failed: claude not found` (CT-10).
+- The mods folder: the package's `nio/mods`, else the checkout's `tools/claude-mods` (CT-8).
+- Pane: a Button per effort row, a Back Button and nothing else; the PATH `nio` when a worktree has no venv, `nio not found` when that run fails; `invalid choice` on exit 2 means an old nio; context line only when the host gives a number (CT-12, CT-13). This replaces the pane's earlier `no .venv: run uv sync` row (RF-20).
+- The install skill's mods step is a new step 3 with one question, install first (CT-15).
+- AC-18 to AC-20 run against the real `claude` with `CLAUDE_CONFIG_DIR` in a temp folder, only with `NIO_E2E=1`; NFR-1's time is asserted only with `NIO_PERF=1` (TC-20 to TC-22, TC-33).
+
+## Call · plan · 2026-11-15 (plan jury, round 1)
+Delegated session: each plan-fix below takes the finding's recommended fix. [agent]
+- A broken effort's error row in the pane is a Button too, opening the same drill-down, so its timeline error shows beside the sections that still build (CT-12, CT-14, TC-37; J-1).
+- The two project-doc lines that call the mods dev tooling outside the product are updated in this effort to the new boundary, citing D-261115-e6nx, instead of after it (CT-17, TC-32; J-3).
+- The install skill's Inputs and Outputs name the second question and the installed mods (CT-15; J-4).
