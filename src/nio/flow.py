@@ -945,6 +945,22 @@ def next_step(root, slug=None, by=None):
 BRIEF = 80  # NFR-2: a brief's most lines
 
 
+def show(root, slug, now=None):
+    """Drill-down data for `nio flow show` (CT-2): one JSON line; the five sections are placeholders until filled."""
+    if not (root / ".nio/specs" / slug).is_dir() or kind(root, slug) != "effort":
+        return 1, [json.dumps({"error": f"no effort {slug}"})]
+    try:
+        state, lines = load(root, slug)
+        stage = where(root, slug, state, lines)["stage"]
+    except Broken:
+        state, stage = None, "-"
+    if stage == "done":
+        return 1, [json.dumps({"error": f"{slug} is done"})]
+    if state and state["abandon"] is not None:
+        return 1, [json.dumps({"error": f"{slug} is abandoned"})]
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": [], "juries": [], "tasks": [], "cost": "-", "memory": []})]
+
+
 def brief(root, slug, everything=False):
     """`nio flow brief` (#128 FR-14): what a fresh driver starts from, read from saved state alone: `nio flow next`'s
     lines, a running long command, the open tasks and the current gate's open findings. Over BRIEF lines it gives the
