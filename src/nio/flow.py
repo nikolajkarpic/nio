@@ -991,6 +991,27 @@ def juries(root, slug):
     return out
 
 
+def task_rows(root, slug, state, lines):
+    """Tasks section (CT-5): per epic its tasks with status and attempts; `[]` when tasks.md is missing."""
+    from nio import implement, tasks
+    if not tasks.path(root, slug).exists():
+        return []
+    st = implement.status(root, slug, lines) if lines is not None else {}
+    last = {}
+    for l in lines or []:
+        if t := (l.get("evidence") or {}).get("task"):
+            last[t] = l
+    out = []
+    for t in implement.tasks_of(root, slug):
+        if not out or out[-1]["epic"] != t["epic"]:
+            out.append({"epic": t["epic"], "tasks": []})
+        l = last.get(t["id"]) or {}
+        status = "-" if lines is None else "failing" if l.get("kind") == "review" and (l.get("evidence") or {}).get("passed") is False else st[t["id"]]
+        att = ((state or {}).get("attempts") or {}).get(t["id"], "-")
+        out[-1]["tasks"].append({"id": t["id"], "title": t["title"], "status": status, "attempts": att})
+    return out
+
+
 def show(root, slug, now=None):
     """Drill-down data for `nio flow show` (CT-2): one JSON line; the five sections are placeholders until filled."""
     if not (root / ".nio/specs" / slug).is_dir() or kind(root, slug) != "effort":
@@ -1012,7 +1033,13 @@ def show(root, slug, now=None):
         ju = juries(root, slug)
     except (ValueError, OSError) as e:  # json.JSONDecodeError is a ValueError
         ju = {"error": f"{slug}: {e}"}
-    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": [], "cost": "-", "memory": []})]
+    try:
+        tk = task_rows(root, slug, state, load(root, slug)[1])
+    except Broken:
+        tk = task_rows(root, slug, state, None)
+    except Exception as e:
+        tk = {"error": f"{slug}: {e}"}
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": tk, "cost": "-", "memory": []})]
 
 
 def brief(root, slug, everything=False):
