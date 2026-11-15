@@ -11,12 +11,11 @@ def main(tests):
     for n in bad:
         print(f"no test named {n}")
     run = [] if bad else [t for t in tests if not names or t.__name__ in names]
-    path = os.path.relpath(tests[0].__code__.co_filename) if tests else ""
+    path = os.path.relpath(sys.modules["__main__"].__file__)  # a wrapped test's code lives in its wrapper's file
     failed = 0
     for t in run:
         try:
-            t()
-            print(f"ok {path}::{t.__name__}")
+            print(f"{'skip' if t() == 'skipped' else 'ok'} {path}::{t.__name__}")
         except Exception:
             traceback.print_exc()
             print(f"FAIL {path}::{t.__name__}", flush=True)
