@@ -1,7 +1,7 @@
 {
   "gate": "pr",
   "subject": "2026-11-15-effort-drilldown-install",
-  "round": 1,
+  "round": 2,
   "tier": "low",
   "expect": [
     "adversary",
@@ -18,41 +18,50 @@
     "R-261115-nu54/pr-integration.md": "81a9d46bedc16bcee5b8148684a4853521931daaf6972dfd73938b15261eb4c4",
     "R-261115-nu54/pr-refuter.md": "aca8af3fac0ef40a224f407ebe470e0e142cb016859ac53dd84defecc8a44c14",
     "R-261115-nu54/pr-conformance-2.md": "022bd8b12bb602eaeedf5d255a15750050e15db1785c9f2b351f55aba3e746a0",
-    "R-261115-nu54/pr-conformance-3.md": "b9b47c4828c7266bda1718cf716e3ee92248a29a1028b68d42aabdf3baa13f89"
+    "R-261115-nu54/pr-conformance-3.md": "b9b47c4828c7266bda1718cf716e3ee92248a29a1028b68d42aabdf3baa13f89",
+    "R-261115-llh7/pr-adversary.md": "f393155a3a7da5a455d0f82132dc4e39a3ef3319daafa93af2e3fa8204f3d8b7",
+    "R-261115-llh7/pr-conformance.md": "8c6ea21c3dac684ac10a7ed58833815deaebef7079d7e11bdb7351263a1195f9",
+    "R-261115-llh7/pr-consistency.md": "eb1a1ddb467513f28a1ac5bc3399d2a6c7308b8184140a9bcc227060ac304b04",
+    "R-261115-llh7/pr-correctness.md": "b2c474d5e101a1b7c17401042fccf86e85660993e9b4a589e72e67b4350e5eaa",
+    "R-261115-llh7/pr-refuter.md": "66534ab2dcad4df8a10e0075a45fae8af8aadc5f64449b5ae5cfe676de50b58c",
+    "R-261115-llh7/pr-conformance-2.md": "dcbb3abd0782eed7b02cfaeca967ca3aaaefa63f33471061b16a3a220c521ad5",
+    "R-261115-llh7/pr-conformance-3.md": "fd79e05445ff2607f07f6899564ee31337180836838b355f5eb36fabb0f9f159",
+    "R-261115-llh7/pr-consistency-2.md": "f88cd4eddc3217f9c328992cd79fda82e4cc4af47303cadf0bd9a96624e78f31",
+    "R-261115-llh7/pr-consistency-3.md": "dc7d68d69af849654cfe6c6474da43d0fdacc198ca49ab8c13cdb4b6742c19d2"
   },
   "jurors": {
     "pr-adversary": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "adversary",
       "by": "juror / claude-code / sonnet",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f66b7bbb33f1942e7bd015111645da466fab17b9",
-      "judged": 1
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
     },
     "pr-conformance": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "conformance",
       "by": "juror / claude-code / sonnet",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f66b7bbb33f1942e7bd015111645da466fab17b9",
-      "judged": 1
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
     },
     "pr-consistency": {
-      "attempts": 1,
+      "attempts": 2,
       "lens": "consistency",
       "by": "juror / claude-code / claude-haiku-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f66b7bbb33f1942e7bd015111645da466fab17b9",
-      "judged": 1
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
     },
     "pr-correctness": {
       "attempts": 1,
@@ -61,9 +70,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f66b7bbb33f1942e7bd015111645da466fab17b9",
-      "judged": 1
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
     },
     "pr-integration": {
       "attempts": 2,
@@ -79,26 +88,48 @@
       "version": "f66b7bbb33f1942e7bd015111645da466fab17b9"
     },
     "pr-conformance-2": {
-      "attempts": 1,
+      "attempts": 2,
       "lens": "conformance",
-      "by": "juror / claude-code / sonnet",
+      "by": "juror / claude-code / claude-sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f66b7bbb33f1942e7bd015111645da466fab17b9",
-      "judged": 1
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
     },
     "pr-conformance-3": {
-      "attempts": 1,
+      "attempts": 2,
       "lens": "conformance",
-      "by": "juror / claude-code / sonnet",
+      "by": "juror / claude-code / claude-sonnet-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "f66b7bbb33f1942e7bd015111645da466fab17b9",
-      "judged": 1
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
+    },
+    "pr-consistency-2": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
+    },
+    "pr-consistency-3": {
+      "attempts": 1,
+      "lens": "consistency",
+      "by": "juror / claude / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+      "judged": 2
     }
   },
   "findings": [
@@ -169,11 +200,11 @@
       ],
       "validation": "confirmed",
       "reason": "src/nio/hooks.py:36-38 `mods_dir` returns only `Path(__file__).parent / \"mods\"`; CT-8 (contracts.md:90-91) requires the `tools/claude-mods` fallback and a `ValueError`, and neither exists in the code.",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -201,9 +232,9 @@
         {
           "juror": "pr-consistency",
           "lens": "consistency",
-          "situation": "CT-10 says `plugin list` and `plugin install ... --scope local` run \"in `root`\", and the contract accepts \"the repo root\". The CLI branch passes `Path.cwd()`, the directory the human ran it from. Run from `src/`, the local-scope install is recorded for that folder, not the clone. A second run from the root then reads \"not installed\" and installs again.",
+          "situation": "run from a subfolder of the repo, `claude plugin install ... --scope local` runs in that subfolder. Local scope may then be recorded for the wrong project path (inferred: I did not run Claude Code). The repo root is found by `records.repo_root()`, which the `mods` branch does not call.",
           "severity": "minor",
-          "round": 1
+          "round": 2
         }
       ],
       "validation": "grounded",
@@ -212,10 +243,10 @@
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
-      "rounds": 0,
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "contradicts",
       "where": "src/nio/cli.py:main (the `mods` branch, which runs before `root = records.repo_root()`)",
       "tampering": false,
@@ -248,11 +279,11 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -286,11 +317,11 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -322,11 +353,11 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -396,11 +427,11 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -435,11 +466,11 @@
       ],
       "validation": "confirmed",
       "reason": "flow.py:987 puts `findings` inside each round and the returned gate dict (flow.py:990) has no gate-level `findings`. register.tsx:235 reads `g.findings ?? []`, so it is always empty.",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -472,11 +503,11 @@
       ],
       "validation": "confirmed",
       "reason": "hooks.py:45 calls `subprocess.run` with no `timeout` and no `stdin`. CT-10 says \"Never raises\", and nothing bounds the wait.",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -510,11 +541,11 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -913,14 +944,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-22",
@@ -948,14 +980,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-23",
@@ -1106,11 +1139,11 @@
       ],
       "validation": "confirmed",
       "reason": "results.json reports the three AC-16/AC-17 tests in register.test.tsx (:386, :391, :398) as \"didn't run\", and the context line is drawn only in the pane.",
-      "status": "open",
+      "status": "fixed",
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
@@ -1141,6 +1174,14 @@
           "situation": "the CLI half of AC-29 passes. The pane half (the reason and the Back button), AC-30 and both AC-24 tests (\"AC-24 nio on PATH\", reported at line 0) did not run. The pane behaviour is unproved.",
           "severity": "blocker",
           "round": 1
+        },
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "AC-24 and AC-30 are tested only by \"AC-24 nio on PATH\" and \"AC-29 AC-30 drill-down errors\", both \"didn't run\". AC-29's pane half (\"the pane shows that reason with a Back button\") is unproven. Only its CLI half passed (test_show_unknown_or_done_slug).",
+          "severity": "blocker",
+          "round": 2,
+          "run": "TC-1"
         }
       ],
       "validation": "confirmed",
@@ -1149,10 +1190,10 @@
       "disposition": "",
       "by": "",
       "note": "",
-      "baseline": "new",
-      "rounds": 0,
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "missing",
       "where": "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
       "tampering": false
@@ -1238,6 +1279,637 @@
       "gap": "partial",
       "where": "tests/test_hooks.py",
       "tampering": false
+    },
+    {
+      "id": "J-30",
+      "title": "Pane drops every jury finding and fix task",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-12",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "...(g.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}"
+      ],
+      "fix": "read `r.findings` inside each round (or flatten them after that round's line), and test with the real CT-4 shape.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "CT-4 puts findings inside each round (`rounds[].findings`), but the pane reads `g.findings` at gate level, which is always undefined. A gate with confirmed blockers draws only its `round n:` lines, so the finding rows, their validation and the `→ <fix tasks>` part (FR-5) never appear. Nothing errors, so the drill-down looks complete while missing the information it exists to show.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "register.tsx:235 reads `g.findings`, but flow.py juries() (CT-4) puts findings under `rounds[].findings`; nothing draws them.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "contradicts",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.tsx (jury)",
+      "tampering": false
+    },
+    {
+      "id": "J-31",
+      "title": "A malformed ledger or history line crashes `flow show` instead of failing one section",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "FR-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "except (ValueError, OSError) as e:",
+        "except Broken as e:\\n        tl = {\"error\": str(e)}"
+      ],
+      "fix": "use `except Exception` for timeline and juries, as the tasks, cost and memory blocks already do.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "CT-2 says \"one section's failure never stops the others\" and a failing section returns `{\"error\": ...}`. The juries try catches only ValueError and OSError. A ledger that is valid JSON but lacks `sources`, `round` or `jurors` raises KeyError or TypeError. The timeline try catches only `Broken`, so a history line that is not an object raises AttributeError. Either one escapes `show` as a traceback with exit 1 and empty stdout. The pane then shows the last stderr line and no sections, and a hand-edited or merge-damaged committed ledger hides all five sections.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "flow.py:1050-1053 catches only ValueError/OSError, and jury.load (jury.py:101) does no validation. A ledger that is valid JSON but lacks `round`, `sources` or `jurors` raises KeyError in juries() and escapes show(). The tasks, cost and memory blocks use `except Exception`.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "contradicts",
+      "where": "src/nio/flow.py:show",
+      "tampering": false
+    },
+    {
+      "id": "J-32",
+      "title": "`mods_dir()` has no checkout fallback, so install fails in the editable dev checkout",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-8",
+        "CT-10",
+        "FR-22"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "return Path(__file__).parent / \"mods\"",
+        "else the checkout's `tools/claude-mods`"
+      ],
+      "fix": "implement CT-8 as written, including the existence check and the ValueError, and have `mods_install` turn that into a `failed` line.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "CT-8 requires the packaged `nio/mods` when present, else `tools/claude-mods`, else a `ValueError`. The code returns `src/nio/mods` unconditionally. In an editable install (the NIO repo itself, and `uv run nio`) that folder does not exist. `claude plugin install --marketplace <missing path>` then fails with whatever claude prints, and the human sees `failed: <claude's error>` rather than a clear cause. Nothing checks that the folder exists before the call.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "hooks.py:36-38 returns `Path(__file__).parent / \"mods\"` with no fallback or check, and `src/nio/mods` does not exist (glob found nothing). CT-8's `tools/claude-mods` fallback and ValueError are missing.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "contradicts",
+      "where": "src/nio/hooks.py:mods_dir",
+      "tampering": false
+    },
+    {
+      "id": "J-33",
+      "title": "`nio mods install` uses the process cwd, so local scope can attach to the wrong directory",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-10",
+        "CT-11",
+        "FR-25"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "print(\"\\n\".join(hooks.mods_install(Path.cwd(), a.skip)))"
+      ],
+      "fix": "use `records.repo_root()` (the other commands do) and fail the line when there is no repo.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "CT-10 takes \"the repo root\". Run from `src/` or any subfolder, `--scope local` is recorded against that subfolder, not the clone. The pane and Claude Code later look up the project at the repo root and find no mod, yet the command printed `installed` and exited 0. The same call from outside any repo also installs \"for this clone\" into an arbitrary folder.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "src/nio/cli.py (mods branch)",
+      "tampering": false
+    },
+    {
+      "id": "J-34",
+      "title": "A change to the committed-record immutability check that no spec item asks for",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "CT-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a pending change request may still be settled once: its outcome set, and the decision appended to its body"
+      ],
+      "fix": "move the records.py and index.py changes to their own issue or effort, or add FRs and ACs for them.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "this effort is about the pane drill-down and the mods install, and no FR or CT mentions change-request settling. The diff loosens the rule that a committed record can change only `paths` and `outdated_by`. A pending change may now take any of three outcomes and gain an arbitrary appended body, and the only test is a prefix match. The same diff makes `index.connect` write a `.gitignore` into `.nio/cache`. Both ride along unreviewed against any spec item.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "unrequested",
+      "where": "src/nio/records.py:edits",
+      "tampering": false
+    },
+    {
+      "id": "J-35",
+      "title": "Pane back, cost and context ACs have no passing test",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-5",
+        "AC-13",
+        "AC-16",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given the drill-down is open, when the human goes back, then the effort list is shown again.",
+        "Observable: the pane's figures equal the CLI's."
+      ],
+      "fix": "run the pane test suite so its results reach the evidence file, or name the run that does.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "the only tests for these ACs are \"AC-5 back to the list\", \"AC-13 cost as the CLI gives it\" and the two \"AC-16 AC-17 context line\" tests in register.test.tsx. All four have result \"didn't run\", so none of the four ACs has run evidence.",
+          "severity": "blocker",
+          "round": 2,
+          "run": "TC-1"
+        },
+        {
+          "juror": "pr-conformance-2",
+          "lens": "conformance",
+          "situation": "the only tests for these ACs are \"AC-5 back to the list\", \"AC-13 cost as the CLI gives it\" and the two \"AC-16 AC-17 context line\" tests in register.test.tsx. All four have result \"didn't run\", so none of the four ACs has run evidence.",
+          "severity": "blocker",
+          "round": 2
+        },
+        {
+          "juror": "pr-conformance-3",
+          "lens": "conformance",
+          "situation": "the only tests for these ACs are \"AC-5 back to the list\", \"AC-13 cost as the CLI gives it\" and the two \"AC-16 AC-17 context line\" tests in register.test.tsx. All four have result \"didn't run\", so none of the four ACs has run evidence.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tests.md maps AC-5, AC-13, AC-16 and AC-17 only to register.test.tsx tests. The ledger records them as \"didn't run\", and nothing else proves them.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "missing",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+      "tampering": false
+    },
+    {
+      "id": "J-36",
+      "title": "Rendered drill-down halves of the timeline, empty-section and broken-effort ACs are unproven",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-1",
+        "AC-2",
+        "AC-4",
+        "AC-9",
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Observable: the rendered drill-down holds three timeline rows matching the history entries field by field, and no model call is made."
+      ],
+      "fix": "get the pane suite's results into the evidence.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "the observable for AC-1 is the rendered drill-down. Only the `flow show` JSON is proven (passed). \"AC-1 drill-down timeline\", \"AC-4 a broken effort opens\" and \"AC-9 AC-11 empty sections\" did not run. The AC's rendered claim, including the \"no juries yet\" and \"no tasks yet\" lines, is therefore not proven. Partial match.",
+          "severity": "major",
+          "round": 2,
+          "run": "TC-1"
+        }
+      ],
+      "validation": "merged",
+      "reason": "same as J-17",
+      "status": "merged",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+      "tampering": false
+    },
+    {
+      "id": "J-37",
+      "title": "Two misuse tests were not run",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "AC-26",
+        "AC-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "attack not run: UJ-1 the drill-down only reads",
+        "attack not run: test_mods_install_without_claude"
+      ],
+      "fix": "make the runner able to address a single test, or run these two on their own.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "the read-only guarantee of the drill-down (UJ-1) and the `claude` not-on-PATH path of `nio mods install` have no run evidence. These are extra checks beyond the ACs.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tests/test_hooks.py and register.test.tsx",
+      "tampering": false
+    },
+    {
+      "id": "J-38",
+      "title": "mods_dir has no checkout fallback, so `nio mods install` fails from an editable install",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-8"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "return Path(__file__).parent / \"mods\""
+      ],
+      "fix": "in `mods_dir`, return the packaged folder if it is a dir, else `Path(__file__).parents[2] / \"tools/claude-mods\"` if that exists, else raise `ValueError(\"no NIO mods in this nio install\")`.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "CT-8 says to return the packaged `mods` folder when it exists, else `tools/claude-mods` in the checkout, else raise ValueError. The code only returns `src/nio/mods`. The glob finds no such folder in the repo. In an editable install, which is how a NIO checkout and the pane's `.venv/bin/nio` run, `--marketplace` points at a missing path. Every mod then reports `failed`. The ValueError for \"no NIO mods\" is never raised.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "hooks.py:38 has only the packaged path, and `src/nio/mods` is absent in the checkout, so the `--marketplace` argument points at a missing folder.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "src/nio/hooks.py",
+      "tampering": false
+    },
+    {
+      "id": "J-39",
+      "title": "Pane never draws the findings of a jury round",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-5",
+        "CT-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "...(g.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}"
+      ],
+      "fix": "draw each round's findings from `r.findings`, after that round's line.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "CT-4 puts findings inside each round (`rounds[].findings`). The `jury` renderer reads `g.findings` at the gate level, which is always undefined. The `?? []` hides the mismatch, so no finding row, validation or fix task is drawn. Only the gate line and the round lens lines appear. The test fixtures may use the same wrong shape and so pass.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "register.tsx:235 reads gate-level `g.findings`, but CT-4 and flow.py:987 nest findings in `rounds[]`. `?? []` hides the mismatch, so FR-5's finding and fix-task rows never draw.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.tsx",
+      "tampering": false
+    },
+    {
+      "id": "J-40",
+      "title": "Timeline draws a stage-changing review as a failed review",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "CT-12",
+        "FR-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "x.kind === 'review'"
+      ],
+      "fix": "branch on `x.from === x.to` (or on `reasons` being present), not on `kind`.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "`timeline` keeps every line whose `from` differs from `to`. A passed review that advances the stage (kind `review`) is kept. The pane branches on `kind === 'review'`, not on the presence of `reasons`. It therefore draws `review <from> · <at> · -` and loses the `to` stage, role, host and model. Only a failed review (same stage) should take that format.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.tsx",
+      "tampering": false
+    },
+    {
+      "id": "J-41",
+      "title": "AC-9 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-9"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-9",
+      "gap": "missing",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.test.tsx, src/nio/flow.py, tests/test_flow.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-9: no test didn't run",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-42",
+      "title": "AC-11 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-11"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-11",
+      "gap": "missing",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.test.tsx, src/nio/flow.py, tests/test_flow.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-11: no test didn't run",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
+    },
+    {
+      "id": "J-43",
+      "title": "mods_dir has no checkout fallback, contrary to CT-8",
+      "kind": "contradiction",
+      "severity": "blocker",
+      "cites": [
+        "CT-8",
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "else the checkout's `tools/claude-mods` (`Path(__file__).parents[2] / \"tools/claude-mods\"`, an editable install).",
+        "return Path(__file__).parent / \"mods\""
+      ],
+      "fix": "make `mods_dir()` try `resources.files(\"nio\") / \"mods\"`, then `Path(__file__).parents[2] / \"tools/claude-mods\"`, else raise `ValueError(\"no NIO mods in this nio install\")`, as CT-8 says.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "a NIO checkout installed with `uv sync` (editable) has no `src/nio/mods` folder (a glob of `src/nio/mods/**` finds nothing; the force-include only fills the wheel). `mods_dir()` returns that missing path, so `nio mods install` gives it to `claude plugin install --marketplace` for both mods. AC-18 cannot pass in the checkout. CT-8 names `tools/claude-mods` as the fallback and `ValueError(\"no NIO mods in this nio install\")` for neither, and the code does neither. The human has ruled on this (C-261115-lkci, rejected, fix task requested), and the fix is not in the diff.",
+          "severity": "blocker",
+          "round": 2
+        },
+        {
+          "juror": "pr-consistency-2",
+          "lens": "consistency",
+          "situation": "a NIO checkout installed with `uv sync` (editable) has no `src/nio/mods` folder. `mods_dir()` returns that missing path, and `nio mods install` passes it to `claude plugin install --marketplace` for both mods. AC-18 cannot pass in the checkout. The CT-8 contract names `tools/claude-mods` as the fallback and `ValueError(\"no NIO mods in this nio install\")` for the case where neither exists, and the code does neither.",
+          "severity": "blocker",
+          "round": 2
+        },
+        {
+          "juror": "pr-consistency-3",
+          "lens": "consistency",
+          "situation": "a NIO checkout installed with `uv sync` (editable) has no `src/nio/mods` folder. `src/nio/hooks.py` `mods_dir()` returns `Path(__file__).parent / \"mods\"` unchanged, so the path does not exist. `nio mods install` passes that path to `claude plugin install --marketplace` for both mods, and AC-18 cannot pass in the checkout. CT-8 names `tools/claude-mods` as the fallback and the `ValueError` for the neither-exists case, and the code does neither.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "hooks.py:38 returns `Path(__file__).parent / \"mods\"` unconditionally, with no `tools/claude-mods` fallback and no ValueError, as CT-8 requires. `src/nio/mods` does not exist in the checkout.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "contradicts",
+      "where": "src/nio/hooks.py:mods_dir",
+      "tampering": false
+    },
+    {
+      "id": "J-44",
+      "title": "Tasks rows in the drill-down are not drawn per task",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-12",
+        "AC-10"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "a task `<id> <status> · attempts <attempts> · <title>` under its epic",
+        "`${t.id} ${t.status} · attempts ${t.attempts} · ${t.title}`",
+        "then the tasks are grouped by epic, each marked done, claimed or failing, with its attempts from `state.json`."
+      ],
+      "fix": "in `sections`, draw each epic's name, then one row per entry of `x.tasks` in the CT-12 form.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "an implementing effort with two epics gets `tasks` as `[{\"epic\": ..., \"tasks\": [...]}]` (CT-5). `sections` passes each epic object to the task row function, which reads `t.id`, `t.status`, `t.attempts` and `t.title`. Every epic line therefore reads `undefined undefined · attempts undefined · undefined`, the epic name is not drawn, and no task row appears. The pack's tests only check the empty case (`tasks: []`), and AC-10 has no test in the Results.",
+          "severity": "major",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-5 shape is `[{\"epic\",\"tasks\":[...]}]`, but register.tsx:254 passes each epic object to a row function that reads `t.id`, `t.status`, `t.attempts` and `t.title`. Those fields are undefined on an epic, so no task row is drawn.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "contradicts",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.tsx (the `sections` function, tasks entry)",
+      "tampering": false
+    },
+    {
+      "id": "J-45",
+      "title": "Pane types are looser than CT-14",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-14",
+        "CT-12"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "gains `path: string`",
+        "shown: any"
+      ],
+      "fix": "type the effort row's `path` as `string`, declare `NioShow` in types/index.d.ts, and type `drill.shown` with it.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "CT-14 makes `path` required on an effort row, but the type declares it `path?: string` on both row variants. It also types the drill-down's `shown` as `any`, not as the `NioShow` object CT-14 names, so a wrong key in `sections` compiles without error.",
+          "severity": "minor",
+          "round": 2
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tools/claude-mods/nio-status-pane/types/index.d.ts",
+      "tampering": false
     }
   ],
   "outcome": "human",
@@ -1245,10 +1917,15 @@
     [
       1,
       "human"
+    ],
+    [
+      2,
+      "human"
     ]
   ],
   "versions": {
-    "1": "f66b7bbb33f1942e7bd015111645da466fab17b9"
+    "1": "f66b7bbb33f1942e7bd015111645da466fab17b9",
+    "2": "5cd971f3596d426b4eeeec2b1db725ddf9925004"
   },
   "matched": {
     "AC-1": [
@@ -1294,24 +1971,14 @@
         "test_show_juries_per_gate"
       ]
     ],
-    "AC-9": [
-      [
-        "tests/test_flow.py",
-        "test_juries_none_yet"
-      ]
-    ],
+    "AC-9": [],
     "AC-10": [
       [
         "tests/test_flow.py",
         "test_show_tasks_by_epic"
       ]
     ],
-    "AC-11": [
-      [
-        "tests/test_flow.py",
-        "test_task_rows_none_yet"
-      ]
-    ],
+    "AC-11": [],
     "AC-12": [
       [
         "tests/test_usage.py",
@@ -1333,8 +2000,18 @@
     ],
     "AC-16": [],
     "AC-17": [],
-    "AC-18": [],
-    "AC-19": [],
+    "AC-18": [
+      [
+        "tests/test_hooks.py",
+        "test_mods_install_e2e"
+      ]
+    ],
+    "AC-19": [
+      [
+        "tests/test_hooks.py",
+        "test_mods_install_e2e"
+      ]
+    ],
     "AC-20": [
       [
         "tests/test_hooks.py",
@@ -1356,7 +2033,7 @@
     "AC-23": [
       [
         "tests/test_flow.py",
-        "test_show_json_five_keys_writes_nothing"
+        "test_show_writes_only_caches"
       ]
     ],
     "AC-24": [],
@@ -1392,5 +2069,14 @@
     ],
     "AC-30": []
   },
-  "asked": {}
+  "asked": {},
+  "cap": {
+    "round": 2,
+    "auto": true,
+    "allow": 3,
+    "lenses": [
+      "conformance",
+      "consistency"
+    ]
+  }
 }
