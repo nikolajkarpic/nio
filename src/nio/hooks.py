@@ -58,7 +58,10 @@ def mods_install(root, skip=False, claude="claude"):
     """One outcome line per mod; never raises, one mod failing never stops the other."""
     try:
         code, out, _ = _claude(root, claude, "plugin", "list", "--json")
-        have = {e.get("id") for e in json.loads(out)} if code == 0 else set()
+        here = Path(root).resolve()
+        # `plugin list` also lists other repos' local/project installs: count only user-scope ones and this repo's
+        have = {e.get("id") for e in json.loads(out) if e.get("scope") not in ("local", "project")
+                or e.get("projectPath") and Path(e["projectPath"]).resolve() == here} if code == 0 else set()
     except (OSError, ValueError, AttributeError):
         have = set()
     lines = []
