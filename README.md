@@ -69,7 +69,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | `@nio:plan` | 🗺️ planned | Contracts, bindings and a concrete test per acceptance criterion, then the plan. |
 | `@nio:tasks` | 🗺️ planned | Breaks the plan into effort → epics → tasks, rates difficulty and estimates usage. |
 | `@nio:implement` | 🗺️ planned | NIO's workers (TDD, builder, adversarial tester, swarm) build epic by epic. |
-| [`@nio:explain`](skills/explain/SKILL.md) | 🚧 plan mode built | Explains an approved plan as a short Mermaid explainer: a component map, a build order, a flow per journey and a state diagram per table, each with a brief walk-through. Needs no tool but `nio`; Node only renders the images. |
+| [`@nio:explain`](skills/explain/SKILL.md) | ✅ built | Explains an approved plan, or any topic, as a short Mermaid explainer: a component map, a build order, a flow per journey and a state diagram per table, each with a brief walk-through, then three items to drill into. `explain.format` picks a host diagram skill instead. Needs no tool but `nio`; Node only renders the images. |
 | [`@nio:jury`](skills/jury/SKILL.md) | ✅ built (spec gate) | Takes a settled spec to a verdict: picks lenses from the risk flags and size, runs each as an independent agent with a fresh pack, validates findings with the refuter, escalates a confirmed blocker to 3 jurors, fixes what it may and sends behaviour changes back through the grill, then records the verdict. |
 | `@nio:lite` | 🗺️ planned | Repro, failing test, fix, jury: for small fixes. |
 

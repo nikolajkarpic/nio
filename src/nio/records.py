@@ -145,7 +145,7 @@ def check_record(path, meta, body, area_list, known_ids):
     if ID_RE.match(str(meta.get("subject", ""))):
         links.append(meta["subject"])
     errs += [f"links to unknown record `{x}`" for x in links if x not in known_ids]
-    if len(body) > MAX_BODY_LINES:
+    if len(body) > MAX_BODY_LINES and rtype != "verdict":  # a verdict lists every minor finding (#57 FR-31, FR-33)
         errs.append(f"body is {len(body)} lines, max {MAX_BODY_LINES}")
     if any("TODO" in line for line in body):
         errs.append("body still has TODO placeholders")

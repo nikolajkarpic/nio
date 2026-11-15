@@ -770,6 +770,8 @@ def test_read_first_round_trips():
     for q in ("---\nslug: s\n---\n# Quickstart\nRun it.\n", "# Quickstart\n\nRun it.\n", "---\nslug: s\n---\n\n# Q\n"):
         added = explain.read_first(q)
         assert added != q and explain.read_first(added) == added and jury.planned("quickstart.md", added) == q, (q, added)
+    crlf = "---\r\nslug: s\r\n---\r\n# Q\r\n"
+    assert explain.read_first(crlf).startswith("---\r\nslug: s\r\n---\r\n" + explain.READ_FIRST)
     mid = "# Q\n\n" + explain.READ_FIRST + "x\n"
     assert jury.planned("quickstart.md", mid) == mid
 
@@ -797,6 +799,13 @@ def test_pr_gate_fixes():
         bad.parent.mkdir(parents=True)
         bad.write_bytes(b"\xff\xfe(source: x@1)")
         assert "error: can't read .nio/specs/zz/explainer.md" in explain.stale(root)
+        # adversary F5: a topic named only in a section's text doesn't continue that file
+        r = root / ".nio/research"
+        r.mkdir(parents=True, exist_ok=True)
+        import datetime
+        day = datetime.date.today().isoformat()
+        (r / f"{day}-git-hooks-explainer.md").write_text("# Hooks\n\n(topic: hooks)\n\n## Overview\nSee (topic: git hooks).\n")
+        assert explain.topic(root, "git hooks") == f"new: .nio/research/{day}-git-hooks-explainer-2.md"
         # J-6: a symlinked explainer.md still gets the plan checks
         root, fin = fin_repo()
         d = root / ".nio/specs/checkout-refunds"

