@@ -1,5 +1,6 @@
 """Self-check for nio hooks and the cross-branch merge check. Run: uv run python tests/test_hooks.py"""
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -239,7 +240,46 @@ def test_mods_install_e2e():
     print("ok")
 
 
+def _skill_steps():
+    text = (ROOT / "skills/install/SKILL.md").read_text()
+    steps_text = text.split("## Steps", 1)[1].split("## When to stop", 1)[0]
+    pieces = re.split(r"^(?=\d+\. )", steps_text, flags=re.M)
+    return [re.sub(r"^\d+\. ", "", p).strip() for p in pieces if re.match(r"\d+\. ", p)]
+
+
+def test_install_skill_mods_step():
+    # TC-24 (AC-22)
+    steps = _skill_steps()
+    mods = [s for s in steps if "mod" in s.lower()]
+    assert len(mods) == 1, mods
+    assert mods[0].startswith("On Claude Code"), mods[0]
+    assert "nio mods install" in mods[0] and "nio mods install --skip" in mods[0], mods[0]
+    print("ok")
+
+
+def test_mods_install_local_scope():
+    # TC-31 (AC-26): a fake claude that records its working directory and arguments, succeeding for both mods
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "claude"
+        fake.write_text('#!/bin/sh\necho "$PWD $@" >> "$0.log"\nif [ "$1 $2" = "plugin list" ]; then echo "[]"; fi\nexit 0\n')
+        fake.chmod(0o755)
+        root = Path(tmp) / "repo"
+        root.mkdir()
+        assert hooks.mods_install(root, claude=str(fake)) == [
+            "background-nio-commands: installed", "nio-status-pane: installed"]
+        log = Path(str(fake) + ".log").read_text().splitlines()
+        for mod in ("background-nio-commands", "nio-status-pane"):
+            want = f"{root} plugin install {mod} --marketplace {hooks.mods_dir()} --scope local --json"
+            assert want in log, (want, log)
+    text = (ROOT / "skills/install/SKILL.md").read_text()
+    questions = [line for line in text.splitlines() if line.rstrip().endswith("?")]
+    mods_q = [q for q in questions if "nio mods install" in q or "mod" in q.lower()]
+    assert len(questions) == 1 and len(mods_q) == 1, questions
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
                     test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_without_claude,
-                    test_mods_install_e2e])
+                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope])
