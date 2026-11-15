@@ -344,3 +344,48 @@ test('AC-4 a broken effort opens', async ($, on) => {
   expect(all).toContain('no memory yet')
   expect(await buttons(ui)).toContain('back')
 })
+
+test('AC-9 AC-11 empty sections', async ($, on) => {
+  const { read } = await open($, on, ok)
+  const all = await read()
+  expect(all).toContain('no juries yet')
+  expect(all).toContain('no tasks yet')
+  expect(all.filter(t => t.startsWith('error:'))).toEqual([])
+})
+
+test('AC-13 cost as the CLI gives it', async ($, on) => {
+  const cost = {
+    stages: [
+      { stage: 'spec_jury', tokens: 110, seconds: 600, juries: [{ gate: 'spec', tokens: 10, seconds: 240 }] },
+      { stage: 'planning', tokens: 20, seconds: 1200, juries: [] },
+      { stage: 'plan_jury', tokens: 50, seconds: 600, juries: [] },
+    ],
+    unattributed: { tokens: 0, seconds: 0 },
+    total: { tokens: 180, seconds: 2400 },
+  }
+  const { read } = await open($, on, () => result(0, JSON.stringify({ ...SHOWN, cost })))
+  const all = await read()
+  for (const l of ['spec_jury: 110 tokens · 600s', 'planning: 20 tokens · 1200s', 'plan_jury: 50 tokens · 600s', 'unattributed: 0 tokens · 0s', 'total: 180 tokens · 2400s'])
+    expect(all.some(t => t.includes(l))).toBe(true)
+  const i = all.findIndex(t => t.includes('spec_jury: 110'))
+  expect(all.slice(i).some(t => /^\s+spec: 10 tokens · 240s/.test(t))).toBe(true)
+})
+
+test('AC-16 AC-17 context line', async ($, on) => {
+  on('session.usage' as any, () => ({ value: { context: { percent: 42 } } }))
+  expect((await (await open($, on, ok)).read())).toContain('context: 42%')
+})
+
+test('AC-16 AC-17 context line: none when the host gives none', async ($, on) => {
+  on('session.usage' as any, () => { throw new Error('no usage') })
+  const all = await (await open($, on, ok)).read()
+  expect(all.filter(t => t.startsWith('context:'))).toEqual([])
+  expect(all).toContain('no juries yet')
+})
+
+test('AC-16 AC-17 context line: no percent', async ($, on) => {
+  on('session.usage' as any, () => ({ value: { context: {} } }))
+  const all = await (await open($, on, ok)).read()
+  expect(all.filter(t => t.startsWith('context:'))).toEqual([])
+  expect(all).toContain('no tasks yet')
+})
