@@ -1,7 +1,7 @@
 {
   "gate": "implementation-E-7",
   "subject": "2026-11-08-explainer",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -14,19 +14,20 @@
     "R-261115-6hcf/implementation-E-7-conformance.md": "bfd11022c7131191969048be96da7a28a07aee36d26e4dc4d6c48d9ac1f523fc",
     "R-261115-6hcf/implementation-E-7-consistency.md": "7c470bbd2858137feed6c8b7ab31927746575163783f3074a1700e2b0075b81d",
     "R-261115-6hcf/implementation-E-7-correctness.md": "aba46621c44536c51d0849b33ed7061e4921e6e5fe6a8de74d11956c5e430413",
-    "R-261115-6hcf/implementation-E-7-refuter.md": "8fb1d62100d0d4ea84ef1ce8c296884c3bef3aeb1935cf228721d9fd9ef89569"
+    "R-261115-6hcf/implementation-E-7-refuter.md": "8fb1d62100d0d4ea84ef1ce8c296884c3bef3aeb1935cf228721d9fd9ef89569",
+    "R-261115-uxds/implementation-E-7-adversary.md": "c83f75b8cfd5978365cf4faaa9696adffe1266212135d1aa4a2b7ce4d683dd4a"
   },
   "jurors": {
     "implementation-E-7-adversary": {
       "attempts": 1,
       "lens": "adversary",
-      "by": "juror / claude-code / claude-sonnet-5-5",
+      "by": "juror / claude-code / sonnet",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "d39787e528740592b9a1344f0558a9b0d088fb21",
-      "judged": 1
+      "round": 2,
+      "version": "d69ddc816d957861cabe1c3225447060163bf24f",
+      "judged": 2
     },
     "implementation-E-7-conformance": {
       "attempts": 1,
@@ -352,17 +353,18 @@
       ],
       "validation": "confirmed",
       "reason": "`topic()` in src/nio/explain.py matches `f\"(topic: {text})\" in p.read_text().splitlines()`. A stored `(topic: ...)` that spans two lines, or one the skill trimmed, never equals that string. SKILL.md line 60 says only \"(topic: <text as typed>)\", with no one-line or trim rule, and `topic` does no whitespace normalisation. So each re-run returns `new:` with the next `-N` name.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-39",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/explain.py:topic",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-10",
@@ -389,10 +391,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -426,10 +428,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -538,10 +540,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -574,10 +576,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -790,10 +792,10 @@
       ],
       "validation": "grounded",
       "reason": "",
-      "status": "open",
-      "disposition": "",
-      "by": "",
-      "note": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
       "baseline": "new",
       "rounds": 0,
       "first_round": 1,
@@ -803,15 +805,20 @@
       "tampering": false
     }
   ],
-  "outcome": "rejected",
+  "outcome": "approved",
   "recorded": [
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "approved"
     ]
   ],
   "versions": {
-    "1": "d39787e528740592b9a1344f0558a9b0d088fb21"
+    "1": "d39787e528740592b9a1344f0558a9b0d088fb21",
+    "2": "d69ddc816d957861cabe1c3225447060163bf24f"
   },
   "matched": {
     "AC-18": [
@@ -840,5 +847,10 @@
       ]
     ]
   },
-  "asked": {}
+  "asked": {},
+  "cap": {
+    "round": 2,
+    "auto": false,
+    "batch": []
+  }
 }
