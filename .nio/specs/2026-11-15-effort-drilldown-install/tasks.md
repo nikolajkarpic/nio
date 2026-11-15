@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: [T-4, T-18, T-19, T-20]                      # task IDs removed from this file; never reused
+retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -186,115 +186,16 @@ retired: [T-4, T-18, T-19, T-20]                      # task IDs removed from th
 - Effort: med
 - Mode: single: a fix from a jury finding
 
-### T-21 Fix: AC-5 has no passing evidence
-- From: J-17 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`, `tools/claude-mods/nio-status-pane/types/index.d.ts`, `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
-- Serves: AC-5
-- Test: TC-6
+### T-36 Fix: the pr gate's test run runs and reads the pane tests (T-21..T-30 retired, their tests pass on arrival)
+- From: C-261115-lncp
+- Files: `tests/test_pane.py`, `src/nio/evidence.py`, `src/nio/implement.py`
+- Serves: AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30
+- Test: TC-1, TC-6, TC-10, TC-12, TC-15, TC-18, TC-19, TC-28, TC-29
 - Depends on: none
 - Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-22 Fix: AC-13 has no passing evidence
-- From: J-18 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`, `src/nio/flow.py`, `tests/test_flow.py`
-- Serves: AC-13
-- Test: TC-15
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-23 Fix: AC-16 has no passing evidence
-- From: J-19 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`, `src/nio/flow.py`, `tests/test_flow.py`
-- Serves: AC-16
-- Test: TC-18
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-24 Fix: AC-17 has no passing evidence
-- From: J-20 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`, `src/nio/flow.py`, `tests/test_flow.py`
-- Serves: AC-17
-- Test: TC-19
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-25 Fix: AC-24 has no passing evidence
-- From: J-23 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`, `tools/claude-mods/nio-status-pane/types/index.d.ts`, `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
-- Serves: AC-24
-- Test: TC-29
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-26 Fix: AC-30 has no passing evidence
-- From: J-24 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`, `tools/claude-mods/nio-status-pane/types/index.d.ts`, `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
-- Serves: AC-30
-- Test: TC-28
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-27 Fix: Pane error display and the PATH nio have no test result
-- From: J-27 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
-- Serves: AC-29, AC-30, AC-24
-- Test: TC-1
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-28 Fix: Pane back, cost and context ACs have no passing test
-- From: J-35 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
-- Serves: AC-5, AC-13, AC-16, AC-17
-- Test: TC-1
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-29 Fix: AC-9 has no passing evidence
-- From: J-41 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`, `src/nio/flow.py`, `tests/test_flow.py`
-- Serves: AC-9
-- Test: TC-10
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-30 Fix: AC-11 has no passing evidence
-- From: J-42 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`, `src/nio/flow.py`, `tests/test_flow.py`
-- Serves: AC-11
-- Test: TC-12
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
+- Tier: strong: wires the plugin test run into the evidence parser
+- Effort: low
+- Mode: direct: the pane tests already pass; the fix makes the review run and read them
 
 ### T-31 Fix: test tampering: AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) in tools/claude-mods/nio-status-pane/hooks/register.test.tsx is deleted
 - From: J-1 (pr, round 3)
