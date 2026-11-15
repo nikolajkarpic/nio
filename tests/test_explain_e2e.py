@@ -239,5 +239,70 @@ def test_ac34_topic_whitespace():
     assert explain.topic(root, "Auth\n  tokens") == want
 
 
+HOOKS = "@nio:explain git hooks."
+
+
+def hooks_file(root):
+    fs = list((root / ".nio/research").glob("*explainer*.md"))
+    assert len(fs) == 1, fs
+    return fs[0]
+
+
+def drills(root):
+    return re.findall(r"(?m)^## Drill-down: (.+)$", hooks_file(root).read_text())
+
+
+def offers(out):
+    low = out.lower()
+    return all(k in low for k in ("component", "flow", "decision"))
+
+
+@e2e
+def test_ac15_three_offers():
+    root = topic_repo()
+    out = explain_run(root, HOOKS + " Reply `stop` to the first offer.")
+    assert offers(out), out
+
+
+@e2e
+def test_ac16_pick_appends():
+    root = topic_repo()
+    out = explain_run(root, HOOKS + " Reply to the first offer by picking its first item, then reply `stop` to the next offer.")
+    assert len(drills(root)) == 1, drills(root)
+    assert offers(out), out
+
+
+@e2e
+def test_ac17_stop():
+    root = topic_repo()
+    out = explain_run(root, HOOKS + " Reply to the first offer by picking its first item, then reply `stop` to the next offer.")
+    text = hooks_file(root).read_text()
+    assert re.findall(r"(?m)^## (.+)$", text)[-1].startswith("Drill-down: ")
+    assert not re.search(r"(?i)\b(want|would you like|pick|zoom into)\b", out.strip().splitlines()[-1]), out
+
+
+@e2e
+def test_ac34_same_topic():
+    root = topic_repo()
+    explain_run(root, HOOKS + " Reply to the first offer by picking its first item, then reply `stop`.")
+    f = hooks_file(root)
+    before = f.read_text()
+    explain_run(root, HOOKS + " Reply to the first offer by picking its first item, then reply `stop`.")
+    assert hooks_file(root) == f
+    after = f.read_text()
+    secs = lambda t: re.split(r"(?m)^(?=## )", t)[1:]  # the header's record lines may change; the sections may not
+    old = secs(before)
+    assert [x.rstrip("\n") for x in secs(after)[:len(old)]] == [x.rstrip("\n") for x in old], "earlier sections changed"
+    assert len(re.findall(r"(?m)^## Drill-down: ", after)) == len(re.findall(r"(?m)^## Drill-down: ", before)) + 1
+
+
+@e2e
+def test_uj2_no_repeat():
+    root = topic_repo()
+    explain_run(root, HOOKS + " Reply to the first offer by picking its first item, reply to the second offer by picking its first item again, then reply `stop`.")
+    d = drills(root)
+    assert len(d) == 2 and d[0] != d[1], d
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

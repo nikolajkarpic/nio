@@ -725,8 +725,24 @@ def test_ct6_topic():
     assert explain.topic(root, "auth/tokens") == f"new: .nio/research/{day}-auth-tokens-explainer-2.md"
 
 
+def test_finish_rerun_is_byte_stable():
+    # TC-26's "earlier sections are byte-equal": a rerun without a renderer adds no blank lines
+    import tempfile
+    from test_records import repo
+    root = repo()
+    f = root / ".nio/research/2026-01-01-git-hooks-explainer.md"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text("# git hooks\n\n(topic: git hooks)\n\n## Overview\n\n```mermaid\nflowchart LR\n  a --> b\n```\n\nText.\n")
+    empty = tempfile.mkdtemp()
+    fin_at(root, f, empty)
+    once = f.read_text()
+    fin_at(root, f, empty)
+    assert f.read_text() == once, (once, f.read_text())
+    assert "Images not rendered" in once
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_ac20_topic_render_only, test_uj3_topic_not_plan, test_ct6_topic, test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
+    selfcheck.main([test_finish_rerun_is_byte_stable, test_ac20_topic_render_only, test_uj3_topic_not_plan, test_ct6_topic, test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
                     test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines,
