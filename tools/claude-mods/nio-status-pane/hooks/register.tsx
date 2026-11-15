@@ -9,7 +9,7 @@ const board = atom({ plugin: 'nio-status-pane', key: 'board' } as const, null)
 // FR-10: the worktree's own venv, never uv (which creates `.venv` where none is), and no bytecode,
 // so reading the status writes nothing in the worktree.
 const NIO = '.venv/bin/nio'
-const NO_VENV = 'no .venv: run uv sync'
+const NO_NIO = 'nio not found'
 const ENV = { PYTHONDONTWRITEBYTECODE: '1' }
 const STAMP = /^(\d{4}-\d\d-\d\d \d\d:\d\d|-)$/
 
@@ -52,11 +52,19 @@ const listTrees = async ($: $) => {
   return worktrees(r.stdout)
 }
 
+// CT-13: the worktree's venv nio when it exists, else `nio` from PATH. Never uv.
+export const nioFor = async ($: $, cwd: string): Promise<string> =>
+  (await $.fs.exists(`${cwd}/${NIO}`)) ? `${cwd}/${NIO}` : 'nio'
+
 const flowStatus = async ($: $, cwd: string): Promise<Ran> => {
   try {
-    const nio = `${cwd}/${NIO}`
-    if (!(await $.fs.exists(nio))) return { error: NO_VENV }
-    const r = await $.process.run([nio, 'flow', 'status'], { cwd, env: ENV, timeoutMs: 20_000 })
+    const nio = await nioFor($, cwd)
+    let r
+    try {
+      r = await $.process.run([nio, 'flow', 'status'], { cwd, env: ENV, timeoutMs: 20_000 })
+    } catch {
+      return { error: NO_NIO }
+    }
     if (r.exitCode === 0) return { out: r.stdout }
     return { error: lastLine(r.stderr) || lastLine(r.stdout) || `exit ${r.exitCode}` }
   } catch (err) {

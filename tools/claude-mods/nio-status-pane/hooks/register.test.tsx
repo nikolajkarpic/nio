@@ -76,6 +76,7 @@ const setup = (on: any, status: Record<string, string> = STATUS, files = FILES, 
   on('process.run', (_: unknown, e: { argv: string[]; init?: { cwd?: string } }) => {
     seen.argv.push(e.argv.join(' '))
     if (e.argv[0] === 'git') return { value: result(0, porcelain) }
+    if (e.argv[0] === 'nio' && status.NO_NIO) throw new Error('ENOENT: nio') // no nio on PATH
     const out = status[e.init?.cwd ?? '']
     return { value: out === undefined ? result(1, '', 'Traceback\nValueError: boom') : result(0, out) }
   })
@@ -199,13 +200,21 @@ test('AC-11: a pane refresh and /nio write nothing and run only the two read com
   ])
 })
 
-test('AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv)', async ($, on) => {
-  const seen = setup(on, STATUS, FILES, PORCELAIN + '\nworktree /w/nio-new\nHEAD 4\nbranch refs/heads/nio/new\n')
+const NEW_TREE = PORCELAIN + '\nworktree /w/nio-new\nHEAD 4\nbranch refs/heads/nio/new\n'
+const FRESH = '2026-11-15-fresh · planning · manual · working · 2026-11-15 09:00\n'
+
+test('AC-24 nio on PATH: no venv runs the PATH nio, never uv', async ($, on) => {
+  const seen = setup(on, { ...STATUS, '/w/nio-new': FRESH }, FILES, NEW_TREE)
   await start($, on)
-  expect((await texts($, 'terminal')).join('\n')).toContain('nio-new: no .venv: run uv sync')
-  const { text } = await $.command.run({ command: 'nio' } as any)
-  expect(text).toContain('/w/nio-new [nio/new]\nerror: no .venv: run uv sync')
-  expect(seen.argv.filter(a => a.includes('nio-new') || a.startsWith('uv'))).toEqual([])
+  expect(seen.argv).toContain('nio flow status')
+  expect(seen.argv.filter(a => a.startsWith('uv'))).toEqual([])
+  expect((await texts($, 'terminal')).join('\n')).toContain('2026-11-15-fresh')
+})
+
+test('AC-24 nio on PATH: with no nio either, the row reads nio not found', async ($, on) => {
+  setup(on, { ...STATUS, NO_NIO: 'x' }, FILES, NEW_TREE)
+  await start($, on)
+  expect((await texts($, 'terminal')).join('\n')).toContain('nio-new: nio not found')
 })
 
 // A finished effort is not listed from a stale copy in another worktree, older or as new.
