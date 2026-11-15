@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31]                      # task IDs removed from this file; never reused
+retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-33]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -201,17 +201,6 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - From: J-30 (pr, round 3)
 - Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`
 - Serves: CT-12, CT-4, J-30
-- Test: TC-2
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-33 Fix: Pane never draws the findings of a jury round
-- From: J-39 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`
-- Serves: FR-5, CT-12, J-39
 - Test: TC-2
 - Depends on: none
 - Parallel: no
