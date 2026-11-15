@@ -39,10 +39,14 @@ def mods_dir():
 
 
 MODS = ("background-nio-commands", "nio-status-pane")
+CLAUDE_TIMEOUT = 120  # seconds per `claude plugin` call: a stalled install fails its mod instead of hanging setup (J-10)
 
 
 def _claude(root, claude, *args):
-    r = subprocess.run([claude, *args], cwd=root, capture_output=True, text=True)
+    try:
+        r = subprocess.run([claude, *args], cwd=root, capture_output=True, text=True, timeout=CLAUDE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return 124, "", f"timed out after {CLAUDE_TIMEOUT}s"
     return r.returncode, r.stdout, r.stderr
 
 
