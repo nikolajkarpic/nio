@@ -110,7 +110,7 @@ def tasks_of(root, slug):
             t = parsed["tasks"][tid]
             f = t["fields"]
             word = tasks.TIER.match(f.get("Mode", "")).group(1) if f.get("Mode") else ""
-            out.append({"id": tid, "title": t["title"], "epic": e["id"], "fix": t["fix"], "deps": tasks.ids(f.get("Depends on", "")),
+            out.append({"id": tid, "title": t["title"], "epic": e["id"], "fix": t["fix"], "deps": [d for d in tasks.ids(f.get("Depends on", "")) if d in parsed["tasks"]],  # a retired dependency is met
                         "files": tasks.files(f.get("Files", "")), "serves": tasks.ids(f.get("Serves", "")),
                         "tests": tasks.ids(f.get("Test", "")), "own": tasks.own(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
                         "effort": f.get("Effort", ""), "parallel": f.get("Parallel") == "yes", "mode": forced or (word if word in MODES else "split")})
