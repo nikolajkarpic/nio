@@ -7,9 +7,5 @@
   "claims": {},
   "pause": null,
   "run": "R-261115-7yxk",
-  "waiting": {
-    "change": "C-261115-svvm",
-    "task": "T-1",
-    "why": "spec problem in T-1"
-  }
+  "waiting": null
 }

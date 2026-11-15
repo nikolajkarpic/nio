@@ -198,7 +198,7 @@ the clock, read every `Text`. [agent]
 ### TC-26 An unknown or finished slug gives a JSON error (AC-29; integration) [derived: AC-29]
 - File: `tests/test_flow.py:test_show_unknown_or_done_slug` (new)
 - Covers: CT-1, CT-2
-- Setup: `effort("done")`; a second slug `2026-01-01-nothing` with no folder.
+- Setup: `effort("done")` then `shipped(root, S)` (tests/test_flow.py: writes the history line `{"kind": "override", "from": "implementing", "to": "done", "reason": "shipped by hand"}`, so `flow.where(root, S)["stage"]` is `done`); a second slug `2026-01-01-nothing` with no folder.
 - Action: `run_main(root, "flow", "show", "2026-01-01-nothing", "--json")` and `run_main(root, "flow", "show", S, "--json")`.
 - Assert: both exit 1 with nothing on stderr; stdout parses as `{"error": "no effort 2026-01-01-nothing"}` and `{"error": f"{S} is done"}`.
 
