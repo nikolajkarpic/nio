@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,10 @@ from pathlib import Path
 from test_records import repo
 
 import selfcheck
+import test_flow
+from nio import flow
+
+S, BY = test_flow.S, "driver / test / test"
 
 SHIPPED = "step %s fires only"
 
@@ -191,4 +196,259 @@ def test_followed_steps_and_names_protected():
     assert snap(root) == before
 
 
-selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_")])
+# --- the flow runs an extension step at its spot (E-2) ---
+
+def effort(stage="plan_jury", slug=S, root=None, edits=()):
+    """tests/test_flow.py's effort at `stage` with that stage's ledger approved (not committed); `edits` are
+    (fixture file, old, new) replacements made to the fixtures it is built from."""
+    os.environ.setdefault("NIO_HOME", tempfile.mkdtemp())
+    saved = test_flow.FIXTURES
+    if edits:
+        test_flow.FIXTURES = Path(tempfile.mkdtemp()) / "f"
+        shutil.copytree(saved, test_flow.FIXTURES)
+        for f, old, new in edits:
+            p = test_flow.FIXTURES / f
+            assert old in p.read_text(), (f, old)
+            p.write_text(p.read_text().replace(old, new, 1))
+    try:
+        root = test_flow.effort(stage, slug=slug, root=root)
+    finally:
+        test_flow.FIXTURES = saved
+    test_flow.approve(root, slug, {"plan_jury": "plan", "spec_jury": "spec"}[stage], commit=False)
+    return root
+
+
+def add(root, name, steps=(), **kw):
+    code, out = nio(root, "extensions", "add", str(src(tempfile.mkdtemp(), name, steps, **kw)))
+    assert code == 0, out
+    return out
+
+
+def pass_plan(root, slug=S):
+    code, out = nio(root, "flow", "done", "plan_jury", slug, "--commit", "--by", "human")
+    assert code == 0, out
+    return out
+
+
+def moves_of(root, slug=S, kinds=("pass", "skip", "override")):
+    return [(x["kind"], x["from"], x["to"]) for x in flow.load(root, slug)[1] if x["kind"] in kinds]
+
+
+def flowfiles(root, slug=S):
+    d = root / ".nio/specs" / slug
+    return (d / "state.json").read_bytes(), (d / "history.jsonl").read_bytes()
+
+
+def test_no_extensions_changes_nothing():
+    root = repo()
+    assert not (root / ".nio/extensions").exists()
+    assert all(a is b for a, b in zip(flow.table(root), (flow.STAGES, flow.GATES, flow.SKILL, flow.INPUTS, flow.EXIT)))
+    here = Path(__file__).parent
+    r = subprocess.run([sys.executable, str(here / "test_flow.py")], cwd=here.parent, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    diff = subprocess.run(["git", "diff", "main", "--", "tests/test_flow.py"], cwd=here.parent, capture_output=True, text=True).stdout
+    changed = [x for x in diff.splitlines() if x[:1] in "+-" and not x.startswith(("+++", "---"))]
+    assert all(x.startswith("+") for x in changed) and any("def test_status_speed_with_three_extensions" in x for x in changed), diff
+
+
+def test_shipped_off_until_added():
+    root = effort(edits=[("spec/spec.md", "Level: integration.", "Level: e2e."), ("plan/tests.md", "(AC-1; integration)", "(AC-1; e2e)")])
+    pass_plan(root)
+    assert flow.table(root)[0] is flow.STAGES
+    assert flow.where(root, S)["stage"] == "tasking"
+    code, out = nio(root, "flow", "status")
+    assert code == 0 and "e2e." not in out and "e2e." not in (root / ".nio/specs" / S / "history.jsonl").read_text(), out
+
+
+def test_step_runs_after_its_gate():
+    root = effort()
+    add(root, "x", [step("tests")])
+    pass_plan(root)
+    assert moves_of(root)[-1] == ("pass", "plan_jury", "x.tests"), moves_of(root)
+    code, out = nio(root, "flow", "next", S)
+    assert code == 0 and "state: x.tests (working)" in out and "skill: .nio/extensions/x/skills/tests/SKILL.md" in out, out
+    assert f"done: nio flow done x.tests {S}" in out and "tasking" not in out, out
+
+
+def test_two_steps_run_in_name_order():
+    root = effort()
+    add(root, "beta", [step("two")])
+    add(root, "alpha", [step("one")])
+    pass_plan(root)
+    code, out = nio(root, "flow", "done", "beta.two", S, "--by", BY)
+    assert code == 1 and f"{S} is at alpha.one" in out, out
+    for st in ("alpha.one", "beta.two"):
+        code, out = nio(root, "flow", "done", st, S, "--by", BY)
+        assert code == 0, out
+    passes = [m for m in moves_of(root, kinds=("pass",)) if m[1] != "spec_jury"]
+    assert passes[-3:] == [("pass", "plan_jury", "alpha.one"), ("pass", "alpha.one", "beta.two"), ("pass", "beta.two", "tasking")], passes
+
+
+def test_status_shows_the_step():
+    root = effort()
+    other = "2026-10-19-other"
+    effort(slug=other, root=root)
+    add(root, "x", [step("tests")])
+    pass_plan(root)
+    code, out = nio(root, "flow", "status")
+    row = next(x for x in out.splitlines() if x.startswith(S))
+    assert row.startswith(f"{S} · x.tests · manual · working · "), out
+    assert nio(root, "flow", "done", "x.tests", S, "--by", BY)[0] == 0
+    pass_plan(root, other)
+    test_flow.history(root, other, {"kind": "skip", "from": "x.tests", "to": "tasking", "reason": "skipped: by hand"})
+    for slug, kind in ((S, "pass"), (other, "skip")):
+        code, out = nio(root, "flow", "show", slug, "--json")
+        rows = [(r["kind"], r["from"], r["to"]) for r in json.loads(out)["timeline"]]
+        i = rows.index(("pass", "plan_jury", "x.tests"))
+        assert rows[i + 1] == (kind, "x.tests", "tasking"), rows
+
+
+def test_trigger_not_applying_skips():
+    root = effort()
+    add(root, "x", [step("tests", trigger={"plan_path": "nowhere/"})])
+    pass_plan(root)
+    lines = flow.load(root, S)[1]
+    assert [(x["kind"], x["from"], x["to"]) for x in lines[-2:]] == [("pass", "plan_jury", "x.tests"), ("skip", "x.tests", "tasking")], lines
+    assert lines[-1]["reason"] == "skipped: the plan touches no file under nowhere/"
+    assert "state: tasking" in nio(root, "flow", "next", S)[1]
+
+
+def two_efforts(trigger, *edits, dirs=()):
+    """Efforts S, S2, ... at plan_jury in one repo, each from its own fixture edits; `x` with a triggered step; the plan
+    gates passed."""
+    slugs = [S] + [f"2026-10-2{i}-e" for i in range(1, len(edits))]
+    root = None
+    for slug, e in zip(slugs, edits):
+        root = effort(slug=slug, root=root, edits=e)
+    add(root, "x", [step("tests", trigger=trigger)])
+    for d in dirs:  # a new file's folder exists, so the plan adds no module
+        (root / d).mkdir(parents=True, exist_ok=True)
+    for slug in slugs:
+        pass_plan(root, slug)
+    return root, slugs
+
+
+def test_spec_level_trigger():
+    root, (s1, s2) = two_efforts({"spec_level": "e2e"},
+                                 [("spec/spec.md", "Given a paid order,", "Given a paid order noted as Level: e2e,")],
+                                 [("spec/spec.md", "Level: integration.", "Level: e2e."), ("plan/tests.md", "(AC-1; integration)", "(AC-1; e2e)")])
+    lines = flow.load(root, s1)[1]
+    assert (lines[-1]["kind"], lines[-1]["from"], lines[-1]["to"], lines[-1]["reason"]) == (
+        "skip", "x.tests", "tasking", "skipped: the spec has no AC at Level: e2e"), lines[-1]
+    assert moves_of(root, s2)[-1] == ("pass", "plan_jury", "x.tests")
+    assert "state: x.tests (working)" in nio(root, "flow", "next", s2)[1]
+
+
+def test_plan_path_trigger():
+    root, (s1, s2, s3) = two_efforts({"plan_path": "web/"},
+                                     [("plan/contracts.md", "`app.py:refund_order`", "`src/web/x.py:refund_order`")],
+                                     [("plan/tests.md", "`tests/test_refunds.py:test_full_refund`", "`web/app.spec.ts:loads`")],
+                                     [("plan/contracts.md", "`app.py:refund_order`", "`web/app.tsx:App`")], dirs=("src/web", "web"))
+    lines = flow.load(root, s1)[1]
+    assert (lines[-1]["kind"], lines[-1]["from"], lines[-1]["reason"]) == ("skip", "x.tests", "skipped: the plan touches no file under web/")
+    for slug in (s2, s3):
+        assert flow.where(root, slug)["stage"] == "x.tests", slug
+
+
+def at_step(check, **kw):
+    root = effort()
+    add(root, "x", [step("tests", check=check, **kw)])
+    pass_plan(root)
+    return root
+
+
+def test_check_zero_passes():
+    root = at_step(f'test "$NIO_SLUG" = {S} && test "$NIO_STAGE" = x.tests && test -d "$NIO_EXTENSION_DIR"')
+    code, out = nio(root, "flow", "done", "x.tests", S, "--by", BY)
+    assert code == 0, out
+    last = flow.load(root, S)[1][-1]
+    assert (last["kind"], last["from"], last["to"], last["who"]["role"]) == ("pass", "x.tests", "tasking", "driver"), last
+    assert "state: tasking" in nio(root, "flow", "next", S)[1]
+
+
+def test_check_failing_records_tail():
+    root = at_step("for i in $(seq 1 80); do echo line-$i; done; exit 3")
+    code, out = nio(root, "flow", "done", "x.tests", S, "--by", BY)
+    assert code == 1 and "check failed: exit 3" in out and "line-80" in out, out
+    assert flow.where(root, S)["stage"] == "x.tests"
+    last = flow.load(root, S)[1][-1]
+    ev = last["evidence"]
+    assert (last["kind"], last["from"], last["to"]) == ("fail", "x.tests", "x.tests"), last
+    assert ev["code"] == 3 and ev["timed_out"] is False and ev["tail"] == [f"line-{i}" for i in range(31, 81)], ev
+
+
+def test_misplaced_step_fails_at_check():
+    root = effort("spec_jury")
+    add(root, "x", [step("tests", after="spec_jury", check="test -f .nio/specs/$NIO_SLUG/tasks.md")])
+    code, out = nio(root, "flow", "done", "spec_jury", S, "--commit", "--by", "human")
+    assert code == 0, out
+    assert moves_of(root)[-1] == ("pass", "spec_jury", "x.tests"), moves_of(root)
+    code, out = nio(root, "flow", "done", "x.tests", S, "--by", BY)
+    assert code == 1 and "check failed: exit 1" in out, out
+    assert flow.where(root, S)["stage"] == "x.tests"
+
+
+def test_remove_drops_the_step():
+    root = effort()
+    add(root, "x", [step("tests")])
+    code, out = nio(root, "extensions", "remove", "x")
+    assert code == 0, out
+    assert not (root / ".nio/extensions/x").exists() and "x" not in json.loads((root / ".nio/extensions/record.json").read_text())
+    assert "x.tests" not in flow.table(root)[0]
+    pass_plan(root)
+    assert moves_of(root)[-1] == ("pass", "plan_jury", "tasking"), moves_of(root)
+    assert " x." not in nio(root, "flow", "status")[1]
+
+
+S1, S2 = S, "2026-10-21-past"
+
+
+def past_step(root=None, at=True):
+    """S2 past `x.tests` (its pass to tasking written) and, with `at`, S1 at it."""
+    root = effort(slug=S2, root=root)
+    if at:
+        effort(slug=S1, root=root)
+    add(root, "x", [step("tests")])
+    for slug in (S1, S2) if at else (S2,):
+        pass_plan(root, slug)
+    assert nio(root, "flow", "done", "x.tests", S2, "--by", BY)[0] == 0
+    return root
+
+
+def test_remove_at_step_and_past_step():
+    root = past_step()
+    code, out = nio(root, "extensions", "remove", "x")
+    assert code == 1 and f"effort {S1} is at x.tests" in out and (root / ".nio/extensions/x").is_dir(), out
+    before = snap(root)
+    code, out = nio(root, "extensions", "add", str(src(tempfile.mkdtemp(), "x", version="2.0.0")))
+    assert code == 1 and f"effort {S1} is at x.tests, which the new version drops or moves" in out and snap(root) == before, out
+    assert nio(root, "flow", "abandon", S1, "stop", "--by", "human")[0] == 0
+    files = flowfiles(root, S2)
+    code, out = nio(root, "extensions", "remove", "x")
+    assert code == 0, out
+    assert flowfiles(root, S2) == files and "state: tasking" in nio(root, "flow", "next", S2)[1]
+    root = past_step(at=False)
+    files = flowfiles(root, S2)
+    code, out = nio(root, "extensions", "add", str(src(tempfile.mkdtemp(), "x", version="2.0.0")))
+    assert code == 0, out
+    assert flowfiles(root, S2) == files and "state: tasking" in nio(root, "flow", "next", S2)[1]
+
+
+def test_remove_hand_broken_extension():
+    """T-8 (J-19), on TC-44's setup: a hand-broken extension is still removed, and no effort file is written."""
+    for broken in ("hash", "unplaced"):
+        root = past_step(at=False)
+        files = flowfiles(root, S2)
+        d = root / ".nio/extensions/x"
+        if broken == "hash":
+            (d / "skills/tests/SKILL.md").write_text("changed by hand\n")
+        else:
+            m = json.loads((d / "manifest.json").read_text())
+            m["steps"][0]["after"] = "nowhere.step"
+            (d / "manifest.json").write_text(json.dumps(m))
+        code, out = nio(root, "extensions", "remove", "x")
+        assert code == 0 and not d.exists(), (broken, out)
+        assert flowfiles(root, S2) == files, broken
+
+
+selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])

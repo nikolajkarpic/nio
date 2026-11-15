@@ -284,8 +284,9 @@ def main():
                 sys.exit("error: give the stage or task too: nio run <slug> <stage|T-n>")
             if not (root / ".nio/specs" / a.slug).is_dir():
                 sys.exit(f"error: no effort {a.slug} under .nio/specs/")
-            if a.target not in flow.STAGES and not re.fullmatch(r"T-\d+", a.target):
-                sys.exit(f"error: {a.target} is neither a stage ({', '.join(flow.STAGES)}) nor a task T-n")
+            stages = flow.table(root)[0]
+            if a.target not in stages and not re.fullmatch(r"T-\d+", a.target):
+                sys.exit(f"error: {a.target} is neither a stage ({', '.join(stages)}) nor a task T-n")
             link = {"effort": a.slug, "task" if a.target.startswith("T-") else "stage": a.target,
                     "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
         print(records.new_run(root, link))

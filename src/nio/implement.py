@@ -12,11 +12,13 @@ from nio import flow, pack, plan, records, spec, tasks
 DEFAULT_LIMIT = 600  # FR-44
 
 
-def run(root, command, limit):
+def run(root, command, limit, env=None):
     """(code, output, cause) of a shell command in `root` (CT-1, FR-44): stdin closed, stderr merged into stdout, its own
-    process group so the limit kills every child. `cause` is "", "time limit" or "program not found" (exit 127)."""
+    process group so the limit kills every child. `cause` is "", "time limit" or "program not found" (exit 127). `env`
+    adds variables (an extension check's NIO_SLUG, NIO_STAGE, NIO_EXTENSION_DIR: 2026-11-15-extensions CT-8)."""
     p = subprocess.Popen(command, shell=True, cwd=root, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                         env={k: v for k, v in os.environ.items() if k != "NIO_PERF"}, stderr=subprocess.STDOUT, start_new_session=True)
+                         env={**{k: v for k, v in os.environ.items() if k != "NIO_PERF"}, **(env or {})},
+                         stderr=subprocess.STDOUT, start_new_session=True)
     try:
         out, _ = p.communicate(timeout=limit)
         code, cause = p.returncode, "program not found" if p.returncode == 127 else ""

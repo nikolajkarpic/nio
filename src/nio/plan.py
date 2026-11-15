@@ -158,9 +158,9 @@ def check(root, slug, gate=False, base="HEAD"):
         elif tid not in sdefs:
             errs.append(f"{where(iid)}: {iid} tests {tid}, which isn't in the spec")
         elif tid.startswith("AC-"):
-            want = re.search(r"Level:\s*([a-z0-9]+)", "\n".join(sdefs[tid]))
-            if want and want[1] != level:
-                errs.append(f"{where(iid)}: {iid} is {level}, but {tid} asks for {want[1]}")
+            want = spec.level(sdefs[tid])
+            if want and want != level:
+                errs.append(f"{where(iid)}: {iid} is {level}, but {tid} asks for {want}")
         targets[iid] = tid
         for name in ("File", "Covers", "Setup", "Action", "Assert"):
             if not field(block, name):

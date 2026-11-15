@@ -190,6 +190,46 @@ def active(root, guard=True):
     return out
 
 
+def applies(root, slug, step):
+    """(bool, text): whether a step's trigger applies to the effort (CT-7); a missing spec or plan reads as not applying."""
+    from nio import spec
+    t = step.get("trigger")
+    if not t:
+        return True, ""
+    folder = root / ".nio/specs" / slug
+    if "spec_level" in t:
+        lvl, ok = t["spec_level"], False
+        try:
+            body = records.parse(folder / "spec.md")[1]
+            ok = any(i.startswith("AC-") and spec.level(b) == lvl for lines in spec.sections(body).values() for i, b in spec.items(lines))
+        except (OSError, ValueError):
+            pass
+        return ok, f"the spec has no AC at Level: {lvl}"
+    path, found = t["plan_path"], []
+    for name, field in (("contracts.md", "Binding"), ("tests.md", "File")):
+        try:
+            text = (folder / name).read_text()
+        except OSError:
+            continue
+        found += [p for line in re.findall(rf"^- {field}:(.*)$", text, re.M) for p in re.findall(r"`([^`]+)`", line)]
+    return any(p.startswith(path) for p in found), f"the plan touches no file under {path}"
+
+
+def sitting(root, name, kept=()):
+    """Refusals: an effort not abandoned whose stage is one of extension `name`'s stages not in `kept` (CT-4, J-19: read
+    without the guard)."""
+    out = []
+    for slug in flow.efforts(root):
+        try:
+            state, lines = flow.load(root, slug)
+            stage = flow.where(root, slug, state, lines, guard=False)["stage"]
+        except (flow.Broken, ValueError):
+            continue
+        if state["abandon"] is None and stage.startswith(f"{name}.") and stage[len(name) + 1:] not in kept:
+            out.append((slug, stage))
+    return out
+
+
 def stage_names(others):
     return list(flow.STAGES) + [f"{o['name']}.{s['name']}" for o in others for s in o.get("steps", [])]
 
@@ -241,6 +281,11 @@ def add(root, source):
         reasons = check(src, manifest, others, stage_names(others)) if manifest is not None else check(src, None, [], [])
         if not reasons:
             reasons = [x[len("refused: "):] for x in followers(others, name, {s["name"] for s in manifest["steps"]})]
+        if not reasons and (folder(root) / name).is_dir():  # a replace may not drop or move the step an effort sits at
+            old = {s["name"]: s for m in active(root, guard=False) if m["name"] == name for s in m.get("steps", [])}
+            kept = {n for s in manifest["steps"] if (o := old.get(s["name"])) and o["after"] == s["after"]
+                    for n in (s["name"], *([f"{s['name']}.jury"] if s.get("gate") else []))}
+            reasons = [f"effort {e} is at {st}, which the new version drops or moves" for e, st in sitting(root, name, kept)]
         if reasons:
             return 1, [f"refused: {reasons[0]}"]
         dest, rec = folder(root) / name, read_record(root)
@@ -283,11 +328,15 @@ def listing(root):
 
 
 def remove(root, name):
-    """`nio extensions remove` (CT-4): the record first, then the folder. ponytail: effort-stage refusal comes with T-8."""
+    """`nio extensions remove` (CT-4): the record first, then the folder; refused while an effort sits at one of its
+    stages. Writes no effort file."""
     rec, d = read_record(root), folder(root) / name
     if name not in rec and not d.is_dir():
         return 1, [f"refused: no extension named {name} in .nio/extensions"]
     others = [m for m in active(root, guard=False) if m["name"] != name]
+    if at := sitting(root, name):
+        e, st = at[0]
+        return 1, [f"refused: effort {e} is at {st}; finish that step, or abandon the effort (nio flow abandon), first"]
     if bad := followers(others, name, set()):
         return 1, [bad[0]]
     rec.pop(name, None)
