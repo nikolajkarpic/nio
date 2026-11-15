@@ -2842,6 +2842,28 @@ def test_ac11_retired_fix_task_closes_its_finding():
     print("ok")
 
 
+def test_retire_releases_its_claim():
+    """#157: a fix task retired while claimed no longer blocks every later claim."""
+    root, _ = with_fix(finding=True)
+    st = root / ".nio/specs" / S / "state.json"
+    history(root, S, {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-4"},
+                      "state": {"claims": {"task": "T-4"}}})
+    assert json.loads(st.read_text())["claims"] == {"task": "T-4"}
+    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "duplicate", "--by", "agent")
+    assert code == 0 and "claim released" in out, (out, err)
+    assert json.loads(st.read_text())["claims"] == {}
+    last = json.loads((root / ".nio/specs" / S / "history.jsonl").read_text().splitlines()[-1])
+    assert (last["kind"], last["evidence"]["task"]) == ("retire", "T-4"), last
+    # a task retired before this fix kept its claim: retiring it again releases it, and is refused once nothing is left
+    history(root, S, {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-4"},
+                      "state": {"claims": {"task": "T-4"}}})
+    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "stale claim", "--by", "agent")
+    assert code == 0 and "already retired; its claim released" in out, (out, err)
+    assert json.loads(st.read_text())["claims"] == {}
+    assert run_main(root, "task", "retire", S, "T-4", "--reason", "again", "--by", "agent")[0] != 0
+    print("ok")
+
+
 def test_ac28_retire_without_reason_is_refused():
     root, tasks_md = with_fix(finding=True)
     before = tasks_md.read_text()

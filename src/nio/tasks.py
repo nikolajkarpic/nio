@@ -412,7 +412,12 @@ def retire(root, slug, tid, reason, by):
     if by not in jury.BY:
         raise ValueError(f"retiring {tid} needs --by, one of {', '.join(sorted(jury.BY))}: who retires it")
     p = path(root, slug)
-    task = parse("\n".join(records.parse(p)[1]))["tasks"].get(tid)
+    meta, body = records.parse(p)
+    task = parse("\n".join(body))["tasks"].get(tid)
+    if not task and tid in (meta.get("retired") or []):  # retired already: only a claim left over may still need releasing
+        if release_claim(root, slug, tid, reason, by):
+            return f"{tid} was already retired; its claim released"
+        raise ValueError(f"{tid} is already retired")
     if not task or not task["fix"]:
         raise ValueError(f"{tid} is not a fix task in tasks.md; retire a planned task by hand (it reopens the tasks gate)")
     text = re.sub(rf"^### {tid}\b.*?(?=^#{{1,4}} |\Z)", "", p.read_text(), count=1, flags=re.M | re.S)
@@ -427,7 +432,25 @@ def retire(root, slug, tid, reason, by):
     if f:
         f.update(status="disposed", disposition="accepted-risk", by=by, note=reason)
         jury.save(root, led)
-    return f"retired {tid}" + (f"; {f['id']} closed as accepted-risk by {by}" if f else "")
+    released = release_claim(root, slug, tid, reason, by)
+    return f"retired {tid}" + (f"; {f['id']} closed as accepted-risk by {by}" if f else "") + ("; its claim released" if released else "")
+
+
+def release_claim(root, slug, tid, reason, by):
+    """A retired task that is still claimed would refuse every later claim (#157): drop it from the claims through
+    `nio flow`'s writer, with a `retire` line. True when a claim was released."""
+    from nio import flow, implement
+    if not (root / ".nio/specs" / slug / "history.jsonl").exists():  # no flow state yet: nothing is claimed
+        return False
+    with flow.lock(root, slug):
+        state, _ = flow.load(root, slug)
+        claims = state.get("claims") or {}
+        if tid != claims.get("task") and tid not in claims.get("wave", []):
+            return False
+        w = {"role": "human", "host": "", "model": ""} if by == "human" else {"role": by, "host": "", "model": ""}
+        flow.write(root, slug, [implement.entry("retire", tid, reason=reason)],
+                   {**state, "claims": implement.release(claims, tid)}, w, "implementing")
+    return True
 
 
 def fix_test(root, slug, finding, cites):
