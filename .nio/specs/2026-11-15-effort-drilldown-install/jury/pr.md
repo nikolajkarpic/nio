@@ -1,7 +1,7 @@
 ---
 gate: pr
 subject: 2026-11-15-effort-drilldown-install
-round: 2
+round: 3
 outcome: human
 ---
 # Pr jury: 2026-11-15-effort-drilldown-install
@@ -10,9 +10,9 @@ outcome: human
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap |  | cli | confirmed | open |  | new, 0 |
+| J-1 | major | gap |  | cli | confirmed | disposed | fix-task (human) | new, 0 |
 | J-2 | major | contradiction | CT-8, FR-22, AC-25 | consistency, correctness | confirmed | fixed |  | absent, 0 |
-| J-3 | minor | inconsistency | CT-10, CT-11 | consistency | grounded | open |  | unchanged, 1 |
+| J-3 | minor | inconsistency | CT-10, CT-11 | consistency | grounded | disposed | accepted-risk (system) | unchanged, 1 |
 | J-4 | minor | inconsistency | FR-26, AC-27, CT-16 | consistency | grounded | fixed |  | absent, 0 |
 | J-5 | minor | scope | NFR-2, FR-21 | consistency | grounded | fixed |  | absent, 0 |
 | J-6 | minor | inconsistency | CT-2 | consistency | grounded | fixed |  | absent, 0 |
@@ -26,40 +26,43 @@ outcome: human
 | J-14 | blocker | gap | AC-16, AC-17 | conformance | merged | merged |  | new, 0 |
 | J-15 | blocker | gap | AC-24 | conformance | merged | merged |  | new, 0 |
 | J-16 | blocker | gap | AC-29, AC-30 | conformance | merged | merged |  | new, 0 |
-| J-17 | blocker | gap | AC-5 | cli, conformance | confirmed | open |  | new, 0 |
-| J-18 | blocker | gap | AC-13 | cli, conformance | confirmed | open |  | new, 0 |
-| J-19 | blocker | gap | AC-16 | cli, conformance | confirmed | open |  | new, 0 |
-| J-20 | blocker | gap | AC-17 | cli | confirmed | open |  | new, 0 |
+| J-17 | blocker | gap | AC-5 | cli, conformance | confirmed | disposed | fix-task (human) | new, 0 |
+| J-18 | blocker | gap | AC-13 | cli, conformance | confirmed | disposed | fix-task (human) | new, 0 |
+| J-19 | blocker | gap | AC-16 | cli, conformance | confirmed | disposed | fix-task (human) | new, 0 |
+| J-20 | blocker | gap | AC-17 | cli | confirmed | disposed | fix-task (human) | new, 0 |
 | J-21 | blocker | gap | AC-18 | cli, conformance | confirmed | fixed |  | absent, 0 |
 | J-22 | blocker | gap | AC-19 | cli | confirmed | fixed |  | absent, 0 |
-| J-23 | blocker | gap | AC-24 | cli, conformance | confirmed | open |  | new, 0 |
-| J-24 | blocker | gap | AC-30 | cli, conformance | confirmed | open |  | new, 0 |
+| J-23 | blocker | gap | AC-24 | cli, conformance | confirmed | disposed | fix-task (human) | new, 0 |
+| J-24 | blocker | gap | AC-30 | cli, conformance | confirmed | disposed | fix-task (human) | new, 0 |
 | J-25 | blocker | gap | AC-1, AC-5, AC-13 | conformance | merged | merged |  | new, 0 |
 | J-26 | blocker | gap | AC-16, AC-17 | conformance | confirmed | fixed |  | absent, 0 |
-| J-27 | blocker | gap | AC-29, AC-30, AC-24 | conformance | confirmed | open |  | unchanged, 1 |
+| J-27 | blocker | gap | AC-29, AC-30, AC-24 | conformance | confirmed | disposed | fix-task (human) | unchanged, 1 |
 | J-28 | blocker | gap | AC-1, AC-5, AC-13, AC-16, AC-17, AC-24, AC-30 | conformance | merged | merged |  | new, 0 |
 | J-29 | blocker | gap | AC-18, AC-19, AC-20 | conformance | merged | merged |  | new, 0 |
-| J-30 | major | contradiction | CT-12, CT-4 | adversary | confirmed | open |  | new, 0 |
-| J-31 | major | contradiction | CT-2, FR-13 | adversary | confirmed | open |  | new, 0 |
-| J-32 | major | contradiction | CT-8, CT-10, FR-22 | adversary | confirmed | open |  | new, 0 |
-| J-33 | minor | risk | CT-10, CT-11, FR-25 | adversary | grounded | open |  | new, 0 |
-| J-34 | minor | scope | CT-17 | adversary | grounded | open |  | new, 0 |
-| J-35 | blocker | gap | AC-5, AC-13, AC-16, AC-17 | conformance | confirmed | open |  | new, 0 |
+| J-30 | major | contradiction | CT-12, CT-4 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
+| J-31 | major | contradiction | CT-2, FR-13 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
+| J-32 | major | contradiction | CT-8, CT-10, FR-22 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
+| J-33 | minor | risk | CT-10, CT-11, FR-25 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-34 | minor | scope | CT-17 | adversary, integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-35 | blocker | gap | AC-5, AC-13, AC-16, AC-17 | conformance | confirmed | disposed | fix-task (human) | new, 0 |
 | J-36 | major | gap | AC-1, AC-2, AC-4, AC-9, AC-11 | conformance | merged | merged |  | new, 0 |
-| J-37 | minor | risk | AC-26, AC-13 | conformance | grounded | open |  | new, 0 |
-| J-38 | major | contradiction | CT-8 | correctness | confirmed | open |  | new, 0 |
-| J-39 | major | contradiction | FR-5, CT-12 | correctness | confirmed | open |  | new, 0 |
-| J-40 | minor | contradiction | CT-12, FR-2 | correctness | grounded | open |  | new, 0 |
-| J-41 | blocker | gap | AC-9 | cli | confirmed | open |  | new, 0 |
-| J-42 | blocker | gap | AC-11 | cli | confirmed | open |  | new, 0 |
-| J-43 | blocker | contradiction | CT-8, AC-18 | consistency | confirmed | open |  | new, 0 |
-| J-44 | major | contradiction | CT-12, AC-10 | consistency | confirmed | open |  | new, 0 |
-| J-45 | minor | inconsistency | CT-14, CT-12 | consistency | grounded | open |  | new, 0 |
+| J-37 | minor | risk | AC-26, AC-13 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-38 | major | contradiction | CT-8 | correctness | confirmed | disposed | fix-task (human) | new, 0 |
+| J-39 | major | contradiction | FR-5, CT-12 | correctness | confirmed | disposed | fix-task (human) | new, 0 |
+| J-40 | minor | contradiction | CT-12, FR-2 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-41 | blocker | gap | AC-9 | cli | confirmed | disposed | fix-task (human) | new, 0 |
+| J-42 | blocker | gap | AC-11 | cli | confirmed | disposed | fix-task (human) | new, 0 |
+| J-43 | blocker | contradiction | CT-8, AC-18 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
+| J-44 | major | contradiction | CT-12, AC-10 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
+| J-45 | minor | inconsistency | CT-14, CT-12 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | fix-task (human) | new, 0 |
+| J-47 | minor | risk | CT-2, NFR-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
 
 ### J-1 test tampering: AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) in tools/claude-mods/nio-status-pane/hooks/register.test.tsx is deleted
 - situation (cli): the diff deletes the test AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) from tools/claude-mods/nio-status-pane/hooks/register.test.tsx
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix all three: read the right field, add a timeout to the plugin calls, restore the deleted test (adjusted to the PATH fallback).
 
 ### J-2 The mods folder has no checkout fallback
 - quote: "else the checkout's `tools/claude-mods`"
@@ -74,6 +77,7 @@ outcome: human
 - quote: "print("\n".join(hooks.mods_install(Path.cwd(), a.skip)))"
 - situation (consistency): run from a subfolder of the repo, `claude plugin install ... --scope local` runs in that subfolder. Local scope may then be recorded for the wrong project path (inferred: I did not run Claude Code). The repo root is found by `records.repo_root()`, which the `mods` branch does not call.
 - fix: resolve the repo root first (for example with `records.repo_root()`, as the other commands do) and pass that to `mods_install`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-4 The marketplace description still calls the mods developer tooling
 - quote: "none calls them dev tooling only"
@@ -159,23 +163,27 @@ outcome: human
 - situation (conformance): every test in tools/claude-mods/nio-status-pane/hooks/register.test.tsx (lines 207, 215, 286, 297, 309, 319, 325, 344, 360, 368, 386, 391, 398) has result "didn't run". The pane side of AC-1, AC-2, AC-4, AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29 and AC-30 has no passing test. AC-5, AC-13, AC-16, AC-17, AC-24 and AC-30 are proven nowhere else. The UJ-1 misuse test is also "not configured".
 - fix: add or fix a test that proves AC-5
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-18 AC-13 has no passing evidence
 - situation (cli): no passing test proves AC-13: no test no match
 - situation (conformance): "AC-13 cost as the CLI gives it" at register.test.tsx:368 did not run, so the pane-equals-CLI claim is unproven
 - fix: add or fix a test that proves AC-13
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-19 AC-16 has no passing evidence
 - situation (cli): no passing test proves AC-16: no test no match
 - situation (conformance): the context line is drawn only in the pane. All three "AC-16 AC-17 context line" tests (register.test.tsx:386 and the two after it) did not run
 - fix: add or fix a test that proves AC-16
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-20 AC-17 has no passing evidence
 - situation (cli): no passing test proves AC-17: no test no match
 - fix: add or fix a test that proves AC-17
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-21 AC-18 has no passing evidence
 - situation (cli): no passing test proves AC-18: no test no match
@@ -193,12 +201,14 @@ outcome: human
 - situation (conformance): the tests at register.test.tsx:207 and :215 are reported as "AC-24 nio on PATH" at line 0 and did not run. The hints say the suite's runner can't address them
 - fix: add or fix a test that proves AC-24
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-24 AC-30 has no passing evidence
 - situation (cli): no passing test proves AC-30: no test no match
 - situation (conformance): AC-30 is proven only by "AC-29 AC-30 drill-down errors" at register.test.tsx:319 and :325, and those did not run. Python covers only the CLI exit-1 half of AC-29 (test_flow.py:3006)
 - fix: add or fix a test that proves AC-30
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-25 Drill-down render, back and cost-in-pane have no test result
 - quote: "the drill-down lists the three changes in order"
@@ -221,6 +231,7 @@ outcome: human
 - situation (conformance): AC-24 and AC-30 are tested only by "AC-24 nio on PATH" and "AC-29 AC-30 drill-down errors", both "didn't run". AC-29's pane half ("the pane shows that reason with a Back button") is unproven. Only its CLI half passed (test_show_unknown_or_done_slug).
 - fix: run the pane TSX suite and attach the results; give the AC-24 test a real line so it can be addressed
 - validation: confirmed: The AC-29/AC-30 pane tests (register.test.tsx:319, :325) and the AC-24 tests (:207, :215) are reported as "didn't run", and Python covers only the CLI half of AC-29.
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-28 Pane drill-down tests did not run
 - quote: "Given the drill-down is open, when the human goes back, then the effort list is shown again."
@@ -241,6 +252,7 @@ outcome: human
 - situation (adversary): CT-4 puts findings inside each round (`rounds[].findings`), but the pane reads `g.findings` at gate level, which is always undefined. A gate with confirmed blockers draws only its `round n:` lines, so the finding rows, their validation and the `→ <fix tasks>` part (FR-5) never appear. Nothing errors, so the drill-down looks complete while missing the information it exists to show.
 - fix: read `r.findings` inside each round (or flatten them after that round's line), and test with the real CT-4 shape.
 - validation: confirmed: register.tsx:235 reads `g.findings`, but flow.py juries() (CT-4) puts findings under `rounds[].findings`; nothing draws them.
+- disposition: fix-task by human: Fix all three: read the right field, add a timeout to the plugin calls, restore the deleted test (adjusted to the PATH fallback).
 
 ### J-31 A malformed ledger or history line crashes `flow show` instead of failing one section
 - quote: "except (ValueError, OSError) as e:"
@@ -248,6 +260,7 @@ outcome: human
 - situation (adversary): CT-2 says "one section's failure never stops the others" and a failing section returns `{"error": ...}`. The juries try catches only ValueError and OSError. A ledger that is valid JSON but lacks `sources`, `round` or `jurors` raises KeyError or TypeError. The timeline try catches only `Broken`, so a history line that is not an object raises AttributeError. Either one escapes `show` as a traceback with exit 1 and empty stdout. The pane then shows the last stderr line and no sections, and a hand-edited or merge-damaged committed ledger hides all five sections.
 - fix: use `except Exception` for timeline and juries, as the tasks, cost and memory blocks already do.
 - validation: confirmed: flow.py:1050-1053 catches only ValueError/OSError, and jury.load (jury.py:101) does no validation. A ledger that is valid JSON but lacks `round`, `sources` or `jurors` raises KeyError in juries() and escapes show(). The tasks, cost and memory blocks use `except Exception`.
+- disposition: fix-task by human: Fix, with re-check: two fix tasks; the reviewers that found them check the fixes once more.
 
 ### J-32 `mods_dir()` has no checkout fallback, so install fails in the editable dev checkout
 - quote: "return Path(__file__).parent / "mods""
@@ -255,16 +268,20 @@ outcome: human
 - situation (adversary): CT-8 requires the packaged `nio/mods` when present, else `tools/claude-mods`, else a `ValueError`. The code returns `src/nio/mods` unconditionally. In an editable install (the NIO repo itself, and `uv run nio`) that folder does not exist. `claude plugin install --marketplace <missing path>` then fails with whatever claude prints, and the human sees `failed: <claude's error>` rather than a clear cause. Nothing checks that the folder exists before the call.
 - fix: implement CT-8 as written, including the existence check and the ValueError, and have `mods_install` turn that into a `failed` line.
 - validation: confirmed: hooks.py:36-38 returns `Path(__file__).parent / "mods"` with no fallback or check, and `src/nio/mods` does not exist (glob found nothing). CT-8's `tools/claude-mods` fallback and ValueError are missing.
+- disposition: fix-task by human: Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.
 
 ### J-33 `nio mods install` uses the process cwd, so local scope can attach to the wrong directory
 - quote: "print("\n".join(hooks.mods_install(Path.cwd(), a.skip)))"
 - situation (adversary): CT-10 takes "the repo root". Run from `src/` or any subfolder, `--scope local` is recorded against that subfolder, not the clone. The pane and Claude Code later look up the project at the repo root and find no mod, yet the command printed `installed` and exited 0. The same call from outside any repo also installs "for this clone" into an arbitrary folder.
 - fix: use `records.repo_root()` (the other commands do) and fail the line when there is no repo.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-34 A change to the committed-record immutability check that no spec item asks for
 - quote: "a pending change request may still be settled once: its outcome set, and the decision appended to its body"
 - situation (adversary): this effort is about the pane drill-down and the mods install, and no FR or CT mentions change-request settling. The diff loosens the rule that a committed record can change only `paths` and `outdated_by`. A pending change may now take any of three outcomes and gain an arbitrary appended body, and the only test is a prefix match. The same diff makes `index.connect` write a `.gitignore` into `.nio/cache`. Both ride along unreviewed against any spec item.
+- situation (integration): the edit to `records.edits` loosens the frozen-record check for change requests. That is a different feature (the settle commits) bundled into this effort's diff, with no FR, CT or task in the spec behind it. It changes what the CI lint allows on every committed record, and it is reviewed here only as part of a drill-down and install effort.
 - fix: move the records.py and index.py changes to their own issue or effort, or add FRs and ACs for them.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-35 Pane back, cost and context ACs have no passing test
 - quote: "Given the drill-down is open, when the human goes back, then the effort list is shown again."
@@ -274,6 +291,7 @@ outcome: human
 - situation (conformance): the only tests for these ACs are "AC-5 back to the list", "AC-13 cost as the CLI gives it" and the two "AC-16 AC-17 context line" tests in register.test.tsx. All four have result "didn't run", so none of the four ACs has run evidence.
 - fix: run the pane test suite so its results reach the evidence file, or name the run that does.
 - validation: confirmed: tests.md maps AC-5, AC-13, AC-16 and AC-17 only to register.test.tsx tests. The ledger records them as "didn't run", and nothing else proves them.
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-36 Rendered drill-down halves of the timeline, empty-section and broken-effort ACs are unproven
 - quote: "Observable: the rendered drill-down holds three timeline rows matching the history entries field by field, and no model call is made."
@@ -286,33 +304,39 @@ outcome: human
 - quote: "attack not run: test_mods_install_without_claude"
 - situation (conformance): the read-only guarantee of the drill-down (UJ-1) and the `claude` not-on-PATH path of `nio mods install` have no run evidence. These are extra checks beyond the ACs.
 - fix: make the runner able to address a single test, or run these two on their own.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-38 mods_dir has no checkout fallback, so `nio mods install` fails from an editable install
 - quote: "return Path(__file__).parent / "mods""
 - situation (correctness): CT-8 says to return the packaged `mods` folder when it exists, else `tools/claude-mods` in the checkout, else raise ValueError. The code only returns `src/nio/mods`. The glob finds no such folder in the repo. In an editable install, which is how a NIO checkout and the pane's `.venv/bin/nio` run, `--marketplace` points at a missing path. Every mod then reports `failed`. The ValueError for "no NIO mods" is never raised.
 - fix: in `mods_dir`, return the packaged folder if it is a dir, else `Path(__file__).parents[2] / "tools/claude-mods"` if that exists, else raise `ValueError("no NIO mods in this nio install")`.
 - validation: confirmed: hooks.py:38 has only the packaged path, and `src/nio/mods` is absent in the checkout, so the `--marketplace` argument points at a missing folder.
+- disposition: fix-task by human: Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.
 
 ### J-39 Pane never draws the findings of a jury round
 - quote: "...(g.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}"
 - situation (correctness): CT-4 puts findings inside each round (`rounds[].findings`). The `jury` renderer reads `g.findings` at the gate level, which is always undefined. The `?? []` hides the mismatch, so no finding row, validation or fix task is drawn. Only the gate line and the round lens lines appear. The test fixtures may use the same wrong shape and so pass.
 - fix: draw each round's findings from `r.findings`, after that round's line.
 - validation: confirmed: register.tsx:235 reads gate-level `g.findings`, but CT-4 and flow.py:987 nest findings in `rounds[]`. `?? []` hides the mismatch, so FR-5's finding and fix-task rows never draw.
+- disposition: fix-task by human: Fix all three: read the right field, add a timeout to the plugin calls, restore the deleted test (adjusted to the PATH fallback).
 
 ### J-40 Timeline draws a stage-changing review as a failed review
 - quote: "x.kind === 'review'"
 - situation (correctness): `timeline` keeps every line whose `from` differs from `to`. A passed review that advances the stage (kind `review`) is kept. The pane branches on `kind === 'review'`, not on the presence of `reasons`. It therefore draws `review <from> · <at> · -` and loses the `to` stage, role, host and model. Only a failed review (same stage) should take that format.
 - fix: branch on `x.from === x.to` (or on `reasons` being present), not on `kind`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-41 AC-9 has no passing evidence
 - situation (cli): no passing test proves AC-9: no test didn't run
 - fix: add or fix a test that proves AC-9
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-42 AC-11 has no passing evidence
 - situation (cli): no passing test proves AC-11: no test didn't run
 - fix: add or fix a test that proves AC-11
 - validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix: fix tasks hook the pane tests (claude plugin test) into the review's test run and make the install test check the closing message, so the review proves them.
 
 ### J-43 mods_dir has no checkout fallback, contrary to CT-8
 - quote: "else the checkout's `tools/claude-mods` (`Path(__file__).parents[2] / "tools/claude-mods"`, an editable install)."
@@ -322,6 +346,7 @@ outcome: human
 - situation (consistency): a NIO checkout installed with `uv sync` (editable) has no `src/nio/mods` folder. `src/nio/hooks.py` `mods_dir()` returns `Path(__file__).parent / "mods"` unchanged, so the path does not exist. `nio mods install` passes that path to `claude plugin install --marketplace` for both mods, and AC-18 cannot pass in the checkout. CT-8 names `tools/claude-mods` as the fallback and the `ValueError` for the neither-exists case, and the code does neither.
 - fix: make `mods_dir()` try `resources.files("nio") / "mods"`, then `Path(__file__).parents[2] / "tools/claude-mods"`, else raise `ValueError("no NIO mods in this nio install")`, as CT-8 says.
 - validation: confirmed: hooks.py:38 returns `Path(__file__).parent / "mods"` unconditionally, with no `tools/claude-mods` fallback and no ValueError, as CT-8 requires. `src/nio/mods` does not exist in the checkout.
+- disposition: fix-task by human: Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.
 
 ### J-44 Tasks rows in the drill-down are not drawn per task
 - quote: "a task `<id> <status> · attempts <attempts> · <title>` under its epic"
@@ -330,12 +355,29 @@ outcome: human
 - situation (consistency): an implementing effort with two epics gets `tasks` as `[{"epic": ..., "tasks": [...]}]` (CT-5). `sections` passes each epic object to the task row function, which reads `t.id`, `t.status`, `t.attempts` and `t.title`. Every epic line therefore reads `undefined undefined · attempts undefined · undefined`, the epic name is not drawn, and no task row appears. The pack's tests only check the empty case (`tasks: []`), and AC-10 has no test in the Results.
 - fix: in `sections`, draw each epic's name, then one row per entry of `x.tasks` in the CT-12 form.
 - validation: confirmed: CT-5 shape is `[{"epic","tasks":[...]}]`, but register.tsx:254 passes each epic object to a row function that reads `t.id`, `t.status`, `t.attempts` and `t.title`. Those fields are undefined on an epic, so no task row is drawn.
+- disposition: fix-task by human: Fix, with re-check: two fix tasks; the reviewers that found them check the fixes once more.
 
 ### J-45 Pane types are looser than CT-14
 - quote: "gains `path: string`"
 - quote: "shown: any"
 - situation (consistency): CT-14 makes `path` required on an effort row, but the type declares it `path?: string` on both row variants. It also types the drill-down's `shown` as `any`, not as the `NioShow` object CT-14 names, so a wrong key in `sections` compiles without error.
 - fix: type the effort row's `path` as `string`, declare `NioShow` in types/index.d.ts, and type `drill.shown` with it.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-46 mods_dir has no checkout fallback, so mods install fails on an editable install
+- quote: "return Path(__file__).parent / "mods""
+- quote: "else the checkout's `tools/claude-mods` (`Path(__file__).parents[2] / "tools/claude-mods"`, an editable install)."
+- situation (integration): `mods_dir()` returns `src/nio/mods`, which only exists in a built wheel because `force-include` copies `tools/claude-mods` there. No `src/nio/mods` exists in the checkout, so an editable install (the NIO repo itself and `uv run nio`) passes a non-existent marketplace path to `claude plugin install`, and every mod reports `failed`. CT-8 asked for the fallback and a `ValueError` when neither folder exists. The planned test asserts `mods_dir()` is the checkout's `tools/claude-mods`, but the code can't return that.
+- fix: make `mods_dir` return `src/nio/mods` when it is a directory, else `Path(__file__).parents[2] / "tools/claude-mods"` when that is a directory, else raise `ValueError("no NIO mods in this nio install")`. Catch the error in `mods_install` so it still never raises.
+- validation: confirmed: src/nio/hooks.py:36-38 returns only `Path(__file__).parent / "mods"`, and no `src/nio/mods` exists in the checkout (Glob found none). contracts.md CT-8 (line 90) and grill.md line 188 require the `tools/claude-mods` fallback, so an editable install passes a missing marketplace path to `claude plugin install`.
+- disposition: fix-task by human: Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.
+
+### J-47 flow.show reloads state and history once per section
+- quote: "tl = timeline(load(root, slug)[1])"
+- quote: "tk = task_rows(root, slug, state, load(root, slug)[1])"
+- situation (integration): `show` calls `load(root, slug)` up to four times (stage, timeline, tasks, cost). Each call re-reads and re-parses `history.jsonl`, and a history that is 200 lines long makes that wasteful against the 5 s target in NFR-1. The three nested try blocks, each with its own `Broken` handling, exist only because of the repeated loads.
+- fix: load once at the top and keep `lines` (`None` on `Broken`). Hand `lines` to `timeline`, `task_rows` and `usage.so_far`, and have the timeline and cost sections return the `Broken` error when `lines` is `None`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ## Jurors
 
@@ -349,4 +391,4 @@ outcome: human
 | pr-consistency-2 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | pr-consistency-3 | consistency | juror / claude / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | pr-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| pr-integration | integration | juror / claude-code / sonnet | limited | no: finding `F1 mods_dir points at a folder that only exists in a built wheel`: needs `### F<n> <title>` and ['quote']; finding `F2 usage.so_far repeats the stage-window arithmetic that usage.report already has`: needs `### F<n> <title>` and ['quote'] | 2 | 1 |
+| pr-integration | integration | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 3 |
