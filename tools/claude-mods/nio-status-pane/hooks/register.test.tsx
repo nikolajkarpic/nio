@@ -1,5 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
+import { dur, num, when } from './register'
+
 const PANE = {
   plugin: 'nio-status-pane',
   component: 'Pane',
@@ -278,7 +280,21 @@ const open = async ($: any, on: any, show: (cwd: string | undefined) => ReturnTy
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: SLUG })
   await clock.settle()
-  const read = async () => ((await ui.findAll({ type: 'Text' })) ?? []).map((t: any) => t.text as string)
+  const here = async () => ((await ui.findAll({ type: 'Text' })) ?? []).map((t: any) => t.text as string)
+  // every tab's texts, overview first; a view with no tabs (the list, an error) as it is
+  const read = async () => {
+    const tabs = (await buttons(ui)).filter((k: string) => k?.startsWith('tab:'))
+    if (!tabs.length) return here()
+    const all: string[] = []
+    for (const key of tabs) {
+      await ui.press({ key })
+      await clock.settle()
+      all.push(...(await here()))
+    }
+    await ui.press({ key: 'tab:overview' })
+    await clock.settle()
+    return all
+  }
   return { seen, model, ui, read, clock }
 }
 const buttons = async (ui: any) => ((await ui.findAll({ type: 'Button' })) ?? []).map((b: any) => b.key ?? b.props?.key)
@@ -287,7 +303,8 @@ test('AC-1 drill-down timeline', async ($, on) => {
   const { seen, model, read } = await open($, on, ok)
   expect(seen.argv.filter(a => a === `${NIO} flow show ${SLUG} --json`).length).toBe(1)
   const all = (await read()).join('\n')
-  const at = ['planning → plan_jury', 'plan_jury → tasking', 'plan_jury → implementing'].map((x, i) => `${x} · orchestrator · test · test · 2026-11-10T1${i}:00:00Z`)
+  // times are local (`11-10 11:00`), so only the move, role and model are pinned
+  const at = ['planning → plan_jury', 'plan_jury → tasking', 'plan_jury → implementing'].map(x => `${x} · orchestrator · test`)
   expect(all.indexOf(at[0]!)).toBeGreaterThanOrEqual(0)
   expect(all.indexOf(at[1]!)).toBeGreaterThan(all.indexOf(at[0]!))
   expect(all.indexOf(at[2]!)).toBeGreaterThan(all.indexOf(at[1]!))
@@ -302,8 +319,8 @@ test('AC-1 drill-down timeline: a failed review shows its reasons, or - when flo
   ] }
   const { read } = await open($, on, () => result(0, JSON.stringify(shown)))
   const all = (await read()).join('\n')
-  expect(all).toContain('review plan_jury · 2026-11-10T11:30:00Z · no tests; bad ids')
-  expect(all).toContain('review tasking · 2026-11-10T12:30:00Z · -')
+  expect(all).toMatch(/\d\d:30 ✗ review plan_jury\n[^]*?   no tests; bad ids/)
+  expect(all).toMatch(/\d\d:30 ✗ review tasking\n[^]*?   -/)
 })
 
 test('AC-1 drill-down timeline: findings inside each round and their fix tasks', async ($, on) => {
@@ -311,8 +328,10 @@ test('AC-1 drill-down timeline: findings inside each round and their fix tasks',
   const shown = { ...SHOWN, juries: [{ gate: 'pr', outcome: 'human', rounds: [{ round: 3, lenses: [{ lens: 'adversary', verdict: 'fail' }], findings: [f] }] }] }
   const { read } = await open($, on, () => result(0, JSON.stringify(shown)))
   const all = (await read()).join('\n')
-  expect(all).toContain('round 3: adversary fail')
-  expect(all).toContain('J-30 blocker confirmed: pane drops findings → T-32, T-33')
+  expect(all).toContain('▾ ● pr human · 1 rounds · 1 findings') // not approved: open by default
+  expect(all).toContain('round 3  adversary fail')
+  expect(all).toContain('blocker J-30: pane drops findings')
+  expect(all).toContain('  confirmed → T-32, T-33')
 })
 
 test('AC-10 drill-down tasks grouped by epic', async ($, on) => {
@@ -320,8 +339,10 @@ test('AC-10 drill-down tasks grouped by epic', async ($, on) => {
   const { read } = await open($, on, () => result(0, JSON.stringify(shown)))
   const all = (await read()).join('\n')
   expect(all).toContain('E-1 first')
-  expect(all).toContain('T-1 done · attempts 1 · one')
-  expect(all).toContain('T-2 claimed · attempts 2 · two')
+  expect(all).toContain('E-1 first  1/1 done')
+  expect(all).toContain('✓ T-1 one · done · attempts 1')
+  expect(all).toContain('● T-2 two · claimed · attempts 2')
+  expect(all).toContain('tasks done 1/2 done')
   expect(all).not.toContain('undefined undefined')
 })
 
@@ -349,7 +370,7 @@ test('AC-29 AC-30 drill-down errors: an old nio says to update', async ($, on) =
 
 test('UJ-1 the drill-down only reads', async ($, on) => {
   const { seen, ui } = await open($, on, ok)
-  expect(await buttons(ui)).toEqual(['back'])
+  expect(await buttons(ui)).toEqual(['back', ...['overview', 'history', 'juries', 'tasks', 'cost', 'memory'].map(t => `tab:${t}`)])
   expect([...new Set(seen.argv)].sort()).toEqual([
     `${NIO} flow show ${SLUG} --json`,
     '/w/nio-123/.venv/bin/nio flow status',
@@ -396,27 +417,47 @@ test('AC-13 cost as the CLI gives it', async ($, on) => {
   }
   const { read } = await open($, on, () => result(0, JSON.stringify({ ...SHOWN, cost })))
   const all = await read()
-  for (const l of ['spec_jury: 110 tokens · 600s', 'planning: 20 tokens · 1200s', 'plan_jury: 50 tokens · 600s', 'unattributed: 0 tokens · 0s', 'total: 180 tokens · 2400s'])
+  for (const l of ['spec_jury  110 tokens · 10m', 'planning  20 tokens · 20m', 'plan_jury  50 tokens · 10m', 'unattributed  0 tokens · 0s', 'total  180 tokens · 40m'])
     expect(all.some(t => t.includes(l))).toBe(true)
-  const i = all.findIndex(t => t.includes('spec_jury: 110'))
-  expect(all.slice(i).some(t => /^\s+spec: 10 tokens · 240s/.test(t))).toBe(true)
+  const i = all.findIndex(t => t.includes('spec_jury  110'))
+  expect(all.slice(i).some(t => /^\s+jury spec  10 tokens · 4m/.test(t))).toBe(true)
 })
 
 test('AC-16 AC-17 context line', async ($, on) => {
   on('session.usage' as any, () => ({ value: { context: { percent: 42 } } }))
-  expect((await (await open($, on, ok)).read())).toContain('context: 42%')
+  expect((await (await open($, on, ok)).read()).some(t => t.endsWith(' · context: 42%'))).toBe(true)
 })
 
 test('AC-16 AC-17 context line: none when the host gives none', async ($, on) => {
   on('session.usage' as any, () => { throw new Error('no usage') })
   const all = await (await open($, on, ok)).read()
-  expect(all.filter(t => t.startsWith('context:'))).toEqual([])
+  expect(all.filter(t => t.includes('context:'))).toEqual([])
   expect(all).toContain('no juries yet')
 })
 
 test('AC-16 AC-17 context line: no percent', async ($, on) => {
   on('session.usage' as any, () => ({ value: { context: {} } }))
   const all = await (await open($, on, ok)).read()
-  expect(all.filter(t => t.startsWith('context:'))).toEqual([])
+  expect(all.filter(t => t.includes('context:'))).toEqual([])
   expect(all).toContain('no tasks yet')
+})
+
+test('display helpers', async () => {
+  expect([0, 999, 1500, 382109278].map(num)).toEqual(['0', '999', '1.5k', '382.1M'])
+  expect([45, 600, 23823, '-'].map(dur)).toEqual(['45s', '10m', '6h37m', '-'])
+  expect(when('nope')).toBe('nope')
+  expect(when('2026-11-10T10:00:00Z')).toMatch(/^11-1\d \d\d:00$/)
+})
+
+test('juries tab: an approved gate starts closed and opens on press', async ($, on) => {
+  const g = { gate: 'spec', outcome: 'approved', rounds: [{ round: 1, lenses: [{ lens: 'logic', verdict: 'pass' }], findings: [] }] }
+  const { ui, clock } = await open($, on, () => result(0, JSON.stringify({ ...SHOWN, juries: [g] })))
+  await ui.press({ key: 'tab:juries' })
+  await clock.settle()
+  const texts = async () => ((await ui.findAll({ type: 'Text' })) ?? []).map((t: any) => t.text as string).join('\n')
+  expect(await texts()).toContain('▸ ✓ spec approved · 1 rounds · 0 findings')
+  expect(await texts()).not.toContain('round 1')
+  await ui.press({ key: 'jury:spec' })
+  await clock.settle()
+  expect(await texts()).toContain('round 1  logic pass')
 })

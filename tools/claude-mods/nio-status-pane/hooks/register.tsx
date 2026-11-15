@@ -19,7 +19,7 @@ type Tree = { path: string; branch: string }
 type Effort = { slug: string; stage: string; status: string; at: string; gone: boolean }
 type Line = Effort | { slug: string; error: string }
 type Ran = { out: string } | { error: string }
-type Drill = { slug: string; path: string; shown: any; context: number | null }
+type Drill = { slug: string; path: string; shown: any; context: number | null; tab?: Tab; toggled?: string[] }
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err))
 const lastLine = (text: string) => text.trim().split('\n').pop() ?? ''
@@ -225,38 +225,201 @@ const show = async ($: $, slug: string, path: string): Promise<any> => {
   return { error: lastLine(r.stderr) || lastLine(r.stdout) || `exit ${r.exitCode}` }
 }
 
-const SECTION = { timeline: 'no timeline yet', juries: 'no juries yet', tasks: 'no tasks yet', memory: 'no memory yet' } as const
-const list = (v: any, none: string, row: (x: any) => string[]): string[] =>
-  v && !Array.isArray(v) && v.error ? [`error: ${v.error}`] : !Array.isArray(v) || !v.length ? [none] : v.flatMap(row)
+const TABS = ['overview', 'history', 'juries', 'tasks', 'cost', 'memory'] as const
+type Tab = (typeof TABS)[number]
+const NONE = { history: 'no timeline yet', juries: 'no juries yet', tasks: 'no tasks yet', memory: 'no memory yet' } as const
 
-const jury = (g: any): string[] => [
-  `${g.gate} · ${g.outcome}`,
-  ...(g.rounds ?? []).flatMap((r: any) => [
-    `round ${r.round}: ${(r.lenses ?? []).map((l: any) => `${l.lens} ${l.verdict}`).join(', ')}`,
-    ...(r.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}${f.fix_tasks?.length ? ` → ${f.fix_tasks.join(', ')}` : ''}`),
-  ]),
-]
-
-const cost = (c: any): string[] => {
-  if (c?.error) return [`error: ${c.error}`]
-  const l = (name: string, x: any) => `${name}: ${x.tokens} tokens · ${x.seconds}s`
-  return [
-    ...(c?.stages ?? []).flatMap((s: any) => [l(s.stage, s), ...(s.juries ?? []).map((j: any) => `  ${l(j.gate ?? j.name, j)}`)]),
-    ...(c ? [l('unattributed', c.unattributed ?? {}), l('total', c.total ?? {})].map(x => x.replace(/\[object Object\]/, '-')) : []),
-  ]
+// Display helpers: 382109278 → 382.1M, 23823 → 6h37m, an ISO stamp → local `11-15 14:20`.
+export const num = (n: any) =>
+  typeof n !== 'number' ? '-' : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n)
+export const dur = (s: any) =>
+  typeof s !== 'number' ? '-' : s < 60 ? `${s}s` : s < 3600 ? `${Math.round(s / 60)}m` : `${Math.floor(s / 3600)}h${String(Math.round((s % 3600) / 60)).padStart(2, '0')}m`
+const pad = (n: number) => String(n).padStart(2, '0')
+export const when = (at: any) => {
+  const d = new Date(at)
+  return isNaN(d.getTime()) ? String(at ?? '-') : `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+const tone = (word: any): 'success' | 'error' | 'warning' | undefined => {
+  const w = String(word)
+  if (/^(done|approved|pass|accepted|current)$/.test(w)) return 'success'
+  if (/^(block|blocker|fail|failed|rejected|broken)/.test(w)) return 'error'
+  if (/^(major|claimed|working|human|waiting|open|proposed)/.test(w)) return 'warning'
+  return undefined
+}
+const GLYPH: Record<string, string> = { success: '✓', error: '✗', warning: '●' }
+const arr = (v: any): any[] => (Array.isArray(v) ? v : [])
+const failed = (v: any) => (v && !Array.isArray(v) && v.error ? String(v.error) : null)
 
-// FR-21: the five sections, from the one JSON only.
-const sections = (d: any): string[] => [
-  ...list(d.timeline, SECTION.timeline, x =>
-    x.kind === 'review'
-      ? [`review ${x.from} · ${x.at} · ${Array.isArray(x.reasons) && x.reasons.length ? x.reasons.join('; ') : '-'}`]
-      : [`${x.from} → ${x.to} · ${x.role} · ${x.host} · ${x.model} · ${x.at}`]),
-  ...list(d.juries, SECTION.juries, jury),
-  ...list(d.tasks, SECTION.tasks, x => [String(x.epic), ...(x.tasks ?? []).map((t: any) => `${t.id} ${t.status} · attempts ${t.attempts} · ${t.title}`)]),
-  ...cost(d.cost),
-  ...list(d.memory, SECTION.memory, r => [`${r.id} ${r.kind} ${r.standing}: ${r.title}`]),
-]
+// The effort's drill-down, one tab at a time, from the one `flow show` JSON (FR-21).
+const drillView = (ui: any, d: Drill, row: NioRow | undefined, set: (fn: (d: Drill) => Drill) => void) => {
+  const { Box, Text, Button, Progress } = ui
+  const s = d.shown
+  const tab: Tab = d.tab ?? 'overview'
+  const err = (v: any) => <Text color="error">error: {failed(v)}</Text>
+  const none = (t: string) => <Text dimColor>{t}</Text>
+  const open = (g: any) => (tone(g.outcome) !== 'success') !== (d.toggled ?? []).includes(g.gate)
+
+  const event = (x: any) =>
+    x.kind === 'review' ? (
+      <Box flexDirection="column">
+        <Text>
+          <Text dimColor>{when(x.at)} </Text>
+          <Text color="error">✗ review {x.from}</Text>
+        </Text>
+        <Text dimColor>{`   ${arr(x.reasons).length ? arr(x.reasons).join('; ') : '-'}`}</Text>
+      </Box>
+    ) : (
+      <Text>
+        <Text dimColor>{when(x.at)} </Text>
+        {x.from} → <Text bold>{x.to}</Text>
+        <Text dimColor>{` · ${x.role}${x.model && x.model !== '-' ? ` · ${x.model}` : ''}`}</Text>
+      </Text>
+    )
+  const findingsOf = (g: any) => arr(g.rounds).reduce((n, r) => n + arr(r.findings).length, 0)
+  const juryLine = (g: any, arrow = '') => (
+    <Text>
+      {arrow}
+      <Text color={tone(g.outcome)}>{GLYPH[tone(g.outcome) ?? ''] ?? '·'} </Text>
+      <Text bold>{g.gate}</Text> <Text color={tone(g.outcome)}>{g.outcome}</Text>
+      <Text dimColor>{` · ${arr(g.rounds).length} rounds · ${findingsOf(g)} findings`}</Text>
+    </Text>
+  )
+  const finding = (f: any) => (
+    <Box flexDirection="column" marginLeft={4}>
+      <Text>
+        <Text color={tone(f.severity)}>{f.severity}</Text> {f.id}: {f.title}
+      </Text>
+      <Text dimColor>{`  ${f.validation}${arr(f.fix_tasks).length ? ` → ${f.fix_tasks.join(', ')}` : ''}`}</Text>
+    </Box>
+  )
+  const jury = (g: any) => (
+    <Box flexDirection="column">
+      <Button key={`jury:${g.gate}`} onPress={() => set(c => ({ ...c, toggled: (c.toggled ?? []).includes(g.gate) ? c.toggled!.filter(x => x !== g.gate) : [...(c.toggled ?? []), g.gate] }))}>
+        {juryLine(g, open(g) ? '▾ ' : '▸ ')}
+      </Button>
+      {open(g) &&
+        [...arr(g.rounds)].reverse().map(r => (
+          <Box flexDirection="column" marginLeft={2}>
+            <Text>
+              <Text bold>round {r.round}</Text>
+              {arr(r.lenses).map(l => (
+                <Text>
+                  {'  '}
+                  {l.lens} <Text color={tone(l.verdict)}>{l.verdict}</Text>
+                </Text>
+              ))}
+            </Text>
+            {arr(r.findings).map(finding)}
+          </Box>
+        ))}
+    </Box>
+  )
+  const counts = (tasks: any[]) => [tasks.filter(t => t.status === 'done').length, tasks.length] as const
+  const epic = (x: any) => {
+    const [done, all] = counts(arr(x.tasks))
+    return (
+      <Box flexDirection="column">
+        <Text>
+          <Text bold>{String(x.epic)}</Text>
+          <Text dimColor>{`  ${done}/${all} done`}</Text>
+        </Text>
+        {arr(x.tasks).map(t => (
+          <Text>
+            {'  '}
+            <Text color={tone(t.status)}>{GLYPH[tone(t.status) ?? ''] ?? '○'}</Text> {t.id} {t.title}
+            <Text dimColor>{` · ${t.status}${t.attempts && t.attempts !== '-' ? ` · attempts ${t.attempts}` : ''}`}</Text>
+          </Text>
+        ))}
+      </Box>
+    )
+  }
+  const costLine = (name: string, x: any, indent = '') => (
+    <Text>
+      {indent}
+      {name}
+      <Text dimColor>{`  ${num(x?.tokens)} tokens · ${dur(x?.seconds)}`}</Text>
+    </Text>
+  )
+  const allTasks = arr(s?.tasks).flatMap(x => arr(x.tasks))
+  const [done, total] = counts(allTasks)
+
+  const body = (): any[] => {
+    if (tab === 'history') return failed(s.timeline) ? [err(s.timeline)] : arr(s.timeline).length ? arr(s.timeline).map(event) : [none(NONE.history)]
+    if (tab === 'juries') return failed(s.juries) ? [err(s.juries)] : arr(s.juries).length ? arr(s.juries).map(jury) : [none(NONE.juries)]
+    if (tab === 'tasks') return failed(s.tasks) ? [err(s.tasks)] : arr(s.tasks).length ? arr(s.tasks).map(epic) : [none(NONE.tasks)]
+    if (tab === 'memory')
+      return failed(s.memory)
+        ? [err(s.memory)]
+        : arr(s.memory).length
+          ? arr(s.memory).map(r => (
+              <Box flexDirection="column">
+                <Text>{r.title}</Text>
+                <Text dimColor>
+                  {`  ${r.id} · ${r.kind} · `}
+                  <Text color={tone(r.standing)}>{r.standing}</Text>
+                </Text>
+              </Box>
+            ))
+          : [none(NONE.memory)]
+    if (tab === 'cost')
+      return failed(s.cost)
+        ? [err(s.cost)]
+        : [
+            ...arr(s.cost?.stages).flatMap(st => [costLine(st.stage, st), ...arr(st.juries).map(j => costLine(`jury ${j.gate ?? j.name}`, j, '  '))]),
+            costLine('unattributed', s.cost?.unattributed),
+            <Text bold>
+              total<Text dimColor>{`  ${num(s.cost?.total?.tokens)} tokens · ${dur(s.cost?.total?.seconds)}`}</Text>
+            </Text>,
+          ]
+    // overview: progress, each gate's outcome, the latest moves, the total cost
+    const recent = arr(s.timeline).slice(-3)
+    return [
+      <Text bold>Tasks</Text>,
+      failed(s.tasks) ? err(s.tasks) : total ? <Progress label="tasks done" value={done} max={total} valueText={`${done}/${total} done`} color="success" /> : none(NONE.tasks),
+      <Text bold>Juries</Text>,
+      ...(failed(s.juries) ? [err(s.juries)] : arr(s.juries).length ? arr(s.juries).map(g => juryLine(g)) : [none(NONE.juries)]),
+      <Text bold>Latest</Text>,
+      ...(failed(s.timeline) ? [err(s.timeline)] : recent.length ? recent.map(event) : [none(NONE.history)]),
+      <Text bold>Cost</Text>,
+      failed(s.cost) ? err(s.cost) : <Text>{`${num(s.cost?.total?.tokens)} tokens · ${dur(s.cost?.total?.seconds)}`}</Text>,
+    ]
+  }
+
+  return (
+    <Box flexDirection="column">
+      <Box flexDirection="row" gap={1}>
+        <Button key="back" hotkey="b" onPress={() => set(() => null as any)}>
+          ← Back
+        </Button>
+      </Box>
+      <Box flexDirection="column" marginTop={1}>
+        <Text bold>{d.slug}</Text>
+        <Text dimColor>
+          {row && !('error' in row) ? `${row.stage} · ${row.status} · ${row.worktree}` : base(d.path)}
+          {typeof d.context === 'number' ? ` · context: ${d.context}%` : ''}
+        </Text>
+      </Box>
+      {!s ? (
+        <Text dimColor>Reading...</Text>
+      ) : s.error ? (
+        <Text color="error">{s.error}</Text>
+      ) : (
+        <Box flexDirection="column">
+          <Box flexDirection="row" flexWrap="wrap" columnGap={1} marginY={1}>
+            {TABS.map((t, i) => (
+              <Button key={`tab:${t}`} hotkey={String(i + 1)} variant={t === tab ? 'primary' : undefined} dimColor={t !== tab} onPress={() => set(c => ({ ...c, tab: t }))}>
+                {t}
+              </Button>
+            ))}
+          </Box>
+          <Box flexDirection="column" gap={tab === 'overview' ? 0 : 1}>
+            {body()}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  )
+}
 
 let busy = false // module state: a reload starts a fresh environment, timers included
 
@@ -299,29 +462,14 @@ export const register: Register = on => {
     if (!b) return <Text dimColor>Reading nio flow status...</Text>
     const d = (await read($, drill)) as Drill | null
     if (d) {
-      const shown = d.shown
-      return (
-        <Box flexDirection="column">
-          <Button key="back" onPress={() => update($, drill, () => null)}>
-            Back
-          </Button>
-          <Text bold>{d.slug}</Text>
-          {!shown ? (
-            <Text dimColor>Reading...</Text>
-          ) : shown.error ? (
-            <Text color="error">{shown.error}</Text>
-          ) : (
-            sections(shown).map(l => <Text>{l}</Text>)
-          )}
-          {typeof d.context === 'number' && <Text>context: {d.context}%</Text>}
-        </Box>
-      )
+      const row = b.rows.find(r => r.slug === d.slug)
+      return drillView($.ui.resolve(e), d, row, fn => void update($, drill, cur => (cur ? fn(cur as Drill) : cur)))
     }
     const open = (slug: string, path: string) => async () => {
-      await update($, drill, () => ({ slug, path, shown: null, context: null }))
+      await update($, drill, () => ({ slug, path, shown: null, context: null, tab: 'overview', toggled: [] }))
       const shown = await show($, slug, path)
       const context = await $.session.usage().then(u => (typeof u?.context?.percent === 'number' ? u.context.percent : null), () => null)
-      await update($, drill, cur => (cur && cur.slug === slug ? { slug, path, shown, context } : cur))
+      await update($, drill, cur => (cur && cur.slug === slug ? { ...cur, shown, context } : cur))
     }
     const brokenSlugs = new Set(b.rows.flatMap(r => ('error' in r && r.slug && r.path ? [r.slug] : [])))
     return (
@@ -329,7 +477,7 @@ export const register: Register = on => {
         <Text dimColor>
           {summary(b.rows)} · updated {b.at}
         </Text>
-        {b.rows.map(r =>
+        {b.rows.map((r, i) =>
           'error' in r ? (
             r.slug && r.path ? (
               <Button key={r.slug} onPress={open(r.slug, r.path)}>
@@ -342,15 +490,15 @@ export const register: Register = on => {
               </Text>
             )
           ) : (
-            <Box flexDirection="column" marginTop={1}>
+            <Box flexDirection="column" marginTop={1} paddingLeft={1} borderStyle="single" borderColor="subtle">
               {brokenSlugs.has(r.slug) ? (
                 <Text bold>{r.slug}</Text>
               ) : (
-                <Button key={r.slug} onPress={open(r.slug, r.path!)}>
+                <Button key={r.slug} hotkey={i < 9 ? String(i + 1) : undefined} onPress={open(r.slug, r.path!)}>
                   <Text bold>{r.slug}</Text>
                 </Button>
               )}
-              <Text>
+              <Text color={tone(r.status)}>
                 {r.stage} · {r.status}
               </Text>
               <Text dimColor>
