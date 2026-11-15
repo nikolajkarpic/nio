@@ -1,7 +1,6 @@
 {
   "abandon": null,
   "attempts": {
-    "T-14": 1,
     "T-19": 1,
     "T-9": 1
   },
@@ -9,9 +8,5 @@
   "claims": {},
   "pause": null,
   "run": "R-261115-2oxw",
-  "waiting": {
-    "change": "C-261115-ftot",
-    "task": "T-14",
-    "why": "spec problem in T-14"
-  }
+  "waiting": null
 }
