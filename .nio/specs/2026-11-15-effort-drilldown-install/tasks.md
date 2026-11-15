@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-33, T-34]                      # task IDs removed from this file; never reused
+retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-33, T-34, T-38]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -208,6 +208,17 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - Effort: low
 - Mode: direct: T-34's TC-1 passed on arrival; the new test and the fix land together
 
+### T-43 Fix: a failing self-check name with spaces is reported whole (T-38 retired, its test passed on arrival)
+- From: C-261115-b3lo
+- Files: `src/nio/implement.py`, `tests/test_implement.py`
+- Serves: AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30
+- Test: TC-6, plus new test_suite_reads_self_check_name_with_spaces (a self-check `FAIL` line whose name holds spaces lands whole in the suite's `failing` list)
+- Depends on: none
+- Parallel: no
+- Tier: strong: a one-line reader fix in implement.py's self-check summary with a real test
+- Effort: low
+- Mode: direct: T-38's TC-6 passed on arrival; the new test and the fix land together
+
 ### T-32 Fix: Pane drops every jury finding and fix task
 - From: J-30 (pr, round 3)
 - Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`
@@ -224,17 +235,6 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`
 - Serves: CT-12, AC-10
 - Test: TC-2
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-38 Fix: T-36: src/nio/implement.py isn't in the epic's diff
-- From: J-48 (pr, round 4)
-- Files: `src/nio/implement.py`
-- Serves: AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30
-- Test: TC-6
 - Depends on: none
 - Parallel: no
 - Tier: strong: a fix from a jury finding
