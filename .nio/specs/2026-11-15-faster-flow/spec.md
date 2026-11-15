@@ -240,7 +240,7 @@ every stage and gate itself, with one agent fixing all of a round's confirmed fi
 | blocked | reject: blocked for the human | reject: not claimed | reject: not claimed | reject: no run without a hand-back | reject: no run without a hand-back | reject: no run without a hand-back | → waiting | [agent] |
 | closed | reject: epic closed | reject: epic closed | reject: epic closed | ignore | ignore | ignore | reject: not blocked | [agent] |
 
-A run that errors, collects no test or runs past 30 minutes counts as "flow's test run fails" (FR-4). Unblocking resets the failed-run count. An in-flight epic whose tasks were all done under the per-task flow enters at `testing` (FR-44). [agent]
+A run that errors, collects no test or runs past 30 minutes counts as "flow's test run fails" (FR-4). Unblocking resets the failed-run count. An in-flight epic whose tasks were all done under the per-task flow enters at `testing` (FR-44). A closed epic that gains an undone task (a later pr round's fix task) is `waiting` again. [agent]
 
 ### Decision table: Gate outcome
 | gate (pr, other) | auto (on, off) | risk flag (risky, none) | jury (approved, findings) | → outcome | Src |

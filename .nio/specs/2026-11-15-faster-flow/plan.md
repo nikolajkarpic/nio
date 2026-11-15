@@ -144,7 +144,7 @@ retired: []                      # OP IDs removed from this plan; never reused
 ## Decisions
 - [agent] Epic state is read from history (`claim`, `epic_test`, `blocked`, `unblock`, `task_done`) and the existing `claims`/`attempts` keys, with one new history kind, `epic_test`: no new state key or file, as the task states are today (RF-23, RF-26).
 - [agent] The hand-back is a new `nio flow finish <slug> E-n`, not a reused `green`: FR-5 removes `green`, and the mod matches the new name (CT-2, CT-11).
-- [agent] The epic test command is `--run` or built from the TCs through `evidence.one_test`, and must name every TC file, as red checks today (RF-25, CT-2).
+- [agent] The epic test command is built from the TCs through `evidence.one_test`, else the configured `tests.suite`; never a command the agent hands over (FR-3, CT-2).
 - [agent] The 30-minute limit is a module constant, `EPIC_LIMIT`, that a test lowers; no new config key (FR-4, AC-47).
 - [agent] One commit per epic, `E-n: <heading>`, staging tracked changes plus the untracked paths its tasks list (FR-11, CT-3).
 - [agent] Tier and effort move to a `- Tier:`/`- Effort:` line under each `## E-n`; an epic approved before the change takes its tasks' highest (FR-7, CT-6).

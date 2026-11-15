@@ -68,7 +68,7 @@ def step(root, run=""):
     return jury.step(root, S, "pr", run)
 
 
-def juror(root, run, name, findings="none", matches=True):
+def juror(root, run, name, findings="none", matches=True, verdicts=""):
     """A valid lens output for juror `name` (`<lens>` or `<lens>~<part>`); conformance matches every AC to test_refund."""
     lens = name.split("~")[0]
     line = next(n for n, x in enumerate((root / "tests/test_refund.py").read_text().splitlines(), 1) if "def test_refund" in x)
@@ -80,10 +80,10 @@ def juror(root, run, name, findings="none", matches=True):
                            for i, f in enumerate(findings, 1))
     path = root / f".nio/runs/{run}/jury/pr-{name}.md"
     path.write_text(f'---\nlens: {lens}\ngate: pr\nsubject: {S}\nby: "juror / claude-code / sonnet"\ncontext: sufficient\n---\n'
-                    f"## Reasoning\nChecked.\n\n{body}## Findings\n{findings}\n")
+                    f"## Reasoning\nChecked.\n\n{f'## Verdicts{chr(10)}{verdicts}{chr(10)}{chr(10)}' * bool(verdicts)}{body}## Findings\n{findings}\n")
 
 
-def gate_round(root, findings=None):
+def gate_round(root, findings=None, verdicts=""):
     """One pr round to its outcome: start (push, PR), evidence, packs, every juror (`findings` {juror name: [dicts]}), the
     refuter confirming all. Returns (the run, the lines of every step)."""
     out = step(root)
@@ -92,7 +92,7 @@ def gate_round(root, findings=None):
     out += step(root, run)
     names = json.loads((root / f".nio/runs/{run}/jury/packs/step.json").read_text())["lenses"]
     for name in names:
-        juror(root, run, name, (findings or {}).get(name, "none"))
+        juror(root, run, name, (findings or {}).get(name, "none"), verdicts=verdicts if name == "correctness" else "")
     out += step(root, run)
     if any("run nio-refuter" in x for x in out):
         pack = re.search(r"run nio-refuter on (\S+)", out[-1])[1]
@@ -142,6 +142,30 @@ def test_epics_close_without_a_jury_then_one_pr_gate():
     assert tasks.check(root, S)[0] == errors
     code, out = flow(root, "claim", S)
     assert code == 0 and "epic: E-3 PR fixes" in out and "card: nio-worker-strong" in out, out
+    print("ok")
+
+
+def test_second_pr_round_reopens_the_fixes_epic():
+    """F-2: the closed `PR fixes` epic gains a second round's fix task: it is claimed and finished again, not stuck."""
+    root = built()
+    fake_hub()
+    gate_round(root, {"correctness": [{"title": "Refund pays twice"}]})
+    fix_epic(root)
+    assert stage(root) == "pr", stage(root)
+    blocker = [{"title": "Refund logs nothing", "cites": "AC-2", "severity": "blocker"}]
+    run, out = gate_round(root, {"correctness": blocker}, "- J-1: fixed — gone")
+    for name in ("correctness-2", "correctness-3"):  # the blocker's escalation jurors agree
+        juror(root, run, name, blocker)
+        p = root / f".nio/runs/{run}/jury/pr-{name}.md"
+        p.write_text(p.read_text().replace(f"lens: {name}", "lens: correctness"))
+    out += step(root, run)
+    while m := re.search(r"run nio-refuter on (\S+)", out[-1]):  # the refuter confirms again
+        (root / f".nio/runs/{run}/jury/pr-{Path(m[1]).stem}.md").write_text("### J-2\n- result: confirmed\n- reason: so\n")
+        out += step(root, run)
+    assert "capped: round 2" in "\n".join(out), out
+    jury.rule(root, S, "pr", "J-2", "fix", "fix it")  # the human: a fix task into the closed `PR fixes` epic
+    fix_epic(root, "def refund(x):\n    return x  # fixed twice\n")
+    assert stage(root) == "pr", stage(root)
     print("ok")
 
 

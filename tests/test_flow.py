@@ -2973,6 +2973,12 @@ def test_retire_releases_its_claim():
     assert code == 0 and "already retired; its claim released" in out, (out, err)
     assert json.loads(st.read_text())["claims"] == {}
     assert run_main(root, "task", "retire", S, "T-4", "--reason", "again", "--by", "agent")[0] != 0
+    from nio import tasks
+    note = lambda claims: {"kind": "note", "from": "implementing", "to": "implementing", "evidence": {}, "state": {"claims": claims}}
+    history(root, S, note({"epics": {"E-1": {"run": "R-1"}}}))  # a per-epic claim holds no task: nothing to release
+    assert not tasks.release_claim(root, S, "T-1", "x", "agent") and json.loads(st.read_text())["claims"] == {"epics": {"E-1": {"run": "R-1"}}}
+    history(root, S, note({"task": "T-1", "wave": ["T-1", "T-2"]}))  # an old wave: the rest of it stays claimed
+    assert tasks.release_claim(root, S, "T-1", "x", "agent") and json.loads(st.read_text())["claims"] == {"task": "T-2", "wave": ["T-2"]}
     print("ok")
 
 
@@ -3089,11 +3095,11 @@ def test_drivers_ac20_brief_shows_a_running_long_command():
     implement.finish = lambda *a, **k: (seen.append(cli(root, "brief", S)[1]), (0, []))[1]
     evidence.collect = lambda *a, **k: (seen.append(cli(root, "brief", S)[1]), [])[1]
     try:
-        run_main(root, "flow", "finish", S, "E-1", "--run", "pytest -q", "--by", BY)
+        run_main(root, "flow", "finish", S, "E-1", "--by", BY)
         run_main(root, "jury", "evidence", S, "E-1", "--run", "R-1")
     finally:
         implement.finish, evidence.collect = real
-    assert f"running: nio flow finish {S} E-1 --run 'pytest -q' --by '{BY}', started" in seen[0], seen
+    assert f"running: nio flow finish {S} E-1 --by '{BY}', started" in seen[0], seen
     assert f"running: nio jury evidence {S} E-1 --run R-1, started" in seen[1], seen
     assert "running:" not in cli(root, "brief", S)[1]
     (root / ".nio/specs" / S / "running.json").write_text(json.dumps(  # a killed run's record is not shown
@@ -3313,6 +3319,37 @@ def test_auto_human_steps():
     print("ok")
 
 
+def test_auto_dispositions_are_bounded():
+    """F-9, F-11 (FR-19, FR-47, CT-37, TC-47): under auto the driver accepts only a minor as risk, and a capped batch
+    only through `jury rule`; with auto off, `--by auto` and an agent's ruling are refused, the ledger unchanged."""
+    root = effort("implementing")
+    grant_on(root, "implementing")
+    led = jury.load(root, S, "spec")
+    extra = {"quotes": [], "fix": "", "evidence": "observed", "reason": ""}
+    led["findings"] += [{**finding("J-7"), **extra, "severity": "blocker"}, {**finding("J-8"), **extra, "severity": "minor"},
+                        {**finding("J-9"), **extra}]
+    led["cap"] = {"round": led["round"], "batch": ["J-9"], "fix": [], "version": jury.version_now(root, S, "spec")}
+    (jury.folder(root, S) / "spec.json").write_text(json.dumps(led))
+    for fid, disposition in (("J-7", "accepted-risk"), ("J-7", "out-of-scope"), ("J-9", "accepted-risk"), ("J-9", "spec-fix")):
+        before = (jury.folder(root, S) / "spec.json").read_bytes()
+        code, out, err = run_main(root, "jury", "dispose", S, "spec", fid, disposition, "--by", "auto", "--note", "x")
+        assert code != 0 and (jury.folder(root, S) / "spec.json").read_bytes() == before, (fid, disposition, out, err)
+    code, out, err = run_main(root, "jury", "dispose", S, "spec", "J-8", "accepted-risk", "--by", "auto", "--note", "a minor")
+    assert code == 0, (out, err)
+    off = effort("implementing")
+    history(off, S, {"kind": "start", "from": None, "to": "implementing"})
+    (jury.folder(off, S)).mkdir(exist_ok=True)
+    led["cap"]["version"] = jury.version_now(off, S, "spec")
+    (jury.folder(off, S) / "spec.json").write_text(json.dumps(led))
+    before = (jury.folder(off, S) / "spec.json").read_bytes()
+    code, out, err = run_main(off, "jury", "dispose", S, "spec", "J-8", "accepted-risk", "--by", "auto", "--note", "x")
+    assert code != 0 and "auto flag on" in out + err, (out, err)
+    code, out, err = run_main(off, "jury", "rule", S, "spec", "J-9", "accept", "--note", "x", "--by", BY)
+    assert code != 0 and "a ruling on the capped batch is the human's" in out + err, (out, err)
+    assert (jury.folder(off, S) / "spec.json").read_bytes() == before
+    print("ok")
+
+
 def test_auto_no_progress_pauses():
     """TC-55: under auto, a plan round that closed none of the last round's findings pauses the run for the human."""
     root = effort("plan_jury")
@@ -3500,7 +3537,20 @@ def test_show_tasks_by_epic():
     row = lambda e, i: next(x for x in got[e]["tasks"] if x["id"] == i)
     assert (row(0, "T-1")["status"], row(0, "T-1")["attempts"]) == ("done", "-"), got
     assert (row(0, "T-2")["status"], row(0, "T-2")["attempts"]) == ("claimed", 2), got
-    assert (row(1, "T-4")["status"], row(1, "T-4")["attempts"]) == ("failing", 1), got
+    assert (row(1, "T-4")["status"], row(1, "T-4")["attempts"]) == ("ready", 1), got  # an old per-task count stays
+    # per-epic claims: an epic claimed now, one failed twice, one blocked by its 3 runs (state attempts per epic)
+    epic = lambda kind, e, **ev: {"kind": kind, "from": "implementing", "to": "implementing", "evidence": {"epic": e, **ev}}
+    for got_state, extra, want in (({"claims": {"epics": {"E-2": {"run": "R-1"}}}}, [], ("claimed", "-")),
+                                   ({"claims": {}, "attempts": {"E-2": 2}}, [epic("epic_test", "E-2", passed=False)] * 2, ("failed", 2)),
+                                   ({"claims": {}, "attempts": {"E-2": 3}}, [epic("epic_test", "E-2", passed=False)] * 3 + [epic("blocked", "E-2", cause="runs")], ("blocked", 3))):
+        root = effort("implementing")
+        f = root / ".nio/specs" / S / "tasks.md"
+        f.write_text(f.read_text() + "\n## E-2 Second epic (US-1)\n\n### T-4 Another task\n- Files: `app.py`\n- Serves: AC-1\n"
+                     "- Test: TC-1\n- Depends on: none\n- Parallel: no\n")
+        history(root, S, epic("claim", "E-2", tasks=["T-4"]), *extra, {**epic("claim", "E-2"), "kind": "note", "state": got_state})
+        rows = flow.task_rows(root, S, *flow.load(root, S))
+        t4 = rows[1]["tasks"][0]
+        assert (t4["status"], t4["attempts"]) == want, (want, rows)
     print("ok")
 
 

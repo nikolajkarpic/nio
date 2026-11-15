@@ -107,8 +107,8 @@ wait for it like this:
    the host takes one per call. A second epic claimed while one runs prints `worktree:`; its agent gets that worktree
    as its working directory. The agent writes every task's tests and code, in task order, and hands back
    `status: done` with `command:`, the one command that runs the epic's tests.
-3. **Hand the epic back.** On `done`, run the `then:` line: `nio flow finish <slug> E-n --by` (when the line asks for
-   `--run`, pass the agent's `command:`). It runs the epic's tests once itself; a pass closes the epic with one commit.
+3. **Hand the epic back.** On `done`, run the `then:` line: `nio flow finish <slug> E-n --by`. It runs the epic's tests
+   once itself (its TCs' tests, else the whole suite), never a command from the agent; a pass closes the epic with one commit.
    A failed run (a failing test, a test file that doesn't import, no test run, or past 30 minutes) keeps the epic open:
    claim it again and start a fresh agent; the new pack holds the failing tests and the run's last lines. The third
    failed run blocks the epic for the human. A `try again` from `nio flow` is retried after a few seconds, not counted

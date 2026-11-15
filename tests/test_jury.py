@@ -2851,6 +2851,24 @@ def test_fix_during_escalation_checks_the_raised_version():
     print("ok")
 
 
+def test_refix_of_a_reraised_finding_needs_a_change():
+    """F-10: a finding raised again on a newer version, disposed `spec-fix` with no edit since, is caught; only an
+    escalation juror's vote leaves the version it was raised on alone (TC-28)."""
+    root = setup()
+    lens(root, "R-1", "logic", CONTRADICTION.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    (root / ".nio/runs/R-1/jury/spec-refuter.md").write_text(CONFIRM.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-1")
+    spec_md = root / ".nio/specs/refunds/spec.md"
+    spec_md.write_text(spec_md.read_text() + "- FR-3: an unrelated edit.\n")
+    lens(root, "R-2", "logic", CONTRADICTION.format(n=1))
+    jury.collect(root, "refunds", "spec", "R-2")
+    jury.dispose(root, "refunds", "spec", "J-1", "spec-fix", "agent", "fixed, says the agent")
+    _, lines = jury.check(root, "refunds", "spec")
+    assert any("spec-fix without a change to the spec: J-1" in x for x in lines), lines
+    print("ok")
+
+
 def test_changed_names_plan_items():
     """TC-29: plan edits name the changed contract and tests by ID, not their sections."""
     root = plan_repo()

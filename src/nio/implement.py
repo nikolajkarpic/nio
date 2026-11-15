@@ -24,6 +24,9 @@ def run(root, command, limit):
         os.killpg(p.pid, signal.SIGKILL)
         out, _ = p.communicate()
         code, cause = None, "time limit"
+    except BaseException:  # interrupted: the tests stop with it
+        os.killpg(p.pid, signal.SIGKILL)
+        raise
     return code, out.decode(errors="replace"), cause
 
 
@@ -115,8 +118,7 @@ def tasks_of(root, slug):
                         "files": [x for x in map(tasks.file_of, tasks.files(f.get("Files", ""))) if x],
                         "reused": [tasks.file_of(x) for x in tasks.files(f.get("Files", "")) if x.endswith("(unchanged)")],  # FR-40
                         "serves": tasks.ids(f.get("Serves", "")), "tests": tasks.ids(f.get("Test", "")),
-                        "own": tasks.own(f.get("Test", "")), "test": f.get("Test", ""), "tier": tier, "effort": effort,
-                        "parallel": f.get("Parallel") == "yes"})
+                        "own": tasks.own(f.get("Test", "")), "test": f.get("Test", ""), "tier": tier, "effort": effort})
     return out
 
 
@@ -166,9 +168,9 @@ def epics(root, slug, lines):
                 state, passed = "claimed", False
             elif kind == "epic_test":
                 passed = bool(ev.get("passed"))
-                runs, state = (runs, state) if passed else (runs + 1, "failed")
+                runs, state = (runs, "waiting") if passed else (runs + 1, "failed")  # a task added later reopens it
             elif kind == "epic":
-                passed = True
+                passed, state = True, "waiting"
             elif kind == "blocked":
                 state = "blocked"
             elif kind == "unblock":
@@ -180,6 +182,27 @@ def epics(root, slug, lines):
             state = "testing"
         out[e["id"]] = (state, runs)
     return out
+
+
+def in_main(lines):
+    """The epics whose work sits in the main tree: their last claim made no worktree and no passing run follows it (a
+    failed epic's work stays there for its next agent, FR-42)."""
+    last = {}
+    for x in lines:
+        ev = x.get("evidence") or {}
+        if ev.get("epic") and not ev.get("task"):
+            if x["kind"] == "claim":
+                last[ev["epic"]] = "worktree" not in ev
+            elif x["kind"] == "epic" or x["kind"] == "epic_test" and ev.get("passed"):
+                last[ev["epic"]] = False
+    return [e for e, here in last.items() if here]
+
+
+def base(lines, rel):
+    """The commit a worktree was made from: the first claim line naming it (a re-claim or a converted old claim keeps
+    the tree, not its base)."""
+    return next(x["evidence"]["commit"] for x in lines if x["kind"] == "claim" and
+                rel in (x["evidence"].get("worktree"), *(x["evidence"].get("worktrees") or [])))
 
 
 def claimed(state):
@@ -363,9 +386,7 @@ def epic_tests(root, slug, mine):
 
 
 def then_line(root, slug, eid, mine, by):
-    command = epic_tests(root, slug, mine)[0]
-    run = "" if command else ' --run "<the command: from the agent\'s hand-off>"'
-    return f"then: nio flow finish {slug} {eid}{run} {flow.by_arg(by)}"
+    return f"then: nio flow finish {slug} {eid} {flow.by_arg(by)}"
 
 
 def claim(root, slug=None, by=None, epic=None):
@@ -387,9 +408,9 @@ def claim(root, slug=None, by=None, epic=None):
             return 1, [f'{b} is blocked: nio flow unblock {slug} {b} --human "<reason>" --by human']
         if state["abandon"] is not None or state["pause"] or started and state["waiting"]:
             return 1, flow.talk(slug, flow.where(root, slug, state, lines))  # a blocked task holds the stage (AC-23)
-        old = state["claims"].get("task")
-        if not held and not old and all(s != "failed" for s, _ in states.values()):
-            clean(root, slug)  # a failed epic's work stays in the tree for its next agent
+        old, mains = state["claims"].get("task"), in_main(lines)
+        if not old and not mains:
+            clean(root, slug)  # the claim works in the main tree; a failed epic's work stays there for its next agent
         base = []
         if not started:
             entry, state, why = start_stage(root, slug, state)
@@ -436,9 +457,13 @@ def claim(root, slug=None, by=None, epic=None):
             rid = records.new_run(root, {"effort": slug, "task": eid,
                                          "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
             path = pack.save(root, rid, eid, worker_pack(root, slug, eid, e["title"], mine, failed))
-            tree = prev and prev[-1]["evidence"].get("worktree")
+            last = prev[-1]["evidence"] if prev else {}
+            tree = last.get("worktree")
             tree = tree if tree and (root / tree).is_dir() else None  # a failed epic's tree is reused: its work is there
-            if (held or tree) and "worktrees" not in info:  # FR-43: a second epic works in its own tree
+            olds = [n for n in last.get("worktrees") or [] if (root / n).is_dir()]
+            if olds and "worktrees" not in info:  # a converted epic's old wave trees stay its own until it closes
+                info["worktrees"] = olds
+            if (tree or mains and eid not in mains) and "worktrees" not in info:  # FR-43: the main tree holds another epic's work
                 if not tree:
                     full = root / ".nio/runs" / rid / "worktree"
                     code, _, err = records.git(root, "worktree", "add", "--detach", str(full), head, full=True)
@@ -448,7 +473,8 @@ def claim(root, slug=None, by=None, epic=None):
                     tree = str(full.relative_to(root))
                 info["worktree"] = tree
             info.update(run=rid, pack=str(path.relative_to(root)))
-            ev = {"epic": eid, "tasks": [t["id"] for t in mine], "commit": head, "run": rid,
+            ev = {"epic": eid, "tasks": [t["id"] for t in mine], "commit": head, "run": rid,  # plans: what the agent mustn't edit
+                  "plans": {f: digest(root, f".nio/specs/{slug}/{f}") for f in PLAN_FILES},
                   **{k: info[k] for k in ("worktree", "worktrees") if k in info}}
             claims = {"epics": {**held, eid: info}}
             flow.write(root, slug, base + [{"kind": "claim", "from": "implementing", "to": "implementing", "evidence": ev}],
@@ -524,7 +550,7 @@ def test_files(root, slug, task):
     return list(dict.fromkeys(found))
 
 
-def finish(root, slug, eid, command=None, by=None):
+def finish(root, slug, eid, by=None):
     """`nio flow finish` (CT-2, FR-3, FR-4, FR-10, FR-42, FR-44, NFR-1): the agent handed the epic back; the flow runs
     the tests its tasks name once, itself, on the main tree (a worktree epic's changes landed there first) within
     EPIC_LIMIT. A pass writes the `epic_test` line and commits the epic (CT-3); a failed, broken, empty or hung run keeps
@@ -547,36 +573,41 @@ def finish(root, slug, eid, command=None, by=None):
         e = next(x for x in epic_list(root, slug) if x["id"] == eid)
         st = status(root, slug, lines)
         mine = [t for t in e["tasks"] if st[t["id"]] != "done"]
-        built, files, any_test = epic_tests(root, slug, e["tasks"])
+        built, _, any_test = epic_tests(root, slug, e["tasks"])
         if not any_test:
             raise ValueError(f"{eid} has no test to run")
-        if command:
-            if missing := [f for f in files if f not in command]:
-                raise ValueError(f"the command doesn't run {missing[0]}")
-        elif built:
-            command = built
-        else:
-            raise ValueError(f"{eid}'s tests can't be built from its TCs: hand the command over with --run")
-        since = next(x["evidence"]["commit"] for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("epic") == eid)
-        trees = [root / x for x in [held[eid].get("worktree"), *held[eid].get("worktrees", [])] if x and (root / x).is_dir()]
-        if trees:
-            clean(root, slug)  # FR-14: the apply and its restore must not mix with the human's edits
+        # FR-3: the flow's own command, never the agent's: its TCs' tests, else the whole suite the human configured
+        command = built or (records.config(root).get("tests") or {}).get("suite")
+        if not command:
+            raise ValueError(f"{eid}'s tests can't be built from its TCs and tests.suite is not set")
+        last = next(x["evidence"] for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("epic") == eid)
+        since, plans = last["commit"], last.get("plans")
+        rels = [x for x in [held[eid].get("worktree"), *held[eid].get("worktrees", [])] if x and (root / x).is_dir()]
+        trees = [root / x for x in rels]
+        busy = set(dirty(root, slug)) if trees else set()  # another epic's work in the main tree (FR-43)
         folder = f".nio/specs/{slug}/"
         saved = {}
-        for tree in trees:
-            patch, more, err = land(root, slug, eid, tree, since)
-            saved = {**more, **saved}
-            if err:
-                restore(root, saved)
-                raise ValueError(f"{eid}'s changes in {tree.relative_to(root)} don't apply: {err}")
-        edited = [p[len(folder):] for p in [*changed(root, since), *saved] if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
-        if edited:
+        try:  # NFR-1: an interrupted or refused hand-back leaves the main tree as it found it
+            for rel, tree in zip(rels, trees):
+                patch, more, err = land(root, slug, eid, tree, base(lines, rel))
+                saved = {**more, **saved}
+                if err:
+                    raise ValueError(f"{eid}'s changes in {rel} don't apply: {err}")
+                if hit := sorted(busy & set(more)):
+                    raise ValueError(f"{eid}'s changes in {rel} touch {hit[0]}, which has uncommitted changes in the main tree")
+            edited = [f for f in PLAN_FILES if digest(root, folder + f) != plans[f]] if plans else \
+                [p[len(folder):] for p in [*changed(root, since), *saved] if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
+            if edited:
+                raise ValueError(f"the epic edited {edited[0]}: the spec, plan and tasks are not the agent's")
+            code, out, cause = run(root, command, EPIC_LIMIT)
+            name = runner(command, out)
+            why = cause or wrong_reason(name, code, out) or (f"the command exits {code}" if code else "")
+            ev = {"command": command, "passed": not why, "runner": name or "unknown"}
+            if not why:
+                sha, report = commit(root, slug, e, mine, w, epic_line("epic_test", eid, **ev), list(saved) if trees else None)
+        except BaseException:
             restore(root, saved)
-            raise ValueError(f"the epic edited {edited[0]}: the spec, plan and tasks are not the agent's")
-        code, out, cause = run(root, command, EPIC_LIMIT)
-        name = runner(command, out)
-        why = cause or wrong_reason(name, code, out) or (f"the command exits {code}" if code else "")
-        ev = {"command": command, "passed": not why, "runner": name or "unknown"}
+            raise
         if why:
             restore(root, saved)
             failing = re.findall(SUMMARY[name][0], out, re.M) if name in SUMMARY else []
@@ -590,11 +621,6 @@ def finish(root, slug, eid, command=None, by=None):
             flow.write(root, slug, entries, new, w, "implementing")
             return 1, [f"{eid} failed (run {n} of 3): {why}", f"failing: {', '.join(failing) or 'not read'}", *tail] + \
                 [f"blocked: {eid} after 3 failed test runs; the human unblocks it"] * (n >= 3)
-        try:
-            sha, report = commit(root, slug, e, mine, w, epic_line("epic_test", eid, **ev), list(saved) if trees else None)
-        except Exception:
-            restore(root, saved)
-            raise
         for tree in trees:
             records.git(root, "worktree", "remove", "--force", str(tree), full=True) if sha else restore(root, saved)
     if sha:
@@ -604,9 +630,9 @@ def finish(root, slug, eid, command=None, by=None):
 
 def commit(root, slug, epic, mine, who, test, landed=None):
     """CT-3, FR-11: one `E-n: <heading>` commit on the effort branch holding the passing `epic_test` line, a `task_done`
-    line per undone task, the `pass` to the pr gate once every epic is closed, the tracked changes outside the effort
-    folder (or the paths `landed` from a worktree), the untracked paths the epic's tasks list (or that sit under a listed
-    folder), the test files its TCs name, and history.jsonl and state.json; nothing else. Returns (the sha, the report).
+    line per undone task, the `pass` to the pr gate once every epic is closed, the changed paths, tracked or not, that
+    the epic's tasks list (or that sit under a listed folder) and the test files its TCs name (or the paths `landed`
+    from a worktree), and history.jsonl and state.json; nothing else: another epic's work and the human's edits stay. Returns (the sha, the report).
     A refused commit puts history.jsonl, state.json and the index back, writes a `fail` line with git's error, sets
     `waiting` and returns (None, []). Never merges, rebases or pushes."""
     eid = epic["id"]
@@ -631,12 +657,8 @@ def commit(root, slug, epic, mine, who, test, landed=None):
     listed = [f for t in epic["tasks"] for f in t["files"]] + [f for t in epic["tasks"] for f in test_files(root, slug, t)]
     mark = lambda p: any(p == f or p.startswith(f.rstrip("/") + "/") for f in listed)
     flows = [f".nio/specs/{slug}/history.jsonl", f".nio/specs/{slug}/state.json"]
-    if landed is None:
-        new = [p for c, p in porcelain(root) if c == "??" and outside(slug, [p]) and mark(p)]
-        steps = [["add", "-u", "--", ".", f":(exclude).nio/specs/{slug}", *[f":(exclude){s}" for s in SCRATCH]]]
-        steps += [["add", "--", *new]] * bool(new)
-    else:
-        steps = [["add", "-A", "--", *outside(slug, landed)]] * bool(outside(slug, landed))
+    picked = outside(slug, landed if landed is not None else [p for _, p in porcelain(root) if mark(p)])
+    steps = [["add", "-A", "--", *picked]] * bool(picked)
     for args in steps + [["add", "--", *flows], ["commit", "-q", "-m", f"{eid}: {epic['title']}"]]:
         code, _, err = records.git(root, *args, full=True)
         if code:
