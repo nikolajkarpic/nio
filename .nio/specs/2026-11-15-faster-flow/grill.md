@@ -109,3 +109,37 @@ Options:
 Answer: 1. Stop for me: an epic blocked by its own 3 failed runs pauses the auto run until you look. Other unblocks stay automatic. Costs you one stop, but only when an epic is really stuck. [human]
 Raised by the logic juror's aside in round 3 (unblock resets the failed-run count, so auto could retry forever). AC-49 also now tests all four auto steps (J-16).
 Patched: FR-47, AC-49.
+
+## Plan calls · 2026-11-15
+Delegated grill (the human, session 1). Each call below is below the grill's bar or has a clear recommended option; none changes who may do what, deletes data, or contradicts a `[human]` line. Logged in plan.md's Decisions; decision record D-261115-cf65.
+- **Call · epic state** [agent]: epic state is read from history plus the existing `claims`/`attempts` keys, one new history kind `epic_test`; no new state key or file.
+- **Call · hand-back command** [agent]: `nio flow finish <slug> E-n [--run]`; options were reusing `green` (rejected: FR-5 removes it) or a new name (taken).
+- **Call · epic test command** [agent]: `--run` or built from the TCs via `evidence.one_test`, naming every TC file, as red checks today.
+- **Call · 30-minute limit** [agent]: a module constant `EPIC_LIMIT` a test lowers; no config key.
+- **Call · epic commit** [agent]: one `E-n: <heading>` commit, tracked changes plus untracked paths the tasks list.
+- **Call · tier per epic** [agent]: `- Tier:`/`- Effort:` under each `## E-n`; old epics take their tasks' highest.
+- **Call · auto driver and fix agent** [agent]: options were #122's `skills/auto/` and `nio-fixer` card (a new module, needs an architecture stage) or sections of the existing jury and implement skills (taken, recommended: no new module, same behaviour).
+- **Call · pr gate fixes under auto** [agent]: the `PR fixes` epic's one implementation agent is the round's fix agent.
+- **Call · #122 carry-over** [agent]: no-commit cherry-pick of nine code commits, effort folder left out, three known conflicts resolved (RF-37).
+- **Call · revoke** [agent]: `nio flow manual --by human` without #122's restore lines and refs.
+- **Call · run report** [agent]: `jury.publish` sets it as the pull request's body; no `nio flow pr`.
+- **Call · mod-off check** [agent]: read Claude Code's settings files for the installed mod; `--plugin-dir` can't be seen, the warning says so.
+- **Call · FR-14** [agent]: met by #142's install step; this branch merges `main` after #142 lands, before US-3.
+- **Call · FR-25** [agent]: a human-only `reopen` disposition on a dropped finding.
+- **Call · FR-40** [agent]: `(unchanged)` after a reused path in `Files:`.
+
+## Plan jury round 1 · 2026-11-15
+All confirmed blockers/majors were plan-rooted; fixed in the plan files by the agent under the delegated grill, none touching a `[human]` spec line.
+- **Call · J-1** [agent]: `nio flow finish` lands a worktree epic on the main tree with the existing `land()` before its run (`restore()` on a fail); TC-42 checks E-2's files reach the commit.
+- **Call · J-2** [agent]: `review`'s check against edits to spec.md, plan files and tasks.md moves into `finish`; its frozen-file check goes (TC-2).
+- **Call · J-3** [agent]: CT-20 reads `first_round`, the ledger's field.
+- **Call · J-5** [agent]: the epic commit also stages the test files its TCs name (TC-11).
+- **Call · J-6** [agent]: a dependency inside the epic never holds its claim; only dependencies outside it do (CT-1, TC-1).
+- **Call · J-7** [agent]: a `blocked` hand-back uses the existing `nio flow block <slug> T-n`: a task block on a change request, released claim, effort waits; not the epic's `blocked` state, so the spec's state table holds.
+- **Call · J-8** [agent]: a new `PR fixes` epic gets `- Tier: strong` and `- Effort: med`; a fix epic's run needs `--run` (TC-6).
+- **Call · J-10** [agent]: a second `finish` while `running.json` names one for the epic is refused (`testing`).
+- **Call · J-11, J-12, J-13, J-14, J-15** [agent]: rollback steps written in plan.md (revert only with no live epic claim or blocked epic; old status reads new-flow closes, TC-58; a tasks.md approved after the change is re-rated before its next claim); the per-epic Tier check applies only after the change (`TIER_SINCE`); a live old task or wave claim converts to its epic's claim and `finish` lands its worktrees (TC-57).
+- **Call · J-16** [agent]: TC-36 runs `nio jury collect` so `evidence.join` runs, with a failing copy.
+- Also fixed, though dropped as ungrounded: TC-40 is a new pr-gate test; TC-33 and TC-14 name the lines they replace.
+- Left as minors: J-4 (`reopen` vs `reopen_dropped`), J-9 (US-1 delivers a refusal US-4's code completes; one agent builds both).
+- **Call · J-7, J-8 (round 2)** [agent]: the logic fix check found both still open; fixed before the round's re-run: a task-blocked epic keeps its claim and a fresh driver resumes it from `nio flow brief`; the worker hands back `command:` and the `then:` line carries `--run` for an epic whose tests can't be built from TCs. Round 2 approved.

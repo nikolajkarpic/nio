@@ -1,0 +1,758 @@
+{
+  "gate": "plan",
+  "subject": "2026-11-15-faster-flow",
+  "round": 2,
+  "tier": "high",
+  "expect": [
+    "architecture-fit",
+    "logic",
+    "risk-rollback",
+    "test-proof"
+  ],
+  "collected": {
+    "R-261115-t5uc/plan-architecture-fit.md": "9a26431a0276cc8162f7084b6d2d4f908399fe8ada0f9a461f90729f0e8d12f6",
+    "R-261115-t5uc/plan-logic.md": "dc7428be1e0f3512214424aa68bae1d44b009a16372a21564c62c3ce91264eac",
+    "R-261115-t5uc/plan-risk-rollback.md": "b3cf6fc446611b46b4210d923b63c09bc71805f5e79407877b263f05a51fe789",
+    "R-261115-t5uc/plan-test-proof.md": "0c8f4ff0036012ba81abc650698512f0b090d82c06e1881a272af50e393d2d35",
+    "R-261115-t5uc/plan-refuter.md": "95eab8b1d6c5a5f80771c7a15bec6a62c4925b44d17fd9bed7dc8395f9297f46",
+    "R-261115-otus/plan-architecture-fit.md": "b4a4993e63dd60b56b737a77deb2dc0820aa5f160d4a5ee3eec4e15cb742b6b2",
+    "R-261115-otus/plan-logic.md": "9a93a040e667fea0d33d922651973814a2095aaf842950b333fe59144f22fb97",
+    "R-261115-otus/plan-risk-rollback.md": "7692f83bc9aae1c0c3f13f1d9b8bc7e145a502643f4e1b89c39e1724d4350879",
+    "R-261115-otus/plan-test-proof.md": "f1bfe4be4f4366c611fc2d48222ffd1a7cb43f112ded667f79abae61a457e8f7"
+  },
+  "jurors": {
+    "plan-architecture-fit": {
+      "attempts": 1,
+      "lens": "architecture-fit",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a7d23ad8251dd37973961c22b7124b2facff1cd9",
+      "judged": 2
+    },
+    "plan-logic": {
+      "attempts": 2,
+      "lens": "logic",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a7d23ad8251dd37973961c22b7124b2facff1cd9",
+      "judged": 2
+    },
+    "plan-risk-rollback": {
+      "attempts": 2,
+      "lens": "risk-rollback",
+      "by": "juror / claude-code / opus",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a7d23ad8251dd37973961c22b7124b2facff1cd9",
+      "judged": 2
+    },
+    "plan-test-proof": {
+      "attempts": 2,
+      "lens": "test-proof",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "a7d23ad8251dd37973961c22b7124b2facff1cd9",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "A parallel epic's worktree changes never reach the main tree before its commit",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-2",
+        "CT-3",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "It runs once (NFR-1) in the epic's tree with `EPIC_LIMIT = 1800` seconds",
+        "plus `worktree: <path>` when another epic is already claimed (FR-43)",
+        "patch, saved, err = land(root, slug, tid, tree, since_claim(lines, tid)[0][\"evidence\"][\"commit\"])"
+      ],
+      "fix": "in CT-2, say that a worktree epic's changes are landed with `implement.land` before the commit, put back with `restore` and blocked on an apply error as `green` does, and that the worktree is removed after the commit.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "the existing `green` applies a worktree task's changes to the main tree with `land()` (and puts them back with `restore()` if the review fails) before it commits on the main tree, then removes the worktree. CT-2's `finish` is modelled on `green` but leaves this step out. CT-3 stages only the main tree (\"stages tracked changes outside the effort folder (`git add -u`)\"), so the second epic of AC-44 would be tested in its worktree and then committed with none of its code.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-2 is \"Like green\" but names no land/restore step. CT-1 gives a second epic its own worktree (FR-43), and CT-3 stages only the main tree. implement.py `green` (line 756) calls `land()` for this, and nothing in the plan replaces it.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "Removing green leaves review with no caller, and the guard against edits to spec and plan files goes with it",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-5",
+        "CT-2",
+        "CT-9"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`implement.red`, `implement.green`, `review`'s frozen-file check and `MODES` are removed",
+        "line = review(root, slug, task, lines)",
+        "`quickstart.md`, `architecture.md`) or `tasks.md`: a review fails on any change to them."
+      ],
+      "fix": "either have CT-2 run review's edits-to-plan-files check (PLAN_FILES) before the test run and fail the run on it, removing the rest of `review`, `closes` and `NEEDS`; or say in CT-5 that `review` is removed whole and in CT-9 that the card drops the line.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "`review` is called only from `green`. CT-5 keeps `review` but deletes its only caller, and CT-2's finish never calls it, so it becomes dead code. Its check \"the task edited ...: the spec, plan and tasks are not the worker's\" stops running, and an epic agent that edits tests.md or contracts.md gets committed. CT-9 rewrites the worker card but doesn't say whether that promise still holds.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-5 removes only \"review's frozen-file check\". The edits-to-PLAN_FILES check in `review` (implement.py 582-583) is a separate part, and its only caller `green` is removed. CT-2 never calls review, and CT-9 says nothing about the promise.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-3",
+      "title": "CT-20 names a ledger field that doesn't exist",
+      "kind": "contradiction",
+      "severity": "minor",
+      "cites": [
+        "CT-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "compares `version(led, f[\"first\"])` with the current version, instead of `version(led, f[\"last_round\"])`",
+        "\"baseline\": \"new\", \"rounds\": 0, \"first_round\": rnd, \"last_round\": rnd}"
+      ],
+      "fix": "write `version(led, f[\"first_round\"])`.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "every finding in the ledger, from `add` and from `record_cli`, stores the round it was raised in as `first_round`, and no `first` key exists. A literal implementation fails with a KeyError in `compose`.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "CT-16 reopens a dropped finding differently from the existing reopen code",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "only on a `dropped` finding; sets `status: open`, `validation: pending`, `ruling: <note>`.",
+        "f.update(status=\"open\", disposition=\"\", by=\"\", note=f\"{cid} was dropped; fix it in the plan or accept the risk\")"
+      ],
+      "fix": "write the ruling to `note` and clear `disposition` and `by` as `reopen_dropped` does, and handle `reopen` as an early branch of `_dispose_one` rather than a member of `DISPOSITIONS`, so it doesn't count as a disposition.",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "the existing `reopen_dropped` reopens a finding by clearing `disposition` and `by` and writing the reason to `note`. CT-16 puts `reopen` in `DISPOSITIONS` (whose other values all end a finding as `disposed`) and adds a new `ruling` key that `render`, `verdict` and the fix-check packs don't read. The human's words could then be missing from the ledger's rendered view.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-5",
+      "title": "The epic's commit may leave out the new test files the flow just ran",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "CT-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the untracked paths the epic's tasks list under `Files:` or that sit under a listed folder",
+        "it must name every test file the epic's TCs cite",
+        "found = [f.split(\":\")[0] for t in task[\"own\"] if t in tcs for f in re.findall(r\"`([^`]+)`\", plan.field(tcs[t], \"File\"))]"
+      ],
+      "fix": "in CT-3, also stage the untracked files named by the TC `File:` lines the epic's tasks cite (`implement.test_files`).",
+      "sources": [
+        {
+          "juror": "plan-architecture-fit",
+          "lens": "architecture-fit",
+          "situation": "the existing code finds an epic's test files from the TCs' `File:` lines, not from the tasks' `Files:`. A test file the agent creates that is named only in tests.md would be run and passed by CT-2, then left untracked by CT-3. The epic would close with its tests missing from the commit, and the pr gate's test-proof lens would have nothing to judge.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-3 stages untracked files from the tasks' `Files:` lines. CT-2 finds test files from the TCs' `File:` lines. Nothing ties the two, so a test file named only in tests.md can pass and stay untracked.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-6",
+      "title": "An epic with an internal task dependency can never be claimed",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "FR-1",
+        "CT-1"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "whose tasks' dependencies are all done",
+        "whose dependencies are closed"
+      ],
+      "fix": "say that only dependencies on tasks outside the epic count, and make CT-1 and CT-7 agree on it.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "E-1 holds T-1 and T-2, and T-2 has `Depends on: T-1`. CT-1 picks an epic only when its tasks' dependencies are all done. Tasks are marked done only when the epic closes (`task_done` lines are written at CT-2 pass), so T-1 is not done at claim time. E-1 is never ready, and the claim says `no epic ready; E-1 waits on E-1`. FR-1 says \"closed\" and means other epics. CT-1 doesn't exclude dependencies inside the same epic.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-1 requires \"whose tasks' dependencies are all done\", and `task_done` lines are written only when the epic closes (CT-2). CT-7 only bans dependencies on later epics, so a task depending on an earlier task in the same epic is not excluded anywhere.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-7",
+      "title": "The state table has no transition for an agent that hands back blocked",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "state table Epic row `claimed`",
+        "CT-9",
+        "FR-47"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "hand back `status: done` (no command needed) or `blocked` with a change request",
+        "unblocks a task blocked on a change request"
+      ],
+      "fix": "add an event \"agent hands back blocked\" (claimed → blocked, cause change request) and the unblock outcomes for that cause to the table. Say whether this block counts toward the 3 runs.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "an agent on claimed E-2 hands back `blocked` with a change request. The Epic table has only \"agent hands back done\" and \"hand-back, tasks name no test\" as hand-back events, and `blocked` is entered only by the 3rd failed run. The claimed epic stays claimed, or `implement.block` writes a task-level `blocked` line that CT-4's epic view doesn't read. Under auto, FR-47's \"unblock a task blocked on a change request\" has no epic state to leave.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The spec's Epic state table (spec.md 234-241) has no \"agent hands back blocked\" column, and `blocked` is entered only by the 3rd failed run. CT-9 lets the agent hand back `blocked` with a change request, so that path has no epic transition.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-8",
+      "title": "The `PR fixes` epic has no tier and may name no test, so it can't be claimed or closed",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-37",
+        "CT-6",
+        "CT-2",
+        "FR-10"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`one_fix` writes no Tier, Effort or Mode",
+        "the confirmed findings become the closing `PR fixes` epic, which one implementation agent builds (CT-1)",
+        "THE SYSTEM SHALL refuse to close the epic and say it has no test to run"
+      ],
+      "fix": "have `one_fix` write the Tier, and say what test a PR-fix epic names, or allow the pr-gate fix epic to close without one.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "a pr round confirms a finding about a doc or a card file, and `one_fix` appends `## E-n PR fixes` with no Tier line and a task with no `Test:`. CT-6's check requires a Tier on every epic, and CT-1 prints `card: nio-worker-<epic tier>`. The \"no Tier line, approved before this change\" fallback names old epics, not this one. CT-2 then refuses to close the epic with \"no test to run\". Under auto the one fix agent can never finish, and the run loops or stops on the pr gate.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-6 says `one_fix` writes no Tier or Effort, and `one_fix` today appends `## E-n PR fixes` with no epic Tier line. CT-6's check requires a Tier on every epic and CT-1 prints `nio-worker-<epic tier>`. The pre-change fallback names old approved epics, not this one. The \"no test\" part is weaker, because `one_fix` still writes a `Test:` line, but the missing Tier is enough.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-9",
+      "title": "US-1 delivers auto refusals that depend on US-4's code",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-4",
+        "CT-36",
+        "CT-34"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "under auto, `--by` other than `human` on an epic blocked with `cause: runs`",
+        "cherry-pick, without committing, #122's code commits"
+      ],
+      "fix": "move the auto clause of CT-4 into CT-36, or state that it is built and tested in US-4.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "the Build order puts CT-4 in US-1, but the auto flag and `who` come from CT-34 and CT-36 in US-4, which depends on US-1. When US-1 is built there is no auto flag to test. TC-47 sits under US-4 while its contract CT-4 sits under US-1. US-4 also applies the cherry-pick onto the code US-1 changed (`done`, `unblock`), where conflicts can arise beyond the three RF-37 names.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-10",
+      "title": "`testing` can't be observed from history, so a second hand-back is not rejected",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "state table Epic row `testing`",
+        "CT-4",
+        "NFR-1"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "read from `claim`, `epic_test`, `blocked`, `unblock` and `task_done` lines",
+        "reject: tests running"
+      ],
+      "fix": "write a `handback` line at the start of CT-2, or name the lock (`running.json`) as what makes `testing` observable.",
+      "sources": [
+        {
+          "juror": "plan-logic",
+          "lens": "logic",
+          "situation": "CT-4 reads state from those five line kinds, and CT-2 writes no line when the hand-back starts, only when the run ends. A second `nio flow finish E-n` during the run sees the epic as `claimed`, not `testing`. The table says \"ignore\" for the hand-back, but CT-2 runs the tests again. That breaks NFR-1 (once per hand-back), and two runs write competing `epic_test` lines and failed-run counts.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-11",
+      "title": "The revert can't see a live epic claim and names no way to release it",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Rollback (migration flag): reverting the change restores per-task claims; an effort with an epic claimed at that moment needs its claim released first",
+        "if state[\"claims\"].get(\"task\"):",
+        "Writes one `claim` line `{\"epic\": \"E-n\", \"tasks\": [undone T-IDs], \"commit\": HEAD, \"run\"[, \"worktree\"]}` and `claims` `{\"epics\": {\"E-n\": {\"run\", [\"worktree\"]}}}`"
+      ],
+      "fix": "Name the release step (for example `nio flow release <slug> E-n --by human`, or a documented manual edit). State what the old code does with `claims.epics`, `attempts[\"E-n\"]` and epic-keyed `blocked` lines. Or make the new code also write `claims.task` so the old guard still refuses.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "The change is reverted while E-2 is claimed and its agent is still writing code. The old `guard` checks only `claims.task`, so it lets a driver claim E-2's tasks one by one. Two agents then write the same files. The old `status` also skips `claim`/`blocked` lines that carry `epic` and no `task`, so an epic blocked after 3 runs reads as ready. The plan says the claim \"needs its claim released first\" but names no command. CT-2 releases a claim only on a failed run.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The old `guard` checks only `claims.task` (implement.py 283), while the new claim writes only `claims.epics`. The rollback decision says the claim is \"released first\" and names no command or procedure for it.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-12",
+      "title": "Rolling back leaves tasks.md in a format the old code rejects",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-6",
+        "CT-5"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`FIELDS` becomes `Files, Serves, Test, Depends on, Parallel`",
+        "FIELDS = [\"Files\", \"Serves\", \"Test\", \"Depends on\", \"Parallel\", \"Tier\", \"Effort\", \"Mode\"]",
+        "\"tier\": tasks.TIER.match(f[\"Tier\"]).group(1) if f.get(\"Tier\") else \"\""
+      ],
+      "fix": "Extend the rollback decision to say how tasks.md written in the new format is handled after a revert (for example, keep a per-task Tier written by the drafter until the old flow is retired, or name the conversion step and whether it needs re-approval).",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "An effort's tasks.md is drafted and approved with `- Tier:`/`- Effort:` under each `## E-n` and none on its tasks, and then the change is reverted. The old `tasks.check` raises `T-n: needs \\`- Tier:\\`` for every task. The old `claim` prints `card: nio-worker-` because the tier is empty. Changing tasks.md to fix this means re-approving the tasks gate. The plan's rollback sentence (\"reverting the change restores per-task claims\") doesn't mention this file format.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-6 drops per-task Tier from FIELDS and moves it to the epic. The old `tasks.check` requires it on every task. The rollback decision (\"reverting the change restores per-task claims\") says nothing about tasks.md written in the new format.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-13",
+      "title": "No test proves the rollback or a conversion with a live old claim",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-4"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Setup: `impl()` with history: E-1's T-1, T-2 `task_done` under the old flow (their commits made); E-2 of three tasks with T-3 done.",
+        "Efforts already at implementing convert to per-epic at their next claim instead of finishing on the old flow, so no per-task code path survives FR-5 (FR-44): an agent call under the delegated grill (grill.md, OP-6), for the human's review at this gate; rollback is reverting the change."
+      ],
+      "fix": "Add a TC that converts an effort holding a live `claims.task` (and a `red` line) and asserts the outcome. Add one that releases an epic claim and checks the reverted guard against the new state.json/history, or state in the plan why the rollback needs no test.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "The spec carries the migration flag. TC-43 is the only conversion test, and it only covers finished tasks with no `claims.task`, no `red`/`green` line and no wave worktree. No TC reverts, releases a claim, or checks that history and state written by the new flow are still readable by the old code. \"rollback is reverting the change\" is never tested.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The spec says \"rollback is reverting the change\", and TC-43 is the only conversion test. It covers only finished tasks and has no live claim or reverted code. No TC covers the rollback or a live old claim.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-14",
+      "title": "Old wave claims and their worktrees aren't handled when an effort converts",
+      "kind": "risk",
+      "severity": "major",
+      "cites": [
+        "CT-1",
+        "CT-24"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "An old `claims.task` is read as the claim of that task's epic.",
+        "mark = {\"task\": group[0][\"id\"], **({\"wave\": [t[\"id\"] for t in group]} if len(group) > 1 else {})}",
+        "It runs once (NFR-1) in the epic's tree with `EPIC_LIMIT = 1800` seconds."
+      ],
+      "fix": "In CT-1, say how `claims.wave` and its worktrees convert: their work is merged into the epic's tree, the effort is refused until they are released, or the human is told. Add a TC for it.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "An effort is mid-wave under the old flow when the change lands. T-4 and T-5 are claimed, and T-5's uncommitted work sits in `.nio/runs/<rid>/worktree`. CT-1 maps only `claims.task` to an epic claim and says nothing of `claims.wave` or its worktree. `finish` then runs and commits in the epic's tree, without T-5's worktree changes. Those changes are stranded or later removed. The old worker also can't hand back, because `nio flow green` is removed (CT-5).",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "CT-1 reads only an old `claims.task` as an epic claim. It says nothing of `claims.wave` or the wave's worktrees, which `claim` writes (implement.py 342). A converting effort mid-wave has no defined handling for them.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-15",
+      "title": "It's unclear whether the new Tier check exempts efforts already approved",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "CT-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Errors: `E-n: needs \\`- Tier:\\``",
+        "An epic with no Tier line, approved before this change, takes the highest tier and effort of its tasks.",
+        "errs += [f\"{t}: needs `- {name}:`\" for name in FIELDS if name not in f and not (name == \"Mode\" and old)]"
+      ],
+      "fix": "In CT-6, say that the `E-n: needs \\`- Tier:\\`` error is skipped for a tasks.md approved before the change, as `Mode` is today, and that leftover per-task `Tier`/`Effort`/`Mode` lines are ignored, not errors.",
+      "sources": [
+        {
+          "juror": "plan-risk-rollback",
+          "lens": "risk-rollback",
+          "situation": "An in-flight effort's approved tasks.md has Tier lines only on its tasks. After the change, `nio check tasks` (and any guard or gate that re-runs it) may raise `E-n: needs \\`- Tier:\\`` against an approved file that can't change without re-approval. The existing check exempts `Mode` with `approved_before`, but CT-6 states the fallback only for picking the tier, not for the check.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-16",
+      "title": "TC-36's action never runs the evidence join, so its \"no finding\" assert is vacuous",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "TC-36",
+        "AC-38",
+        "CT-27"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Action: `nio jury evidence S pr`.",
+        "- Binding: `src/nio/evidence.py:join` (existing)",
+        "Assert: the evidence lists `test_old` against AC-1; no finding `AC-1 has no passing evidence`; no fix task added.",
+        "evidence.join(root, slug, epic, \"\\n\".join(found).splitlines(), results)"
+      ],
+      "fix": "make the Action `nio jury evidence S pr --run R`, then a conformance output with `## Matches` holding `AC-1 -> tests/test_app.py:<line>`, then `nio jury collect`. Assert on `results[\"evidence\"]` and the pr ledger.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "`evidence.join` is called only from `jury.collect`'s `if impl:` block, using the conformance lens's `## Matches`. `nio jury evidence` runs the tests and the phantom and tamper checks but never joins. So with CT-27 left unbuilt, the action raises no `AC-1 has no passing evidence` finding and adds no fix task, and two of the three asserts pass. The bug it lets through: `join` still raising the blocker for an existing test the diff doesn't touch.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`evidence.join` is called only from jury.py:730, in `collect`. TC-36's action `nio jury evidence S pr` never reaches it, so \"no finding AC-1 has no passing evidence\" holds with CT-27 unbuilt.",
+      "status": "fixed",
+      "disposition": "plan-fix",
+      "by": "agent",
+      "note": "fixed in the plan files; grill.md 'Plan jury round 1' logs each call",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-17",
+      "title": "TC-40 points at an existing test that judges the implementation-E-1 gate, not the pr gate",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "TC-40",
+        "AC-42",
+        "CT-31"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- File: `tests/test_evidence.py:test_the_plan_holds_conformance_and_correctness_only` (existing)",
+        "lines, ok = jury.plan(root, \"s\", \"implementation-E-1\")",
+        "assert names == CORE_TWO, (names, lines)"
+      ],
+      "fix": "make TC-40 a new test, for example `tests/test_evidence.py:test_pr_gate_runs_test_proof` (new). It should run `jury.plan(root, S, \"pr\")` on an effort at pr, assert `test-proof` is in the lens line, and check that `src/nio/agents/test-proof.md` holds `## At the pr gate`.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "the named test plans `implementation-E-1` and asserts the lens set equals `{\"conformance\", \"correctness\"}`. Adding `test-proof` to `PR_CORE` (jury.py line 39) doesn't change that path, and leaving it out doesn't fail it. Because the test is marked `(existing)`, a builder keeps it as it is, and nothing runs `nio jury next S pr`. The bug it lets through: `PR_CORE` without `test-proof`, or a test-proof card with no `## At the pr gate`.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "Two tests marked `(existing)` must be rewritten, because today they assert the opposite of their AC",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "TC-33",
+        "AC-35",
+        "TC-14",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- File: `tests/test_flow.py:test_ac1_next_names_planning` (existing)",
+        "assert \"next: run /nio:plan\\n\" in nxt(root) + \"\\n\", out",
+        "- File: `tools/claude-mods/background-nio-commands/hooks/register.test.ts:AC-1..AC-5: long commands are backgrounded, nothing else changes` (existing)",
+        "'nio jury run 2026-11-14-x implementation-E-1', // AC-1"
+      ],
+      "fix": "mark both `(changed)` or new, and spell out the lines to replace: the newline-terminated `next:` asserts, and the AC-1..AC-5 command list.",
+      "sources": [
+        {
+          "juror": "plan-test-proof",
+          "lens": "test-proof",
+          "situation": "test_flow.py asserts that the `next:` line ends right after `/nio:plan`, which CT-25 changes. register.test.ts expects `nio jury run` and `nio flow green` to be backgrounded, which CT-11 removes. Marked `(existing)`, the TC's Assert isn't what the file checks. A builder who \"fixes\" the failures by deleting the stale lines, without adding the TC's asserts, ships a test that no longer checks the new form.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "d3a700c936167895ec1986d4153868596ac8b2d8",
+    "2": "a7d23ad8251dd37973961c22b7124b2facff1cd9"
+  },
+  "asked": {},
+  "cap": {
+    "round": 2,
+    "auto": false,
+    "batch": [],
+    "version": "a7d23ad8251dd37973961c22b7124b2facff1cd9"
+  }
+}
