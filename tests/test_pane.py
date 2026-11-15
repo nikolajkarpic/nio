@@ -26,4 +26,11 @@ def pane_tests():
 
 
 if __name__ == "__main__":
-    selfcheck.main(pane_tests())
+    # recorded task commands pass the test file and a name fragment (`... register.test.tsx "findings inside"`):
+    # keep the pane tests whose name contains a fragment, the file path naming the suite only
+    frags = [a for a in sys.argv[1:] if not a.startswith("-") and not a.endswith((".tsx", ".ts"))]
+    tests = pane_tests()
+    if frags:
+        tests = [t for t in tests if any(f in t.__name__ for f in frags)]
+        sys.argv[1:] = [a for a in sys.argv[1:] if a.startswith("-")]
+    selfcheck.main(tests)
