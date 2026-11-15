@@ -32,6 +32,11 @@ BLOCKS = {
 }
 
 
+def mods_dir():
+    """The Claude Code mods shipped inside the package (see pyproject.toml's force-include)."""
+    return Path(__file__).parent / "mods"
+
+
 def install(root, nio=None):
     """Add the nio block to each hook, or replace the one an older install wrote, keeping whatever else the hook
     does. Returns the hook paths."""
