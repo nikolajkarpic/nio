@@ -175,6 +175,57 @@ def test_nfr1_node_cap():
         if s["block"]:
             assert len(explain.nodes(s["block"])) <= 20, s["title"]
 
+def topic_repo():
+    root = plan_repo()
+    shutil.rmtree(root / ".nio/specs")
+    return root
+
+
+def topic_cli(root, text):
+    return subprocess.run(["uv", "run", "nio", "explain", "topic", text], cwd=root, capture_output=True, text=True)
+
+
+def today():
+    return __import__("datetime").date.today().isoformat()
+
+
+@e2e
+def test_ac18_topic_path():
+    root = topic_repo()
+    explain_run(root, "@nio:explain git hooks. Reply `stop` to the first offer.")
+    ex = root / f".nio/research/{today()}-git-hooks-explainer.md"
+    assert ex.is_file()
+    for svg in re.findall(r"[\w./-]+\.svg", ex.read_text()):
+        assert (root / ".nio/research" / Path(svg).name).is_file() and "/" not in svg.replace(".nio/research/", "")
+    r = topic_cli(root, "../Auth / Tokens!")
+    assert r.stdout.strip() == f"new: .nio/research/{today()}-auth-tokens-explainer.md", r.stdout
+    r = topic_cli(root, "//")
+    assert r.returncode == 1 and 'error: the topic "//" gives an empty file name' in r.stdout + r.stderr
+
+
+@e2e
+def test_ac19_no_research_skill():
+    root = topic_repo()
+    skills = root / "skills"
+    shutil.rmtree(skills, ignore_errors=True)
+    (skills / "explain").mkdir(parents=True)
+    shutil.copy(SKILL, skills / "explain/SKILL.md")
+    explain_run(root, "@nio:explain git hooks. Reply `stop` to the first offer.")
+    assert (root / f".nio/research/{today()}-git-hooks-explainer.md").is_file()
+
+
+@e2e
+def test_ac35_clash():
+    root = topic_repo()
+    first = root / f".nio/research/{today()}-auth-tokens-explainer.md"
+    first.parent.mkdir(parents=True, exist_ok=True)
+    first.write_text("# Auth tokens\n\n(topic: Auth tokens)\n\n## Overview\nTokens.\n")
+    before = first.read_bytes()
+    out = explain_run(root, "@nio:explain auth/tokens. Reply `stop` to the first offer.")
+    second = first.with_name(first.name.replace("explainer.md", "explainer-2.md"))
+    assert second.is_file() and "(topic: auth/tokens)" in second.read_text()
+    assert first.read_bytes() == before and second.name in out
+
 
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
