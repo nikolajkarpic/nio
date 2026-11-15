@@ -3118,5 +3118,33 @@ def test_juries_none_yet():
     print("ok")
 
 
+def test_show_tasks_by_epic():
+    root = effort("implementing")
+    f = root / ".nio/specs" / S / "tasks.md"
+    f.write_text(f.read_text() + (
+        "\n## E-2 Second epic (US-1)\n\n### T-4 Another task\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n"
+        "- Depends on: none\n- Parallel: no\n- Tier: strong: x\n- Effort: med\n- Mode: single: x\n"))
+    t = task_line
+    history(root, S, t("claim", "T-1"), t("red", "T-1"), t("green", "T-1"), t("review", "T-1", passed=True),
+            t("task_done", "T-1"), t("claim", "T-2"), t("claim", "T-4"), t("review", "T-4", passed=False, reasons=[]),
+            {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-2"},
+             "state": {"claims": {"task": "T-2"}, "attempts": {"T-2": 2, "T-4": 1}}})
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)["tasks"]
+    assert [e["epic"] for e in got] == ["E-1", "E-2"], got
+    row = lambda e, i: next(x for x in got[e]["tasks"] if x["id"] == i)
+    assert (row(0, "T-1")["status"], row(0, "T-1")["attempts"]) == ("done", "-"), got
+    assert (row(0, "T-2")["status"], row(0, "T-2")["attempts"]) == ("claimed", 2), got
+    assert (row(1, "T-4")["status"], row(1, "T-4")["attempts"]) == ("failing", 1), got
+    print("ok")
+
+
+def test_task_rows_none_yet():
+    root = effort("planning")
+    assert flow.task_rows(root, S, *flow.load(root, S)) == []
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
