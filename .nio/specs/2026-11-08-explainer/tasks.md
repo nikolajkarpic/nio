@@ -281,6 +281,160 @@ retired: [T-24, T-28, T-14]                      # task IDs removed from this fi
 - Effort: low
 - Mode: direct: the behaviour exists; the tests guard it
 
+### T-31 Fix: test tampering: test_ac16_new_failure_only in tests/test_implement.py is deleted
+- From: J-1 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-1
+- Test: new: J-1
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-32 Fix: test tampering: test_ac35_unknown_runner_review in tests/test_implement.py is deleted
+- From: J-2 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-2
+- Test: new: J-2
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-33 Fix: test tampering: test_ac44_broken_or_fewer in tests/test_implement.py is deleted
+- From: J-3 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-3
+- Test: new: J-3
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-34 Fix: test tampering: test_full_suite_waits_for_the_epic_to_close in tests/test_implement.py is deleted
+- From: J-4 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-4
+- Test: new: J-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-35 Fix: test tampering: test_tests_epic_replaces_the_suite_until_the_last_epic in tests/test_implement.py is deleted
+- From: J-5 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-5
+- Test: new: J-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-36 Fix: test tampering: test_review_fails_a_crashed_self_check_suite in tests/test_implement.py is deleted
+- From: J-6 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-6
+- Test: new: J-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-37 Fix: test tampering: test_review_fails_a_crash_beside_a_baseline_failure in tests/test_implement.py is deleted
+- From: J-7 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-7
+- Test: new: J-7
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-38 Fix: test tampering: test_ac15_review_still_fails in tests/test_implement.py is deleted
+- From: J-8 (implementation-E-7, round 1)
+- Files: `tests/test_implement.py`
+- Serves: J-8
+- Test: new: J-8
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-39 Fix: A multi-line or padded topic never continues, and silently spawns a new file every run
+- From: J-9 (implementation-E-7, round 1)
+- Files: `src/nio/explain.py`
+- Serves: FR-27, AC-34
+- Test: TC-26
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-40 Fix: AC-18 has no passing evidence
+- From: J-16 (implementation-E-7, round 1)
+- Files: `tests/test_explain_e2e.py`
+- Serves: AC-18
+- Test: TC-23
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-41 Fix: AC-19 has no passing evidence
+- From: J-17 (implementation-E-7, round 1)
+- Files: `tests/test_explain_e2e.py`
+- Serves: AC-19
+- Test: TC-24
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-42 Fix: AC-34 has no passing evidence
+- From: J-18 (implementation-E-7, round 1)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: AC-34
+- Test: TC-26
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-43 Fix: AC-35 has no passing evidence
+- From: J-19 (implementation-E-7, round 1)
+- Files: `tests/test_explain_e2e.py`
+- Serves: AC-35
+- Test: TC-27
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-44 Fix: Renderer failures other than a parse error are reported as broken
+- From: J-20 (implementation-E-7, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-3, FR-11, J-20
+- Test: TC-14
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-8 Drill down interactively (US-4)
 ### T-15 Add the `Drill-down` section to the skill and its end-to-end tests (CT-12)
 - Files: `skills/explain/SKILL.md`, `tests/test_explain_e2e.py`
