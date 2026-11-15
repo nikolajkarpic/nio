@@ -945,6 +945,23 @@ def next_step(root, slug=None, by=None):
 BRIEF = 80  # NFR-2: a brief's most lines
 
 
+def timeline(lines):
+    """Timeline section (CT-3): stage changes and failed reviews, a missing field reads `-`."""
+    rows = []
+    for l in lines:
+        ev = l.get("evidence") or {}
+        failed = l.get("kind") == "review" and ev.get("passed") is False
+        if l.get("from") == l.get("to") and not failed:
+            continue
+        who = l.get("who") or {}
+        row = {"kind": l.get("kind") or "-", "from": l.get("from") or "-", "to": l.get("to") or "-",
+               **{k: who.get(k) or "-" for k in ("role", "host", "model")}, "at": l.get("at") or "-"}
+        if failed:
+            row["reasons"] = ev.get("reasons") or "-"
+        rows.append(row)
+    return rows
+
+
 def show(root, slug, now=None):
     """Drill-down data for `nio flow show` (CT-2): one JSON line; the five sections are placeholders until filled."""
     if not (root / ".nio/specs" / slug).is_dir() or kind(root, slug) != "effort":
@@ -958,7 +975,11 @@ def show(root, slug, now=None):
         return 1, [json.dumps({"error": f"{slug} is done"})]
     if state and state["abandon"] is not None:
         return 1, [json.dumps({"error": f"{slug} is abandoned"})]
-    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": [], "juries": [], "tasks": [], "cost": "-", "memory": []})]
+    try:
+        tl = timeline(load(root, slug)[1])
+    except Broken as e:
+        tl = {"error": f"{slug}: {e}"}
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": [], "tasks": [], "cost": "-", "memory": []})]
 
 
 def brief(root, slug, everything=False):

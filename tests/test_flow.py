@@ -2,6 +2,7 @@
 which wait for #43, which builds the task machine (change request C-261028-xcg6), as the tasks-stage spec's non-goal
 says. Until then each of those says so and passes.
 Run: uv run python tests/test_flow.py"""
+import datetime
 import hashlib
 import json
 import os
@@ -3010,6 +3011,43 @@ def test_show_unknown_or_done_slug():
         assert code == 1 and not err, (code, err)
         assert json.loads(out) == {"error": want}, out
     print("ok")
+
+def test_show_timeline_lists_stage_changes():
+    root = effort("tasking")
+    ev = {"paths": [], "verdict": "", "output": ""}
+    rows = [("pass", "planning", "plan_jury", 10), ("pass", "plan_jury", "tasking", 11), ("back", "tasking", "planning", 12)]
+    history(root, S, *({"kind": k, "from": a, "to": b, "evidence": ev,
+                        "at": datetime.datetime(2026, 11, 10, h, tzinfo=datetime.timezone.utc)} for k, a, b, h in rows))
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0 and len(out.strip().splitlines()) == 1, (code, out, err)
+    want = [{"kind": k, "from": a, "to": b, "role": "orchestrator", "host": "test", "model": "test",
+             "at": f"2026-11-10T{h}:00:00Z"} for k, a, b, h in rows]
+    assert json.loads(out)["timeline"] == want, out
+    print("ok")
+
+
+def test_show_timeline_failed_review():
+    root = effort("implementing")
+    rev = lambda t, passed, reasons: {"kind": "review", "from": "implementing", "to": "implementing",
+                                      "evidence": {"task": t, "passed": passed, "reasons": reasons}}
+    history(root, S, rev("T-1", False, ["test still fails", "file outside the task"]), rev("T-2", False, []), rev("T-3", True, []))
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    rows = json.loads(out)["timeline"]
+    assert [r["kind"] for r in rows] == ["review", "review"], rows
+    assert rows[0]["reasons"] == ["test still fails", "file outside the task"] and rows[1]["reasons"] == "-", rows
+    print("ok")
+
+
+def test_timeline_missing_fields_read_dash():
+    a = {"kind": "pass", "from": "grilling", "to": "spec_jury", "who": {"role": "human", "host": "", "model": ""},
+         "at": "2026-11-10T10:00:00Z"}
+    b = {"kind": "pass", "from": "grilling", "to": "spec_jury", "at": "2026-11-10T10:00:00Z"}
+    r1, r2 = flow.timeline([a, b])
+    assert (r1["role"], r1["host"], r1["model"]) == ("human", "-", "-"), r1
+    assert (r2["role"], r2["host"], r2["model"]) == ("-", "-", "-"), r2
+    print("ok")
+
 
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
