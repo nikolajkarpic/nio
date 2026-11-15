@@ -1,7 +1,7 @@
 {
   "gate": "tasks",
   "subject": "2026-11-08-explainer",
-  "round": 4,
+  "round": 5,
   "tier": "medium",
   "expect": [
     "executability"
@@ -11,19 +11,20 @@
     "R-261108-hgvz/tasks-refuter.md": "db6d806cd5f973f92ac63ca2c56bd4d99daf40e1dd76aa45284f4948c4de1865",
     "R-261108-rct4/tasks-executability.md": "e1bc3d5ed7f6ac509b3c634bf691b7e7301568bfcd4a27a367c70046aa74402a",
     "R-261108-3pgr/tasks-executability.md": "89126f4d4ea8590d8c940308311bba6313288ed95303466327af3313e0a4e695",
-    "R-261108-3vq5/tasks-executability.md": "c6d12af8196f4ffc6bb60029be248dc18b84b9f00d31727aa4a1f87af9cb57ea"
+    "R-261108-3vq5/tasks-executability.md": "c6d12af8196f4ffc6bb60029be248dc18b84b9f00d31727aa4a1f87af9cb57ea",
+    "R-261115-wgaz/tasks-executability.md": "fe270726f34fa0d392532120a1247bf87b4133ca5625a4bde18b76c95310b505"
   },
   "jurors": {
     "tasks-executability": {
       "attempts": 1,
       "lens": "executability",
-      "by": "juror / claude-agent-sdk / claude-haiku-5-5",
+      "by": "juror / claude-code / claude-haiku-5-5",
       "context": "limited",
       "valid": true,
       "errors": [],
-      "round": 4,
-      "version": "74e0afa3eeb2793efcb3944fc67dc3d9fd06b1c9",
-      "judged": 4
+      "round": 5,
+      "version": "86d10241cfad5d18202ea65141c029e3cc03604e",
+      "judged": 5
     }
   },
   "findings": [
@@ -257,13 +258,18 @@
     [
       4,
       "approved"
+    ],
+    [
+      5,
+      "approved"
     ]
   ],
   "versions": {
     "1": "89bdf30ff50cf174fa9732de051b54f79597f584",
     "2": "fb961077e5eee62fdfa3f34f2a98551f86208804",
     "3": "f80d0331d16e871f4aab79cdb3230e53814183d8",
-    "4": "74e0afa3eeb2793efcb3944fc67dc3d9fd06b1c9"
+    "4": "74e0afa3eeb2793efcb3944fc67dc3d9fd06b1c9",
+    "5": "86d10241cfad5d18202ea65141c029e3cc03604e"
   },
   "fixes": {
     "1": [],
@@ -288,6 +294,20 @@
       "T-25",
       "T-26",
       "T-27"
+    ],
+    "5": [
+      "T-17",
+      "T-18",
+      "T-19",
+      "T-20",
+      "T-21",
+      "T-22",
+      "T-23",
+      "T-25",
+      "T-26",
+      "T-27",
+      "T-29",
+      "T-30"
     ]
   },
   "asked": {},
