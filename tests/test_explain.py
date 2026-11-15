@@ -141,6 +141,14 @@ def test_ac10_no_node():
     ex.write_text(ex.read_text().replace("CT-2 ", ""))
     c, out = go()
     assert c == 1 and "ERROR component map misses CT-2" in out, (c, out)
+    # J-42: a Mermaid block in a host-format explainer (the fallback) is still rendered and checked
+    ex.write_text(ex.read_text() + "\n## Flow\n\n```mermaid\nflowchart LR\n  a --> b\n```\n\nWalk.\n")
+    keep = explain.render
+    explain.render = lambda block, out: "broken: Parse error"
+    try:
+        assert "broken diagram: Flow" in explain.check(root, "checkout-refunds")[0]
+    finally:
+        explain.render = keep
 
 
 def test_ac5_node_cap_check():
@@ -756,8 +764,53 @@ def test_ac27_host_format():
     assert c == 1 and "ERROR component map misses CT-2" in out, (c, out)
 
 
+def test_read_first_round_trips():
+    # J-48, J-108, J-116: finish's Read first line comes off exactly, and only where finish puts it
+    from nio import jury
+    for q in ("---\nslug: s\n---\n# Quickstart\nRun it.\n", "# Quickstart\n\nRun it.\n", "---\nslug: s\n---\n\n# Q\n"):
+        added = explain.read_first(q)
+        assert added != q and explain.read_first(added) == added and jury.planned("quickstart.md", added) == q, (q, added)
+    mid = "# Q\n\n" + explain.READ_FIRST + "x\n"
+    assert jury.planned("quickstart.md", mid) == mid
+
+
+def test_pr_gate_fixes():
+    # J-10: finish refuses a file that isn't an explainer, and a missing path
+    from nio import plan
+    keep = plan.approved
+    try:
+        root, fin = fin_repo()
+        d = root / ".nio/specs/checkout-refunds"
+        (root / "README.md").write_text("# mine\n")
+        for bad in ("README.md", None, ".nio/research/none-explainer.md"):
+            try:
+                explain.finish(root, bad)
+                assert False, bad
+            except ValueError:
+                pass
+        assert (root / "README.md").read_text() == "# mine\n"
+        # J-41: a source gone at finish reads stale; J-19: an unreadable explainer doesn't break status
+        fin()
+        (d / "contracts.md").unlink()
+        assert explain.stale(root)[:1] == ["stale: explainer.md (spec, plan or contracts changed)"], explain.stale(root)
+        bad = root / ".nio/specs/zz/explainer.md"
+        bad.parent.mkdir(parents=True)
+        bad.write_bytes(b"\xff\xfe(source: x@1)")
+        assert "error: can't read .nio/specs/zz/explainer.md" in explain.stale(root)
+        # J-6: a symlinked explainer.md still gets the plan checks
+        root, fin = fin_repo()
+        d = root / ".nio/specs/checkout-refunds"
+        real = root / "elsewhere.md"
+        real.write_text("# empty\n")
+        (d / "explainer.md").unlink()
+        (d / "explainer.md").symlink_to(real)
+        assert "missing core diagram: component map" in explain.check(root, "checkout-refunds")[0]
+    finally:
+        plan.approved = keep
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_ac27_host_format, test_finish_rerun_is_byte_stable, test_ac20_topic_render_only, test_uj3_topic_not_plan, test_ct6_topic, test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
+    selfcheck.main([test_pr_gate_fixes, test_read_first_round_trips, test_ac27_host_format, test_finish_rerun_is_byte_stable, test_ac20_topic_render_only, test_uj3_topic_not_plan, test_ct6_topic, test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
                     test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines,

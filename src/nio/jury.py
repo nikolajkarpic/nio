@@ -212,7 +212,8 @@ def planned(name, text, keep=()):
     without retired fix-task IDs; any other file as it is. Work added under Fixes after approval, or a fix task retired,
     doesn't withdraw it (#42 FR-27, FR-50; #126)."""
     if name == "quickstart.md":  # the `Read first` line finish adds is not an edit to the plan
-        return text.replace("Read first: [explainer.md](explainer.md)\n\n", "", 1)
+        from nio import explain
+        return explain.unread_first(text)
     if name != "tasks.md":
         return text
     kept = []
