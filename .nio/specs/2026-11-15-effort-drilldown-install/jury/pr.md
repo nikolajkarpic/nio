@@ -10,7 +10,7 @@ outcome: human
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap |  | cli | confirmed | disposed | fix-task (human) | new, 0 |
+| J-1 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-2 | major | contradiction | CT-8, FR-22, AC-25 | consistency, correctness | confirmed | fixed |  | absent, 0 |
 | J-3 | minor | inconsistency | CT-10, CT-11 | consistency | grounded | disposed | accepted-risk (system) | unchanged, 1 |
 | J-4 | minor | inconsistency | FR-26, AC-27, CT-16 | consistency | grounded | fixed |  | absent, 0 |
@@ -62,7 +62,7 @@ outcome: human
 - situation (cli): the diff deletes the test AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) from tools/claude-mods/nio-status-pane/hooks/register.test.tsx
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by human: Fix all three: read the right field, add a timeout to the plugin calls, restore the deleted test (adjusted to the PATH fallback).
+- disposition: accepted-risk by human: Retire it, deletion intended: the old no-venv test is superseded by the two AC-24 PATH-fallback tests (register.test.tsx:207, :215); retire T-31.
 
 ### J-2 The mods folder has no checkout fallback
 - quote: "else the checkout's `tools/claude-mods`"
