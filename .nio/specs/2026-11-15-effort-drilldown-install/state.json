@@ -7,10 +7,6 @@
   "auto": false,
   "claims": {},
   "pause": null,
-  "run": "R-261115-4mav",
-  "waiting": {
-    "change": "C-261115-duou",
-    "task": "T-4",
-    "why": "spec problem in T-4"
-  }
+  "run": "R-261115-mjoe",
+  "waiting": null
 }
