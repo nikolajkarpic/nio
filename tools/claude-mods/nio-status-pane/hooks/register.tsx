@@ -231,8 +231,10 @@ const list = (v: any, none: string, row: (x: any) => string[]): string[] =>
 
 const jury = (g: any): string[] => [
   `${g.gate} · ${g.outcome}`,
-  ...(g.rounds ?? []).map((r: any) => `round ${r.round}: ${(r.lenses ?? []).map((l: any) => `${l.lens} ${l.verdict}`).join(', ')}`),
-  ...(g.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}${f.fix_tasks?.length ? ` → ${f.fix_tasks.join(', ')}` : ''}`),
+  ...(g.rounds ?? []).flatMap((r: any) => [
+    `round ${r.round}: ${(r.lenses ?? []).map((l: any) => `${l.lens} ${l.verdict}`).join(', ')}`,
+    ...(r.findings ?? []).map((f: any) => `${f.id} ${f.severity} ${f.validation}: ${f.title}${f.fix_tasks?.length ? ` → ${f.fix_tasks.join(', ')}` : ''}`),
+  ]),
 ]
 
 const cost = (c: any): string[] => {
