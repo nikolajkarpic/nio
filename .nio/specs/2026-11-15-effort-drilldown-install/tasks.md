@@ -229,3 +229,58 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - Tier: strong: a fix from a jury finding
 - Effort: med
 - Mode: single: a fix from a jury finding
+
+### T-38 Fix: T-36: src/nio/implement.py isn't in the epic's diff
+- From: J-48 (pr, round 4)
+- Files: `src/nio/implement.py`
+- Serves: AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30
+- Test: TC-6
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-39 Fix: the test suite failed
+- From: J-49 (pr, round 4)
+- Files: `.nio/project/architecture.md`, `.nio/project/stack.md`, `.nio/specs/2026-11-15-effort-drilldown-install/contracts.md`, `.nio/specs/2026-11-15-effort-drilldown-install/grill.md`, `.nio/specs/2026-11-15-effort-drilldown-install/intake.md`, `.nio/specs/2026-11-15-effort-drilldown-install/plan.md`, `.nio/specs/2026-11-15-effort-drilldown-install/quickstart.md`, `.nio/specs/2026-11-15-effort-drilldown-install/research.md`, `.nio/specs/2026-11-15-effort-drilldown-install/spec.md`, `.nio/specs/2026-11-15-effort-drilldown-install/tasks.md`, `.nio/specs/2026-11-15-effort-drilldown-install/tests.md`, `README.md`, `pyproject.toml`, `skills/install/SKILL.md`, `src/nio/cli.py`, `src/nio/evidence.py`, `src/nio/flow.py`, `src/nio/hooks.py`, `src/nio/index.py`, `src/nio/records.py`, `src/nio/tasks.py`, `src/nio/usage.py`, `tests/test_flow.py`, `tests/test_hooks.py`, `tests/test_pane.py`, `tests/test_records.py`, `tests/test_usage.py`, `tools/claude-mods/README.md`, `tools/claude-mods/background-nio-commands/README.md`, `tools/claude-mods/nio-status-pane/README.md`, `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`, `tools/claude-mods/nio-status-pane/hooks/register.tsx`, `tools/claude-mods/nio-status-pane/types/index.d.ts`
+- Serves: J-49
+- Test: new: J-49
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-40 Fix: `nio mods install` installs for the current directory, not the clone's root
+- From: J-50 (pr, round 4)
+- Files: `src/nio/cli.py`
+- Serves: FR-25, FR-29, J-50
+- Test: new: FR-25
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-41 Fix: Background mod README tells target projects not to turn the mod on, which the decision now offers
+- From: J-54 (pr, round 4)
+- Files: `tools/claude-mods/background-nio-commands/README.md`
+- Serves: FR-26, CT-16, J-54
+- Test: TC-32
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-42 Fix: The marketplace file that ships in the wheel still calls the mods dev tooling for NIO
+- From: J-55 (pr, round 4)
+- Files: `tools/claude-mods/.claude-plugin/marketplace.json`
+- Serves: FR-26, CT-9, AC-25
+- Test: TC-30
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding

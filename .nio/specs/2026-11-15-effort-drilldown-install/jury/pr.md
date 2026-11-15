@@ -1,7 +1,7 @@
 ---
 gate: pr
 subject: 2026-11-15-effort-drilldown-install
-round: 3
+round: 4
 outcome: human
 ---
 # Pr jury: 2026-11-15-effort-drilldown-install
@@ -27,21 +27,21 @@ outcome: human
 | J-15 | blocker | gap | AC-24 | conformance | merged | merged |  | new, 0 |
 | J-16 | blocker | gap | AC-29, AC-30 | conformance | merged | merged |  | new, 0 |
 | J-17 | blocker | gap | AC-5 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-18 | blocker | gap | AC-13 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-18 | blocker | gap | AC-13 | cli, conformance | confirmed | disposed | accepted-risk (human) | unchanged, 0 |
 | J-19 | blocker | gap | AC-16 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-20 | blocker | gap | AC-17 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-21 | blocker | gap | AC-18 | cli, conformance | confirmed | fixed |  | absent, 0 |
+| J-21 | blocker | gap | AC-18 | cli, conformance | confirmed | fixed |  | absent, 1 |
 | J-22 | blocker | gap | AC-19 | cli | confirmed | fixed |  | absent, 0 |
-| J-23 | blocker | gap | AC-24 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-23 | blocker | gap | AC-24 | cli, conformance | confirmed | disposed | accepted-risk (human) | unchanged, 0 |
 | J-24 | blocker | gap | AC-30 | cli, conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-25 | blocker | gap | AC-1, AC-5, AC-13 | conformance | merged | merged |  | new, 0 |
 | J-26 | blocker | gap | AC-16, AC-17 | conformance | confirmed | fixed |  | absent, 0 |
 | J-27 | blocker | gap | AC-29, AC-30, AC-24 | conformance | confirmed | disposed | accepted-risk (human) | unchanged, 1 |
 | J-28 | blocker | gap | AC-1, AC-5, AC-13, AC-16, AC-17, AC-24, AC-30 | conformance | merged | merged |  | new, 0 |
 | J-29 | blocker | gap | AC-18, AC-19, AC-20 | conformance | merged | merged |  | new, 0 |
-| J-30 | major | contradiction | CT-12, CT-4 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
+| J-30 | major | contradiction | CT-12, CT-4 | adversary | confirmed | fixed | fix-task (human) | absent, 0 |
 | J-31 | major | contradiction | CT-2, FR-13 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-32 | major | contradiction | CT-8, CT-10, FR-22 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
+| J-32 | major | contradiction | CT-8, CT-10, FR-22 | adversary | confirmed | fixed | fix-task (human) | absent, 0 |
 | J-33 | minor | risk | CT-10, CT-11, FR-25 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-34 | minor | scope | CT-17 | adversary, integration | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-35 | blocker | gap | AC-5, AC-13, AC-16, AC-17 | conformance | confirmed | disposed | accepted-risk (human) | new, 0 |
@@ -53,10 +53,25 @@ outcome: human
 | J-41 | blocker | gap | AC-9 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-42 | blocker | gap | AC-11 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-43 | blocker | contradiction | CT-8, AC-18 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-44 | major | contradiction | CT-12, AC-10 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
+| J-44 | major | contradiction | CT-12, AC-10 | consistency | confirmed | fixed | fix-task (human) | absent, 0 |
 | J-45 | minor | inconsistency | CT-14, CT-12 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-47 | minor | risk | CT-2, NFR-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-48 | major | gap | AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30 | cli | confirmed | disposed | fix-task (human) | new, 0 |
+| J-49 | major | gap |  | cli | confirmed | disposed | fix-task (human) | new, 0 |
+| J-50 | major | gap | FR-25, FR-29 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
+| J-51 | major | scope | FR-26 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-52 | minor | risk | FR-14 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-53 | minor | gap | AC-2 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-54 | major | contradiction | D-261115-e6nx, FR-26, CT-16 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
+| J-55 | major | contradiction | D-261115-e6nx, FR-26, CT-9, AC-25 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
+| J-56 | minor | inconsistency | FR-23, AC-24, CT-13 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-57 | minor | inconsistency | CT-10, CT-16, FR-25 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-58 | minor | inconsistency | CT-10, CT-11, FR-25 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-59 | minor | risk | CT-7, FR-7 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-60 | minor | inconsistency | FR-21, FR-22 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-61 | minor | inconsistency | FR-22, FR-29 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-62 | minor | inconsistency | FR-13, FR-21 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
 
 ### J-1 test tampering: AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) in tools/claude-mods/nio-status-pane/hooks/register.test.tsx is deleted
 - situation (cli): the diff deletes the test AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) from tools/claude-mods/nio-status-pane/hooks/register.test.tsx
@@ -167,7 +182,7 @@ outcome: human
 
 ### J-18 AC-13 has no passing evidence
 - situation (cli): no passing test proves AC-13: no test no match
-- situation (conformance): "AC-13 cost as the CLI gives it" at register.test.tsx:368 did not run, so the pane-equals-CLI claim is unproven
+- situation (conformance): the suite result is `failed`. `tests/test_selfcheck.py::test_every_script_uses_selfcheck` fails because `tests/test_pane.py` calls its own `main()` and doesn't use `selfcheck.main`. The pane's AC evidence reaches the gate through that script. Its failure to meet the suite rule is the likely reason AC-24 didn't match.
 - fix: add or fix a test that proves AC-13
 - validation: confirmed: the CLI's own check; no refuter
 - disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
@@ -188,6 +203,7 @@ outcome: human
 ### J-21 AC-18 has no passing evidence
 - situation (cli): no passing test proves AC-18: no test no match
 - situation (conformance): `test_mods_install_e2e` (tests/test_hooks.py:201) prints "skip (NIO_E2E=1 runs it)" and returns unless `NIO_E2E=1`, so its "passed" result is a skip. Even with the variable set, it exercises `nio mods install` only. It never checks that the skill's closing message names each mod as installed, skipped or already installed (AC-18, AC-19, AC-20). `test_install_skill_mods_step` only checks the step's text.
+- situation (conformance): test_mods_install_e2e prints "skip" and returns unless `NIO_E2E=1`. The pack lists it as passed three times, but a skip also exits green. Whether the real `claude` ran isn't visible. The unit-level fake-`claude` tests cover installed, skipped and failed. The "already installed" path (AC-20) is only exercised with a real `claude`.
 - fix: add or fix a test that proves AC-18
 - validation: confirmed: the CLI's own check; no refuter
 
@@ -198,7 +214,7 @@ outcome: human
 
 ### J-23 AC-24 has no passing evidence
 - situation (cli): no passing test proves AC-24: no test no match
-- situation (conformance): the tests at register.test.tsx:207 and :215 are reported as "AC-24 nio on PATH" at line 0 and did not run. The hints say the suite's runner can't address them
+- situation (conformance): the result for AC-24 is "didn't run" (line 0). Its two tests at register.test.tsx:207 and :215 are named `AC-24 nio on PATH: ...`, so the recorded name didn't match them. Nothing shows the PATH fallback or `nio not found` passing.
 - fix: add or fix a test that proves AC-24
 - validation: confirmed: the CLI's own check; no refuter
 - disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.
@@ -379,16 +395,120 @@ outcome: human
 - fix: load once at the top and keep `lines` (`None` on `Broken`). Hand `lines` to `timeline`, `task_rows` and `usage.so_far`, and have the timeline and cost sections return the `Broken` error when `lines` is `None`.
 - disposition: accepted-risk by system: minor, skipped at the round cap
 
+### J-48 T-36: src/nio/implement.py isn't in the epic's diff
+- situation (cli): T-36 names src/nio/implement.py, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+
+### J-49 the test suite failed
+- situation (cli): `printf '%s\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:
+warning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+warning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+warning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+warning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+warning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+
+### J-50 `nio mods install` installs for the current directory, not the clone's root
+- quote: "print("\n".join(hooks.mods_install(Path.cwd(), a.skip)))"
+- quote: "Install: `<claude> plugin install <mod> --marketplace <mods_dir()> --scope local --json`, run in `root`"
+- situation (adversary): the human runs `nio mods install` (or an agent runs it for `@nio:install`) from `src/` or any subfolder. `Path.cwd()` is passed as `root`. Claude Code's local scope is keyed to the project directory, so the mods are installed for the subfolder as a project. The command prints `installed` and exits 0, but the clone's pane never loads them. The `plugin list` check in a different directory also misses mods already installed at the repo root, so a second run reinstalls them. The failure is silent. CT-10 says `root` is "the repo root", and the code comment says "needs no repo", which is why it skips `records.repo_root()`.
+- fix: resolve the root with `records.repo_root()` when inside a repo (fall back to `cwd` only when there is none), and test a run from a subfolder.
+- validation: confirmed: src/nio/cli.py:234 passes `Path.cwd()` to `hooks.mods_install`, while contracts.md (CT-10) says it accepts the repo root. FR-25 says the install is per clone. Nothing resolves the root, so a run from a subfolder installs for the subfolder.
+- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+
+### J-51 A change in this PR weakens the committed-record immutability guard, outside the spec
+- quote: "# a pending change request may still be settled once: its outcome set, and the decision appended to its body"
+- situation (adversary): `records.edits` used to reject any change to a committed record other than `paths` and `outdated_by`. The new `settle` branch lets a `type: change` record with `outcome: pending` have `outcome` and its body edited after commit. The only check is that the new body starts with the old one (`after[1][:len(before[1])] == before[1]`). Nothing requires a single settlement or an actual decision text. A pending record can also be set to `pending` and appended to repeatedly. The error text "a committed record may only change `paths` and `outdated_by`" is now untrue for these records. Nothing in the drill-down or install spec asks for this change. It is a hole in a memory-integrity check that arrives unreviewed. The same goes for the unrelated `evidence.py` regex change and the `tasks.release_claim` writer, which writes history lines and takes the flow lock.
+- fix: move the `records.py`, `evidence.py` and `tasks.py` changes to their own efforts. If they stay, give them an AC and a test, and have the guard require that `outcome` leaves `pending` at most once.
+- validation: confirmed: The `settle` branch in src/nio/records.py:205-210 lets a pending change record's outcome and body change after commit. It also allows `pending` to `pending` repeatedly, and the error text at line 212 still says only `paths` and `outdated_by` may change. spec.md has no FR or AC for settling change requests.
+- disposition: accepted-risk by human: Keep them, accept the risk: they stay in this PR (this effort needed them to finish) with their tests; issues #154 and #157 track the cleaner follow-ups, including tightening the settle rule to once against main.
+
+### J-52 A slow drill-down response for a reopened effort can overwrite the current view
+- quote: "await update($, drill, cur => (cur && cur.slug === slug ? { slug, path, shown, context } : cur))"
+- situation (adversary): the human opens effort A, presses Back and opens A again, or opens it twice. `flow show` can take seconds (cost so far; the timeout is 60 s). Each press starts its own run, and every result is kept as long as the slug matches. An older, slower result lands after the newer one and replaces it. The drill-down then shows stale or error data, and a failed first run can replace a good second one with no sign of it. Opening the same effort from two worktrees that share a slug is the same case.
+- fix: key the guard on a per-open token (a counter stored in the atom), not on the slug.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-53 A failed review's reasons are hidden when they are not a list
+- quote: "row["reasons"] = ev.get("reasons") or "-""
+- quote: "Array.isArray(x.reasons) && x.reasons.length ? x.reasons.join('; ') : '-'"
+- situation (adversary): `evidence.reasons` is hand-written history data. If a line holds `reasons` as a plain string (a malformed or older entry), `timeline` passes it through unchanged. The pane sees that it is not an array and prints `-`. The failure reasons are lost and the drill-down reads as "no reasons", which is the opposite of AC-2's "contains each text of `evidence.reasons`". Nothing flags the malformed entry.
+- fix: in `timeline`, wrap a string in a list, and treat any other type as `-` there. Add a test row for a string value.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-54 Background mod README tells target projects not to turn the mod on, which the decision now offers
+- quote: "Don't turn it on in a target project: NIO must behave the"
+- quote: "NIO's Claude Code mods are an optional part of the product, shipped in the nio package"
+- situation (consistency): a person runs `@nio:install` in a target project and chooses "Install the mods (recommended)". `nio mods install` turns the background mod on for that clone, while the mod's README (the one `claude plugin` and a reader see) says not to turn it on in a target project. The README's first paragraph says "offered by `@nio:install`", so it contradicts itself. CT-16 asks each README to say that `@nio:install` installs the mods for this clone; this one does not say so and keeps the instruction.
+- fix: replace the "Turning it on" section and the "Don't turn it on in a target project" sentence with the install path (`@nio:install` or `nio mods install`, local scope), keeping the `--plugin-dir` option as the try-it-once route. If the decision's "skills work the same without them" is the point to keep, say that instead of "NIO must behave the same on every host".
+- validation: confirmed: tools/claude-mods/background-nio-commands/README.md:31 still says "Don't turn it on in a target project". FR-26 and AC-27 require the READMEs to describe the mods as optional, and `@nio:install` now turns them on in target projects.
+- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+
+### J-55 The marketplace file that ships in the wheel still calls the mods dev tooling for NIO
+- quote: "Claude Code mods for developing NIO"
+- situation (consistency): CT-9 force-includes all of `tools/claude-mods` into `nio/mods`, so `.claude-plugin/marketplace.json` ships in the wheel. `nio mods install` passes that folder as `--marketplace`, so `claude plugin` shows this description to the target project's user, and it says the mods are for developing NIO. The diff does not touch the file, and FR-26 and CT-16 list only the README files, so AC-27 never reaches it. The decision says the mods are an optional part of the product.
+- fix: change the description to the optional-part wording (for example "Optional Claude Code mods for NIO"), and add `tools/claude-mods/.claude-plugin/marketplace.json` to CT-16 or to FR-26's scope so the spec covers it.
+- validation: confirmed: tools/claude-mods/.claude-plugin/marketplace.json:3 still reads "Claude Code mods for developing NIO". The folder ships in the wheel and is passed as `--marketplace`. FR-26 and AC-27 cover only READMEs, so nothing in the spec covers this file.
+- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+
+### J-56 The pane README still describes the venv-missing row and the venv-only run, both replaced by FR-23
+- quote: "A worktree with no `.venv` shows `no .venv: run uv sync` and runs nothing."
+- quote: "IF a worktree has no `.venv/bin/nio` THEN THE SYSTEM SHALL have the pane run the `nio` found on PATH, and show `nio not found` only when neither exists."
+- situation (consistency): after this change a worktree with no `.venv` runs the PATH `nio`, and its row reads `nio not found` only when that run fails (`register.tsx` now has `NO_NIO = 'nio not found'` and no `NO_VENV`). A reader of the pane README is told the opposite: the row says `no .venv: run uv sync` and nothing runs. The same README's "It only reads" paragraph also names only each worktree's own `.venv/bin/nio flow status`.
+- fix: update the two sentences to the PATH fallback and `nio not found`, and add the `flow show` drill-down to the list of what the pane shows.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-57 The mods README still gives the manual two-step install from a checkout that CT-10 replaces
+- quote: "Use the path of your own checkout. Claude Code reads the mods straight from this folder, so after a `git pull` run `/reload-plugins` in a session to pick up changes."
+- quote: "replacing the README's two-step `marketplace add` then `install <mod>@nio-mods`"
+- situation (consistency): CT-10 says the install goes through `claude plugin install <mod> --marketplace <mods_dir()> --scope local`, which is what `nio mods install` runs, and it names the README's two-step form as the thing being replaced. The README's "Install (once)" section still tells the reader to run `claude plugin marketplace add ~/nio/tools/claude-mods` and then two `install <mod>@nio-mods` lines from their checkout. A target project has no NIO checkout, so this guidance does not fit the packaged install that the same file's first line describes.
+- fix: make "Install (once)" point to `@nio:install` or `nio mods install` (local scope, one line per mod), and keep the manual two-step form as a dev-only note for working from a checkout.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-58 `nio mods install` runs `claude` in the shell's cwd, not the repo root
+- quote: "print("\n".join(hooks.mods_install(Path.cwd(), a.skip)))"
+- situation (correctness): the human runs `nio mods install` (or the install skill does) from a subdirectory of the repo. CT-10 says `mods_install(root, ...)` takes "the repo root" and runs `claude` there. The command passes the cwd instead. Claude Code's local scope is tied to the project it runs in, so the mods could be installed for the subfolder and not for this clone, or the `plugin list` check could miss an existing install.
+- fix: use `records.repo_root()` with a fallback to `Path.cwd()` when there is no repo, still before the `root = records.repo_root()` line that needs a repo.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-59 Transcript replies with no timestamp are counted in every stage window
+- quote: "row["tokens"] += sum(count(tokens(log, a, b)[0]) for log in logs)"
+- situation (correctness): `so_far` calls `usage.tokens(log, a, b)` once per window and per log. `tokens` only skips a reply that has a timestamp outside the window, so a reply with no `timestamp` is added to every window. Stage figures and `total` would then overcount. Replies shared by two windows at the same instant, since both ends are inclusive, are also counted twice.
+- fix: in `so_far`, count a reply only when it has a timestamp inside a half-open window `[a, b)`. Doing it in `tokens` for the windowed call is the smallest change.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-60 nio-status-pane README still says a worktree without .venv runs nothing, and omits the drill-down
+- quote: "A worktree with no `.venv` shows `no .venv: run uv sync` and runs nothing."
+- situation (integration): register.tsx now removes `NO_VENV` and `nioFor` falls back to `nio` on PATH. A worktree without `.venv` therefore runs `nio flow status`, and the pane only shows `nio not found` if that fails. The mod README, which this effort edited for its opening lines, still describes the old behaviour. It also never mentions the new click-to-drill-down view or `nio flow show`.
+- fix: update line 20 of tools/claude-mods/nio-status-pane/README.md to the PATH fallback and add a line on the drill-down.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-61 tools/claude-mods README still gives the manual two-step install as the only path
+- quote: "claude plugin marketplace add ~/nio/tools/claude-mods"
+- situation (integration): The intro now says `@nio:install` and `nio mods install` install the mods. The install steps below it (lines 13-20) still point at a `~/nio` checkout and the per-mod commands. They do not say that `nio mods install` is the normal route, or that a new mod must also be added to `MODS` in hooks.py. Line 20 tells a maintainer to run `claude plugin install <mod>@nio-mods` for a new mod. `hooks.MODS` is a hard-coded tuple that the marketplace.json does not feed, so a new mod would silently not be offered by `@nio:install`.
+- fix: say in the README that `nio mods install` is the install route, and that a new mod needs an entry in `hooks.MODS`, or derive `MODS` from marketplace.json.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
+### J-62 Leftovers in new code: stale `show` docstring, dead `[object Object]` replace and `j.name` fallback, repeated `load`
+- quote: "the five sections are placeholders until filled"
+- situation (integration): The `flow.show` docstring says the sections are placeholders, but all five are built. In register.tsx `cost()` applies `.replace(/\[object Object\]/, '-')` to strings that can never contain it, because `l()` interpolates `x.tokens` and `x.seconds`, not an object. It also falls back to `j.name`, a field CT-7 never returns. `show` calls `load(root, slug)` four times, once for each of timeline, tasks and cost plus the first, so each section re-reads and re-parses history.jsonl. This is the kind of duplication the single `lines` variable would remove.
+- fix: correct the docstring, drop the replace and `j.name`, and load once, keeping the per-section try for a section's own failure.
+- disposition: accepted-risk by system: minor, skipped at the round cap
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| pr-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| pr-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
+| pr-adversary | adversary | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 4 |
+| pr-conformance | conformance | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 4 |
 | pr-conformance-2 | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 2 | 2 |
 | pr-conformance-3 | conformance | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 2 | 2 |
-| pr-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 2 | 2 |
+| pr-consistency | consistency | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 4 |
 | pr-consistency-2 | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
 | pr-consistency-3 | consistency | juror / claude / claude-haiku-5-5 | sufficient | yes | 1 | 2 |
-| pr-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
-| pr-integration | integration | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 3 |
+| pr-correctness | correctness | juror / claude-code / claude-opus-5-5 | limited | yes | 1 | 4 |
+| pr-integration | integration | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 4 |
