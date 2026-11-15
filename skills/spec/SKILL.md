@@ -54,7 +54,10 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    ask the human to pick, each option saying what happens: another name, or continue the existing spec at its current
    stage.
 3. **Record the intake** in `.nio/specs/<slug>/intake.md`: the human's words exactly as given, never paraphrased or
-   summarised. For an issue or file, copy its text under a `## Source: <link or path>` heading.
+   summarised. For an issue or file, copy its text under a `## Source: <link or path>` heading. For an issue, copy
+   its comments too, `Decided` comments included (optional: `gh issue view <n> --comments`; without it, ask the human
+   to paste them). If the issue still lists open questions no `Decided` comment answers, tell the human that
+   @nio:brainstorm can settle them first, and go on if they don't want it.
 4. **Memory:** start a run with `nio run`, then `nio pack "<the intake in one sentence>" --run <run> --reader spec --slug <slug>`.
    The pack is saved under `.nio/runs/<run>/packs/`. It carries the project docs for drafting (personas, product), when
    the project has them.

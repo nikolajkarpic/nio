@@ -85,6 +85,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | [`@nio:install`](skills/install/SKILL.md) | Installs the git hooks and agents, and asks whether stage commands run without permission prompts, for you or the whole repo. |
 | [`@nio:onboard`](skills/onboard/SKILL.md) | Onboards an existing repo through a grill, one doc at a time, until the six project docs under `.nio/project/` are written and confirmed. |
 | [`@nio:reconcile-onboarding`](skills/reconcile-onboarding/SKILL.md) | Brings the project docs back in line after files changed, grilling only on the changed files and the docs they feed. |
+| [`@nio:brainstorm`](skills/brainstorm/SKILL.md) | Optional, before a spec: settles an issue's open questions with you, facts first, then one question at a time, and posts the decisions as one comment on the issue for `@nio:spec` to start from. A fresh-context reviewer first challenges whether the work is needed and what code already does it. |
 | [`@nio:spec`](skills/spec/SKILL.md) | Records your words verbatim and picks the route (full, lite or epic), then the spec-drafter writes a first draft that never guesses: what you didn't say becomes a `[default]` proposal or an open point. |
 | [`@nio:grill`](skills/grill/SKILL.md) | Settles a draft one question at a time: looks facts up, asks only decisions (3 options, one recommended), makes small calls as `[agent]` for you to review, and stops when `nio check spec --gate` passes. You can delegate a session to an agent. |
 | [`@nio:plan`](skills/plan/SKILL.md) | Turns an approved spec into its plan, contracts, tests and quickstart, from the spec, the architecture and the code. Asks only what nothing upstream settled. |
@@ -95,7 +96,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | [`@nio:remember`](skills/remember/SKILL.md) | Writes memory records: decisions, lessons, change requests and jury verdicts. Any agent leaves candidates that one memory writer promotes at the end of a run. |
 | [`@nio:recall`](skills/recall/SKILL.md) | Looks memory up in three steps (find IDs, follow links, read at most 5 records) and says how to act on each record's standing. |
 
-The agents behind the skills (spec and tasks drafters, evaluator, 13 juror lenses, refuter, workers per
+The agents behind the skills (spec and tasks drafters, evaluator, 13 juror lenses, refuter, brainstorm zoom-out reviewer, workers per
 model tier) are cards in [`src/nio/agents/`](src/nio/agents/), rendered per host by `nio agents sync`.
 
 ## Shorthand
