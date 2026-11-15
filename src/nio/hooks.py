@@ -3,6 +3,7 @@ rebases, and run the CI check before commits and pushes. Only the checks block g
 import json
 import shutil
 import subprocess
+from importlib import resources
 from pathlib import Path
 
 from nio import records
@@ -34,8 +35,11 @@ BLOCKS = {
 
 
 def mods_dir():
-    """The Claude Code mods shipped inside the package (see pyproject.toml's force-include)."""
-    return Path(__file__).parent / "mods"
+    """The Claude Code mods: the packaged folder (an installed wheel), else the checkout's (an editable install)."""
+    for d in (resources.files("nio") / "mods", Path(__file__).parents[2] / "tools/claude-mods"):
+        if Path(str(d)).is_dir():
+            return Path(str(d))
+    raise ValueError("no NIO mods in this nio install")
 
 
 MODS = ("background-nio-commands", "nio-status-pane")
@@ -65,9 +69,12 @@ def mods_install(root, skip=False, claude="claude"):
             lines.append(f"{mod}: skipped")
         else:
             try:
-                code, out, err = _claude(root, claude, "plugin", "install", mod, "--marketplace", str(mods_dir()), "--scope", "local", "--json")
+                market = str(mods_dir())
+                code, out, err = _claude(root, claude, "plugin", "install", mod, "--marketplace", market, "--scope", "local", "--json")
                 text = (err.strip() or out.strip()).splitlines()
                 lines.append(f"{mod}: installed" if code == 0 else f"{mod}: failed: {text[-1] if text else 'exit ' + str(code)}")
+            except ValueError as e:
+                lines.append(f"{mod}: failed: {e}")
             except OSError:
                 lines.append(f"{mod}: failed: claude not found")
     return lines
