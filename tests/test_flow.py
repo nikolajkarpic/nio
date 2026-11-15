@@ -3190,5 +3190,113 @@ def test_show_memory_by_front_matter():
     print("ok")
 
 
+def show_effort(events=2):
+    """TC-25's effort: history with a stage change, a ledger (real, from the spec approval), tasks.md and `events` events."""
+    root = effort("implementing")
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ago = lambda m: now - datetime.timedelta(minutes=m)
+    history(root, S, {"kind": "pass", "from": "tasks_jury", "to": "implementing", "at": ago(60)}, task_line("claim", "T-1"))
+    (root / ".nio/runs").mkdir(parents=True, exist_ok=True)
+    rows = [{"at": ago(50 - i % 40).isoformat(), "kind": "agent_start" if i % 2 == 0 else "agent_stop", "session": "s",
+             "effort": S, "agent": f"a{i // 2}", "type": "w", "log": ""} for i in range(events)]
+    (root / ".nio/runs/events.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return root
+
+
+def test_show_json_five_keys_writes_nothing():
+    """TC-25."""
+    root = show_effort()
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "setup")
+    before = git(root, "status", "--porcelain")
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)
+    assert {"timeline", "juries", "tasks", "cost", "memory", "slug", "stage"} <= set(got), got
+    for key in ("timeline", "juries", "tasks", "cost", "memory"):
+        assert not (isinstance(got[key], dict) and "error" in got[key]), (key, got[key])
+    assert isinstance(got["cost"], dict) and got["cost"].get("stages"), got["cost"]
+    after = git(root, "status", "--porcelain")
+    assert after == before, (before, after)
+    assert not (root / ".nio/specs" / S / "usage.json").exists()
+    print("ok")
+
+
+def test_show_writes_only_caches():
+    """TC-34."""
+    root = show_effort()
+    from nio import index
+    real = index.embed
+    index.embed = lambda model, texts: [bytes(index.DIM)] * len(texts)
+    try:
+        index.build(root)
+    finally:
+        index.embed = real
+    snap = lambda: sorted((str(p), p.stat().st_size, p.stat().st_mtime_ns) for p in root.rglob("*")
+                          if p.is_file() and ".git" not in p.relative_to(root).parts
+                          and p.relative_to(root).parts[:2] != (".nio", "cache"))
+    before = snap()
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)
+    for key in ("cost", "memory"):
+        assert not (isinstance(got[key], dict) and "error" in got[key]), (key, got[key])
+    assert isinstance(got["cost"], dict) and got["cost"].get("stages"), got["cost"]
+    assert snap() == before
+    print("ok")
+
+
+def test_show_bad_history_line_keeps_other_sections():
+    """TC-5."""
+    root = effort("implementing")
+    history(root, S, {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-1"}})
+    with (root / ".nio/specs" / S / "history.jsonl").open("a") as f:
+        f.write("not json\n")
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)
+    assert got["timeline"] == {"error": f"{S}: history.jsonl, line 2"}, got["timeline"]
+    assert isinstance(got["cost"], dict) and "error" in got["cost"], got["cost"]
+    assert isinstance(got["juries"], list) and "spec" in [j["gate"] for j in got["juries"]], got["juries"]
+    assert isinstance(got["tasks"], list) and isinstance(got["memory"], list), got
+    print("ok")
+
+
+def test_show_speed():
+    """TC-33: 200 history lines, 10 ledgers, 2,000 events; the 5-second limit holds only if NIO_PERF=1."""
+    root = effort("implementing")
+    folder = root / ".nio/specs" / S
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ago = lambda m: now - datetime.timedelta(minutes=m)
+    state = flow.load(root, S)[0]
+    for i in range(200):
+        t = f"T-{i % 50 + 1}"
+        line = ({"kind": "pass", "from": "tasks_jury", "to": "implementing"} if i == 0 else
+                task_line(("claim", "red", "green", "review")[i % 4], t, passed=True))
+        line["at"] = ago(400 - i)
+        history(root, S, line)
+    ledger = (folder / "jury/spec.json").read_text()
+    for gate in ["plan", "tasks"] + [f"implementation-E-{n}" for n in range(1, 7)]:
+        (folder / "jury" / f"{gate}.json").write_text(ledger)
+    (root / ".nio/runs").mkdir(parents=True, exist_ok=True)
+    tmp, rows = Path(tempfile.mkdtemp()), []
+    for a in range(40):
+        log = tmp / f"a{a}.jsonl"
+        log.write_text("".join(json.dumps({"type": "assistant", "requestId": f"r{a}-{r}", "timestamp": ago(300).isoformat(),
+                                           "message": {"model": "m", "usage": {"output_tokens": 5}}}) + "\n" for r in range(20)))
+        base = {"session": "s", "effort": S, "agent": f"a{a}"}
+        rows += [{"at": ago(300 - a).isoformat(), "kind": "agent_start", "type": "w", **base},
+                 {"at": ago(299 - a).isoformat(), "kind": "agent_stop", "log": str(log), **base}]
+    rows += [{"at": ago(200 - i % 100).isoformat(), "kind": "shell_start", "session": "s", "effort": S} for i in range(2000 - len(rows))]
+    (root / ".nio/runs/events.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    start = time.perf_counter()
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    took = time.perf_counter() - start
+    assert code == 0, (code, out, err)
+    if os.environ.get("NIO_PERF") == "1":
+        assert took < 5.0, f"show took {took:.2f}s, over the limit of 5 seconds"
+    print(f"ok ({took:.2f}s)")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
