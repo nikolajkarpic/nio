@@ -89,7 +89,8 @@ def render(block, out):
 
 
 def check(root, target, gate=False, base="HEAD"):
-    """(errors, notes) for an explainer: a slug (plan mode) or a .md path. Only the missing-file error so far."""
+    """(errors, notes) for an explainer: a slug (plan mode) or a .md path (CT-4): plan mode checks the core
+    diagrams, contract IDs, node cap and walk-throughs; every mode renders its Mermaid blocks."""
     if target.endswith(".md"):
         p = Path(target) if Path(target).is_absolute() else root / target
     else:
@@ -156,14 +157,14 @@ READ_FIRST = "Read first: [explainer.md](explainer.md)\n\n"
 
 def _front(text):
     """(front matter with its closing `---` line, the rest)."""
-    j = text.find("\n---\n", 3) if text.startswith("---\n") else -1
-    return (text[:j + 5], text[j + 5:]) if j >= 0 else ("", text)
+    m = re.match(r"---\r?\n.*?\n---\r?\n", text, re.S)  # CRLF files too (pr gate adversary F1)
+    return (m[0], text[m.end():]) if m else ("", text)
 
 
 def read_first(text):
     """quickstart.md with the `Read first` line right after its front matter (J-48): `unread_first` is its exact inverse."""
     fm, rest = _front(text)
-    if text.startswith("---\n") and not fm:
+    if re.match(r"---\r?\n", text) and not fm:
         raise ValueError("quickstart.md's front matter has no closing `---`; fix it before finishing")
     return text if rest.startswith(READ_FIRST) else fm + READ_FIRST + rest
 
@@ -299,12 +300,12 @@ def finish(root, path):
     text = "\n".join(new).rstrip() + "\n"
     recs = [f"({k}: {v})" for k in ("source", "diagrams") for v in rec.get(k, [])]
     recs += [f"(images: {', '.join(drawn + keep)})"] + [f"(drill-down: {t.removesuffix(EARLIER)})" for t in drill]
-    for f in dels:
-        f.unlink()
-        out.append(f"deleted: {f.name}")
     i = text.find("## ") if text.startswith("## ") else text.find("\n## ") + 1  # records sit above the first section
     head = text[:i].rstrip("\n")
     _put(p, (head + "\n\n" if head else "") + "\n".join(recs) + "\n\n" + text[i:])
+    for f in dels:  # only once the explainer no longer links them (CT-5: nothing changes before step 8's write)
+        f.unlink()
+        out.append(f"deleted: {f.name}")
     if qtext is not None:
         _put(q, qtext)
     out.append(f"finished: {path}")
@@ -349,6 +350,7 @@ def topic(root, text, today=None):
         p = root / rel
         if not p.exists():
             return f"new: {rel}"
-        if want in " ".join(p.read_text().split()):  # J-9: padding and line breaks don't change the topic
+        head = p.read_text(errors="replace").split("\n## ", 1)[0]  # the stored topic line sits above the first section
+        if want in " ".join(head.split()):  # J-9: padding and line breaks don't change the topic
             return f"continue: {rel}"
         n += 1

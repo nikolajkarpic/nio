@@ -192,5 +192,16 @@ def test_history():
     print("ok")
 
 
+def test_verdict_body_has_no_line_cap():
+    """A generated verdict lists every minor finding, so the 40-line cap is for other records only."""
+    long = ["## Ruling", *[f"- J-{i} minor" for i in range(60)]]
+    meta = {"id": "V-261115-abcd", "type": "verdict", "date": "2026-11-15"}
+    errs = records.check_record(Path("project/V-261115-abcd-x.md"), meta, long, ["project"], set())
+    assert not [e for e in errs if "max 40" in e], errs
+    meta = {"id": "D-261115-abcd", "type": "decision", "date": "2026-11-15"}
+    assert [e for e in records.check_record(Path("project/D-261115-abcd-x.md"), meta, long, ["project"], set()) if "max 40" in e]
+    print("ok")
+
+
 if __name__ == "__main__":
-    selfcheck.main([test, test_history])
+    selfcheck.main([test, test_history, test_verdict_body_has_no_line_cap])

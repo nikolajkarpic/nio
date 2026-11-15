@@ -35,7 +35,7 @@ def main():
     c.add_argument("--gate", action="store_true", help="spec: also require no [default] and no open points. plan: no open points")
     c.add_argument("--approved", action="store_true", help="plan: exit 0 when the tasks stage may start. tasks: exit 0 when the implement stage may")
     c.add_argument("--rated-from", default="", help="tasks: a copy of tasks.md from before rating; only Tier, Effort and Mode lines may differ")
-    e = sub.add_parser("explain", help="explainer commands: `explain finish <slug>` and `explain topic <text>`")
+    e = sub.add_parser("explain", help="explainer commands: `explain finish <path>` and `explain topic <text>`")
     e.add_argument("action", choices=["finish", "topic"])
     e.add_argument("target", nargs="?")
     ob = sub.add_parser("onboard", help="`onboard scan`: list the project's docs, manifests, IaC and CI files with a content hash")

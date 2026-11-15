@@ -1461,10 +1461,9 @@ def verdict(root, led, outcome, reasons):
     counts = ", ".join(f"{n} {s}" for s, n in sorted(collections.Counter(f["status"] for f in led["findings"]).items())) or "no findings"
     body = ["## Ruling", f"The {gate} jury ruled **{outcome}** for `{slug}` in round {led['round']} ({counts}). Ledger: `{rel}`.",
             "## Jurors", "| Lens | Host | Model | Vote |", "| --- | --- | --- | --- |"]
-    for lens, js in votes(led).items():
-        for name, vote in js:
-            who = [p.strip() for p in led["jurors"][name]["by"].split("/")] + ["", "", ""]  # role / host / model
-            body.append(f"| {lens} | {who[1]} | {who[2]} | {vote} |")
+    for lens, js in votes(led).items():  # one row per lens, host, model and vote: a split pr gate has dozens of jurors
+        rows = collections.Counter(tuple(([p.strip() for p in led["jurors"][name]["by"].split("/")] + ["", "", ""])[1:3]) + (vote,) for name, vote in js)
+        body += [f"| {lens} | {h} | {m} | {v}{f' ×{n}' if n > 1 else ''} |" for (h, m, v), n in rows.items()]
     body += ["## Reasons", *[f"- {r}" for r in reasons[:6]]]  # the record body stays under 40 lines
     body += [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}: {f['status']} {f['disposition']}".rstrip() for f in [f for f in open_ if f['severity'] != 'minor'][:8] + [f for f in open_ if f['severity'] == 'minor']]  # never cut a minor (FR-31, FR-33)
     if not reasons and not open_:
