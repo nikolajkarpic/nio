@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30]                      # task IDs removed from this file; never reused
+retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -196,17 +196,6 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - Tier: strong: wires the plugin test run into the evidence parser
 - Effort: low
 - Mode: direct: the pane tests already pass; the fix makes the review run and read them
-
-### T-31 Fix: test tampering: AC-11: a worktree with no venv shows an error and runs nothing (uv would create .venv) in tools/claude-mods/nio-status-pane/hooks/register.test.tsx is deleted
-- From: J-1 (pr, round 3)
-- Files: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx`
-- Serves: J-1
-- Test: new: J-1
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
 
 ### T-32 Fix: Pane drops every jury finding and fix task
 - From: J-30 (pr, round 3)
