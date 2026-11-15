@@ -187,6 +187,22 @@ def test_mods_install_one_fails():
     print("ok")
 
 
+def test_mods_install_times_out():
+    # J-10: a `claude` that hangs fails each mod with a timeout instead of hanging install
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "claude"
+        fake.write_text("#!/bin/sh\nexec sleep 30\n")
+        fake.chmod(0o755)
+        old, hooks.CLAUDE_TIMEOUT = hooks.CLAUDE_TIMEOUT, 0.5
+        try:
+            lines = hooks.mods_install(Path(tmp), claude=str(fake))
+        finally:
+            hooks.CLAUDE_TIMEOUT = old
+        assert lines == ["background-nio-commands: failed: timed out after 0.5s",
+                         "nio-status-pane: failed: timed out after 0.5s"], lines
+    print("ok")
+
+
 def test_mods_install_without_claude():
     # TC-36
     with tempfile.TemporaryDirectory() as tmp:
@@ -299,6 +315,6 @@ def test_readmes_call_mods_optional():
 
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
-                    test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_without_claude,
+                    test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_times_out, test_mods_install_without_claude,
                     test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope,
                     test_readmes_call_mods_optional])
