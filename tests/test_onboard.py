@@ -455,8 +455,8 @@ def test_reader_packs():
     from nio import implement
     root = test_implement.impl()
     setup_project(root, "done", SIX)
-    task = implement.tasks_of(root, test_implement.S)[0]
-    text = implement.worker_pack(root, test_implement.S, task)
+    e = implement.epic_list(root, test_implement.S)[0]
+    text = implement.worker_pack(root, test_implement.S, e["id"], e["title"], e["tasks"])
     assert headings(text) == ROWS["worker"], headings(text)
     assert len([l for l in text.splitlines() if l.startswith("## ")]) == 5, text
 

@@ -3,6 +3,7 @@ import functools
 import hashlib
 import importlib.metadata
 import os
+import shutil
 import sqlite3
 import subprocess
 from pathlib import Path
@@ -33,9 +34,11 @@ def settings(root):
     return cfg.get("model", DEFAULT_MODEL), cfg.get("drift", DEFAULT_DRIFT)
 
 
-def connect(root):
-    path = root / ".nio/cache/index.db"
+def connect(root, name="index.db"):
+    path = root / ".nio/cache" / name
     path.parent.mkdir(parents=True, exist_ok=True)
+    if not (path.parent / ".gitignore").exists():
+        (path.parent / ".gitignore").write_text("*\n")  # keep the cache out of `git status`
     db = sqlite3.connect(path)
     db.enable_load_extension(True)
     sqlite_vec.load(db)
@@ -140,7 +143,22 @@ def build(root):
     commits, renames = records.added_in(root), {}
     model, threshold = settings(root)
     version = f"{model}@fastembed-{importlib.metadata.version('fastembed')}"
-    db = connect(root)
+    # FR-31: rebuild a copy and replace the index in one step, so a reader sees the whole old index or the whole new one
+    path, new = root / ".nio/cache/index.db", root / ".nio/cache/index.db.new"
+    new.unlink(missing_ok=True)
+    if path.exists():
+        shutil.copyfile(path, new)
+    try:
+        count, done = fill(root, connect(root, new.name), recs, files, commits, renames, model, threshold, version)
+    except BaseException:
+        new.unlink(missing_ok=True)
+        raise
+    os.replace(new, path)
+    return count, done
+
+
+def fill(root, db, recs, files, commits, renames, model, threshold, version):
+    """Write the records into the open index `db`, then INDEX.md, and close it. Returns (record count, re-embedded)."""
     with db:
         if (db.execute("select value from meta where key='model'").fetchone() or [None])[0] != version:
             db.execute("delete from vec")

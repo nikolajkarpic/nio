@@ -1,7 +1,7 @@
 import type { Register } from 'claude-code'
 
-// A segment that runs `nio jury run` or `nio flow green`, optionally via `uv run`.
-const LONG_NIO = /^(?:uv\s+run\s+)?nio\s+(?:jury\s+run|flow\s+green)(?:\s|$)/
+// A segment that runs `nio jury evidence` or `nio flow finish`, optionally via `uv run`.
+const LONG_NIO = /^(?:uv\s+run\s+)?nio\s+(?:jury\s+evidence|flow\s+finish)(?:\s|$)/
 // Leading `cd <dir> &&` prefixes before the configured suite command.
 const CD_PREFIX = /^(?:\s*cd\s+\S+\s*&&)*\s*/
 

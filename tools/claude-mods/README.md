@@ -1,10 +1,10 @@
-# Claude Code mods for developing NIO
+# Optional Claude Code mods for NIO
 
-Claude-only dev tooling for working on this repo. They are not part of the NIO product.
+The mods are an optional Claude Code part of NIO, shipped in the `nio` package and offered by `@nio:install`, which installs them for this clone (`nio mods install`); the skills work the same without them.
 
 | Mod | What it does |
 | --- | --- |
-| [background-nio-commands](background-nio-commands/) | Runs `nio jury run`, `nio flow green` and the test suite in the background, so agents stop polling (#130) |
+| [background-nio-commands](background-nio-commands/) | Runs `nio jury evidence`, `nio flow finish` and the test suite in the background, so agents stop polling (#130) |
 | [nio-status-pane](nio-status-pane/) | A side pane, a status line and `/nio` showing where every effort in the repo's worktrees stands, with no model turn (#131, #132) |
 
 ## Install (once)

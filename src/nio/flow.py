@@ -45,14 +45,23 @@ class Busy(Exception):
 HELD = {}  # (effort folder, pid) -> the lock this process holds there, re-read before each write (CT-3)
 
 
-def who(by):
-    """`--by "<role> / <host> / <model>"` as a history line's `who`; `human` alone is the human (CT-2, CT-16)."""
+def who(by, root=None, slug=None):
+    """`--by "<role> / <host> / <model>"` as a history line's `who`; `human` alone is the human (CT-2, CT-16). Given the
+    effort, an agent's `who` under auto carries `auto`: the history line of the grant it acts on (2026-11-15 CT-36)."""
     if by.strip() == "human":
         return {"role": "human", "host": "", "model": ""}
     parts = [p.strip() for p in by.split("/")]
     if len(parts) != 3 or not all(parts):
         raise ValueError(f'--by must be "<role> / <host> / <model>" or human, not "{by}"')
-    return dict(zip(("role", "host", "model"), parts))
+    w = dict(zip(("role", "host", "model"), parts))
+    n = grant_line(root, slug) if root is not None and slug else None
+    return {**w, "auto": n} if n else w
+
+
+def grant_line(root, slug):
+    """The 1-based history line of the grant the effort's auto flag rests on, or None when auto is off."""
+    state, lines = load(root, slug)
+    return next((i for i in range(len(lines), 0, -1) if lines[i - 1]["kind"] == "grant"), None) if state["auto"] else None
 
 
 def sha(data):
@@ -197,7 +206,7 @@ def ignore(folder):
     """The effort folder's .gitignore names the files nio writes there that are never committed."""
     path = folder / ".gitignore"
     have = path.read_text().splitlines() if path.exists() else []
-    if missing := [x for x in ("flow.lock*", "state.json.new", "running.json") if x not in have]:
+    if missing := [x for x in ("flow.lock*", "state.json.new", "running.json", "driver.lock*") if x not in have]:
         path.write_text("".join(f"{x}\n" for x in have + missing))
 
 
@@ -280,6 +289,84 @@ def lock(root, slug):
         HELD.pop((folder.resolve(), os.getpid()), None)
         if holder(path) == mine:
             path.unlink()
+
+
+def drive(root, slug, by, token=None, release=False, now=None):
+    """The driver claim `.nio/specs/<slug>/driver.lock` (CT-5, FR-29, FR-38): taken atomically, refreshed with its
+    token, taken over once its `at` is over 30 minutes old, released with its token. Writes no history line."""
+    folder = root / ".nio/specs" / slug
+    if not folder.is_dir():
+        raise ValueError(f"no effort {slug}")
+    path = folder / "driver.lock"
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+
+    def claim(p):
+        try:
+            d = json.loads(p.read_text())
+            return d if isinstance(d, dict) else {}
+        except (OSError, ValueError):
+            return None
+
+    def refuse(d):
+        return 1, [f"{slug} is driven by {d.get('by')} on {d.get('host')}, last refreshed {d.get('at')}; stop"]
+
+    def temp():
+        return folder / f"driver.lock.{os.getpid()}.{secrets.token_hex(4)}"
+
+    held = claim(path)
+    if release:
+        if held is None:
+            return 0, [f"released: {slug}"]
+        if not token or held.get("token") != token:
+            return refuse(held)
+        path.unlink(missing_ok=True)
+        return 0, [f"released: {slug}"]
+    mine = token or secrets.token_hex(8)
+    body = json.dumps({"token": mine, "by": by, "host": socket.gethostname(), "at": now.isoformat()})
+
+    def create():  # O_EXCL by link: fails when a claim exists, and a reader never sees a half-written one
+        tmp = temp()
+        tmp.write_text(body)
+        try:
+            os.link(tmp, path)
+        finally:
+            tmp.unlink()
+
+    lines = [f"driving: {slug}", f"token: {mine}"]
+    if held is not None and token and held.get("token") == token:  # refresh
+        tmp = temp()
+        tmp.write_text(body)
+        if (claim(path) or {}).get("token") != token:
+            tmp.unlink()
+            return refuse(claim(path) or held)
+        os.replace(tmp, path)
+        return 0, lines
+    if held is not None:
+        try:
+            age = now - datetime.datetime.fromisoformat(held.get("at"))
+        except (TypeError, ValueError):
+            age = datetime.timedelta(0)  # an unreadable claim is never judged stale
+        if age <= datetime.timedelta(minutes=30):
+            return refuse(held)
+        stale = temp()
+        try:
+            os.rename(path, stale)  # of two takers, only one renames it
+        except FileNotFoundError:
+            return refuse(claim(path) or held)
+        if claim(stale) != held:  # a newer claim than the one judged stale: put it back
+            try:
+                os.link(stale, path)
+            except FileExistsError:
+                pass
+            stale.unlink()
+            return refuse(claim(path) or held)
+        stale.unlink()
+        lines.append(f"took over from {held.get('by')}, last refreshed {held.get('at')}")
+    try:
+        create()
+    except FileExistsError:
+        return refuse(claim(path) or {})
+    return 0, lines
 
 
 def verdict(root, slug, gate, rnd, outcome):
@@ -477,7 +564,8 @@ EXIT = {  # the decision table "Guards", word for word
     "plan_jury": "`nio check plan --approved` exits 0",
     "tasking": "`nio check tasks` passes: every AC has a task and every task an AC",
     "tasks_jury": "`nio check tasks --approved` exits 0 (the tasks ledger approved, or the human closed it with a reason)",
-    "implementing": "every task is done, and an epic already in its old implementation jury has its `epic` line",
+    "implementing": "every epic is closed by its own passing test run (`nio flow finish`), and an epic already in its "
+                    "old implementation jury has its `epic` line",
     "pr": "the pr jury approved the whole effort diff with no finding unruled and a verdict that isn't stale (or the "
           "human closed it), and the human approved it at a terminal with `nio flow approve`"}
 ASKED = re.compile(r"^## Asked · (Q\d+)\b", re.M)
@@ -753,25 +841,26 @@ def where(root, slug, state=None, lines=None):
     elif state["waiting"]:
         status, command = f"waiting_for_human: {state['waiting']['why']}", f"nio flow start {slug} --by human"
         if state["waiting"]["why"].startswith("commit failed"):  # CT-9: the retry re-runs the review and the commit
-            command = f"nio flow green {slug} {state['waiting']['task']} {by_arg(None)}"
-        elif state["waiting"].get("task"):  # CT-10, CT-11: a blocked task goes on when the human unblocks it
-            command = f'nio flow unblock {slug} {state["waiting"]["task"]} --human "<reason>" --by human'
+            command = f"nio flow finish {slug} {state['waiting'].get('epic') or state['waiting'].get('task')} {by_arg(None)}"
+        elif state["waiting"].get("task") or state["waiting"].get("epic"):  # a blocked task or epic goes on when the human unblocks it
+            command = f'nio flow unblock {slug} {state["waiting"].get("task") or state["waiting"]["epic"]} --human "<reason>" --by human'
     elif pending:
         status, command = f"waiting_for_human: {pending[0]['change']} pending", ""
     elif asked:
         status, command = f"waiting_for_human: {asked}", ""
+    elif (ready == "pass" or ready == "closed") and stage != "pr" and state["auto"]:  # FR-46: the driver's done approves it
+        status, command = "working", f"nio flow done {stage} {slug}"
     elif ready == "pass" or stage == "pr" and ready == "closed":
         status, command = f"waiting_for_human: approve {GATES[stage][0]}", f"nio flow done {stage} --commit {slug} --by human"
         if stage == "pr":
             command = f"nio flow approve {slug}"  # FR-9: the human, at a terminal
-    elif stage == "implementing":  # implement CT-14: the claimed task, else the next ready one
+    elif stage == "implementing":  # implement CT-1: the claimed epics, else the next ready one
         from nio import implement
-        tid = state["claims"].get("task")
-        t = next((t for t in implement.tasks_of(root, slug) if t["id"] == tid), None) if tid else \
-            implement.next_ready(root, slug, lines)
-        status, command = "working", "" if tid or not t else f"nio flow claim {slug}"
-        task = f"{t['id']} {t['title']}" + " (claimed)" * bool(tid) if t else ""
-        gate = None if tid else implement.open_gate(root, slug, lines)
+        held_ = implement.claimed(state) or ({state["claims"]["task"]: {}} if state["claims"].get("task") else {})
+        nxt = None if held_ else implement.pending_epic(root, slug, lines)[0]
+        status, command = "working", f"nio flow claim {slug}" if nxt else ""
+        task = ", ".join(f"{e} (claimed)" for e in held_) or (f"{nxt['id']} {nxt['title']}" if nxt else "")
+        gate = None if held_ else implement.open_gate(root, slug, lines)
         if gate:  # CT-17: the epic waits on its gate
             gate = f"implementation-{gate}"
             held = [p for p in jury.gate_changes(root, slug, gate) if re.search(r"^outcome: pending", (root / p).read_text(), re.M)]
@@ -848,9 +937,11 @@ def held(state):
 
 
 def typed(skill):
-    """What the human types to run a skill on this host; a host we can't identify gets the plain name."""
+    """What the human types to run a skill on this host, a host we can't identify getting the plain name; with the
+    skill's file, for a session without the NIO plugin (FR-34)."""
     # ponytail: only Claude Code is detected; add a host's form here once it is verified on that host
-    return f"/{skill[1:]}" if os.environ.get("CLAUDECODE") else f"the {skill[1:]} skill"
+    name = f"/{skill[1:]}" if os.environ.get("CLAUDECODE") else f"the {skill[1:]} skill"
+    return f"{name} (skills/{skill.split(':')[-1]}/SKILL.md)"
 
 
 def by_arg(by):
@@ -867,6 +958,7 @@ def talk(slug, here):
         ("waiting_for_human: commit failed", "Fix what git refused, then run the command below", "history.jsonl"),
         ("waiting_for_human: spec problem", "Settle the change request, then run the command below", "spec.md"),
         ("waiting_for_human: T-", "Look at the task's saved changes, then run the command below", "history.jsonl"),
+        ("waiting_for_human: E-", "Look at the epic's failed test runs, then run the command below", "history.jsonl"),
         ("done", "Nothing needed: the effort is done", "history.jsonl")] if status.startswith(key)),
         ("Run this command to resume", "state.json"))
     out = [first.format(q=status.split(": ", 1)[-1].split()[0]), f"effort: {slug}", f"state: {here['stage']} ({status})"]
@@ -945,6 +1037,136 @@ def next_step(root, slug=None, by=None):
 BRIEF = 80  # NFR-2: a brief's most lines
 
 
+def timeline(lines):
+    """Timeline section (CT-3): stage changes and failed reviews, a missing field reads `-`."""
+    rows = []
+    for l in lines:
+        ev = l.get("evidence") or {}
+        failed = l.get("kind") == "review" and ev.get("passed") is False
+        if l.get("from") == l.get("to") and not failed:
+            continue
+        who = l.get("who") or {}
+        row = {"kind": l.get("kind") or "-", "from": l.get("from") or "-", "to": l.get("to") or "-",
+               **{k: who.get(k) or "-" for k in ("role", "host", "model")}, "at": l.get("at") or "-"}
+        if failed:
+            row["reasons"] = ev.get("reasons") or "-"
+        rows.append(row)
+    return rows
+
+
+def juries(root, slug):
+    """Juries section (CT-4): per committed ledger, its rounds with lenses, verdicts and findings."""
+    from nio import jury, tasks
+    out = []
+    for f in sorted(jury.folder(root, slug).glob("*.json")):
+        led = jury.load(root, slug, f.stem)
+        votes = jury.votes(led)
+        has_tasks = tasks.path(root, slug).exists()
+        rounds = []
+        for n in range(1, led["round"] + 1):
+            mine = [x for x in led["findings"] if x["first_round"] == n]
+            names = {s["lens"] for x in led["findings"] for s in x["sources"] if s["round"] == n}
+            names |= {j["lens"] for j in led["jurors"].values() if j["round"] == n}
+            lenses = []
+            for lens in sorted(names):
+                if n == led["round"] and lens in votes:
+                    v = [x[1] for x in votes[lens]]
+                    verdict = "block" if "block" in v else v[0]
+                else:
+                    verdict = "block" if any(x["validation"] == "confirmed" and x["severity"] != "minor" and any(
+                        s["lens"] == lens and s["round"] == n for s in x["sources"]) for x in led["findings"]) else "approve"
+                lenses.append({"lens": lens, "verdict": verdict})
+            rounds.append({"round": n, "lenses": lenses, "findings": [
+                {"id": x["id"], "title": x["title"], "severity": x["severity"], "validation": x["validation"],
+                 "fix_tasks": tasks.fixes_of(root, slug, f.stem, x["id"]) if has_tasks else []} for x in mine]})
+        out.append({"gate": f.stem, "outcome": led["outcome"] or "-", "rounds": rounds})
+    return out
+
+
+def task_rows(root, slug, state, lines):
+    """Tasks section (CT-5): per epic its tasks with status and attempts; `[]` when tasks.md is missing."""
+    from nio import implement, tasks
+    if not tasks.path(root, slug).exists():
+        return []
+    st = implement.status(root, slug, lines) if lines is not None else {}
+    ep = implement.epics(root, slug, lines) if lines is not None else {}
+    claims = (state or {}).get("claims") or {}  # a claimed epic's tasks, or an old task or wave claim
+    held = set(claims.get("epics") or {}) | {claims.get("task")} | set(claims.get("wave") or [])
+    attempts = (state or {}).get("attempts") or {}  # failed runs count per epic (an old per-task count stays)
+    out = []
+    for t in implement.tasks_of(root, slug):
+        if not out or out[-1]["epic"] != t["epic"]:
+            out.append({"epic": t["epic"], "tasks": []})
+        status = "-" if lines is None else st[t["id"]]
+        if status in ("ready", "pending"):  # an undone task reads as its epic: claimed, failed or blocked by its runs
+            now = ep[t["epic"]][0]
+            status = "claimed" if {t["id"], t["epic"]} & held else now if now in ("failed", "blocked") else status
+        att = attempts.get(t["epic"], attempts.get(t["id"], "-"))
+        out[-1]["tasks"].append({"id": t["id"], "title": t["title"], "status": status, "attempts": att})
+    return out
+
+
+def memory(root, slug):
+    """CT-6: records whose front matter `paths` sit under the effort's folder or whose `against` is the slug."""
+    from nio import index
+    pre = f".nio/specs/{slug}/"
+    try:
+        stands = dict(index.connect(root).execute("select id, standing from nodes where kind='record'"))
+    except Exception:
+        stands = {}
+    out = []
+    for rid, (_, meta, _, _) in index.load(root).items():
+        paths = meta.get("paths") or []
+        if isinstance(paths, str):
+            paths = [paths]
+        if meta.get("against") == slug or any(str(x).startswith(pre) for x in paths):
+            out.append({"id": rid, "kind": meta.get("type"), "standing": stands.get(rid, "-"), "title": meta.get("title")})
+    return sorted(out, key=lambda r: r["id"])
+
+
+def show(root, slug, now=None):
+    """Drill-down data for `nio flow show` (CT-2): one JSON line; the five sections are placeholders until filled."""
+    if not (root / ".nio/specs" / slug).is_dir() or kind(root, slug) != "effort":
+        return 1, [json.dumps({"error": f"no effort {slug}"})]
+    try:
+        state, lines = load(root, slug)
+        stage = where(root, slug, state, lines)["stage"]
+    except Broken:
+        state, stage = None, "-"
+    if stage == "done":
+        return 1, [json.dumps({"error": f"{slug} is done"})]
+    if state and state["abandon"] is not None:
+        return 1, [json.dumps({"error": f"{slug} is abandoned"})]
+    try:
+        tl = timeline(load(root, slug)[1])
+    except Broken as e:
+        tl = {"error": str(e)}
+    except Exception as e:
+        tl = {"error": f"{slug}: {e}"}
+    try:
+        ju = juries(root, slug)
+    except Exception as e:
+        ju = {"error": f"{slug}: {e}"}
+    try:
+        tk = task_rows(root, slug, state, load(root, slug)[1])
+    except Broken:
+        tk = task_rows(root, slug, state, None)
+    except Exception as e:
+        tk = {"error": f"{slug}: {e}"}
+    try:
+        from nio import usage
+        cost = usage.so_far(root, slug, load(root, slug)[1], now or datetime.datetime.now(datetime.timezone.utc))
+    except Broken as e:
+        cost = {"error": str(e)}
+    except Exception as e:
+        cost = {"error": f"{slug}: {e}"}
+    try:
+        mem = memory(root, slug)
+    except Exception as e:
+        mem = {"error": f"{slug}: {e}"}
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": tk, "cost": cost, "memory": mem})]
+
+
 def brief(root, slug, everything=False):
     """`nio flow brief` (#128 FR-14): what a fresh driver starts from, read from saved state alone: `nio flow next`'s
     lines, a running long command, the open tasks and the current gate's open findings. Over BRIEF lines it gives the
@@ -953,6 +1175,7 @@ def brief(root, slug, everything=False):
     if not (root / ".nio/specs" / slug).is_dir():
         raise ValueError(f"no effort {slug}")
     _, out = next_step(root, slug)
+    out = mod_off(root) + out
     if rec := live_run(root / ".nio/specs" / slug / "running.json"):  # another host's run can't be checked from here
         host = "" if rec.get("host") == socket.gethostname() else f" on {rec.get('host')}, can't check"
         out.append(f"running{host}: {rec['command']}, started {stamp(rec['at'])} UTC")
@@ -966,6 +1189,9 @@ def brief(root, slug, everything=False):
         todo = [t for t in implement.tasks_of(root, slug) if st[t["id"]] != "done"]
         heads.append(f"open tasks: {len(todo)}")
         items += [f"  {t['id']} {t['title']} ({st[t['id']]})" for t in todo]
+        for eid, c in implement.claimed(state).items():  # CT-4: a fresh agent resumes a claimed epic from these
+            mine = [t for t in implement.tasks_of(root, slug) if t["epic"] == eid]
+            heads += [f"claimed: {eid}", f"pack: {c.get('pack')}", implement.then_line(root, slug, eid, mine, None)]
         epic = implement.open_gate(root, slug, lines)
         gate = f"implementation-{epic}" if epic else None
     else:
@@ -982,6 +1208,24 @@ def brief(root, slug, everything=False):
     return 0, cut(out + heads + items, slug, everything)
 
 
+MOD = "background-nio-commands"
+
+
+def mod_off(root):
+    """The warning a Claude Code session gets when the background mod isn't installed for this repo (FR-15), else [].
+    ponytail: a mod loaded with --plugin-dir leaves no trace a command can read, so the warning says to ignore it then."""
+    if not os.environ.get("CLAUDECODE") or MOD in os.environ.get("CLAUDE_CODE_PLUGIN_DIRS", ""):
+        return []
+    for name in ("settings.local.json", "settings.json"):
+        try:
+            if json.loads((root / ".claude" / name).read_text()).get("enabledPlugins", {}).get(f"{MOD}@nio-mods") is True:
+                return []
+        except (OSError, ValueError, AttributeError):
+            continue
+    return ["warning: the background mod is off, so long commands block this session: run nio mods install "
+            "(ignore if you loaded it with --plugin-dir)"]
+
+
 def cut(lines, slug, everything):
     """A brief at most BRIEF lines, however long `nio flow next`'s part is; the last line then names the rest."""
     return lines if everything or len(lines) <= BRIEF else lines[:BRIEF - 1] + [f"rest: nio flow brief {slug} --all"]
@@ -992,14 +1236,46 @@ def never_reviewed(root, slug, lines):
     return [x["evidence"]["epic"] for x in lines if x["kind"] == "epic" and x.get("reason") == "skipped: not built"]
 
 
-def start(root, slug, by):
+def grant_who():
+    """The human's `who` on a grant line: host and model as far as they can be detected (CT-1, AC-42)."""
+    return {"role": "human", "host": "claude-code" if os.environ.get("CLAUDECODE") else "terminal",
+            "model": os.environ.get("ANTHROPIC_MODEL") or "unknown"}
+
+
+def to_branch(root, slug):
+    """Switch to the effort branch, carrying the effort folder's uncommitted files (CT-1)."""
+    from nio import implement
+    name = implement.branch(slug)
+    if records.git(root, "rev-parse", "--abbrev-ref", "HEAD") == [name]:
+        return name
+    if records.git(root, "status", "--porcelain", "-uno", "--", ".", f":!.nio/specs/{slug}"):
+        raise ValueError(f"commit or stash your other changes before auto switches to {name}")
+    exists = records.git(root, "rev-parse", "--verify", "--quiet", f"refs/heads/{name}", full=True)[0] == 0
+    code, _, err = records.git(root, "switch", *([name] if exists else ["-c", name]), full=True)
+    if code != 0:
+        raise ValueError(f"commit or stash your other changes before auto switches to {name}: {err.strip()}")
+    return name
+
+
+def start(root, slug, by, auto=False):
     """`nio flow start` (CT-10, FR-10, FR-44, FR-53): create the flow files with a `start` line, resume a held effort
     (also one the stop list pauses), then record the `back` lines a change owes; or record a `start` line on a working
     one, which makes it the effort with the newest line. Returns (code, lines)."""
     slug = pick(root, slug)
     refuse(root, slug)
     w = who(by)
+    if auto:
+        if w["role"] != "human":
+            raise ValueError("only the human grants auto (--by human)")
+        from nio import spec
+        errors = spec.check(root, slug)[0]
+        if errors:
+            raise ValueError(f"auto needs a spec draft that passes nio check spec: {errors[0]}")
+        w = grant_who()
     load(root, slug)  # a broken effort is refused before the lock or .gitignore is touched
+    if auto and load(root, slug)[0]["auto"]:
+        return 0, [f"{slug} is already auto"]
+    name = to_branch(root, slug) if auto else None
     with lock(root, slug):
         state, lines = load(root, slug)
         fresh = not (root / ".nio/specs" / slug / "history.jsonl").exists()
@@ -1011,8 +1287,53 @@ def start(root, slug, by):
             entry = {"kind": "start", "from": last_to(lines), "to": None}
         entry["to"] = where(root, slug, new, lines)["stage"]
         here = where(root, slug, new, lines + [entry])  # the resume names the change it cleared: now it moves
-        write(root, slug, [entry] + backs(here, lines + [entry], slug, new["auto"]), new, w, entry["from"] or entry["to"])
-    return 0, [f"{'resumed' if entry['kind'] == 'resume' else 'started'} {slug} at {here['stage']}"]
+        grant = [{"kind": "grant", "from": here["stage"], "to": here["stage"]}] if auto else []
+        new = {**new, "auto": new["auto"] or auto}
+        write(root, slug, [entry] + backs(here, lines + [entry], slug, new["auto"]) + grant, new, w,
+              entry["from"] or entry["to"])
+    out = [f"{'resumed' if entry['kind'] == 'resume' else 'started'} {slug} at {here['stage']}"]
+    return 0, out + ([f"granted auto on {slug} at {here['stage']} (branch {name})"] if auto else [])
+
+
+def report(root, slug):
+    """The run report (CT-40, #122's CT-14): each gate's approval (under auto, with its grant line), the risks accepted,
+    the fixes the run made and the `[auto]` defaults in the spec; read from history and the ledgers. The pull request's
+    body under auto."""
+    from nio import jury
+    _, lines = load(root, slug)
+    out = [f"# Run report: {slug}", "", "## Gates"]
+    for x in lines:
+        if x["kind"] in ("pass", "override") and x["from"] in GATES:
+            auto = (x["evidence"].get("auto") or {}).get("grant")
+            out.append(f"- {GATES[x['from']][0]}: " + (f"approved under auto (grant, history line {auto})" if auto
+                                                       else f"{'closed' if x['kind'] == 'override' else 'approved'} by {x['who']['role']}"))
+    risks, fixes = [], []
+    for gate, _ in GATES.values():
+        for f in jury.load(root, slug, gate)["findings"]:
+            if f.get("disposition") == "accepted-risk":
+                risks.append(f"- {gate} {f['id']} [{f['severity']}] {f['title']} (by {f['by']}): {f['note']}")
+            elif f.get("disposition") in jury.FIXES and f.get("by") in ("agent", "auto"):
+                fixes.append(f"- {gate} {f['id']} [{f['severity']}] {f['title']}: {f['note']}")
+    sp = root / ".nio/specs" / slug / "spec.md"
+    auto = [f"- {x.strip()}" for x in (sp.read_text().splitlines() if sp.exists() else []) if x.rstrip().endswith("[auto]")]
+    for head, items in (("Accepted risks", risks), ("Fixes by the run", fixes), ("`[auto]` defaults", auto)):
+        out += ["", f"## {head}", *(items or ["None."])]
+    return "\n".join(out) + "\n"
+
+
+def manual(root, slug, by):
+    """`nio flow manual` (CT-33, FR-16): the human switches auto off; one `switch_off` line. Returns (code, lines)."""
+    slug = pick(root, slug)
+    refuse(root, slug)
+    if who(by)["role"] != "human":
+        raise ValueError("only the human switches auto off (--by human)")
+    with lock(root, slug):
+        state, lines = load(root, slug)
+        if not state["auto"]:
+            raise ValueError(f"{slug} is already manual")
+        stage = where(root, slug, state, lines)["stage"]
+        write(root, slug, [{"kind": "switch_off", "from": stage, "to": stage}], {**state, "auto": False}, who(by), stage)
+    return 0, [f"auto is off for {slug}"]
 
 
 def park(root, slug, why, by):
@@ -1037,9 +1358,6 @@ def park(root, slug, why, by):
 
 # --- nio flow done (CT-11, CT-19) ---
 
-RISKY = {"money", "data-deletion", "migration", "auth"}  # FR-51: with these the human always gives --commit
-
-
 def moves(stage, off=NOT_BUILT):
     """The `skip` lines after `stage` up to the next built stage (FR-21), and that stage."""
     out, s = [], STAGES[stage][0]
@@ -1048,14 +1366,6 @@ def moves(stage, off=NOT_BUILT):
                     "reason": "skipped: not built" if s in NOT_BUILT else "skipped: lite route"})
         s = STAGES[s][0]
     return out, s
-
-
-def risky(root, slug):
-    try:
-        flags = records.parse(root / ".nio/specs" / slug / "spec.md")[0].get("risk") or []
-    except (OSError, ValueError):
-        return False
-    return bool(RISKY & set(flags))
 
 
 def pending_pass(lines, stage, verdict_id):
@@ -1076,10 +1386,10 @@ def stage_arg(name):
     raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(STAGES)}, implementation-E-n)")
 
 
-def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=False):
+def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=False, auto=False):
     """`nio flow done` (CT-11, FR-12 to FR-27, FR-48, FR-62): run the stage's guard and, when it passes (or the human
     overrides a failing one), record the move and the skips after it; at a gate, `--commit` (or the auto flag on a
-    spec without a risky flag) also makes the approval commit, rolled back when git fails. Returns (code, lines)."""
+    spec, risky or not, but never the pr gate: 2026-11-15 FR-46) also makes the approval commit, rolled back when git fails. Returns (code, lines)."""
     from nio import jury
     if EPIC_GATE.fullmatch(stage):
         return epic_done(root, stage, slug, by)
@@ -1095,9 +1405,13 @@ def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=Fal
                    f'nio jury check {slug} {gate} --human "{human}" --record']
     if human is not None and not human.strip():
         raise ValueError("--human needs a reason")
-    w = who(by)
+    w = who(by, root, slug)
+    if auto and stage != "drafting":
+        raise ValueError("--auto goes with nio flow done drafting, or nio flow start")
+    if auto and w["role"] != "human":
+        raise ValueError("only the human grants auto (--by human)")
     state, lines = load(root, slug)
-    if commit and w["role"] != "human" and (not state["auto"] or risky(root, slug)):  # FR-18, FR-48, FR-51
+    if commit and w["role"] != "human" and not state["auto"]:  # FR-18, FR-48; under auto any gate but pr (2026-11-15 FR-46)
         raise ValueError("--commit approves a gate: only the human gives it, with --by human")
     here = where(root, slug, state, lines)
     if held(state):
@@ -1125,6 +1439,8 @@ def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=Fal
         return 0, [f"{slug} is done; nothing to do"]
     result, output, ev = guard(root, slug, stage)
     skipl, to = moves(stage, skips(root, slug))
+    if auto and result == "fail":  # AC-3, CT-2: a failing draft can't go auto, even with --human
+        return 1, output
     if result == "fail" and human is None:  # FR-13: nothing written, but FR-41's `fail` line in auto mode
         if state["auto"]:
             with lock(root, slug):
@@ -1153,13 +1469,22 @@ def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=Fal
     gated = stage in GATES and result == "pass"
     if gated and jury.load(root, slug, GATES[stage][0])["round"] in approvals(root, slug)[stage]:
         gated = False  # its approval commit for this round exists already: record the pass, commit nothing (FR-17, FR-47)
-    if gated and not (commit or state["auto"] and not risky(root, slug)):
+    if gated and not (commit or state["auto"]):
         command = f"nio flow done {stage} --commit {slug} --by human"
         return 0, [f"{slug}: the {GATES[stage][0]} gate passes; nothing is recorded until the human approves it:",
                    command]  # FR-48
     out = [f"moved {slug}: {stage} → {to}"] + [f"skipped {s['from']} ({s['reason'][9:]})" for s in skipl]
+    if gated and state["auto"] and w["role"] != "human":  # FR-46: the flow approves it, naming the grant it rests on
+        n = grant_line(root, slug)
+        line["evidence"] = {**line["evidence"], "auto": {"grant": n}}
+        out.append(f"approved {GATES[stage][0]} under auto (grant, history line {n})")
     if to in SKILL:
         out.append(f"next: run {typed(SKILL[to])}")
+    grant = auto and not gated and not state["auto"]
+    if grant:
+        w = grant_who()
+        name = to_branch(root, slug)
+        out.append(f"granted auto on {slug} (branch {name})")
     with lock(root, slug):
         state, now = load(root, slug)
         if now != lines:
@@ -1167,6 +1492,9 @@ def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=Fal
         owed = backs(here, lines, slug, state["auto"])
         entries = owed + ([] if gated and pending_pass(lines, stage, ev["verdict"]) else [line] + skipl)
         if not gated:
+            if grant:
+                entries += [{"kind": "grant", "from": to, "to": to}]
+                state = {**state, "auto": True}
             write(root, slug, entries, state, w, stage)
             if to == "done":
                 from nio import usage
@@ -1376,7 +1704,7 @@ def seen(root, slug, by):
     nothing to see. Returns (code, lines)."""
     slug = pick(root, slug)
     refuse(root, slug)
-    w = who(by)
+    w = who(by, root, slug)
     state, lines = load(root, slug)
     if not unseen(lines):
         return 0, [f"nothing to see on {slug}"]

@@ -6,7 +6,7 @@ effort: med
 tools: [read, write]
 ---
 
-Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`.
+Flow state: only `nio flow` writes `state.json` and `history.jsonl`; never edit them. Only the human gives `--human` to `nio flow done`, runs `nio flow seen`, or asks for `nio flow abandon`. Never pass `--by human`: only the human grants or revokes auto, or approves a gate.
 
 ## Job
 
@@ -28,7 +28,10 @@ The context pack from the jury skill, and nothing else:
 - Would the worker know when it's done: does its `Test:` say what proves it?
 - Are its dependencies real: does it need what it depends on, and does it miss something it needs first?
 - Is a `Parallel: yes` safe beyond shared files: a shared table, config or global state?
-- Does each tier and effort fit the work: subtle state rated cheap, or a rename rated max?
+- Does each epic's tier and effort fit the work: subtle state rated cheap, or a rename rated max?
+- Is a task blocked until a later epic: a guard or a suite check an early epic adds (every planned test file exists, a
+  config key is set, a record is present) that only a later epic's task can satisfy? One agent implements each epic and
+  the flow runs its tests at its end, so that epic can never pass. Cite both task IDs.
 
 ## Output format
 

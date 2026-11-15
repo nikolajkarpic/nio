@@ -143,7 +143,7 @@ def test_ac5_it_fails():
 
 
 def test_ac8_it_fails():
-    has(errs(repo(field("T-3", "Effort", None))), "T-3: needs `- Effort:`")
+    has(errs(repo(lambda t: t.replace("- Effort: med\n", "", 1))), "E-1: needs `- Effort:`")  # per epic (FR-7)
     print("ok")
 
 
@@ -186,14 +186,15 @@ def test_ac13_only_the_second_is_an_error():
 
 
 def test_ac14_both_are_errors():
-    e = errs(repo(chain(field("T-1", "Tier", "strong"), field("T-2", "Tier", "huge: big change"))))
-    assert e == ["T-1: `Tier: strong` needs a reason, as `Tier: strong: <why>`", "T-2: `huge` is not cheap, strong, max or frontier"], e
+    tier = lambda v: lambda t: t.replace("- Tier: max: money moves, concurrent refunds must pay once\n", f"- Tier: {v}\n", 1)
+    assert errs(repo(tier("strong"))) == ["E-1: `Tier: strong` needs a reason, as `Tier: strong: <why>`"]
+    assert errs(repo(tier("huge: big change"))) == ["E-1: `huge` is not cheap, strong, max or frontier"]
     print("ok")
 
 
 def test_ac15_it_fails():
     for line in ("- [ ] done", "- Status: in review"):
-        root = repo(lambda t: t.replace("- Effort: med\n", f"- Effort: med\n{line}\n"))
+        root = repo(lambda t: t.replace("- Parallel: no\n", f"- Parallel: no\n{line}\n", 1))
         has(errs(root), "T-1 holds a status or a checkbox; status lives in the CLI's state")
     print("ok")
 
@@ -280,11 +281,13 @@ def test_ac54_tasks_md_has_exactly_one_epic_e_1_whose():
 # --- the estimate (CT-5) ---
 
 def test_ac27_it_prints_e_1_s_estimate_row():
-    text = chain(field("T-1", "Tier", "cheap: x"), field("T-1", "Effort", "low"), field("T-1", "Parallel", "yes"),
-                 field("T-2", "Tier", "cheap: x"), field("T-2", "Effort", "med"), field("T-2", "Parallel", "yes"),
-                 field("T-3", "Tier", "max: x"), field("T-3", "Effort", "high"))(TASKS)
+    text = chain(field("T-1", "Parallel", "yes"), field("T-2", "Parallel", "yes"))(TASKS)
     row = tasks.estimate(tasks.parse(text))[0]
-    assert row == "E-1: 3 tasks; tier cheap 2, strong 0, max 1, frontier 0; effort low 1, med 1, high 1; parallel: T-1, T-2", row
+    assert row == "E-1: 3 tasks; tier max; effort med; parallel: T-1, T-2", row
+    old = text.replace("- Tier: max", "- X: x").replace("- Effort: med", "- Y: y")  # an old list rated per task: the highest
+    old = chain(lambda t: t.replace("- Parallel: yes\n", "- Parallel: yes\n- Tier: cheap: x\n- Effort: low\n"),
+                lambda t: t.replace("- Parallel: no\n", "- Parallel: no\n- Tier: strong: x\n- Effort: high\n"))(old)
+    assert tasks.estimate(tasks.parse(old))[0] == "E-1: 3 tasks; tier strong; effort high; parallel: T-1, T-2"
     print("ok")
 
 
@@ -460,7 +463,7 @@ def test_ac37_it_is_not_finished():
 # --- the tasks gate (CT-11) ---
 
 def test_ac23_it_does_not_start():
-    lines, ok = jury.plan(repo(field("T-3", "Effort", None)), SLUG, "tasks")
+    lines, ok = jury.plan(repo(lambda t: t.replace("- Effort: med\n", "", 1)), SLUG, "tasks")
     assert not ok and lines == [f"`nio check tasks {SLUG}` fails (1 errors): the check must pass first"], lines
     print("ok")
 
@@ -532,7 +535,7 @@ def test_ac25_edit_withdraws_approval():
 
 def rated_run(edit_after, edit_before=lambda t: t):
     """Run `nio check tasks --rated-from` on a rated tasks.md; `before` holds `to be rated`."""
-    root = repo(chain(field("T-1", "Tier", "to be rated"), field("T-1", "Mode", "to be rated"), edit_before))
+    root = repo(chain(lambda t: t.replace("- Tier: max: money moves, concurrent refunds must pay once\n", "- Tier: to be rated\n"), edit_before))
     copy = root / "before.md"
     copy.write_text(tasks.path(root, SLUG).read_text())
     tasks.path(root, SLUG).write_text(edit_after(copy.read_text()))
@@ -540,7 +543,7 @@ def rated_run(edit_after, edit_before=lambda t: t):
                            "--rated-from", str(copy)], cwd=root, capture_output=True, text=True)
 
 
-RATE = chain(field("T-1", "Tier", "strong: money moves"), field("T-1", "Mode", "split: two workers"))
+RATE = lambda t: t.replace("- Tier: to be rated", "- Tier: strong: money moves")
 
 
 def test_ac26_rated_from_stray_edit():
@@ -554,7 +557,7 @@ def test_ac26_rated_from_stray_edit():
 def test_ac27_rated_from_ok():
     out = rated_run(RATE)
     assert out.returncode == 0, out
-    out = rated_run(field("T-1", "Effort", "high"))
+    out = rated_run(lambda t: t.replace("- Effort: med", "- Effort: high"))
     assert out.returncode == 1 and "not rated" in out.stdout, out
     print("ok")
 
@@ -658,6 +661,54 @@ def test_bracket_path_not_made_yet_is_kept():
     """A bracket path for a file the task will create is a path too: only `*` and `?` make a pattern."""
     out = "\n".join(tasks.show(repo(field("T-3", "Files", "`app/[id]/page.tsx`")), SLUG, "T-3"))
     assert "- Files: `app/[id]/page.tsx`" in out and "matches no file" not in out, out
+    print("ok")
+
+
+# --- a task can't depend on a later epic (2026-11-15-faster-flow CT-7) ---
+
+LATER = "\n## E-5 Later work (US-1)\n\n### T-10 Uses the later one\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: {dep}\n- Parallel: no\n- Tier: cheap: x\n- Effort: low\n- Mode: split: x\n\n## E-6 Even later (US-1)\n\n### T-11 The later one\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: none\n- Parallel: no\n- Tier: cheap: x\n- Effort: low\n- Mode: split: x\n"
+
+
+def test_dependency_on_a_later_epic_fails():
+    """TC-12: T-10 (E-5) waits on T-11 (E-6): the check names both tasks and both epics."""
+    found = [e for e in errs(repo(lambda t: t + LATER.format(dep="T-11"))) if "a later epic" in e]
+    assert len(found) == 1 and all(x in found[0] for x in ("T-10", "T-11", "E-5", "E-6")), found
+    print("ok")
+
+
+def test_dependency_on_an_earlier_epic_passes():
+    """TC-13: dependencies on the same or an earlier epic raise no cross-epic error."""
+    found = errs(repo(lambda t: t + LATER.format(dep="T-1, T-2")))
+    assert not [e for e in found if "a later epic" in e], found
+    print("ok")
+
+
+def test_tier_per_epic_and_the_task_map():
+    """TC-7: tier and effort sit on the epic, none on a task; a task still needs its test, and an epic its tier."""
+    assert tasks.FIELDS == ["Files", "Serves", "Test", "Depends on", "Parallel"]
+    assert errs(repo()) == [], errs(repo())
+    assert not re.search(r"^### T-1.*?^- (Tier|Effort|Mode):", TASKS, re.M | re.S)
+    has(errs(repo(field("T-2", "Test", None))), "T-2: needs `- Test:`")
+    has(errs(repo(lambda t: re.sub(r"^- Tier: .*\n", "", t, count=1, flags=re.M))), "E-1: needs `- Tier:`")
+    assert errs(repo(lambda t: t.replace("- Parallel: no\n", "- Parallel: no\n- Mode: split: old\n"))) == []  # ignored (FR-5)
+    print("ok")
+
+
+def test_retired_fix_id_stays_unused():
+    """TC-34: fix tasks T-6 to T-9 stay valid around the retired T-10, and T-10 can't be used again."""
+    fixes = [fix(f"T-{n}", f"J-{n} (implementation-E-1, round 1)", f"J-{n}") for n in range(6, 11)]
+    roots = []
+    for again in (False, True):
+        root = repo(chain(*fixes))
+        approve_commit(root)
+        tasks.retire(root, SLUG, "T-10", "the same as T-9", "human")
+        assert "retired: [T-10]" in tasks.path(root, SLUG).read_text()
+        if again:
+            p = tasks.path(root, SLUG)
+            p.write_text(fixes[-1](p.read_text()))
+        roots.append(errs(root))
+    assert not [e for e in roots[0] if "next free ID" in e or "T-10" in e], roots[0]
+    has(roots[1], "T-10 is retired and can't be used again")
     print("ok")
 
 

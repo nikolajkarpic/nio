@@ -41,7 +41,7 @@ def link(root, text):
 
 
 def label(command):
-    """A shell call's name: `nio flow red` for NIO's own commands, plain `bash` for the rest, whose text may hold secrets."""
+    """A shell call's name: `nio flow finish` for NIO's own commands, plain `bash` for the rest, whose text may hold secrets."""
     m = NIO.match(command)
     return " ".join(["nio", *filter(None, m.groups())]) if m else "bash"
 
@@ -219,6 +219,62 @@ def report(root, slug):
             "waiting_for_human_seconds": waiting, "agents_seconds": covered(spans), "shell_seconds": covered(shell),
             "orchestrator_thinking_seconds": max(0.0, wall - waiting - busy), "orchestrator_tokens": orchestrator,
             "by_agent": kinds, "tasks": dict(sorted(tasks.items(), key=lambda x: int(x[0][2:])))}
+
+
+def so_far(root, slug, lines, now):
+    """Tokens and seconds per stage window and per jury, up to `now`; "-" when nothing was recorded. Writes nothing."""
+    events = own(read(root), slug)
+    if not events:
+        return {"stages": [], "unattributed": {"tokens": "-", "seconds": "-"}, "total": {"tokens": "-", "seconds": "-"}}
+    turns = [(when(x["at"]), x["to"]) for x in lines if x.get("from") != x.get("to")]
+    wins = [(a, turns[i + 1][0] if i + 1 < len(turns) else now, stage) for i, (a, stage) in enumerate(turns)]
+    first = wins[0][0] if wins else now
+    floor = datetime.min.replace(tzinfo=timezone.utc)
+    logs = {e["transcript"] for e in events if e.get("transcript")}
+    count = lambda t: sum(t[k] for k in TOKENS)
+
+    def juror(log):
+        try:
+            head = Path(log).open().readline()
+        except OSError:
+            return None
+        m = re.search(r"\.nio/runs/(R-[\w-]+)/jury/", head)
+        try:
+            return json.loads((root / ".nio/runs" / m.group(1) / "jury/packs/step.json").read_text()).get("gate") if m else None
+        except (OSError, ValueError):
+            return None
+
+    stages = {}
+    for a, b, stage in wins:
+        row = stages.setdefault(stage, {"stage": stage, "tokens": 0, "seconds": 0, "juries": {}})
+        row["seconds"] += (b - a).total_seconds()
+        row["tokens"] += sum(count(tokens(log, a, b)[0]) for log in logs)
+    unattributed, loose = {"tokens": sum(count(tokens(log, floor, first)[0]) for log in logs)}, []
+    for begin, stop in pairs(events, "agent_start", "agent_stop", "agent").values():
+        start, span = when(begin["at"]), (when(begin["at"]), when(stop["at"]))
+        used = count(tokens(stop.get("log"))[0])
+        win = next((w for w in wins if w[0] <= start < w[1]), None)
+        if not win:
+            unattributed["tokens"] += used
+            loose.append(span)
+            continue
+        row = stages[win[2]]
+        row["tokens"] += used
+        gate = juror(stop.get("log")) if stop.get("log") else None
+        if gate:
+            j = row["juries"].setdefault(gate, {"gate": gate, "tokens": 0, "spans": []})
+            j["tokens"] += used
+            j["spans"].append(span)
+    loose += [(when(a["at"]), when(b["at"])) for a, b in pairs(events, "bash_start", "bash_end", "call").values()
+              if not a.get("agent") and when(a["at"]) < first]
+    unattributed["seconds"] = int(covered(loose))
+    out = []
+    for row in stages.values():
+        row["seconds"] = int(row["seconds"])
+        row["juries"] = [{"gate": j["gate"], "tokens": j["tokens"], "seconds": int(covered(j["spans"]))} for j in row["juries"].values()]
+        out.append(row)
+    total = {k: sum(r[k] for r in out) + unattributed[k] for k in ("tokens", "seconds")}
+    return {"stages": out, "unattributed": unattributed, "total": total}
 
 
 def attempts(root, slug):

@@ -260,5 +260,62 @@ def test_effort_ac9_clean_diff_has_no_integration_finding():
     two_of_three(lambda fs: not fs, files)
 
 
+LATER = """---
+slug: checkout-refunds
+retired: []
+---
+# Tasks: Refunds
+
+## E-1 Customer refunds a paid order (US-1)
+- Tier: strong: x
+- Effort: low
+
+### T-1 Refund a paid order in full
+- Files: `app.py`
+- Serves: AC-1
+- Test: TC-1
+- Depends on: none
+- Parallel: no
+
+### T-2 A suite check that every test file tests.md plans exists
+- Files: `tests/test_planned_files.py`
+- Serves: AC-2
+- Test: TC-2
+- Depends on: none
+- Parallel: no
+
+## E-3 Refunds hold under load (US-2)
+- Tier: strong: x
+- Effort: low
+
+### T-7 Write the load tests
+- Files: `tests/test_refunds_load.py`
+- Serves: AC-1, AC-2
+- Test: TC-3, TC-4
+- Depends on: T-1
+- Parallel: no
+"""
+
+
+@e2e
+def test_executability_flags_a_later_epic_guard():
+    """TC-44: E-1's T-2 adds a check that every planned test file exists; only E-3's T-7 writes one of them."""
+    root = plan_repo()
+    (root / ".nio/specs" / PSLUG / "tasks.md").write_text(LATER)
+    meta, body, _ = agents.load(root)["executability"]
+    files = "\n".join(f"- {p.relative_to(root)}" for p in jury.sources(root, PSLUG, "tasks"))
+    template = resources.files("nio").joinpath("templates/lens-output.md").read_text()
+    pack = (f"Gate: tasks. Slug: {PSLUG}. Read these files, and nothing else:\n{files}\n\n"
+            f"Answer in this format, with lens: executability, gate: tasks, subject: {PSLUG}, by: \"juror / claude-code / opus\":\n\n{template}")
+    r = subprocess.run(["claude", "-p", "--model", agents.DEFAULT_TIERS["claude"][meta["tier"]], "--system-prompt", body,
+                        "--allowedTools", TOOLS["read"]], input=pack, cwd=root, capture_output=True, text=True, timeout=900)
+    path = root / ".nio/runs/R-E2E/jury/tasks-executability.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(r.stdout[r.stdout.index("---"):] if "---" in r.stdout else r.stdout)
+    _, findings, errs = jury.parse_lens(path, "tasks", PSLUG)
+    assert not errs, (errs, r.stdout)
+    assert [f for f in findings if "T-2" in str(f) and "T-7" in str(f)], findings
+
+
 if __name__ == "__main__":
-    selfcheck.main([f for n, f in list(globals().items()) if re.match(r"test_(effort_)?ac\d+", n) and callable(f)])
+    selfcheck.main([f for n, f in list(globals().items()) if re.match(r"test_((effort_)?ac\d+|executability_)", n) and callable(f)])

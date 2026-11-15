@@ -24,6 +24,9 @@ def run(root, command, limit):
         os.killpg(p.pid, signal.SIGKILL)
         out, _ = p.communicate()
         code, cause = None, "time limit"
+    except BaseException:  # interrupted: the tests stop with it
+        os.killpg(p.pid, signal.SIGKILL)
+        raise
     return code, out.decode(errors="replace"), cause
 
 
@@ -71,7 +74,7 @@ def wrong_reason(name, code, output):
 SUMMARY = {
     "pytest": (r"^(?:FAILED|ERROR) (\S+)", r"collected (\d+) items?"),
     "unittest": (r"^(?:FAIL|ERROR): (.+?)\s*$", r"^Ran (\d+) tests?"),
-    "self-check": (r"^FAIL (\S+)", r"^ran (\d+) tests?"),
+    "self-check": (r"^FAIL (.+?)\s*$", r"^ran (\d+) tests?"),
 }
 
 
@@ -95,65 +98,135 @@ def suite(root, cfg, command=None):
             "collected": collected, "broken": broken, "output_hash": flow.sha(out.encode()), "output": out}
 
 
-MODES = ("split", "single", "direct")
+EPIC_LIMIT = 1800  # FR-4: an epic's test run is stopped after 30 minutes; a test lowers it
+TAIL = 50  # FR-4: the lines of a failed run's output that are kept
 
 
 def tasks_of(root, slug):
-    """Every task of tasks.md in epic order then file order, fix tasks included (CT-4): id, title, epic, fix, deps, files,
-    serves, tests, tier, effort and mode. The mode is `implement.mode` from the config, else the task's `Mode:`, else
-    split (FR-40, C-261029-nbrg)."""
+    """Every task of tasks.md in epic order then file order, fix tasks included (CT-4): id, title, epic, heading (its
+    epic's title), fix, deps, files, serves, tests, own, test (the raw `Test:`), parallel, and its epic's tier and
+    effort (FR-7: an epic rated before the change takes its tasks' highest)."""
     parsed = tasks.parse("\n".join(records.parse(tasks.path(root, slug))[1]))
-    forced = (records.config(root).get("implement") or {}).get("mode")
     out = []
     for e in parsed["epics"]:
+        tier, effort = tasks.epic_rating(e, parsed["tasks"])
         for tid in e["tasks"]:
             t = parsed["tasks"][tid]
             f = t["fields"]
-            word = tasks.TIER.match(f.get("Mode", "")).group(1) if f.get("Mode") else ""
-            out.append({"id": tid, "title": t["title"], "epic": e["id"], "fix": t["fix"], "deps": [d for d in tasks.ids(f.get("Depends on", "")) if d in parsed["tasks"]],  # a retired dependency is met
-                        "files": tasks.files(f.get("Files", "")), "serves": tasks.ids(f.get("Serves", "")),
-                        "tests": tasks.ids(f.get("Test", "")), "own": tasks.own(f.get("Test", "")), "tier": tasks.TIER.match(f["Tier"]).group(1) if f.get("Tier") else "",
-                        "effort": f.get("Effort", ""), "parallel": f.get("Parallel") == "yes", "mode": forced or (word if word in MODES else "split")})
+            out.append({"id": tid, "title": t["title"], "epic": e["id"], "heading": e["title"], "fix": t["fix"],
+                        "deps": [d for d in tasks.ids(f.get("Depends on", "")) if d in parsed["tasks"]],  # a retired dependency is met
+                        "files": [x for x in map(tasks.file_of, tasks.files(f.get("Files", ""))) if x],
+                        "reused": [tasks.file_of(x) for x in tasks.files(f.get("Files", "")) if x.endswith("(unchanged)")],  # FR-40
+                        "serves": tasks.ids(f.get("Serves", "")), "tests": tasks.ids(f.get("Test", "")),
+                        "own": tasks.own(f.get("Test", "")), "test": f.get("Test", ""), "tier": tier, "effort": effort})
     return out
 
 
 def status(root, slug, lines):
-    """{T-n: state} (CT-4, FR-18): the task lines replayed through the spec's Task state table. A task with no line is
-    ready when every dependency is done, else pending. Ids that only the history knows (retired ones) keep their state
-    (FR-39). A passed review leaves the task green: only its `task_done` line makes it done, so a failed commit stays green."""
-    ts = tasks_of(root, slug)
-    mode = {t["id"]: t["mode"] for t in ts}
+    """{T-n: state} (CT-4): `done` after its `task_done` line, `blocked` after a task block (a spec problem) until its
+    `unblock`, else `ready` when every dependency is done, `pending` when not. Ids that only the history knows (retired
+    ones) keep their state. A task is done only through its epic's passing test run (FR-3)."""
     state = {}
     for line in lines:
-        ev, tid = line.get("evidence") or {}, (line.get("evidence") or {}).get("task")
-        kind = line.get("kind")
+        tid, kind = (line.get("evidence") or {}).get("task"), line.get("kind")
         if not tid:
             continue
-        if kind == "review":
-            if not ev.get("passed"):
-                state[tid] = "claimed" if mode.get(tid) == "direct" else "red"  # FR-45
-        elif kind in ("claim", "red", "green", "blocked"):
-            state[tid] = {"claim": "claimed", "blocked": "blocked"}.get(kind, kind)
-        elif kind == "task_done":
+        if kind == "task_done":
             state[tid] = "done"
+        elif kind == "blocked":
+            state[tid] = "blocked"
         elif kind == "unblock":
-            state[tid] = "ready"
-    for t in ts:
+            state.pop(tid, None)
+    for t in tasks_of(root, slug):
         if t["id"] not in state:
             state[t["id"]] = "ready" if all(state.get(d) == "done" for d in t["deps"]) else "pending"
     return state
 
 
-def next_ready(root, slug, lines):
-    """The first ready task of the first epic that has a task not done, fix tasks included (CT-4, FR-31); None when it
-    has none ready."""
-    st = status(root, slug, lines)
-    ts = tasks_of(root, slug)
-    for epic in dict.fromkeys(t["epic"] for t in ts):
-        mine = [t for t in ts if t["epic"] == epic]
-        if any(st[t["id"]] != "done" for t in mine):
-            return next((t for t in mine if st[t["id"]] == "ready"), None)
-    return None
+def epic_list(root, slug):
+    """[{"id", "title", "tasks": [task]}] in file order."""
+    out = {}
+    for t in tasks_of(root, slug):
+        out.setdefault(t["epic"], {"id": t["epic"], "title": t["heading"], "tasks": []})["tasks"].append(t)
+    return list(out.values())
+
+
+def epics(root, slug, lines):
+    """{E-n: (state, failed runs)} (CT-4), the spec's state table "Epic" read from the `claim`, `epic_test`, `blocked`,
+    `unblock` and `task_done` lines: closed once every task is done and a passing run follows its last claim; an epic
+    whose tasks are all done with no passing run since (an in-flight one, FR-44) reads `testing`. An old `epic` line (its
+    implementation jury closed it) closes it too. Unblocking resets the failed runs."""
+    st, out = status(root, slug, lines), {}
+    for e in epic_list(root, slug):
+        state, runs, passed = "waiting", 0, False
+        for x in lines:
+            ev = x.get("evidence") or {}
+            if ev.get("epic") != e["id"] or ev.get("task"):
+                continue
+            kind = x["kind"]
+            if kind == "claim":
+                state, passed = "claimed", False
+            elif kind == "epic_test":
+                passed = bool(ev.get("passed"))
+                runs, state = (runs, "waiting") if passed else (runs + 1, "failed")  # a task added later reopens it
+            elif kind == "epic":
+                passed, state = True, "waiting"
+            elif kind == "blocked":
+                state = "blocked"
+            elif kind == "unblock":
+                state, runs = "waiting", 0
+        done = all(st[t["id"]] == "done" for t in e["tasks"])
+        if done and passed:
+            state = "closed"
+        elif done and state in ("waiting", "claimed"):
+            state = "testing"
+        out[e["id"]] = (state, runs)
+    return out
+
+
+def in_main(lines):
+    """The epics whose work sits in the main tree: their last claim made no worktree and no passing run follows it (a
+    failed epic's work stays there for its next agent, FR-42)."""
+    last = {}
+    for x in lines:
+        ev = x.get("evidence") or {}
+        if ev.get("epic") and not ev.get("task"):
+            if x["kind"] == "claim":
+                last[ev["epic"]] = "worktree" not in ev
+            elif x["kind"] == "epic" or x["kind"] == "epic_test" and ev.get("passed"):
+                last[ev["epic"]] = False
+    return [e for e, here in last.items() if here]
+
+
+def base(lines, rel):
+    """The commit a worktree was made from: the first claim line naming it (a re-claim or a converted old claim keeps
+    the tree, not its base)."""
+    return next(x["evidence"]["commit"] for x in lines if x["kind"] == "claim" and
+                rel in (x["evidence"].get("worktree"), *(x["evidence"].get("worktrees") or [])))
+
+
+def claimed(state):
+    """{E-n: its claim} in state.json: `{"run", "pack", "worktree"?, "worktrees"?}`."""
+    return dict(state["claims"].get("epics") or {})
+
+
+def pending_epic(root, slug, lines, held=()):
+    """(the first epic a claim may take, in file order: waiting, failed or testing, not claimed, its tasks' dependencies
+    outside it done; why none is, else "")."""
+    st, why, other = status(root, slug, lines), "", ""
+    states = epics(root, slug, lines)
+    of = {t["id"]: t["epic"] for t in tasks_of(root, slug)}
+    for e in epic_list(root, slug):
+        s = states[e["id"]][0]
+        if e["id"] in held or s not in ("waiting", "failed", "testing"):
+            other = other or (f"{e['id']} is claimed" if e["id"] in held else f"{e['id']} is {s}" if s != "closed" else "")
+            continue
+        waits = [d for t in e["tasks"] if st[t["id"]] != "done" for d in t["deps"] if of.get(d) != e["id"] and st.get(d) != "done"]
+        if waits:
+            why = why or f"{e['id']} waits on {of.get(waits[0], waits[0])}"
+            continue
+        return e, ""
+    return None, why or other
 
 
 def nest(lines):
@@ -178,24 +251,33 @@ def finding_lines(root, slug, shown):
     return ["", "#### The finding", *said, *[f"- fix asked: {f['fix']}"] * bool(f["fix"])]
 
 
-def worker_pack(root, slug, task):
-    """The task's worker pack (CT-6, FR-4): exactly five `## ` parts, in order: its memory pack (no closing
-    instructions, CT-15 replaces them), its section of tasks.md, the ACs it serves, the CT-n blocks its TC-n entries
-    cover, and those TC-n entries. No mode and no handoff format: `claim` prints the mode, the card carries the rest."""
+def worker_pack(root, slug, eid, heading, mine, failed=None):
+    """The epic's pack (CT-1, FR-2, FR-42): exactly five `## ` parts, in order: its memory pack (no closing instructions,
+    the card carries them), its undone tasks' sections of tasks.md, the ACs they serve, the CT-n blocks their TC-n entries
+    cover, and those TC-n entries; a sixth, `## Last failed run`, after a failed run: its cause, failing tests and output
+    tail. No handoff format: the card carries it."""
     folder = root / ".nio/specs" / slug
-    memory, _ = pack.build(root, task["title"], task["files"], task["serves"], task["id"], worker=False, reader="worker", slug=slug)
+    files = list(dict.fromkeys(f for t in mine for f in t["files"]))
+    serves = list(dict.fromkeys(a for t in mine for a in t["serves"]))
+    memory, _ = pack.build(root, heading, files, serves, eid, worker=False, reader="worker", slug=slug)
     memory, sep, docs = memory.partition("## Project docs\n")
     acs, cts, tcs = defs(folder / "spec.md"), defs(folder / "contracts.md"), defs(folder / "tests.md")
-    tests = [t for t in task["tests"] if t in tcs]
+    tests = list(dict.fromkeys(i for t in mine for i in t["tests"] if i in tcs))
     covers = list(dict.fromkeys(c for t in tests for c in tasks.ids(plan.field(tcs[t], "Covers")) if c in cts))
     block = lambda ids, found: [x for i in ids if i in found for x in found[i]]
     body = lambda name, lines: [f"## {name}", ""] + nest("\n".join(lines).strip().splitlines()) + [""]
-    shown = [x for x in tasks.show(root, slug, task["id"]) if not x.startswith("- Mode:")]  # claim prints the mode
+    shown = []
+    for t in mine:
+        part = [x for x in tasks.show(root, slug, t["id"]) if not x.startswith("- Mode:")]
+        shown += (part if not shown else part[2:]) + finding_lines(root, slug, part) + [""]
     out = nest(memory.rstrip().splitlines()) + [""]
     if sep:  # the docs sit in the first part: their headings are already nested
-        out = nest(memory.rstrip().splitlines()) + ["", "### Project docs"] + docs.partition("\n## ")[0].rstrip().splitlines() + [""] + nest(("## " + docs.partition("\n## ")[2]).splitlines() if "\n## " in docs else [])  # the pack's `# Memory for T-n` becomes its part's heading
-    return "\n".join(out + body("Task", shown + finding_lines(root, slug, shown)) + body("Acceptance criteria", block(task["serves"], acs))
-                     + body("Contracts", block(covers, cts)) + body("Tests", block(tests, tcs))).rstrip() + "\n"
+        out = nest(memory.rstrip().splitlines()) + ["", "### Project docs"] + docs.partition("\n## ")[0].rstrip().splitlines() + [""] + nest(("## " + docs.partition("\n## ")[2]).splitlines() if "\n## " in docs else [])  # the pack's `# Memory for E-n` becomes its part's heading
+    last = body("Last failed run", [f"- cause: {failed['cause']}", f"- failing: {', '.join(failed.get('failing') or []) or 'not read'}",
+                                    "- output tail:", *[f"    {x}" for x in failed.get("tail") or []]]) if failed else []
+    return "\n".join(out + body("Tasks", shown or [heading, "", "Every task is done: the flow runs the epic's tests."])
+                     + body("Acceptance criteria", block(serves, acs)) + body("Contracts", block(covers, cts))
+                     + body("Tests", block(tests, tcs)) + last).rstrip() + "\n"
 
 
 def branch(slug):
@@ -270,7 +352,7 @@ def clean(root, slug):
 
 
 def guard(root, slug, state, lines, started):
-    """CT-5's refusals, in its order; each raises ValueError and nothing is recorded (FR-2, FR-3, FR-20, FR-22)."""
+    """CT-5's refusals, in its order; each raises ValueError and nothing is recorded (FR-2, FR-3, FR-20)."""
     if not any(s == "tasks_jury" for _, _, s in flow.commits(root, slug)):
         raise ValueError('tasks not approved: no "nio: approve tasks" commit')
     stage = flow.where(root, slug, state, lines)["stage"]
@@ -279,23 +361,39 @@ def guard(root, slug, state, lines, started):
     now = (records.git(root, "branch", "--show-current") or ["(detached)"])[0]
     if started and now != branch(slug):
         raise ValueError(f"on {now}, not {branch(slug)}")
-    clean(root, slug)
-    if state["claims"].get("task"):
-        raise ValueError(f"{state['claims']['task']} is claimed")
-    if next_ready(root, slug, lines) is None:
-        st = status(root, slug, lines)
-        ts = [t for t in tasks_of(root, slug) if st[t["id"]] != "done"]
-        if not ts:
-            raise ValueError("no task left: every task is done")
-        why = next((f"{t['id']} waits on {d}" for t in ts if st[t["id"]] == "pending" for d in t["deps"]
-                    if st.get(d) != "done"), f"{ts[0]['id']} is {st[ts[0]['id']]}")
-        raise ValueError(f"no ready task; {why}")
 
 
-def claim(root, slug=None, by=None):
-    """`nio flow claim` (CT-5, FR-1 to FR-4, FR-6, FR-7, FR-16, FR-20, FR-22, FR-35, FR-36, FR-40, FR-46): claim the next
-    ready task, starting the stage first when it has no baseline; print the task, its mode, the worker card for its
-    tier, its effort and its pack. Returns (code, lines)."""
+def parallel(root):
+    n = (records.config(root).get("budgets") or {}).get("parallel", 2)
+    if type(n) is not int or n < 1:
+        raise ValueError(f"budgets.parallel must be a whole number of at least 1, not {n!r}")
+    return n
+
+
+def epic_tests(root, slug, mine):
+    """(the command built from the epic's TCs through the suite's runner, else None; the test files those TCs name;
+    whether its tasks name any test at all, FR-10). A `Test:` that is `none` or empty names none."""
+    from nio import evidence
+    tcs = list(dict.fromkeys(i for t in mine for i in t["own"]))
+    words = [t for t in mine if not t["own"] and t["test"].strip().lower() not in ("", "none")]
+    known, suite_ = evidence.known_tests(root, slug), (records.config(root).get("tests") or {}).get("suite")
+    one = [evidence.one_test(suite_, *known[c]) if known.get(c) else None for c in tcs]
+    command = None
+    if tcs and not words and all(one):  # one run of every named test: the runner's command, then each test
+        command = one[0].rsplit(" ", 1)[0] + " " + " ".join(dict.fromkeys(c.rsplit(" ", 1)[1] for c in one))
+    files = list(dict.fromkeys(f for t in mine for f in test_files(root, slug, t)))
+    return command, files, bool(tcs or words)
+
+
+def then_line(root, slug, eid, mine, by):
+    return f"then: nio flow finish {slug} {eid} {flow.by_arg(by)}"
+
+
+def claim(root, slug=None, by=None, epic=None):
+    """`nio flow claim` (CT-1, CT-24, FR-1, FR-2, FR-9, FR-32, FR-43, FR-44): claim the next epic (or `epic`), starting
+    the stage first when it has no baseline; print the epic, its undone tasks, the worker card for its tier, its effort,
+    its pack and the command that hands it back. A second epic claimed meanwhile gets its own worktree. An old task or
+    wave claim is read as its epic's. Returns (code, lines)."""
     slug = flow.pick(root, slug)
     flow.refuse(root, slug)
     w = flow.who(by)
@@ -303,10 +401,16 @@ def claim(root, slug=None, by=None):
         state, lines = flow.load(root, slug)
         started = any(x["kind"] == "baseline" for x in lines)
         guard(root, slug, state, lines, started)
+        states, held = epics(root, slug, lines), claimed(state)
+        if epic and epic not in states:
+            raise ValueError(f"no {epic} in tasks.md")
+        if b := next((e for e, (s, _) in states.items() if s == "blocked" and epic in (None, e)), None):
+            return 1, [f'{b} is blocked: nio flow unblock {slug} {b} --human "<reason>" --by human']
         if state["abandon"] is not None or state["pause"] or started and state["waiting"]:
             return 1, flow.talk(slug, flow.where(root, slug, state, lines))  # a blocked task holds the stage (AC-23)
-        if t := next((t for t, v in status(root, slug, lines).items() if v == "blocked"), None):
-            return 1, [f'{t} is blocked: nio flow unblock {slug} {t} --human "<reason>" --by human']
+        old, mains = state["claims"].get("task"), in_main(lines)
+        if not old and not mains:
+            clean(root, slug)  # the claim works in the main tree; a failed epic's work stays there for its next agent
         base = []
         if not started:
             entry, state, why = start_stage(root, slug, state)
@@ -317,50 +421,74 @@ def claim(root, slug=None, by=None):
         gate = open_gate(root, slug, lines)
         if gate:
             return 1, [f"{gate} is finished but its gate is open: run @nio:jury on implementation-{gate}, then `nio flow done implementation-{gate}`"]
-        task = next_ready(root, slug, lines)
-        group = wave(root, slug, lines, task)
+        st, info = status(root, slug, lines), {}
+        if old:  # FR-44: the old task or wave claim is its epic's; its worktrees are landed by `finish`
+            wave = state["claims"].get("wave") or [old]
+            e = next(x for x in epic_list(root, slug) if any(t["id"] == old for t in x["tasks"]))
+            names = [next((x["evidence"].get("worktree") for x in reversed(lines) if x["kind"] == "claim" and
+                           x["evidence"].get("task") == tid), None) for tid in wave]
+            info["worktrees"] = [n for n in names if n and (root / n).is_dir()]
+            held, out = {}, [f"{e['id']} is claimed already (an old claim of {', '.join(wave)}): it is now the epic's claim"]
+        elif epic:
+            if epic in held or states[epic][0] == "claimed":
+                raise ValueError(f"{epic} is claimed")
+            if states[epic][0] == "closed":
+                raise ValueError(f"{epic} is closed")
+            e, why = pending_epic(root, slug, lines, held | {x: 1 for x in states if x != epic})
+            if not e:
+                raise ValueError(f"no epic ready; {why}")
+            out = []
+        else:
+            if len(held) >= parallel(root):
+                raise ValueError(f"no epic ready; {', '.join(held)} claimed, budgets.parallel is {parallel(root)}")
+            e, why = pending_epic(root, slug, lines, held)
+            if not e:
+                raise ValueError("no epic left: every epic is closed" if all(s == "closed" for s, _ in states.values())
+                                 else f"no epic ready; {why}")
+            out = []
+        eid = e["id"]
+        mine = [t for t in e["tasks"] if st[t["id"]] != "done"]
         head = records.git(root, "rev-parse", "HEAD")[0]
-        made, out, claims = [], [], []
-        for t in group:
-            rid = records.new_run(root, {"effort": slug, "task": t["id"],
+        prev = [x for x in lines if x["kind"] == "claim" and (x.get("evidence") or {}).get("epic") == eid]
+        tests_ = [x["evidence"] for x in lines if x["kind"] == "epic_test" and x["evidence"].get("epic") == eid]
+        failed = tests_[-1] if tests_ and not tests_[-1].get("passed") else None
+        made = []
+        try:
+            rid = records.new_run(root, {"effort": slug, "task": eid,
                                          "at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")})
-            path = pack.save(root, rid, t["id"], worker_pack(root, slug, t))
-            ev = {"task": t["id"], "commit": head, "run": rid}  # its own run: the line's `run` is one per write
-            out += [f"task: {t['id']} {t['title']}", f"mode: {t['mode']}", f"card: nio-worker-{t['tier']}",
-                    f"effort: {t['effort']}", f"pack: {path.relative_to(root)}"]
-            if len(group) > 1:
-                tree = root / ".nio/runs" / rid / "worktree"
-                code, _, err = records.git(root, "worktree", "add", "--detach", str(tree), head, full=True)
-                if code:
-                    for m in made:
-                        records.git(root, "worktree", "remove", "--force", str(m), full=True)
-                    raise ValueError(f"can't create a worktree for {t['id']}: {err.strip()}")
-                made.append(tree)
-                ev["worktree"] = str(tree.relative_to(root))
-                out.append(f"worktree: {ev['worktree']}")
-            claims.append({"kind": "claim", "from": "implementing", "to": "implementing", "evidence": ev})
-        mark = {"task": group[0]["id"], **({"wave": [t["id"] for t in group]} if len(group) > 1 else {})}
-        flow.write(root, slug, base + claims, {**state, "claims": mark}, w, "implementing")
+            path = pack.save(root, rid, eid, worker_pack(root, slug, eid, e["title"], mine, failed))
+            last = prev[-1]["evidence"] if prev else {}
+            tree = last.get("worktree")
+            tree = tree if tree and (root / tree).is_dir() else None  # a failed epic's tree is reused: its work is there
+            olds = [n for n in last.get("worktrees") or [] if (root / n).is_dir()]
+            if olds and "worktrees" not in info:  # a converted epic's old wave trees stay its own until it closes
+                info["worktrees"] = olds
+            if (tree or mains and eid not in mains) and "worktrees" not in info:  # FR-43: the main tree holds another epic's work
+                if not tree:
+                    full = root / ".nio/runs" / rid / "worktree"
+                    code, _, err = records.git(root, "worktree", "add", "--detach", str(full), head, full=True)
+                    if code:
+                        raise ValueError(f"can't create a worktree for {eid}: {err.strip()}")
+                    made.append(full)
+                    tree = str(full.relative_to(root))
+                info["worktree"] = tree
+            info.update(run=rid, pack=str(path.relative_to(root)))
+            ev = {"epic": eid, "tasks": [t["id"] for t in mine], "commit": head, "run": rid,  # plans: what the agent mustn't edit
+                  "plans": {f: digest(root, f".nio/specs/{slug}/{f}") for f in PLAN_FILES},
+                  **{k: info[k] for k in ("worktree", "worktrees") if k in info}}
+            claims = {"epics": {**held, eid: info}}
+            flow.write(root, slug, base + [{"kind": "claim", "from": "implementing", "to": "implementing", "evidence": ev}],
+                       {**state, "claims": claims}, w, "implementing")
+        except BaseException:  # CT-24: a failed claim leaves no worktree it made
+            for m in made:
+                records.git(root, "worktree", "remove", "--force", str(m), full=True)
+            raise
+    tier = e["tasks"][0]["tier"] if e["tasks"] else ""
+    head_line = f"epic: {eid} {e['title']}" if mine else f"epic: {eid} (every task done: run its tests)"
+    out += [head_line, f"tasks: {', '.join(t['id'] for t in mine) or 'none'}", f"card: nio-worker-{tier or 'strong'}",
+            f"effort: {e['tasks'][0]['effort'] if e['tasks'] else ''}", f"pack: {info['pack']}", then_line(root, slug, eid, e["tasks"], by)]
+    out += [f"worktree: {x}" for x in [info.get("worktree"), *info.get("worktrees", [])] if x]
     return 0, out
-
-
-def wave(root, slug, lines, first):
-    """The tasks one claim takes (CT-1, FR-1 to FR-3, FR-15): `first`, then the epic's following ready `Parallel: yes`
-    tasks in file order, at most `budgets.parallel` (2 when unset) in all; just `first` when it isn't parallel."""
-    n = (records.config(root).get("budgets") or {}).get("parallel", 2)
-    if type(n) is not int or n < 1:
-        raise ValueError(f"budgets.parallel must be a whole number of at least 1, not {n!r}")
-    if n == 1 or not first["parallel"]:
-        return [first]
-    st, ts = status(root, slug, lines), tasks_of(root, slug)
-    after = ts[[t["id"] for t in ts].index(first["id"]) + 1:]
-    return [first] + [t for t in after if t["epic"] == first["epic"] and t["parallel"] and st[t["id"]] == "ready"][:n - 1]
-
-
-def release(claims, tid):
-    """`claims` without `tid` (CT-1): a wave keeps its other tasks, the first left leading; {} once none is left."""
-    left = [t for t in claims.get("wave", []) if t != tid]
-    return {"task": left[0], "wave": left} if left else {}
 
 
 def land(root, slug, tid, tree, since):
@@ -387,22 +515,7 @@ def restore(root, saved):
         (root / p).write_bytes(b) if b is not None else (root / p).unlink(missing_ok=True)
 
 
-def worktree(root, lines, tid):
-    """The absolute worktree the task's latest claim line names, None when it names none or the folder is gone (CT-2)."""
-    name = next((x["evidence"].get("worktree") for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("task") == tid), None)
-    return root / name if name and (root / name).is_dir() else None
-
-
-def tree_of(root, lines, tid):
-    """The tree a task's command runs in: its worktree, the main tree when it has none; refuses a named worktree that is gone."""
-    path = worktree(root, lines, tid)
-    name = next((x["evidence"].get("worktree") for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("task") == tid), None)
-    if name and not path:
-        raise ValueError(f"the worktree of {tid} is gone: {name}")
-    return path or root
-
-
-# --- red, green, review, attempts and unblock (CT-7, CT-8, CT-10, CT-12) ---
+# --- the hand-back, its test run and the epic's commit (CT-2, CT-3, CT-4) ---
 
 PLAN_FILES = ("spec.md", "tasks.md", "plan.md", "contracts.md", "tests.md", "quickstart.md", "architecture.md")  # FR-25
 
@@ -413,11 +526,9 @@ def entry(kind, tid, reason=None, **ev):
     return {**line, "reason": reason} if reason is not None else line
 
 
-def since_claim(lines, tid):
-    """The task's own lines from its latest claim on: a claim after an unblock starts afresh (FR-38)."""
-    mine = [x for x in lines if (x.get("evidence") or {}).get("task") == tid]
-    at = max((i for i, x in enumerate(mine) if x["kind"] == "claim"), default=0)
-    return mine[at:]
+def epic_line(kind, eid, **ev):
+    """An epic's history line (CT-4): `claim`, `epic_test`, `blocked` or `unblock`."""
+    return {"kind": kind, "from": "implementing", "to": "implementing", "evidence": {"epic": eid, **ev}}
 
 
 def changed(root, since):
@@ -439,194 +550,116 @@ def test_files(root, slug, task):
     return list(dict.fromkeys(found))
 
 
-def limit(root):
-    return (records.config(root).get("tests") or {}).get("timeout") or DEFAULT_LIMIT
-
-
-def shelve(root, slug, run, tid, tree=None):
-    """Save the task's uncommitted changes outside the effort folder (`git diff HEAD` plus untracked files) as
-    `.nio/runs/<run>/T-n.patch` of the main tree, then restore those paths to HEAD (CT-10). `tree` is the task's
-    worktree, when it has one. Returns the patch's path."""
-    main, root = root, tree or root
-    keep = (lambda p: not p.startswith(SCRATCH) and not p.startswith(f".nio/specs/{slug}/") or  # a worktree is removed: keep
-            p.startswith(f".nio/specs/{slug}/") and p.rsplit("/", 1)[-1] not in ("state.json", "history.jsonl")) \
-        if tree else (lambda p: bool(outside(slug, [p])))  # its effort-folder edits too
-    rows = [(c, p) for c, p in porcelain(root) if keep(p)]
-    paths = [p for _, p in rows]
-    diff = b""
-    if paths:
-        if new := [p for c, p in rows if c == "??"]:
-            records.git(root, "add", "-N", "--", *new)  # so `git diff` shows untracked files too
-        code, diff, err = records.git(root, "diff", "HEAD", "--binary", "--", *paths, raw=True)
-        if code:
-            raise ValueError(f"can't shelve {tid}: git diff failed: {err.strip()}")  # nothing written or restored
-    path = main / ".nio/runs" / run / f"{tid}.patch"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(diff)  # written before anything is restored: the work is never only in the tree
-    for p in paths:
-        if records.git(root, "cat-file", "-e", f"HEAD:{p}", full=True)[0] == 0:
-            records.git(root, "checkout", "-q", "HEAD", "--", p)
-        else:
-            records.git(root, "rm", "-q", "--cached", "--ignore-unmatch", "--", p)
-            (root / p).unlink(missing_ok=True)
-    if tree:
-        records.git(main, "worktree", "remove", "--force", str(tree), full=True)
-    return str(path.relative_to(main))
-
-
-def run_of(root, slug, lines, tid):
-    """The run of the task's latest claim, else a new one: where its patch goes."""
-    return next((x["evidence"].get("run") or x.get("run") for x in reversed(since_claim(lines, tid)) if x["kind"] == "claim"), "") \
-        or records.new_run(root, {"effort": slug, "task": tid})
-
-
-def attempt(root, slug, state, lines, tid, line):
-    """(lines, state) for a refusal or failed review `line` (CT-10, FR-26, FR-37): one attempt more; the third shelves
-    the task's changes as a patch, blocks it, clears the claim and sets the effort waiting, auto flag on or off."""
-    n = state["attempts"].get(tid, 0) + 1
-    state = {**state, "attempts": {**state["attempts"], tid: n}}
-    if n < 3:
-        return [line], state
-    patch = shelve(root, slug, run_of(root, slug, lines, tid), tid, worktree(root, lines, tid))
-    why = f"{tid} blocked after 3 attempts"
-    return [line, entry("blocked", tid, cause="attempts", patch=patch)], \
-        {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}
-
-
-def refused(root, slug, state, lines, tid, step, command, why, w):
-    """Write a guard refusal and its attempt (FR-37); (1, what to print)."""
-    entries, state = attempt(root, slug, state, lines, tid, entry("refused", tid, step=step, command=command, cause=why))
-    flow.write(root, slug, entries, state, w, "implementing")
-    return 1, [f"refused: {why}"] + said(entries)
-
-
-def said(entries):
-    """The block an attempt caused, for the human."""
-    ev = entries[-1]["evidence"]
-    return [f"blocked: {ev['task']} after 3 attempts; its changes are in {ev['patch']}"] if entries[-1]["kind"] == "blocked" else []
-
-
-def task_for(root, slug, lines, tid, allowed):
-    """(task, state) for red or green; refuses, recording nothing, when the state table forbids it (FR-32)."""
-    now = status(root, slug, lines).get(tid)
-    if now is None:
-        raise ValueError(f"no task {tid} in tasks.md")
-    task = next((t for t in tasks_of(root, slug) if t["id"] == tid), None)
-    if now not in allowed or task is None:
-        raise ValueError(f"{tid} is {now}")
-    return task, now
-
-
-def by_worker(task, w, step):
-    """Only single mode takes red and green from its worker; the orchestrator reports them otherwise (CT-15, FR-42)."""
-    if w["role"] == "worker" and task["mode"] != "single":
-        raise ValueError(f"{task['id']} is in {task['mode']} mode: only single mode takes {step} from its worker")
-
-
-def red(root, slug, tid, command, by):
-    """`nio flow red` (CT-7, FR-8 to FR-11, FR-32, FR-37, FR-41 to FR-44): run the command; accept red only on a failure
-    for the right reason, freezing the files changed since the claim (the first red picks them; a later one re-hashes
-    the same ones). A guard refusal writes a `refused` line and costs an attempt. Returns (code, lines)."""
+def finish(root, slug, eid, by=None):
+    """`nio flow finish` (CT-2, FR-3, FR-4, FR-10, FR-42, FR-44, NFR-1): the agent handed the epic back; the flow runs
+    the tests its tasks name once, itself, on the main tree (a worktree epic's changes landed there first) within
+    EPIC_LIMIT. A pass writes the `epic_test` line and commits the epic (CT-3); a failed, broken, empty or hung run keeps
+    it open, records its cause, failing tests and output tail, and counts one failed run: the third blocks the epic for
+    the human. The agent's word never counts. Returns (code, lines)."""
     flow.refuse(root, slug)
     w = flow.who(by)
+    rec = flow.live_run(root / ".nio/specs" / slug / "running.json")
+    if rec and rec.get("pid") != os.getpid() and re.search(rf"\bflow finish\b.*\s{eid}(\s|$)", rec.get("command", "")):
+        raise ValueError(f"{eid}'s tests are running")
     with flow.lock(root, slug):
         state, lines = flow.load(root, slug)
-        task, _ = task_for(root, slug, lines, tid, ("claimed", "red"))
-        if task["mode"] == "direct":
-            raise ValueError(f"{tid} is in direct mode: no red")
-        by_worker(task, w, "red")
-        named, name, out = test_files(root, slug, task), None, ""
-        if named and not any(f in command for f in named):
-            why = f"the command doesn't name {' or '.join(named)}"
-        else:
-            code, out, cause = run(tree_of(root, lines, tid), command, limit(root))
+        states, held = epics(root, slug, lines), claimed(state)
+        if eid not in states:
+            raise ValueError(f"no {eid} in tasks.md")
+        if states[eid][0] == "closed":
+            raise ValueError(f"{eid} is closed")
+        if eid not in held:
+            raise ValueError(f"{eid} is not claimed")
+        e = next(x for x in epic_list(root, slug) if x["id"] == eid)
+        st = status(root, slug, lines)
+        mine = [t for t in e["tasks"] if st[t["id"]] != "done"]
+        built, _, any_test = epic_tests(root, slug, e["tasks"])
+        if not any_test:
+            raise ValueError(f"{eid} has no test to run")
+        # FR-3: the flow's own command, never the agent's: its TCs' tests, else the whole suite the human configured
+        command = built or (records.config(root).get("tests") or {}).get("suite")
+        if not command:
+            raise ValueError(f"{eid}'s tests can't be built from its TCs and tests.suite is not set")
+        last = next(x["evidence"] for x in reversed(lines) if x["kind"] == "claim" and x["evidence"].get("epic") == eid)
+        since, plans = last["commit"], last.get("plans")
+        rels = [x for x in [held[eid].get("worktree"), *held[eid].get("worktrees", [])] if x and (root / x).is_dir()]
+        trees = [root / x for x in rels]
+        busy = set(dirty(root, slug)) if trees else set()  # another epic's work in the main tree (FR-43)
+        folder = f".nio/specs/{slug}/"
+        saved = {}
+        try:  # NFR-1: an interrupted or refused hand-back leaves the main tree as it found it
+            for rel, tree in zip(rels, trees):
+                patch, more, err = land(root, slug, eid, tree, base(lines, rel))
+                saved = {**more, **saved}
+                if err:
+                    raise ValueError(f"{eid}'s changes in {rel} don't apply: {err}")
+                if hit := sorted(busy & set(more)):
+                    raise ValueError(f"{eid}'s changes in {rel} touch {hit[0]}, which has uncommitted changes in the main tree")
+            edited = [f for f in PLAN_FILES if digest(root, folder + f) != plans[f]] if plans else \
+                [p[len(folder):] for p in [*changed(root, since), *saved] if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
+            if edited:
+                raise ValueError(f"the epic edited {edited[0]}: the spec, plan and tasks are not the agent's")
+            code, out, cause = run(root, command, EPIC_LIMIT)
             name = runner(command, out)
-            # a cause first: a killed run's partial output proves nothing either way; "none ran" before the exit code (CT-7)
-            last = re.findall(r"^ran (\d+) tests?", out, re.M)  # FR-4: the run's last `ran N tests` line decides
-            none = (last[-1] == "0" if last else False) if name == "self-check" else \
-                any(m in out for m in RUNNERS.get(name, {}).get("none", []))
-            why = cause or ("no tests ran" if none else "the test passes before the code exists" if code == 0
-                            else wrong_reason(name, code, out))
+            why = cause or wrong_reason(name, code, out) or (f"the command exits {code}" if code else "")
+            ev = {"command": command, "passed": not why, "runner": name or "unknown"}
+            if not why:
+                sha, report = commit(root, slug, e, mine, w, epic_line("epic_test", eid, **ev), list(saved) if trees else None)
+        except BaseException:
+            restore(root, saved)
+            raise
         if why:
-            return refused(root, slug, state, lines, tid, "red", command, why, w)
-        mine, tree = since_claim(lines, tid), tree_of(root, lines, tid)
-        reds = [x for x in mine if x["kind"] == "red"]
-        paths = list(reds[0]["evidence"]["frozen"]) if reds else \
-            outside(slug, changed(tree, mine[0]["evidence"].get("commit") or "HEAD"))  # FR-10, FR-11: never grown
-        frozen = {p: digest(tree, p) for p in paths}
-        line = entry("red", tid, command=command, output=flow.sha(out.encode()), runner=name or "unknown", frozen=frozen)
-        flow.write(root, slug, [line], state, w, "implementing")
-    return 0, [f"red: {tid} accepted", "frozen:"] + [f"  {p}" for p in frozen] + \
-        ["output:"] + [f"  {l}" for l in out.splitlines()[-20:]]
+            restore(root, saved)
+            failing = re.findall(SUMMARY[name][0], out, re.M) if name in SUMMARY else []
+            tail, n = out.splitlines()[-TAIL:], states[eid][1] + 1
+            entries = [epic_line("epic_test", eid, **ev, cause=why, failing=failing, tail=tail)]
+            rest = {k: v for k, v in held.items() if k != eid}
+            new = {**state, "claims": {"epics": rest} if rest else {}, "attempts": {**state["attempts"], eid: n}}
+            if n >= 3:
+                entries.append(epic_line("blocked", eid, cause="runs"))
+                new["waiting"] = {"why": f"{eid} blocked after 3 failed test runs", "epic": eid}
+            flow.write(root, slug, entries, new, w, "implementing")
+            return 1, [f"{eid} failed (run {n} of 3): {why}", f"failing: {', '.join(failing) or 'not read'}", *tail] + \
+                [f"blocked: {eid} after 3 failed test runs; the human unblocks it"] * (n >= 3)
+        for tree in trees:
+            records.git(root, "worktree", "remove", "--force", str(tree), full=True) if sha else restore(root, saved)
+    if sha:
+        return 0, [f"closed: {eid} {sha}"] + report
+    return 1, [flow.load(root, slug)[0]["waiting"]["why"], f"{eid} stays claimed; `nio flow finish {slug} {eid}` retries"]
 
 
-def closes(root, slug, task, lines):
-    """(whether this task closes its epic, whether it closes the last one): every other task there is done."""
-    st, ts = status(root, slug, lines), [t for t in tasks_of(root, slug) if t["id"] != task["id"]]
-    return all(st[t["id"]] == "done" for t in ts if t["epic"] == task["epic"]), all(st[t["id"]] == "done" for t in ts)
-
-
-def review(root, slug, task, lines):
-    """The review line of a green task, checks only and no model call (CT-8, FR-14, FR-15, FR-17, FR-25, FR-36), in the
-    order of the decision table Review; the first failing row decides. Files outside the task's list are recorded:
-    changed, and in neither `Files:` nor the red line's `frozen`. The task closing an epic also re-runs the own test of
-    every task of the epic (each one's green command), so it answers for a failure any of them caused; no whole suite
-    runs here: it runs once, at the pr gate (2026-11-14-effort-jury FR-1, D-261106-ltsr)."""
-    tid = task["id"]
-    mine = since_claim(lines, tid)
-    # a wave task's changes are applied on HEAD, which may hold a sibling's commit since its claim (CT-5)
-    paths = changed(root, "HEAD" if worktree(root, lines, tid) else mine[0]["evidence"].get("commit") or "HEAD")
-    reds = [x for x in mine if x["kind"] == "red"]
-    frozen = reds[-1]["evidence"]["frozen"] if reds else {}
-    folder = f".nio/specs/{slug}/"
-    reasons = [f"the task edited {p[len(folder):]}: the spec, plan and tasks are not the worker's" for p in paths
-               if p.startswith(folder) and p[len(folder):] in PLAN_FILES]
-    reasons = reasons or [f"{p} changed since red" for p, h in frozen.items() if digest(root, p) != h]
-    new, still, ran = [], [], {}
-    # #66: the task's own test already ran at green; the epic's close re-runs its tasks' own tests, never the suite
-    if not reasons and closes(root, slug, task, lines)[0]:
-        mine = {t["id"] for t in tasks_of(root, slug) if t["epic"] == task["epic"]}
-        latest = {x["evidence"]["task"]: x["evidence"]["command"] for x in lines if x["kind"] == "green" and x["evidence"].get("task") in mine}
-        cmds = dict.fromkeys(latest.values())  # each task's latest green only: an earlier claim's command may be obsolete
-        ran = {"epic_tests": []}
-        for command in cmds:
-            code, out_, cause = run(root, command, limit(root))
-            ran["epic_tests"].append({"command": command, "code": code})
-            if code != 0:
-                name = runner(command, out_)
-                named = re.findall(SUMMARY[name][0], out_, re.M) if name in SUMMARY else []
-                new += named
-                reasons.append(f"an epic task's own test fails: {command}" + (f" ({cause})" if cause else "")
-                               + (f": {', '.join(named)}" if named else ""))
-    out = [p for p in outside(slug, paths) if p not in task["files"] and p not in frozen]
-    return entry("review", tid, passed=not reasons, reasons=reasons, failing=new, still=still, outside=out, **ran)
-
-
-def commit(root, slug, task, who, review=None):
-    """CT-9, FR-19 to FR-21: commit a task whose review passed as `T-n: <title>` on the effort branch, the `task_done`
-    line (with its branch and parent commit), the lines `epic_end` owes and the task's changes together; returns (the
-    sha, the epic report with the sha filled in). A refused commit puts
-    history.jsonl, state.json and the index back as `flow.commit_gate` does, writes a `fail` line with git's error, sets
-    `waiting` and returns (None, []): the task stays green. Never merges, rebases or pushes."""
-    tid = task["id"]
+def commit(root, slug, epic, mine, who, test, landed=None):
+    """CT-3, FR-11: one `E-n: <heading>` commit on the effort branch holding the passing `epic_test` line, a `task_done`
+    line per undone task, the `pass` to the pr gate once every epic is closed, the changed paths, tracked or not, that
+    the epic's tasks list (or that sit under a listed folder) and the test files its TCs name (or the paths `landed`
+    from a worktree), and history.jsonl and state.json; nothing else: another epic's work and the human's edits stay. Returns (the sha, the report).
+    A refused commit puts history.jsonl, state.json and the index back, writes a `fail` line with git's error, sets
+    `waiting` and returns (None, []). Never merges, rebases or pushes."""
+    eid = epic["id"]
     if records.git(root, "branch", "--show-current") != [branch(slug)]:
-        raise ValueError(f"not on {branch(slug)}: {tid} is not committed")  # FR-20
+        raise ValueError(f"not on {branch(slug)}: {eid} is not committed")  # FR-20
     folder = root / ".nio/specs" / slug
     sp, hp, np = folder / "state.json", folder / "history.jsonl", folder / "state.json.new"
     kept, saved = hp.read_bytes(), sp.read_bytes()
     code, tree, err = records.git(root, "write-tree", full=True)
     if code:
         raise ValueError(err.strip())
-    state, _ = flow.load(root, slug)
+    state, lines = flow.load(root, slug)
     parent = records.git(root, "rev-parse", "HEAD")[0]
-    waiting = None if (state["waiting"] or {}).get("task") == tid else state["waiting"]
-    flow.write(root, slug, [entry("task_done", tid, branch=branch(slug), parent=parent)],
-               {**state, "claims": release(state["claims"], tid), "waiting": waiting}, who, "implementing")
-    ends, report = epic_end(root, slug, task, review or {})
-    if ends:
-        flow.write(root, slug, ends, flow.load(root, slug)[0], who, "implementing")
-    rel = outside(slug, [p for _, p in porcelain(root)]) + [f".nio/specs/{slug}/history.jsonl", f".nio/specs/{slug}/state.json"]
-    for args in (["add", "-A", "--", *rel], ["commit", "-q", "-m", f"{tid}: {task['title']}", "--", *rel]):
+    entries = [test] + [entry("task_done", t["id"], branch=branch(slug), parent=parent) for t in mine]
+    rest = {k: v for k, v in claimed(state).items() if k != eid}
+    last = all(s == "closed" for s, _ in epics(root, slug, lines + entries).values())
+    if last:
+        entries.append({"kind": "pass", "from": "implementing", "to": "pr", "evidence": {"paths": [f".nio/specs/{slug}/tasks.md"]}})
+    waiting = None if (state["waiting"] or {}).get("epic") == eid else state["waiting"]
+    flow.write(root, slug, entries, {**state, "claims": {"epics": rest} if rest else {}, "waiting": waiting,
+                                     "attempts": {k: v for k, v in state["attempts"].items() if k != eid}}, who, "implementing")
+    listed = [f for t in epic["tasks"] for f in t["files"]] + [f for t in epic["tasks"] for f in test_files(root, slug, t)]
+    mark = lambda p: any(p == f or p.startswith(f.rstrip("/") + "/") for f in listed)
+    flows = [f".nio/specs/{slug}/history.jsonl", f".nio/specs/{slug}/state.json"]
+    picked = outside(slug, landed if landed is not None else [p for _, p in porcelain(root) if mark(p)])
+    steps = [["add", "-A", "--", *picked]] * bool(picked)
+    for args in steps + [["add", "--", *flows], ["commit", "-q", "-m", f"{eid}: {epic['title']}"]]:
         code, _, err = records.git(root, *args, full=True)
         if code:
             hp.write_bytes(kept)
@@ -634,69 +667,33 @@ def commit(root, slug, task, who, review=None):
             np.unlink(missing_ok=True)
             records.git(root, "read-tree", tree.strip(), full=True)
             err = err.strip() or f"git {args[0]} failed"
-            flow.write(root, slug, [entry("fail", tid, err.splitlines()[0], output=err)],
-                       {**state, "waiting": {"why": f"commit failed: {err.splitlines()[0]}", "task": tid}}, who, "implementing")
+            flow.write(root, slug, [epic_line("fail", eid, output=err)], {**state, "waiting": {"why": f"commit failed: {err.splitlines()[0]}", "epic": eid}},
+                       who, "implementing")
             return None, []
     sha = records.git(root, "rev-parse", "HEAD")[0]
-    return sha, [x.replace(THIS, sha) for x in report]
-
-
-THIS = "<this commit>"  # the report's commit for the task being committed, filled in once git made it
-
-
-def commits_of(root, slug):
-    """{T-n: sha} of the `T-n: <title>` commits on the effort branch, the newest of each."""
-    out = {}
-    for x in records.git(root, "log", "--format=%H %s", branch(slug)):
-        sha, _, subject = x.partition(" ")
-        out.setdefault(subject.split(":")[0], sha)
-    return out
-
-
-def epic_end(root, slug, task, review):
-    """CT-13 (FR-27 to FR-31): after the task's `task_done` line, when every task of its epic (fix tasks included) is
-    done and its review found no failing own test, the epic closes with no jury (2026-11-14 FR-1). Returns (the lines
-    owed: the `pass` to the pr gate once nothing is left, else none; the report: each done task with its commit, the
-    files outside each task's list, the `next:` and `notify:` lines); ([], []) otherwise. The task being committed has
-    no commit yet: its line names THIS."""
-    ev = review.get("evidence") or {}
-    lines = flow.load(root, slug)[1]
-    st, ts = status(root, slug, lines), tasks_of(root, slug)
-    eid = task["epic"]
-    mine = [t for t in ts if t["epic"] == eid]
-    if ev.get("failing") or any(st[t["id"]] != "done" for t in mine):
-        return [], []
-    shas = commits_of(root, slug)
-    reviews = {x["evidence"]["task"]: x["evidence"] for x in lines if x["kind"] == "review" and x["evidence"].get("passed")}
-    reviews[task["id"]] = ev
-    report = [f"epic: {eid} finished"]
-    for t in mine:
-        report.append(f"  {t['id']} {THIS if t['id'] == task['id'] else shas.get(t['id'], '(no commit found)')} {t['title']}")
-        report += [f"  outside {t['id']}'s files: {p}" for p in (reviews.get(t["id"]) or {}).get("outside", [])]
-    if left(root, slug, lines):  # FR-1: the epic closed on its tasks' own tests; the next epic's tasks follow
-        return [], report + [f"next: nio flow claim {slug}"]
-    # the last task of the last epic: the effort moves to the pr gate, a new unit in a fresh driver (FR-2, FR-8)
-    return [{"kind": "pass", "from": "implementing", "to": "pr", "evidence": {"paths": [f".nio/specs/{slug}/tasks.md"]}}], \
-        report + [f"next: end this unit; the pr gate runs in a fresh driver started from `nio flow brief {slug}` alone",
-                  f"notify: the human: every task of {slug} is done; the pr gate judges the whole effort diff next"]
-
-
-NEEDS = {"split": "red, green and review", "single": "red, green and review", "direct": "green and review"}
+    if not last:
+        return sha, [f"next: nio flow claim {slug}"]
+    # the last epic: the effort moves to the pr gate, a new unit in a fresh driver (FR-2, FR-8)
+    return sha, [f"next: end this unit; the pr gate runs in a fresh driver started from `nio flow brief {slug}` alone",
+                 f"notify: the human: every epic of {slug} is closed; the pr gate judges the whole effort diff next"]
 
 
 def left(root, slug, lines):
-    """What keeps implementing's guard from passing (CT-14): each task not done with what it still needs, then each
-    epic still in its old implementation jury with no `epic` line; [] when the stage is finished."""
+    """What keeps implementing's guard from passing (CT-14): each task not done, each epic whose tasks are all done but
+    whose tests haven't passed since (FR-44; not once the effort moved past implementing), then each epic still in its
+    old implementation jury with no `epic` line; [] when the stage is finished."""
     st, ts = status(root, slug, lines), tasks_of(root, slug)
-    needs = {"red": "green and review", "green": "its review", "blocked": "the human to unblock it"}
-    out = [f"{t['id']} is {st[t['id']]}: needs {needs.get(st[t['id']], NEEDS[t['mode']])}" for t in ts if st[t["id"]] != "done"]
+    out = [f"{t['id']} is {st[t['id']]}: needs " + ("the human to unblock it" if st[t["id"]] == "blocked" else f"{t['epic']} closed by `nio flow finish`")
+           for t in ts if st[t["id"]] != "done"]
+    if not any(x["kind"] == "pass" and x["from"] == "implementing" for x in lines):
+        out += [f"{e} is testing: needs `nio flow finish`" for e, (s, _) in epics(root, slug, lines).items() if s == "testing"]
     shut = {x["evidence"].get("epic") for x in lines if x["kind"] == "epic"}
     return out + [f"{e} has no epic line" for e in dict.fromkeys(t["epic"] for t in ts) if e not in shut and in_jury(root, slug, e)]
 
 
 def in_jury(root, slug, epic):
     """An epic already in its old implementation jury when per-epic gates went away: its ledger has a round. It finishes
-    that jury, findings kept; any other epic closes on its tasks' own tests (2026-11-14-effort-jury FR-12)."""
+    that jury, findings kept; any other epic closes on its own test run (2026-11-14-effort-jury FR-12)."""
     from nio import jury
     return bool(jury.load(root, slug, f"implementation-{epic}")["round"])
 
@@ -714,92 +711,33 @@ def open_gate(root, slug, lines):
     return None
 
 
-def green(root, slug, tid, command, by):
-    """`nio flow green` (CT-8, FR-12 to FR-15, FR-32, FR-33, FR-37, FR-41, FR-45): on a red task run the red line's
-    command (another `--run` is refused) with its frozen files unchanged; on a direct claimed task run `--run`. An
-    exit 0 writes `green` and the review runs at once; a passed review commits. A `green` task (its commit failed) runs
-    no guard: only the review and the commit again. Returns (code, lines): 0 only when the task is done."""
+def unblock(root, slug, target, reason, by):
+    """`nio flow unblock` (CT-4, CT-12): a task blocked on a spec problem goes on, or an epic blocked by its 3 failed
+    runs goes back to waiting with its failed runs reset; clears `waiting` when it names it. Under auto only the human
+    unblocks an epic blocked by its own runs (FR-47). Returns (code, lines)."""
     flow.refuse(root, slug)
-    w = flow.who(by)
+    w = flow.who(by, root, slug)
+    is_epic = bool(re.fullmatch(r"E-\d+", target))
     with flow.lock(root, slug):
         state, lines = flow.load(root, slug)
-        task, now = task_for(root, slug, lines, tid, ("claimed", "red", "green"))
-        direct, tree = task["mode"] == "direct", tree_of(root, lines, tid)
-        if tree != root:
-            clean(root, slug)  # FR-14: the apply and its restore must not mix with the human's edits
-        if now == "claimed" and not direct:
-            raise ValueError(f"{tid} has no failing test first")
-        by_worker(task, w, "green")
-        printed = []
-        if now != "green":
-            why = ""
-            if direct:
-                if not command:
-                    raise ValueError(f"{tid} is in direct mode: green needs --run")
-            else:
-                ev = [x for x in since_claim(lines, tid) if x["kind"] == "red"][-1]["evidence"]
-                if command and command != ev["command"]:
-                    why = f"the command recorded at red is {ev['command']}"
-                command = ev["command"]
-                why = why or next((f"{p} changed since red; prove red again" for p, h in ev["frozen"].items()
-                                   if digest(tree, p) != h), "")
-            if not why:
-                code, out, cause = run(tree, command, limit(root))
-                why = cause or (f"the command exits {code}" if code else "")
-            if why:
-                return refused(root, slug, state, lines, tid, "green", command, why, w)
-            line = entry("green", tid, command=command, output=flow.sha(out.encode()))
-            flow.write(root, slug, [line], state, w, "implementing")
-            lines, printed = lines + [line], [f"green: {tid} accepted"]
-        saved = {}
-        if tree != root:
-            patch, saved, err = land(root, slug, tid, tree, since_claim(lines, tid)[0]["evidence"]["commit"])
-            if err:
-                if patch:  # no patch (the diff failed): the tree is the only copy of the work, so it stays
-                    records.git(root, "worktree", "remove", "--force", str(tree), full=True)
-                where = patch or str(tree.relative_to(root))
-                why = f"{tid} blocked: its changes don't apply"
-                flow.write(root, slug, [entry("blocked", tid, cause="apply", patch=patch)],
-                           {**state, "claims": release(state["claims"], tid), "waiting": {"why": why, "task": tid}}, w, "implementing")
-                return 1, printed + [why, f"  {err}", f"its changes are in {where}"]
-        line = review(root, slug, task, lines)
-        ev = line["evidence"]
-        if not ev["passed"]:
-            restore(root, saved)
-            entries, state = attempt(root, slug, state, lines, tid, line)
-            flow.write(root, slug, entries, state, w, "implementing")
-            return 1, printed + ["review: failed"] + [f"  {r}" for r in ev["reasons"]] + said(entries)
-        flow.write(root, slug, [line], state, w, "implementing")
-        printed += ["review: passed"] + [f"  outside the task's files: {p}" for p in ev["outside"]]
-        try:
-            sha, report = commit(root, slug, task, w, line)
-        except Exception:
-            restore(root, saved)
-            raise
-        if tree != root:
-            records.git(root, "worktree", "remove", "--force", str(tree), full=True) if sha else restore(root, saved)
-    if sha:
-        return 0, printed + [f"done: {tid} {sha}"] + report
-    return 1, printed + [flow.load(root, slug)[0]["waiting"]["why"], f"{tid} stays green; `nio flow green {slug} {tid}` retries"]
-
-
-def unblock(root, slug, tid, reason, by):
-    """`nio flow unblock` (CT-12, FR-38): the human sets a blocked task ready, its attempts reset and its frozen files
-    dropped (its next claim freezes afresh); clears `waiting` when it names this task. Returns (code, lines)."""
-    flow.refuse(root, slug)
-    w = flow.who(by)
-    with flow.lock(root, slug):
-        state, lines = flow.load(root, slug)
-        now = status(root, slug, lines).get(tid)
-        if now != "blocked":
-            raise ValueError(f"{tid} is {now}" if now else f"no task {tid} in tasks.md")
+        if is_epic:
+            now = epics(root, slug, lines).get(target, (None,))[0]
+            if now != "blocked":
+                raise ValueError(f"{target} is not blocked" if now else f"no {target} in tasks.md")
+        else:
+            now = status(root, slug, lines).get(target)
+            if now != "blocked":
+                raise ValueError(f"{target} is {now}" if now else f"no task {target} in tasks.md")
         if not (reason or "").strip():
             raise ValueError("--human needs a reason")
-        waiting = None if (state["waiting"] or {}).get("task") == tid else state["waiting"]
-        attempts = {k: v for k, v in state["attempts"].items() if k != tid}
-        flow.write(root, slug, [entry("unblock", tid, reason=reason)], {**state, "attempts": attempts, "waiting": waiting},
-                   w, "implementing")
-    return 0, [f"unblocked: {tid}"]
+        if is_epic and state["auto"] and w["role"] != "human":  # FR-47: the auto run stops here for the human
+            return 1, [f"{target} was blocked by its own 3 failed test runs; only the human unblocks it"]
+        key = "epic" if is_epic else "task"
+        waiting = None if (state["waiting"] or {}).get(key) == target else state["waiting"]
+        attempts = {k: v for k, v in state["attempts"].items() if k != target}
+        line = epic_line("unblock", target, reason=reason) if is_epic else entry("unblock", target, reason=reason)
+        flow.write(root, slug, [line], {**state, "attempts": attempts, "waiting": waiting}, w, "implementing")
+    return 0, [f"unblocked: {target}"]
 
 
 PARTS = (("spec_says", "What the spec says"), ("code_shows", "What the code shows"), ("smallest_change", "Smallest change"))
@@ -807,8 +745,9 @@ PARTS = (("spec_says", "What the spec says"), ("code_shows", "What the code show
 
 def block(root, slug, tid, handoff, by):
     """`nio flow block` (CT-11, FR-23, FR-24, FR-37, AC-48): file a `status: blocked` handoff with a `change_request` as a
-    pending change record against the effort's spec.md, shelve the task's changes like the cap does, write a `blocked`
-    line (`cause: spec`), clear the claim and set the effort waiting. The record holds `Handoff: <sha256>`: a pending
+    pending change record against the effort's spec.md, write a `blocked` line (`cause: spec`) and set the effort
+    waiting. The task's epic stays claimed and its work stays in the tree: after the unblock a fresh agent resumes it
+    from `nio flow brief` (CT-4). The record holds `Handoff: <sha256>`: a pending
     one that does is reused and only the steps not yet done are written. No attempt is used. Returns (code, lines)."""
     flow.refuse(root, slug)
     w = flow.who(by)
@@ -834,12 +773,13 @@ def block(root, slug, tid, handoff, by):
         now = status(root, slug, lines).get(tid)
         mine = [x for x in lines if x["kind"] == "blocked" and x["evidence"].get("task") == tid
                 and x["evidence"].get("handoff") == hsh]
-        if now not in ("claimed", "red", "green") and not (now == "blocked" and mine):
-            raise ValueError(f"{tid} is {now}" if now else f"no task {tid} in tasks.md")
+        of = next((t["epic"] for t in tasks_of(root, slug) if t["id"] == tid), None)
+        if not (now in ("ready", "pending") and of in claimed(state)) and not (now == "blocked" and mine):
+            raise ValueError(f"{tid} is {now}" + (f", its epic {of} not claimed" if now in ("ready", "pending") else "")
+                             if now else f"no task {tid} in tasks.md")
         found = next((p for p in sorted((root / ".nio/memory").rglob("C-*.md"))
                       if f"Handoff: {hsh}" in p.read_text() and records.parse(p)[0].get("outcome") == "pending"), None)
         kept = found.read_text() if found else ""
-        patch = "" if mine else shelve(root, slug, run_of(root, slug, lines, tid), tid, worktree(root, lines, tid))  # first: it cleans every untracked file
         if found is None:
             areas = records.areas(root)
             found = records.new(root, "change", "project" if "project" in areas else areas[0],
@@ -849,10 +789,10 @@ def block(root, slug, tid, handoff, by):
             body = (f"## What is wrong\nThe spec says: {str(cr['spec_says']).strip()}\n\nThe code shows: {str(cr['code_shows']).strip()}\n"
                     f"## Proposed change\n{str(cr['smallest_change']).strip()}\n\nHandoff: {hsh}\n")
             kept = f"{head}\n---\n{body}## Human decision\nPending.\n"
-        found.write_text(kept)  # a reused record, untracked, was cleaned with the task's files
+        found.write_text(kept)
         cid = records.parse(found)[0]["id"]
         if not mine:  # the line and the state it leaves go in one write, so a blocked line means waiting is set too
-            line = {**entry("blocked", tid, cause="spec", handoff=hsh, patch=patch), "change": cid}
-            flow.write(root, slug, [line], {**state, "claims": release(state["claims"], tid), "waiting": {"why": f"spec problem in {tid}", "task": tid, "change": cid}},
+            line = {**entry("blocked", tid, cause="spec", handoff=hsh), "change": cid}
+            flow.write(root, slug, [line], {**state, "waiting": {"why": f"spec problem in {tid}", "task": tid, "change": cid}},
                        w, "implementing")
     return 0, [f"blocked: {tid}", cid]

@@ -8,9 +8,8 @@ from importlib import resources
 
 from nio import records, spec
 
-FIELDS = ["Files", "Serves", "Test", "Depends on", "Parallel", "Tier", "Effort", "Mode"]
-MODES = ["split", "single", "direct"]
-MODE_SINCE = "2026-10-30"  # a list approved before this date may omit `Mode:` and runs in split (C-261029-nbrg)
+FIELDS = ["Files", "Serves", "Test", "Depends on", "Parallel"]  # a `Mode:` line left in an old list is ignored (FR-5)
+TIER_SINCE = "2026-11-16"  # a list approved before this date may rate tier and effort per task, not per epic (FR-7)
 TIER = re.compile(r"^(\S+?)(?::\s*(.*))?$")
 TIERS = ["cheap", "strong", "max", "frontier"]
 EFFORTS = ["low", "med", "high"]
@@ -66,13 +65,13 @@ def new(root, slug):
 
 
 def parse(text):
-    """{"epics": [{"id", "title", "story", "head", "tasks": [ids]}], "tasks": {id: task}, "dupes": [ids]}. A task holds its
+    """{"epics": [{"id", "title", "story", "head", "tasks": [ids], "fields"}], "tasks": {id: task}, "dupes": [ids]}. A task holds its
     epic, whether it sits under `#### Fixes`, its block of lines and its `- Name: value` fields."""
     epics, tasks, dupes, epic, fix, cur = [], {}, [], None, False, None
     for line in re.sub(r"<!--.*?-->", "", text, flags=re.S).splitlines():
         if m := EPIC.match(line):
             story = re.search(r"\((US-\d+|Foundation)\)\s*$", m[2])
-            epic, fix, cur = {"id": m[1], "title": m[2], "story": story[1] if story else "", "head": line, "tasks": []}, False, None
+            epic, fix, cur = {"id": m[1], "title": m[2], "story": story[1] if story else "", "head": line, "tasks": [], "fields": {}}, False, None
             epics.append(epic)
         elif line.strip() == "#### Fixes":
             fix, cur = True, None
@@ -84,6 +83,8 @@ def parse(text):
             epic["tasks"].append(m[1])
         elif line.startswith("## ") or line.startswith("# "):
             epic, cur = None, None
+        elif epic and cur is None and not fix and (m := LINE.match(line)):  # an epic's own `- Tier:` and `- Effort:`
+            epic["fields"].setdefault(m[1], m[2])
         elif cur is not None and line.strip():
             cur["block"].append(line)
             if m := LINE.match(line):
@@ -193,12 +194,12 @@ def check(root, slug, gate=False, base="HEAD"):
     errs += [f"{t} is defined {1 + parsed['dupes'].count(t)} times" for t in dict.fromkeys(parsed["dupes"])]
     errs += [f"{e} is defined {n} times" for e, n in collections.Counter(e["id"] for e in epics).items() if n > 1]
     full = kind == "full"
-    old = approved_before(root, slug, MODE_SINCE, base)
+    old = approved_before(root, slug, TIER_SINCE, base)
     entries, tcs = plan_parts(root, slug) if full else ({}, set())
     approved = records.git(root, "log", "-1", "--format=%H", "--grep=^nio: approve tasks$", base, "--", str(p.relative_to(root)))
     for t, task in tasks.items():
         f = task["fields"]
-        errs += [f"{t}: needs `- {name}:`" for name in FIELDS if name not in f and not (name == "Mode" and old)]
+        errs += [f"{t}: needs `- {name}:`" for name in FIELDS if name not in f]
         if any(re.match(r"^- \[[ xX]\]", line) or re.match(r"^- Status:", line) for line in task["block"]):
             errs.append(f"{t} holds a status or a checkbox; status lives in the CLI's state, not tasks.md")
         if t in retired:
@@ -221,28 +222,21 @@ def check(root, slug, gate=False, base="HEAD"):
             errs.append(f"{t}: `Depends on:` lists task IDs or says `none`")
         if "Parallel" in f and f["Parallel"] not in ("yes", "no"):
             errs.append(f"{t}: `Parallel:` must be yes or no, not `{f['Parallel']}`")
-        if "Tier" in f and f["Tier"] != "to be rated":
-            m = TIER.match(f["Tier"])
-            if m[1] not in TIERS:
-                errs.append(f"{t}: `{m[1]}` is not cheap, strong, max or frontier")
-            elif not (m[2] or "").strip():
-                errs.append(f"{t}: `Tier: {m[1]}` needs a reason, as `Tier: {m[1]}: <why>`")
-        if "Mode" in f and f["Mode"] != "to be rated":
-            m = TIER.match(f["Mode"])
-            if m[1] not in MODES:
-                errs.append(f"{t}: `{m[1]}` is not split, single or direct")
-            elif not (m[2] or "").strip():
-                errs.append(f"{t}: `Mode: {m[1]}` needs a reason, as `Mode: {m[1]}: <why>`")
-        if "Effort" in f and f["Effort"] not in EFFORTS:
-            errs.append(f"{t}: `Effort:` must be low, med or high, not `{f['Effort']}`")
+        errs += rating(t, f)
         if full and "Test" in f and not ids(f["Test"]):
             errs.append(f"{t}: on a full spec `Test:` cites the plan's `TC-n`")
         if "Serves" in f and not [i for i in ids(f["Serves"]) if i.startswith("AC-")] and not (
                 task["fix"] and [i for i in ids(f["Serves"]) if i.startswith("J-")]):
             errs.append(f"{t} serves no AC")
+    for e in epics:  # tier and effort per epic (FR-7); a list approved before TIER_SINCE rated them per task
+        errs += [f"{e['id']}: needs `- {name}:`" for name in ("Tier", "Effort") if name not in e["fields"] and not old]
+        errs += rating(e["id"], e["fields"])
     served = {i for task in tasks.values() for i in ids(task["fields"].get("Serves", ""))}
     errs += [f"{ac} is served by no task" for ac in sorted(acs, key=lambda a: int(a[3:])) if ac not in served]
     errs += [f"dependency cycle: {' → '.join(c)}" for c in cycles(tasks)]
+    at = {e["id"]: i for i, e in enumerate(epics)}
+    errs += [f"{t} ({x['epic']}) depends on {d} ({tasks[d]['epic']}), a later epic" for t, x in tasks.items()
+             for d in ids(x["fields"].get("Depends on", "")) if d in tasks and at[tasks[d]["epic"]] > at[x["epic"]]]  # FR-12
     # parallel clashes across the whole spec, unless one task depends on the other (#42 FR-13, FR-48)
     below = reach(tasks)
     par = [t for t in tasks if tasks[t]["fields"].get("Parallel") == "yes"]
@@ -276,6 +270,30 @@ def check(root, slug, gate=False, base="HEAD"):
         if len(dirs) > 1:
             notes.append(f"escalate: the fix changes files in {len(dirs)} folders ({', '.join(sorted(dirs))}): offer the full flow (@nio:spec, \"Escalating a bug fix\")")
     return errs, notes
+
+
+def rating(owner, f):
+    """The errors of a `Tier:` and an `Effort:` line, an epic's or (in an old list) a task's."""
+    errs = []
+    if "Tier" in f and f["Tier"] != "to be rated":
+        m = TIER.match(f["Tier"])
+        if m[1] not in TIERS:
+            errs.append(f"{owner}: `{m[1]}` is not cheap, strong, max or frontier")
+        elif not (m[2] or "").strip():
+            errs.append(f"{owner}: `Tier: {m[1]}` needs a reason, as `Tier: {m[1]}: <why>`")
+    if "Effort" in f and f["Effort"] not in EFFORTS:
+        errs.append(f"{owner}: `Effort:` must be low, med or high, not `{f['Effort']}`")
+    return errs
+
+
+def epic_rating(epic, tasks):
+    """(tier, effort) of an epic: its own lines, else the highest of its tasks' (a list approved before TIER_SINCE)."""
+    word = lambda v: TIER.match(v)[1] if v and TIER.match(v) else ""
+    tier, effort = word(epic["fields"].get("Tier", "")), epic["fields"].get("Effort", "")
+    rated = [tasks[t]["fields"] for t in epic["tasks"]]
+    tier = tier if tier in TIERS else max((word(f.get("Tier", "")) for f in rated if word(f.get("Tier", "")) in TIERS), key=TIERS.index, default="")
+    effort = effort if effort in EFFORTS else max((f.get("Effort") for f in rated if f.get("Effort") in EFFORTS), key=EFFORTS.index, default="")
+    return tier, effort
 
 
 def check_fixes(root, slug, parsed, retired, base="HEAD"):
@@ -316,7 +334,7 @@ def check_fixes(root, slug, parsed, retired, base="HEAD"):
 
 
 def rated_from(root, slug, copy):
-    """Errors when tasks.md differs from `copy` outside Tier/Effort/Mode lines, or a rating still reads `to be rated`."""
+    """Errors when tasks.md differs from `copy` outside Tier/Effort lines (an old Mode line too), or a rating still reads `to be rated`."""
     p = path(root, slug)
     rel, new, old = p.relative_to(root), p.read_text().splitlines(), open(copy).read().splitlines()
     rating = lambda l: re.match(r"- (Tier|Effort|Mode):", l)
@@ -332,15 +350,13 @@ def rated_from(root, slug, copy):
 
 
 def estimate(parsed):
-    """One row per epic: task count, tier and effort counts, and the parallel tasks; no token or money figure (#42
+    """One row per epic: task count, its tier and effort, and the parallel tasks; no token or money figure (#42
     FR-14). Parallel comes only from `Parallel:` (FR-47)."""
     out = []
     for e in parsed["epics"]:
-        ts = [parsed["tasks"][t]["fields"] for t in e["tasks"]]
-        tier = lambda f: TIER.match(f.get("Tier", "")).group(1) if TIER.match(f.get("Tier", "")) else ""
+        tier, effort = epic_rating(e, parsed["tasks"])
         par = [t for t in e["tasks"] if parsed["tasks"][t]["fields"].get("Parallel") == "yes"]
-        out.append(f"{e['id']}: {len(ts)} tasks; tier " + ", ".join(f"{x} {sum(tier(f) == x for f in ts)}" for x in TIERS)
-                   + "; effort " + ", ".join(f"{x} {sum(f.get('Effort') == x for f in ts)}" for x in EFFORTS)
+        out.append(f"{e['id']}: {len(e['tasks'])} tasks; tier {tier or 'not rated'}; effort {effort or 'not rated'}"
                    + f"; parallel: {', '.join(par) or 'none'}")
     return out
 
@@ -412,7 +428,12 @@ def retire(root, slug, tid, reason, by):
     if by not in jury.BY:
         raise ValueError(f"retiring {tid} needs --by, one of {', '.join(sorted(jury.BY))}: who retires it")
     p = path(root, slug)
-    task = parse("\n".join(records.parse(p)[1]))["tasks"].get(tid)
+    meta, body = records.parse(p)
+    task = parse("\n".join(body))["tasks"].get(tid)
+    if not task and tid in (meta.get("retired") or []):  # retired already: only a claim left over may still need releasing
+        if release_claim(root, slug, tid, reason, by):
+            return f"{tid} was already retired; its claim released"
+        raise ValueError(f"{tid} is already retired")
     if not task or not task["fix"]:
         raise ValueError(f"{tid} is not a fix task in tasks.md; retire a planned task by hand (it reopens the tasks gate)")
     text = re.sub(rf"^### {tid}\b.*?(?=^#{{1,4}} |\Z)", "", p.read_text(), count=1, flags=re.M | re.S)
@@ -427,7 +448,26 @@ def retire(root, slug, tid, reason, by):
     if f:
         f.update(status="disposed", disposition="accepted-risk", by=by, note=reason)
         jury.save(root, led)
-    return f"retired {tid}" + (f"; {f['id']} closed as accepted-risk by {by}" if f else "")
+    released = release_claim(root, slug, tid, reason, by)
+    return f"retired {tid}" + (f"; {f['id']} closed as accepted-risk by {by}" if f else "") + ("; its claim released" if released else "")
+
+
+def release_claim(root, slug, tid, reason, by):
+    """A retired task that is still claimed would refuse every later claim (#157): drop it from the claims through
+    `nio flow`'s writer, with a `retire` line. True when a claim was released."""
+    from nio import flow, implement
+    if not (root / ".nio/specs" / slug / "history.jsonl").exists():  # no flow state yet: nothing is claimed
+        return False
+    with flow.lock(root, slug):
+        state, _ = flow.load(root, slug)
+        claims = state.get("claims") or {}
+        if tid != claims.get("task") and tid not in claims.get("wave", []):
+            return False
+        w = {"role": "human", "host": "", "model": ""} if by == "human" else {"role": by, "host": "", "model": ""}
+        left = [t for t in claims.get("wave", []) if t != tid]  # an old task or wave claim (per-epic claims hold no task)
+        flow.write(root, slug, [implement.entry("retire", tid, reason=reason)],
+                   {**state, "claims": {"task": left[0], "wave": left} if left else {}}, w, "implementing")
+    return True
 
 
 def fix_test(root, slug, finding, cites):
@@ -488,13 +528,12 @@ def one_fix(root, slug, epic, finding):
         where = ", ".join(f"`{f}`" for f in named)
         ask = "Justify or remove" if finding.get("gap") == "unrequested" else "Fix"
         block = [f"### {tid} {ask}: {finding['title']}", f"- From: {src}", f"- Files: {where}", f"- Serves: {', '.join(serves)}",
-                 f"- Test: {fix_test(root, slug, finding, cites)}", "- Depends on: none", "- Parallel: no",
-                 "- Tier: strong: a fix from a jury finding", "- Effort: med", "- Mode: single: a fix from a jury finding", ""]
+                 f"- Test: {fix_test(root, slug, finding, cites)}", "- Depends on: none", "- Parallel: no", ""]
         if epic == "pr":
             epic = evidence.pr_fixes(root, slug)
-            if not epic:
+            if not epic:  # CT-6: the new epic carries its own tier and effort
                 epic = f"E-{max([int(e['id'][2:]) for e in parsed['epics']] + [0]) + 1}"
-                text = text.rstrip("\r\n") + f"{nl}{nl}## {epic} PR fixes{nl}"
+                text = text.rstrip("\r\n") + f"{nl}{nl}## {epic} PR fixes{nl}- Tier: strong: fixes from the pr jury{nl}- Effort: med{nl}"
         # headings inside a comment aren't headings, as in `parse`; an opening mark in a title would hide the tasks after it
         mask = re.sub(r"<!--.*?-->", lambda m: re.sub(r"[^\r\n]", " ", m[0]), text, flags=re.S)
         start = re.search(rf"^## {epic}\b", mask, re.M)

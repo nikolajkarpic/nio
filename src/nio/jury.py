@@ -4,6 +4,7 @@ results and the dispositions, and compose the gate outcome. The ledger's data is
 import collections
 import hashlib
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -18,11 +19,12 @@ KINDS = {"contradiction", "gap", "ambiguity", "untestable", "risk", "scope", "in
 SEVERITY = ["minor", "major", "blocker"]  # ascending
 CONTEXT = {"sufficient", "limited", "needs-more"}
 EVIDENCE = {"observed", "inferred"}
-DISPOSITIONS = {"spec-fix", "plan-fix", "spec-change", "open-question", "accepted-risk", "out-of-scope", "overruled", "fix-task"}
+DISPOSITIONS = {"spec-fix", "plan-fix", "spec-change", "open-question", "accepted-risk", "out-of-scope", "overruled", "fix-task",
+                "held"}  # held: under auto, a fix the fix agent may not make alone (a [human] line, a scope cut, risk:)
 FIXES = {"spec-fix", "plan-fix", "spec-change", "open-question", "fix-task"}  # settled by changing the judged artefact; a lens checks each
 PLAN_ONLY = {"plan-fix", "spec-change"}  # spec-change: a plan finding rooted in the spec, sent to a change request
 HUMAN_ONLY = {"accepted-risk", "out-of-scope", "overruled"}  # overruled: a final-check `not fixed` the human overrides (#58)
-BY = {"agent", "grill", "human"}  # grill: the human answered a grill question
+BY = {"agent", "grill", "human", "auto"}  # grill: the human answered a grill question; auto: the driver, under the human's grant
 MAX_FINDINGS = 5
 FIELDS = ["cites", "kind", "severity", "evidence", "quote", "situation", "fix"]
 GAPS = ["missing", "partial", "contradicts", "unrequested"]  # the implementation gate's `gap` (CT-12); it also needs `where`
@@ -35,8 +37,8 @@ PLAN_LENSES = {"security": {"auth", "pii"}, "risk-rollback": {"migration", "data
 IMPL_LENSES = {"adversary": {"external-input", "multi-party", "public-api"}, "security": {"auth", "pii", "secrets"},
                "risk-rollback": {"migration", "data-deletion"}}
 MAX_RUNS = 6  # lens runs per gate, each juror counted; `jury.max_runs` in config overrides it (#47)
-PR_RUNS = 7  # the pr gate's own default: its five core lenses and both risk lenses run without asking (2026-11-14-effort-jury)
-PR_CORE = ["correctness", "conformance", "adversary", "consistency", "integration"]  # FR-4
+PR_RUNS = 8  # the pr gate's own default: its six core lenses and both risk lenses run without asking (2026-11-14-effort-jury)
+PR_CORE = ["correctness", "conformance", "adversary", "consistency", "integration", "test-proof"]  # FR-4; test-proof: 2026-11-15 FR-41
 MAX_ROUNDS = 2  # rounds per gate before the human rules what is open; `jury.max_rounds` in config overrides it (#129)
 SKIPPED = "minor, skipped at the round cap"
 
@@ -119,7 +121,9 @@ def blocks(lines):
 
 
 def unquote(q):
-    """A quote's text: the outer marks off, and the escapes a juror puts inside (`\\"`, `\\\\`) undone."""
+    """A quote's text: the outer marks off, and the escapes a juror puts inside (`\\"`, `\\\\`) undone. A source note after
+    the closing mark, as `"..." (tasks.md, T-11)`, is no part of the quote (2026-11-15 FR-23)."""
+    q = re.sub(r'(")\s*\([^()]*,\s*[A-Z]+-\d+\)$', r"\1", q.strip())
     q = q[1:-1] if len(q) > 1 and q[0] == q[-1] == '"' else q.strip('"')
     return re.sub(r'\\(["\\])', r"\1", q)
 
@@ -222,7 +226,7 @@ def planned(name, text, keep=()):
         found = tasks.parse(text)["tasks"]
         kept = [line for t in keep for line in found[t]["block"]]
     text = re.sub(r"^#### Fixes$.*?(?=^## |\Z)", "", text, flags=re.M | re.S)
-    text = re.sub(r"^## E-\d+ PR fixes\s*$", "", text, flags=re.M)  # the pr gate's closing epic holds only fix tasks
+    text = re.sub(r"^## E-\d+ PR fixes[ \t]*(?:\r?\n- (?:Tier|Effort):.*)*$", "", text, flags=re.M)  # the pr gate's closing epic: fix tasks, and its own rating
     return re.sub(r"\n\s*\n+", "\n\n", "\n".join([unretire(text), *kept])).rstrip() + "\n"  # the blank lines a Fixes section leaves don't count
 
 
@@ -293,6 +297,12 @@ def human_words(root, slug):
 
 def version(led, rnd):
     return led.get("versions", {}).get(str(rnd))
+
+
+def raised_round(f):
+    """The last round a finding was raised in by a juror of its own: an escalation juror's (`<lens>-<n>`) is a vote,
+    so a fix made while that round ran is checked against the version before it (2026-11-15 FR-29)."""
+    return max((s["round"] for s in f["sources"] if s.get("round") and not re.search(r"-\d+$", s["juror"])), default=f["first_round"])
 
 
 def worst(*levels):
@@ -428,14 +438,14 @@ CITED = re.compile(r"(?<![\w-])([A-Z]+-\d+)(?![\w-])")
 def parts(text):
     """({id: its whole block}, {section: the text outside any item}): an item's continuation lines (an AC's Observable)
     belong to it; tables, notes and prose belong to their section (#52 FR-14)."""
-    items, secs, cur, sec = {}, collections.defaultdict(list), None, "(front matter)"
+    items, secs, cur, sec, whole = {}, collections.defaultdict(list), None, "(front matter)", False
     for line in text.splitlines():
         if line.startswith("## "):
             sec, cur = line[3:].strip(), None
         elif m := spec.DEF.match(line):
             cur = m[1] or m[2]
-            items[cur] = [line]
-        elif cur and line.startswith(" ") and line.strip():
+            items[cur], whole = [line], line.startswith("### ")
+        elif cur and (whole and not line.startswith("#") or line.startswith(" ") and line.strip()):  # a `### ID` item: to the next heading
             items[cur].append(line)
         else:
             cur = None
@@ -627,12 +637,16 @@ def moved(root, slug, gate, run, led):
     if not sj.exists() or json.loads(sj.read_text())["version"] == version_now(root, slug, gate):
         return
     for path in (root / ".nio/runs" / run / "jury").glob(f"{gate}-*.md"):
-        if path.stem != f"{gate}-refuter" and led["collected"].get(f"{run}/{path.name}") != hashlib.sha256(path.read_bytes()).hexdigest():
+        if not re.fullmatch(rf"{gate}-refuter(-\d+)?", path.stem) and led["collected"].get(f"{run}/{path.name}") != hashlib.sha256(path.read_bytes()).hexdigest():
             raise ValueError(f"the {gate} changed after {run}'s packs were written: restore it, or start a new run (nio jury next without --run)")
 
 
 def ask_refuter(root, slug, gate, run, ids):
+    """Record the findings the refuter is asked about in `run`; a batch asked after the last was answered is the run's
+    next one, with its own pack and output file (2026-11-15 FR-27)."""
     led = load(root, slug, gate)
+    if not led.get("asked", {}).get(run):
+        led.setdefault("batches", {})[run] = led.get("batches", {}).get(run, 0) + 1
     led.setdefault("asked", {})[run] = sorted(set(led.get("asked", {}).get(run, [])) | set(ids))
     save(root, led)
 
@@ -675,7 +689,7 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
     out, new = [], []
     for path in sorted(jury.glob(f"{gate}-*.md")):
         key, sha = f"{run}/{path.name}", hashlib.sha256(path.read_bytes()).hexdigest()
-        if path.stem != f"{gate}-refuter" and led["collected"].get(key) != sha:
+        if not re.fullmatch(rf"{gate}-refuter(-\d+)?", path.stem) and led["collected"].get(key) != sha:
             led["collected"][key] = sha
             new.append(path)
     if new and gate == "plan" and (st := state(root, slug, led))[0] in ("with-human", "waiting-on-spec"):
@@ -709,7 +723,8 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
             out.append(f"revived {f['id']} {f['title']} (now grounded)")
     if gate == "spec":
         out += deferred(led, root, slug)
-    refuter = jury / f"{gate}-refuter.md"
+    refuter = jury / f"{gate}-refuter-{led.get('batches', {}).get(run, 1)}.md"  # the batch asked; an older driver's plain name too
+    refuter = refuter if refuter.exists() else jury / f"{gate}-refuter.md"
     if refuter.exists():
         sha = hashlib.sha256(refuter.read_bytes()).hexdigest()
         if led["collected"].get(f"{run}/{refuter.name}") != sha:
@@ -798,8 +813,11 @@ def merge(led, paths, gate, slug, text, human=""):
             continue
         if juror["context"] != "needs-more":  # the last round this juror actually judged
             juror["judged"] = rnd
-        for f in findings:
-            out.append(add(led, f, path.stem, juror["lens"], rnd, text(juror["lens"]) if callable(text) else text, human, review))
+        said = [add(led, f, path.stem, juror["lens"], rnd, text(juror["lens"]) if callable(text) else text, human, review) for f in findings]
+        out += said
+        if said and all(x.startswith("dropped") for x in said):  # FR-24: a juror whose every finding is ungrounded is re-run
+            juror.update(valid=False, errors=["every finding is ungrounded"])
+            out.append(f"INVALID {path.name}: every finding is ungrounded")
     if review:
         return out + apply_verdicts(led, verdicts, rnd)
     # fixed: every juror that raised it has since judged a different version without raising it again, in this round or
@@ -861,6 +879,10 @@ def add(led, f, juror, lens, rnd, text, human="", review=False):
     # are distinct problems by construction, so they never merge with each other.
     match = next((g for g in led["findings"] if g["status"] != "merged" and same(g, f)
                   and not any(s["juror"] == juror and s.get("round") == rnd for s in g["sources"])), None)
+    if not match and re.search(r"-\d+$", juror) and any(g["severity"] == "blocker" and g["validation"] == "confirmed" and g["status"] == "open"
+                                                         and any(s["lens"] == lens for s in g["sources"]) for g in led["findings"]):
+        led.setdefault("notes", []).append({"juror": juror, "title": f["title"], "round": rnd})  # FR-26: a vote, not a finding
+        return f"note    {juror}: {f['title']} (an escalation juror's; no finding)"
     if not match:
         ok = grounded(f, text, human, not impl)
         g = {"id": f"J-{len(led['findings']) + 1}", **{k: f[k] for k in ("title", "kind", "severity", "cites", "evidence", "quotes", "fix")},
@@ -948,7 +970,7 @@ def refute(led, path, asked):
         if target and target is not g and target["status"] in ("open", "disposed"):  # never into a closed finding
             target["sources"] += [s for s in g["sources"] if s["juror"] not in {t["juror"] for t in target["sources"]}]
             raised = worst(target["severity"], g["severity"])
-            if raised != target["severity"] and (target["validation"] == "grounded" or raised == "blocker"):
+            if raised != target["severity"] and target["validation"] == "grounded":  # a confirmed one stays confirmed (FR-28)
                 target["validation"] = "pending"
             target["severity"] = raised
             g.update(status="merged", validation="merged", reason=f"same as {target['id']}")
@@ -964,7 +986,7 @@ def refute(led, path, asked):
     return out
 
 
-def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=False):
+def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=False, ruled=False):
     """`fid` one ID or comma-separated IDs, `note` a string or a list (one, or one per ID); all checks pass before the one save."""
     ids = fid.split(",")
     notes = [note] if isinstance(note, str) else list(note)
@@ -973,10 +995,14 @@ def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=Fals
     if len(notes) not in (1, len(ids)):
         raise ValueError(f"{len(notes)} notes for {len(ids)} findings; give one note, or one per finding in order")
     led = load(root, slug, gate)
+    if by == "auto":  # 2026-11-15 FR-47: the driver acts for the human only on an effort whose auto flag the human granted
+        from nio import flow
+        if not flow.load(root, slug)[0]["auto"]:
+            raise ValueError(f"--by auto needs {slug}'s auto flag on")
     bad = []
     for i, n in zip(ids, notes * len(ids) if len(notes) == 1 else notes):
         try:
-            _dispose_one(root, slug, gate, led, i, disposition, by, n, change, routed)
+            _dispose_one(root, slug, gate, led, i, disposition, by, n, change, routed, ruled)
         except ValueError as e:
             if len(ids) == 1:
                 raise
@@ -987,17 +1013,24 @@ def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=Fals
     return ids
 
 
-def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, routed):
+def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, routed, ruled=False):
     f = next((g for g in led["findings"] if g["id"] == fid), None)
     if not f:
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
+    if disposition == "reopen":  # 2026-11-15 FR-25: the human's ruling on a finding dropped as ungrounded
+        if by != "human":
+            raise ValueError("reopen is the human's call (--by human)")
+        if f["status"] != "dropped":
+            raise ValueError(f"{fid} is {f['status']}; reopen takes a dropped finding")
+        f.update(status="open", validation="pending", reason="", ruling=note)
+        return
     if disposition not in DISPOSITIONS or by not in BY or not note.strip():
         raise ValueError(f"disposition must be one of {sorted(DISPOSITIONS)}, --by one of {sorted(BY)}, and --note is required")
-    if fid in batch_open(led) and by != "human" and not routed:  # #129: the capped batch is the human's to rule
+    if fid in batch_open(led) and by not in ("human", "auto") and not routed:  # #129: the capped batch is the human's to rule
         raise ValueError(f"{fid} is in the capped batch; only the human rules it (nio jury rule, or --by human)")
     if f.get("tampering") and by != "human" and not routed:  # only the human disposes of it; `tasks.append_fix` alone routes it to its fix task (FR-26)
         raise ValueError(f"{fid} is test tampering; only the human disposes of it (--by human)")
-    if disposition in PLAN_ONLY and gate != "plan":
+    if disposition in PLAN_ONLY and gate != "plan" and not (disposition == "spec-change" and gate == "pr"):  # FR-39 at pr
         raise ValueError(f"`{disposition}` belongs to the plan gate")
     if disposition == "fix-task":
         from nio import tasks
@@ -1010,8 +1043,13 @@ def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, rout
         if not path:
             raise ValueError(f"spec-change needs --change naming a change record; `{change}` isn't one")
         note = f"{change}: {note}"
-    if disposition in HUMAN_ONLY and by != "human":
+    if disposition in HUMAN_ONLY and by not in ("human", "auto"):
         raise ValueError(f"{disposition} is the human's call (--by human)")
+    if by == "auto" and not ruled:  # FR-19, FR-47: the driver accepts minors as risk; a capped batch only through `rule`
+        if fid in batch_open(led):
+            raise ValueError(f"{fid} is in the capped batch; under auto the driver rules it with nio jury rule")
+        if disposition in HUMAN_ONLY and (disposition != "accepted-risk" or f["severity"] != "minor"):
+            raise ValueError(f"{disposition} on a {f['severity']} is the human's call; under auto only a minor is accepted as risk")
     if any(s["lens"] == "deferred" for s in f["sources"]) and by == "agent":
         raise ValueError(f"{fid} was deferred by the grill; only the human closes it (--by human, or --by grill once a session settles it)")
     if any(s["lens"] == "deferred" for s in f["sources"]) and disposition == "spec-fix":
@@ -1107,7 +1145,7 @@ def compose(led, current):
     # disposed as a spec-fix, yet the artefact (== judged, see above) reads as it did when the finding was raised: the
     # fix never landed, or was undone; a fix judged in a later round that skipped the finding's lens counts
     unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] in ("spec-fix", "plan-fix")
-                 and version(led, f["last_round"]) == judged]
+                 and version(led, raised_round(f)) == judged]  # the version it was raised on (2026-11-15 FR-29)
     if unapplied:
         return "human" if ph == "final" else "rejected", [f"{'plan' if led['gate'] == 'plan' else 'spec'}-fix without a change to the {led['gate']}: {', '.join(unapplied)}"], []
     if stuck or split or stale:
@@ -1170,10 +1208,41 @@ def version_now(root, slug, gate):
     return now
 
 
+def cuts(root, slug, gate, led):
+    """CT-38: what the fixes since the last round changed that the fix agent may not change alone: a `[human]` item
+    changed or gone, an item removed, a non-goal added, the risk flags changed. [] when nothing was judged yet."""
+    judged = version(led, led["round"])
+    old = "\n".join(records.git(root, "cat-file", "-p", judged)) if judged else ""
+    if not old:
+        return []
+    new = artefact(root, slug, gate)
+    (was, was_secs), (now, now_secs) = parts(old), parts(new)
+    flat = lambda s: " ".join(s.split())
+    out = [(f"[human] line gone: {i}" if i not in now else f"[human] line changed: {i}") if "[human]" in text else f"removed: {i}"
+           for i, text in was.items() if i not in now or "[human]" in text and flat(now[i]) != flat(text)]
+    goals = lambda secs: [x.strip() for x in secs.get("Non-goals", "").splitlines() if x.strip()]
+    out += [f"non-goal added: {x}" for x in goals(now_secs) if x not in goals(was_secs)]
+    risk = lambda text: (re.search(r"^risk:\s*(\[[^\]]*\])", text, re.M) or [None, ""])[1]
+    out += [f"risk changed: {risk(old)} → {risk(new)}"] * (risk(old) != risk(new))
+    return out
+
+
 def composed(root, slug, gate, led, current, rejected=()):
     """`compose`, and at the implementation gate: never approved while a task of the epic, a fix task above all, isn't done
     or a fix has no verdict yet (FR-26); and human, not a dead end, when rejected has no new work to send back, since a
-    finding `not fixed` with its task done can't get a second one (FR-26)."""
+    finding `not fixed` with its task done can't get a second one (FR-26). Under auto (2026-11-15 CT-37, CT-38), at the
+    spec, plan and tasks gates: a fix the round check flags, or a finding held, goes to the human; a minor is accepted as
+    the gate's risk."""
+    from nio import flow
+    if gate in GATES and flow.load(root, slug)[0]["auto"]:
+        if hits := cuts(root, slug, gate, led):
+            return "human", hits, []
+        for f in led["findings"]:
+            if f["status"] == "open" and f["severity"] == "minor":
+                f.update(status="disposed", disposition="accepted-risk", by="auto", note="a minor, accepted as the gate's risk under auto")
+    held = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] == "held"]
+    if held:
+        return "human", [f"held for the human: {', '.join(held)}"], held
     outcome, reasons, listed = compose(led, current)
     if outcome not in ("approved", "rejected") or not impl_gate(gate):
         return outcome, reasons, listed
@@ -1212,10 +1281,17 @@ def check(root, slug, gate, record=False, human=""):
     closed = led.get("closed") or (human.strip() and [led["round"], current, human.strip()])
     if closed:
         outcome, reasons = "human", [f"the human closed the gate: {closed[2]}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
-    appended = []
+    appended, asked = [], []
     if record and outcome == "rejected" and not closed and impl_gate(gate):
         from nio import tasks
         save(root, led)  # append_fix disposes through the saved ledger
+        if gate == "pr":  # FR-39: a finding rooted in the spec or plan asks for a change to that file, not a code fix
+            for f in led["findings"]:
+                if to_task(f, [] if held else rejected) and (name := plan_rooted(slug, f)):
+                    cid = raise_change(root, slug, gate, f, name)
+                    dispose(root, slug, gate, f["id"], "spec-change", "agent", f"change asked against {name}", change=cid, routed=True)
+                    asked.append(f["id"])
+            led = load(root, slug, gate)
         appended = [(f["id"], tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)) for f in led["findings"] if to_task(f, [] if held else rejected)]  # a pending request holds its own finding and the rejected ones
         led = load(root, slug, gate)
     led["outcome"] = outcome
@@ -1224,7 +1300,7 @@ def check(root, slug, gate, record=False, human=""):
     if held or rejected and outcome == "rejected":  # CT-15: the epic waits on the human, or goes back to the implement stage
         lines.insert(1, "state: waiting-on-change" if held else "state: implementing")
         lines += [f"- {fid} waits on the change request {cid}" for fid, cid in held if cid] + [f"- {x}" for x in raised]
-    lines += [f"fix task {tid} for {fid}" for fid, tid in appended if tid]
+    lines += [f"fix task {tid} for {fid}" for fid, tid in appended if tid] + [f"change asked: {fid}" for fid in asked]
     lines += [f"vote {lens}: {', '.join(f'{n}={v}' for n, v in js)}" for lens, js in votes(led).items()]
     notes = [f for f in led["findings"] if f["status"] == "noted"]  # raised below blocker after the first review (#52 FR-12)
     lines += ["notes (no ruling needed):"] * bool(notes) + [f"- {f['id']} [{f['severity']}/{f['kind']}] {f['title']}" for f in notes]
@@ -1308,14 +1384,23 @@ def publish(root, slug, body=None):
         if code:
             raise ValueError(f"{step} failed, the pr gate stays open: {(err or out).strip()}")
         return out.strip()
+    from nio import flow
     call("push", "git", "push", "-u", "origin", branch)
     find = ("gh", "pr", "list", "--head", branch, "--state", "open", "--json", "number", "--jq", ".[0].number // empty")
     num = call("pull request", *find)
+    described = ["--body", f"Effort `{slug}`. The pr gate's verdict is the comment below; only the human approves it."]
+    if flow.load(root, slug)[0]["auto"]:  # CT-40: under auto the run report is the pull request's body
+        path = root / ".nio/runs" / f"report-{slug}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(flow.report(root, slug))
+        described = ["--body-file", str(path)]
+        if num:
+            call("pull request", "gh", "pr", "edit", num, *described)
     if not num:
         sp = spec.path(root, slug)
         title = next((x[2:] for x in (sp.read_text().splitlines() if sp.exists() else []) if x.startswith("# ")), slug)
         call("pull request", "gh", "pr", "create", "--head", branch, "--base", evidence.default_branch(root).removeprefix("origin/"),
-             "--title", title, "--body", f"Effort `{slug}`. The pr gate's verdict is the comment below; only the human approves it.")
+             "--title", title, *described)
         num = call("pull request", *find)
     out = [f"pull request: #{num} on {branch}"]
     if body is None:
@@ -1349,7 +1434,7 @@ def change_for(root, slug, gate, fid):
     for path in sorted((root / ".nio/memory").rglob("C-*.md")):
         meta, _ = records.parse(path)
         text = re.sub(r"^- situation \(.*$", "", path.read_text(), flags=re.M)  # a juror's words name other findings
-        if meta.get("type") == "change" and f"/{slug}/spec.md" in str(meta.get("against")) and named(text, fid, r"\d") and named(text, gate, r"[\w-]"):
+        if meta.get("type") == "change" and f"/{slug}/" in str(meta.get("against")) and named(text, fid, r"\d") and named(text, gate, r"[\w-]"):
             return path, meta
     return None, {}
 
@@ -1363,11 +1448,25 @@ def gate_changes(root, slug, gate):
             if f"/{slug}/spec.md" in str(records.parse(p)[0].get("against")) and named.search(p.read_text())]
 
 
-def raise_change(root, slug, gate, finding):
-    """The pending change request against the spec for a contradicts finding whose code is right: the existing one when a
-    request already names the finding and the gate, so a repeat or a stop before the ledger save raises no second (CT-15,
-    FR-30). spec.md is never touched."""
+def plan_rooted(slug, f):
+    """The spec or plan file of the effort a finding's `where` names, or None (2026-11-15 FR-39)."""
+    m = re.search(rf"\.nio/specs/{re.escape(slug)}/((?:spec|plan|contracts|tests|quickstart|architecture)\.md)", f.get("where") or "")
+    return m and m[1]
+
+
+def raise_change(root, slug, gate, finding, against="spec.md"):
+    """The pending change request against the spec for a contradicts finding whose code is right, or against the spec or
+    plan file `against` a pr finding is rooted in: the existing one when a request already names the finding and the
+    gate, so a repeat or a stop before the ledger save raises no second (CT-15, FR-30). The file is never touched."""
     path = change_for(root, slug, gate, finding["id"])[0]
+    if not path and against != "spec.md":
+        areas = records.areas(root)
+        path = records.new(root, "change", "project" if "project" in areas else areas[0],
+                           f"Plan change asked: {finding['id']} at {gate}", by="jury")
+        head = re.sub(r"^against: .*$", f'against: ".nio/specs/{slug}/{against}"', path.read_text().partition("\n---\n")[0], flags=re.M)
+        path.write_text(f"{head}\n---\n## What is wrong\n{finding['id']} at {gate}, rooted in {against}: {finding['title']}.\n"
+                        + "".join(f"- situation ({s['lens']}): {s['situation']}\n" for s in finding["sources"])
+                        + f"## Proposed change\nChange {against}: {finding.get('fix') or finding['title']}\n## Human decision\nPending.\n")
     if not path:
         areas = records.areas(root)
         path = records.new(root, "change", "project" if "project" in areas else areas[0],
@@ -1565,15 +1664,17 @@ def packs(root, slug, gate, run, lenses, fix=False):
 
 
 def refuter_pack(root, slug, gate, run, batch):
+    """The n-th refuter batch of the run, written to `packs/refuter-<n>.md`; its output is `<gate>-refuter-<n>.md`."""
     root = Path(root)
-    p = root / ".nio/runs" / run / "jury/packs/refuter.md"
-    p.parent.mkdir(parents=True, exist_ok=True)
     text = ["# Pack: refuter, " + f"{gate} gate of {slug}", "", *batch, "## Files to read (quotes may come only from these)",
             *[str(f.relative_to(root)) for f in sources(root, slug, gate)], "", f"Ledger: .nio/specs/{slug}/jury/{gate}.md", ""]
     if gate == "spec":
         text += ["## The human's grill answers", *answers(root, slug), ""]
     ask_refuter(root, slug, gate, run, re.findall(r"^### (J-\d+)", "\n".join(batch), re.M))
-    p.write_text("\n".join(text) + "\n" + _out_line(gate, "refuter", run).replace("{slug}", slug).split("Set lens:")[0].rstrip() + "\n")
+    n = load(root, slug, gate).get("batches", {}).get(run, 1)
+    p = root / ".nio/runs" / run / f"jury/packs/refuter-{n}.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("\n".join(text) + "\n" + _out_line(gate, f"refuter-{n}", run).replace("{slug}", slug).split("Set lens:")[0].rstrip() + "\n")
     return p
 
 
@@ -1628,10 +1729,13 @@ def step(root, slug, gate, run="", add=(), pick=None):
         errors = agents.sync(root)[1]
         if errors:
             raise ValueError("; ".join(errors))
+        other = os.environ.get("CLAUDE_PROJECT_DIR")  # FR-33: the host loads the agents of the checkout it started in
+        warn = [f"warning: agents were rendered into {root}, but this session loads them from {other}; start the session in {root}"] \
+            if other and Path(other).resolve() != root.resolve() else []
         if (cl := capped(root, slug, gate, led, names)) is not None:
-            return cl
+            return warn + cl
         fix = bool(led["round"])
-        return _begin(root, slug, gate, run, next_lenses(root, slug, gate) if fix else names, fix)
+        return warn + _begin(root, slug, gate, run, next_lenses(root, slug, gate) if fix else names, fix)
     for p in outputs:
         lens = lens_of(p.stem, gate)
         if lens != "refuter" and lens not in names:
@@ -1651,8 +1755,8 @@ def step(root, slug, gate, run="", add=(), pick=None):
         return lines + [f"next: re-run {l} on .nio/runs/{run}/jury/packs/{l}.md, adding the INVALID lines above to it "
                         f"(output .nio/runs/{run}/jury/{gate}-{l}.md), then {again.format(run)}" for l in redo]
     if batch:
-        refuter_pack(root, slug, gate, run, batch)
-        return lines + [f"next: run nio-refuter on .nio/runs/{run}/jury/packs/refuter.md (output .nio/runs/{run}/jury/{gate}-refuter.md), then {again.format(run)}"]
+        p = refuter_pack(root, slug, gate, run, batch)
+        return lines + [f"next: run nio-refuter on {p.relative_to(root)} (output .nio/runs/{run}/jury/{gate}-{p.stem}.md), then {again.format(run)}"]
     for f in led["findings"]:  # escalation jurors land in a later round than the blocker: count every round since it was raised
         for l in dict.fromkeys(s["lens"] for s in f["sources"] if s["lens"] in names):
             if f["severity"] == "blocker" and f["validation"] == "confirmed" and f["status"] == "open" and escalation(led, f, l) < 3:
@@ -1773,11 +1877,17 @@ def owed_fixes(root, slug, gate, led):
 RULINGS = ("accept", "fix", "again")
 
 
-def rule(root, slug, gate, fid, ruling, note):
+def rule(root, slug, gate, fid, ruling, note, by="human"):
     """The human's ruling on findings of a capped batch (#129 FR-5, FR-6, FR-16, FR-20): accept as risk; fix, which no
     juror re-checks; or again, a fix one more round re-checks on those findings' lenses. Refused, recording nothing,
-    unless every ID is open in the batch."""
+    unless every ID is open in the batch. Under auto the driver rules for the human: `by: auto` in the ledger and a
+    `ruling` history line naming the grant (2026-11-15 FR-47); refused for an agent with auto off."""
+    from nio import flow
     ids = fid.split(",")
+    w = flow.who(by, root, slug)
+    if w["role"] != "human" and not w.get("auto"):
+        raise ValueError(f"a ruling on the capped batch is the human's (--by human), or the driver's under auto")
+    actor = "human" if w["role"] == "human" else "auto"
     led = load(root, slug, gate)
     bad = [i for i in ids if i not in batch_open(led)]
     if bad:
@@ -1786,13 +1896,19 @@ def rule(root, slug, gate, fid, ruling, note):
     none = [i for i in ids if ruling == "again" and not lenses_of(next(f for f in led["findings"] if f["id"] == i), gate)]
     if none:
         raise ValueError(f"no lens re-checks {', '.join(none)} (deferred by the grill): rule accept or fix")
+    if actor == "auto":
+        with flow.lock(root, slug):
+            state, lines = flow.load(root, slug)
+            stage = lines[-1]["to"] if lines else None
+            flow.write(root, slug, [{"kind": "ruling", "from": stage, "to": stage, "evidence": {"gate": gate, "ids": ids, "auto": w["auto"]}}],
+                       state, w, stage)
     if ruling == "accept":
-        return dispose(root, slug, gate, fid, "accepted-risk", "human", note)
+        return dispose(root, slug, gate, fid, "accepted-risk", actor, note, ruled=True)
     if impl_gate(gate):
         from nio import tasks
         for f in [f for f in led["findings"] if f["id"] in ids]:
             tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)
-    dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in GATES else "spec-fix"), "human", note)
+    dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in GATES else "spec-fix"), actor, note, ruled=True)
     if ruling == "fix" and gate in GATES:
         led = load(root, slug, gate)
         led["cap"]["fix"] = sorted(set(led["cap"].get("fix", [])) | set(ids), key=lambda i: int(i[2:]))
