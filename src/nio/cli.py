@@ -76,7 +76,7 @@ def main():
     md = sub.add_parser("mods", help="install NIO's Claude Code mods for this clone")
     md.add_argument("mods_cmd", choices=["install"])
     md.add_argument("--skip", action="store_true", help="install nothing; report what is already installed")
-    al = sub.add_parser("allow", help="let agents run stage commands without a prompt on Claude Code; the human's decisions still prompt")
+    al = sub.add_parser("allow", help="let agents run every nio command without a prompt on Claude Code; the human's decisions still prompt")
     scope = al.add_mutually_exclusive_group(required=True)
     scope.add_argument("--personal", action="store_true", help="this clone only: .claude/settings.local.json, gitignored")
     scope.add_argument("--shared", action="store_true", help="everyone on the repo: .claude/settings.json, to commit")

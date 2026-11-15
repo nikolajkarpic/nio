@@ -197,7 +197,7 @@ Every command has `--help`.
 | `nio explain finish <slug>` / `explain topic <text>` | Check and finish a plan's explainer, or start one on a topic |
 | `nio task show <slug> T-n` | One task's section, for a worker's pack |
 | `nio index [--check]` · `nio query` · `nio get` · `nio pack` | Memory: rebuild the index with conflict checks, find records by text, file or link, print them, and the memory that applies to a piece of work |
-| `nio hooks` · `nio allow --personal\|--shared` | Git hooks that refresh the index and check memory; let agents run stage commands without a permission prompt |
+| `nio hooks` · `nio allow --personal\|--shared` | Git hooks that refresh the index and check memory; let agents run every nio command without a permission prompt |
 | `nio agents sync\|verify` | Render the agent cards for Claude Code and Codex with each tier's model; check runs used the right model |
 | `nio usage install\|report` | Timestamp every agent and shell call; a finished effort commits `usage.json` with its time, tokens and attempts |
 | `nio status` · `nio run` | Index freshness and onboarding state; start a run and its `promote.md` |

@@ -118,12 +118,9 @@ def test_allow():
         cfg = json.loads(local.read_text())
         rules = cfg["permissions"]["allow"]
         assert cfg["model"] == "opus" and "Bash(git log:*)" in rules and len(rules) == len(set(rules))
-        assert "Bash(nio flow next:*)" in rules and "Bash(uv run nio flow next:*)" in rules
-        assert "Bash(nio jury evidence:*)" in rules and "Bash(uv run nio jury evidence:*)" in rules
+        assert "Bash(nio:*)" in rules and "Bash(uv run nio:*)" in rules
         assert not (root / ".claude/settings.json").exists()
-        # commands that run anything, or are the human's alone, are never allowed
-        for cmd in ("flow finish", "flow seen", "flow abandon", "flow unblock", "hooks"):
-            assert not any(cmd in r for r in rules), cmd
+        # every command runs unprompted; only the human's decisions still ask
         assert "Bash(nio *human*)" in cfg["permissions"]["ask"] and "Bash(nio flow done *--c*)" in cfg["permissions"]["ask"]
         assert "Bash(nio jury plan *--pick*)" in cfg["permissions"]["ask"]
         assert hooks.allow(root, True) == root / ".claude/settings.json"
@@ -285,6 +282,22 @@ def test_install_skill_mods_step():
     print("ok")
 
 
+def test_mods_install_ignores_other_repos():
+    """An install local to another repo is not this repo's: it installs here; a user-scope or this repo's install counts."""
+    import json as _json
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp) / "repo"
+        root.mkdir()
+        listing = [{"id": "nio-status-pane@nio-mods", "scope": "local", "projectPath": str(Path(tmp) / "other")},
+                   {"id": "background-nio-commands@nio-mods", "scope": "local", "projectPath": str(root)}]
+        fake = Path(tmp) / "claude"
+        fake.write_text("#!/bin/sh\nif [ \"$1 $2\" = \"plugin list\" ]; then echo '" + _json.dumps(listing) + "'; fi\nexit 0\n")
+        fake.chmod(0o755)
+        assert hooks.mods_install(root, claude=str(fake)) == [
+            "background-nio-commands: already installed", "nio-status-pane: installed"]
+    print("ok")
+
+
 def test_mods_install_local_scope():
     # TC-31 (AC-26): a fake claude that records its working directory and arguments, succeeding for both mods
     import os
@@ -376,6 +389,6 @@ def test_mods_texts_offer_mods_to_target_projects():
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
                     test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_times_out, test_mods_install_without_claude,
-                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope, test_mods_install_from_subfolder, test_mods_dir_fallback,
+                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_ignores_other_repos, test_mods_install_local_scope, test_mods_install_from_subfolder, test_mods_dir_fallback,
                     test_readmes_call_mods_optional,
                     test_mods_texts_offer_mods_to_target_projects])
