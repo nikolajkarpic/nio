@@ -1,6 +1,6 @@
 # background-nio-commands
 
-A Claude Code mod for working on NIO itself (dev tooling, not part of the NIO product). It turns
+An optional Claude Code part of NIO, shipped in the `nio` package and offered by `@nio:install`; the skills work the same without it. It turns
 foreground Bash calls that run a long nio command into background runs, so the harness wakes the
 agent when the command exits instead of the agent sitting in a `sleep`/poll wait loop (issue #130).
 

@@ -73,7 +73,7 @@ across hosts, and asking which subscriptions you have.</sub>
 - **Lite path** (#112) for small fixes, with review fixes for forged refuter files, binary-safe wave
   patches and an empty rerun loop (#110).
 - **Explainer** (#146): `@nio:explain` turns an approved plan, or any topic, into a short Mermaid explainer.
-- **Dev mods** for Claude Code (#134–#136, #143): see [tools/claude-mods](tools/claude-mods/README.md).
+- **Optional Claude Code mods** (#134–#136, #143): an optional Claude Code part of NIO, offered by `@nio:install`; the skills work the same without them. See [tools/claude-mods](tools/claude-mods/README.md).
 
 ## Skills
 
@@ -218,4 +218,4 @@ are the state** (no daemon, no database of record) · **human in the loop by def
 - [MEMORY_NORTH_STAR.md](MEMORY_NORTH_STAR.md): the memory build spec.
 - [GitHub issues](https://github.com/nikolajkarpic/nio/issues): open decisions and the backlog.
 - [CLAUDE.md](CLAUDE.md): instructions for agents working in this repo.
-- [tools/claude-mods](tools/claude-mods/README.md): Claude Code mods for developing NIO (background commands, status pane).
+- [tools/claude-mods](tools/claude-mods/README.md): optional Claude Code mods (background commands, status pane), installed by `@nio:install` or `nio mods install`.
