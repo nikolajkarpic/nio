@@ -682,4 +682,203 @@ def test_timeouts_stop_commands():
         assert code == 1 and "steps[0].timeout must be a whole number of seconds of at least 1" in out, (bad, out)
 
 
+
+# --- the shipped e2e tester (E-6) ---
+
+ORIG_PATH = os.environ["PATH"]
+NPX = ('#!/usr/bin/env python3\nimport json, os, sys\nd = os.path.dirname(os.path.abspath(__file__))\n'
+       'open(os.path.join(d, "npx.log"), "a").write(json.dumps(sys.argv[1:]) + "\\n")\nc = json.load(open(os.path.join(d, "stub.json")))\n'
+       'if c.get("report") is not None and os.environ.get("PLAYWRIGHT_JSON_OUTPUT_NAME"):\n'
+       '    open(os.environ["PLAYWRIGHT_JSON_OUTPUT_NAME"], "w").write(json.dumps(c["report"]))\nprint(c.get("out", ""))\nsys.exit(c.get("code", 0))\n')
+
+
+def npx_stub(code=0, out="", report=None, d=None):
+    """A fake `npx` first on PATH: logs its argv to npx.log, prints `out`, writes `report` where Playwright's JSON reporter
+    would, exits `code`. Called again with `d`, it changes the answer."""
+    d = d or Path(tempfile.mkdtemp())
+    if not (d / "npx").exists():
+        (d / "npx").write_text(NPX)
+        (d / "npx").chmod(0o755)
+    (d / "stub.json").write_text(json.dumps({"code": code, "out": out, "report": report}))
+    os.environ["PATH"] = f"{d}:{ORIG_PATH}"
+    return d
+
+
+def test_tasks_name_the_e2e_test():
+    import test_tasks as tt
+    from nio import implement, spec, tasks
+    root = tt.repo(write=False)
+    folder = spec.path(root, tt.SLUG).parent
+    sp = (folder / "spec.md").read_text().replace("Level: integration.", "Level: e2e.")
+    (folder / "spec.md").write_text(sp.replace("- **AC-2**", "- **AC-3** (FR-2) Given x, when y, then z. [human]\n  Observable: z. Level: unit.\n- **AC-2**", 1))
+    (folder / "tests.md").write_text((folder / "tests.md").read_text().split("## Quality tests")[0].replace(
+        "tests/test_refunds.py:test_full_refund` (new)", "e2e/a.spec.ts:AC-1 loads`").replace(
+        "tests/test_refunds.py:test_second_refund` (new)", "e2e/b.spec.ts:AC-2 shows (x)`").replace(
+        "(AC-2; integration)", "(AC-2; e2e)").replace("(AC-1; integration)", "(AC-1; e2e)") +
+        "### TC-3 Three (AC-3; unit) [default]\n- File: `tests/test_app.py:test_three`\n- Covers: CT-1\n\n")
+    (root / "playwright.config.ts").write_text("export default {};\n")
+    (root / ".nio/config.json").write_text(json.dumps({"tests": {"suite": "python -m pytest"}}))
+    mk = lambda one: tt.TASKS.split("## E-1")[0] + (
+        "## E-1 Refunds (US-1)\n- Tier: max: x\n- Effort: med\n\n"
+        f"### T-1 One\n- Files: `app.py`\n- Serves: AC-1, AC-2\n- Test: {one}\n- Depends on: none\n- Parallel: no\n\n"
+        "### T-2 Two\n- Files: `app.py`\n- Serves: AC-3\n- Test: TC-3\n- Depends on: T-1\n- Parallel: no\n")
+    tasks.path(root, tt.SLUG).write_text(mk("TC-3"))
+    errs = [e for e in tt.errs(root) if "Level: e2e" in e]
+    assert errs == [f"T-1 serves AC-{n} (Level: e2e) but its Test: cites no TC aimed at it" for n in (1, 2)], errs
+    tasks.path(root, tt.SLUG).write_text(mk("TC-1, TC-2"))
+    assert not [e for e in tt.errs(root) if "Level: e2e" in e]
+    got = implement.epic_tests(root, tt.SLUG, implement.tasks_of(root, tt.SLUG))[0]
+    assert got == r"npx playwright test e2e/a.spec.ts e2e/b.spec.ts -g 'AC\-1\ loads|AC\-2\ shows\ \(x\)' && python -m pytest tests/test_app.py::test_three", got
+
+
+def pw_effort(code, tasks=None):
+    """test_implement's refunds effort whose TC-1 is the Playwright test `e2e/a.spec.ts:AC-1 loads`, a playwright config
+    committed, `npx` stubbed to exit `code`; (root, stub folder)."""
+    import test_implement as ti
+    root = ti.impl(tasks=tasks, tests_md=lambda t: t.replace("`tests/test_refund.py:T.test_refund`", "`e2e/a.spec.ts:AC-1 loads`"))
+    (root / "playwright.config.ts").write_text("export default {};\n")
+    ti.commit_all(root, "playwright config")
+    return root, npx_stub(code, "1 failed" * bool(code))
+
+
+def test_failing_e2e_keeps_epic_open():
+    import test_implement as ti
+    one = "## E-1 Customer refunds a paid order (US-1)\n- Tier: max: x\n- Effort: med\n\n### T-1 Refund\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n- Depends on: none\n- Parallel: no\n"
+    root, d = pw_effort(1, ti.REFUNDS.split("## E-1")[0] + one)
+    code, out = ti.flow(root, "claim", ti.S)
+    assert code == 0, out
+    code, out = ti.flow(root, "finish", ti.S, "E-1")
+    assert code != 0, out
+    lines = ti.lines(root)
+    ev = [x["evidence"] for x in lines if x["kind"] == "epic_test"][-1]
+    assert ev["passed"] is False and "npx playwright test e2e/a.spec.ts -g" in ev["command"], ev
+    assert not [x for x in lines if x["kind"] == "task_done"]
+    assert json.loads((d / "npx.log").read_text().splitlines()[-1])[:4] == ["playwright", "test", "e2e/a.spec.ts", "-g"]
+
+
+def test_pr_evidence_lists_e2e_tests():
+    import test_effort as te
+    import test_evidence as tev
+    import test_implement as ti
+    from nio import evidence
+    for code, want in ((1, "failed"), (0, "passed")):
+        root, d = pw_effort(0, ti.TWO)
+        for eid in ("E-1", "E-2"):
+            ti.close_epic(root, eid)
+        npx_stub(code, d=d)
+        (d / "npx.log").unlink()
+        run, _ = tev.pr_run(root)
+        got = [x for x in evidence.load(root, run)["tests"] if x["file"] == "e2e/a.spec.ts"]
+        assert [(x["name"], x["result"]) for x in got] == [("AC-1 loads", want)], got
+        log = (d / "npx.log").read_text().splitlines()
+        assert len(log) == 1 and json.loads(log[0])[-1] == "AC\\-1\\ loads", log
+
+
+def test_add_shipped_e2e():
+    root, tmp = fixture()
+    shipped = Path(__file__).parent.parent / "src/nio/shipped/e2e"
+    code, out = nio(root, "extensions", "add", "e2e")
+    assert code == 0, out
+    mine = root / ".nio/extensions/e2e"
+    files = lambda d: {str(p.relative_to(d)): p.read_bytes() for p in d.rglob("*") if p.is_file() and "__pycache__" not in p.parts}
+    assert files(mine) == files(shipped)
+    from importlib import metadata
+    rec = json.loads((root / ".nio/extensions/record.json").read_text())["e2e"]
+    assert rec["source"] == "shipped" and rec["version"] == metadata.version("nio"), rec
+    home = Path(os.environ["NIO_HOME"]) / "extensions/e2e"
+    shutil.copytree(shipped, home)
+    (home / "manifest.json").write_text((home / "manifest.json").read_text().replace('"1.0.0"', '"9.9.9"'))
+    code, out = nio(root, "extensions", "add", "e2e")
+    rec = json.loads((root / ".nio/extensions/record.json").read_text())["e2e"]
+    assert code == 0 and rec["version"] == "9.9.9" and rec["source"].endswith("extensions/e2e"), (out, rec)
+
+
+def test_nothing_names_the_e2e_extension():
+    base = Path(__file__).parent.parent / "src/nio"
+    shipped = base / "shipped/e2e"
+    for p in base.rglob("*"):
+        if p.is_file() and shipped not in p.parents and "__pycache__" not in p.parts:
+            text = p.read_text(errors="ignore")
+            assert not [w for w in ("shipped/e2e", "e2e-tester", "e2e.tests") if w in text], p
+    assert extensions.check(shipped, None, [], extensions.stage_names([])) == []
+    root, tmp = fixture()
+    broken = Path(tmp) / "broken"
+    shutil.copytree(shipped, broken)
+    m = json.loads((broken / "manifest.json").read_text())
+    del m["version"]
+    (broken / "manifest.json").write_text(json.dumps(m))
+    refused(root, broken, "missing field version")
+
+
+CHECK = Path(__file__).parent.parent / "src/nio/shipped/e2e/check.py"
+
+
+def e2e_spec(root, acs):
+    """A repo with a spec whose ACs are at Level: e2e, a TC for each aimed at it, and its test file `e2e/<AC>.spec.ts`
+    holding the test `<AC> shows the page`."""
+    d = root / ".nio/specs" / S
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "spec.md").write_text("## Acceptance criteria\n\n" + "".join(
+        f"- **{ac}** (FR-1) Given x, when y, then z. [agent]\n  Observable: z. Level: e2e.\n" for ac in acs))
+    (d / "tests.md").write_text("## Acceptance tests\n\n" + "".join(
+        f"### TC-{n} Shows (AC-{n}; e2e) [agent]\n- File: `e2e/AC-{n}.spec.ts:AC-{n} shows the page` (new)\n\n" for n in range(1, len(acs) + 1)))
+    (root / "e2e").mkdir(exist_ok=True)
+    for ac in acs:
+        (root / f"e2e/{ac}.spec.ts").write_text(f"test('{ac} shows the page', async ({{ page }}) => {{}});\n")
+    return root
+
+
+def report(*results, errors=()):
+    """A Playwright JSON report: one (status, message) per test, named AC-n shows the page."""
+    specs = [{"title": f"AC-{n} shows the page", "tests": [{"results": [{"status": st, "error": {"message": msg},
+              "attachments": [{"name": "trace", "path": f"{os.getcwd()}/test-results/x/trace.zip"}]}]}]}
+             for n, (st, msg) in enumerate(results, 1)]
+    return {"suites": [{"title": "f", "specs": specs, "suites": []}], "errors": list(errors)}
+
+
+def run_check(root, **stub):
+    npx_stub(**stub)
+    r = subprocess.run([sys.executable, str(CHECK)], cwd=root, capture_output=True, text=True, env={**os.environ, "NIO_SLUG": S})
+    return r.returncode, r.stdout + r.stderr
+
+
+FAIL = ("failed", "Error: expect(locator).toBeVisible() failed")
+
+
+def test_e2e_check_wants_assertion_failures():
+    root = e2e_spec(repo(), ["AC-1", "AC-2"])
+    code, out = run_check(root, code=1, report=report(FAIL, FAIL))
+    assert code == 0 and "e2e: 2 tests fail on their assertions, as they should before implementation" in out, out
+    (root / "e2e/AC-2.spec.ts").unlink()
+    code, out = run_check(root, code=1, report=report(FAIL, FAIL))
+    assert code == 1 and "AC-2 has no e2e test" in out, out
+    e2e_spec(root, ["AC-1", "AC-2"])
+    code, out = run_check(root, code=1, report=report(("passed", ""), FAIL))
+    assert code == 1 and "AC-1 AC-1 shows the page: passes before any code is written" in out, out
+
+
+def test_e2e_check_app_not_started():
+    root = e2e_spec(repo(), ["AC-1"])
+    line = "Error: Process from config.webServer was not able to start. Exit code: 1"
+    code, out = run_check(root, code=1, out=line)
+    assert code == 1 and "setup error: the app didn't start" in out and line in out and "fail on their assertions" not in out, out
+
+
+def test_e2e_check_failure_kinds():
+    root = e2e_spec(repo(), ["AC-1"])
+    page = "Error: expect(page).toHaveTitle(expected) failed"
+    colour = "\u001b[31mError: \u001b[39mexpect(\u001b[2mpage\u001b[22m).toHaveTitle(\u001b[32mexpected\u001b[39m) failed"
+    boom = lambda m: {"suites": [], "errors": [{"message": m, "location": {"file": f"{root}/e2e/AC-1.spec.ts"}}]}
+    for rep in (report(("failed", page)), report(("failed", colour))):
+        assert run_check(root, code=1, report=rep)[0] == 0
+    for rep, text in ((boom("SyntaxError: Unexpected token"), "setup error: e2e/AC-1.spec.ts: SyntaxError"),
+                      (boom("Error: Cannot find module './nope'"), "setup error: e2e/AC-1.spec.ts: Error: Cannot find module"),
+                      (report(("timedOut", "Test timeout of 30000ms exceeded.")),
+                       "AC-1 AC-1 shows the page: fails on Test timeout of 30000ms exceeded., not on a web-first assertion"),
+                      (report(("failed", "Error: expect(received).toBe(expected)")),
+                       "AC-1 AC-1 shows the page: fails on Error: expect(received).toBe(expected), not on a web-first assertion")):
+        code, out = run_check(root, code=1, report=rep)
+        assert code == 1 and text in out, out
+
+
 selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])

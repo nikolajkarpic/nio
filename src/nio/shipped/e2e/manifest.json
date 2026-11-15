@@ -1,0 +1,1 @@
+{"name": "e2e", "version": "1.0.0", "steps": [{"name": "tests", "after": "plan_jury", "skill": "skills/e2e/SKILL.md", "card": "e2e-tester", "output": "e2e.md", "trigger": {"spec_level": "e2e"}, "check": "python3 \"$NIO_EXTENSION_DIR/check.py\"", "timeout": 900}], "cards": ["e2e-tester"], "hooks": []}
