@@ -184,3 +184,7 @@ Answer: every other drafter proposal taken as proposed [agent], reason: delegate
 
 ## Finish gate · 2026-11-15
 Fidelity: re-read every patched item against Q1 to Q8; numbers ("300 seconds"), negatives ("runs none", "never stops", "not sent back", "uncommitted") and the order (personal before shipped) match the answers. Passivity: skipped (delegated session). `nio check spec --gate` passes; the agent chose finish, as delegated. The human sees every [agent] answer at the spec gate.
+
+## Call · plan stop list and calls below the grill's bar · 2026-11-15
+Facet: architecture, verification
+Answer: the plan needs a new module (`src/nio/extensions.py`), a shipped folder (`src/nio/shipped/`) and new stored data (`.nio/extensions/record.json`, `hook` lines), all on the plan skill's stop list; the architecture stage is not built, so the plan driver (driver / claude-code / claude-opus-5-5) wrote `architecture.md` settling only those items from the spec and the code, as 2026-11-08-project-onboarding did [agent]. Reason: delegated by the human, 2026-11-15 (recommended option). Below the grill's bar, logged in plan.md `## Decisions` [agent]: stage names `<extension>.<step>` and `<extension>.<step>.jury`; AC-18's "stage list in `nio flow status`" read as `nio flow show`'s timeline (RF-16); an extension stage counts only once the flow moved an effort to it; Playwright tests told apart by file; an AC's level read from its own `Level:` (CT-17), since `nio check plan` today takes AC-13's first `Level:` (TC-13's heading says e2e for that reason).
