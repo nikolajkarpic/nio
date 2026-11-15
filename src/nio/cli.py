@@ -158,6 +158,9 @@ def main():
     fbr = fsub.add_parser("brief", help="what a fresh driver starts from: the state, the next command, a running long command, open tasks and findings")
     fbr.add_argument("slug")
     fbr.add_argument("--all", action="store_true", help="list every open task and finding, past the 80-line cap")
+    fsh = fsub.add_parser("show", help="an effort's drill-down data as one JSON line")
+    fsh.add_argument("slug")
+    fsh.add_argument("--json", action="store_true", required=True)
     fsub.add_parser("status", help="one line per effort, newest activity first")
     fap = fsub.add_parser("approve", help="the human approves the pr gate at a terminal, typing the effort's slug back")
     fap.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
@@ -403,6 +406,7 @@ def main():
                 "claim": lambda: implement.claim(root, a.slug, by=a.by),
                 "red": lambda: implement.red(root, a.slug, a.task, a.run, by=a.by),
                 "brief": lambda: flow.brief(root, a.slug, a.all),
+                "show": lambda: flow.show(root, a.slug),
                 "green": lambda: long(lambda: implement.green(root, a.slug, a.task, a.run, by=a.by)),
                 "block": lambda: implement.block(root, a.slug, a.task, a.handoff, by=a.by),
                 "unblock": lambda: implement.unblock(root, a.slug, a.task, a.human, by=a.by),

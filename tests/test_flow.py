@@ -3002,5 +3002,14 @@ def test_brief_lists_fixes_the_human_ruled():
     assert "owed fixes" not in cli(root, "brief", S)[1]
     print("ok")
 
+def test_show_unknown_or_done_slug():
+    root = effort("done")
+    shipped(root, S)
+    for slug, want in (("2026-01-01-nothing", "no effort 2026-01-01-nothing"), (S, f"{S} is done")):
+        code, out, err = run_main(root, "flow", "show", slug, "--json")
+        assert code == 1 and not err, (code, err)
+        assert json.loads(out) == {"error": want}, out
+    print("ok")
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
