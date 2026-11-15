@@ -240,17 +240,42 @@ def span(root, slug, epic):
     return base, (records.git(root, "log", "-1", "--format=%H", f"{base}..HEAD", "--", ".", *PRIVATE) or [base])[0]
 
 
+def e2e_greens(root, slug):
+    """{(file, test)}: the tests an accepted `nio flow green` ran with NIO_E2E=1 by name, which a suite run without it
+    skips; the pr gate counts them as passing so it doesn't raise a missing-evidence blocker per e2e test.
+    ponytail: trusts the green run even if the test changed after it; re-run e2e at the gate if that matters."""
+    from nio import flow
+    try:
+        return e2e_from(flow.load(root, slug)[1])
+    except flow.Broken:
+        return set()
+
+
+def e2e_from(lines):
+    """The (file, test) pairs that accepted green lines ran by name with NIO_E2E=1."""
+    out = set()
+    for ln in lines:
+        cmd = (ln.get("evidence") or {}).get("command", "") if ln.get("kind") == "green" else ""
+        for part in cmd.split("&&") if "NIO_E2E=1" in cmd else []:
+            words = shlex.split(part)
+            files = [w for w in words if w.endswith(".py")]
+            if "NIO_E2E=1" in words and files:
+                out |= {(files[0], w) for w in words[words.index(files[0]) + 1:] if w.startswith("test_")}
+    return out
+
+
 def changed_lines(root, slug):
-    """Lines the effort diff adds and removes, binary files counting none (FR-13)."""
+    """Lines the effort diff adds and removes outside `.nio/`, binary files counting none (FR-13): the spec, plan and
+    tasks were judged at their own gates, so they don't make the pr gate split."""
     rows = code_diff(root, *span(root, slug, "pr"), "--numstat")
-    return sum(int(a) + int(d) for a, d, _ in (r.split("\t", 2) for r in rows) if a.isdigit() and d.isdigit())
+    return sum(int(a) + int(d) for a, d, f in (r.split("\t", 2) for r in rows) if a.isdigit() and d.isdigit() and not f.startswith(".nio/"))
 
 
 def split(root, slug):
-    """{part: [commits, oldest first]} when the effort diff is over `jury.split_lines` (1,500) changed lines, else {}: one
+    """{part: [commits, oldest first]} when the effort diff is over `jury.split_lines` (2,500) changed lines, else {}: one
     part per epic (`E1` for E-1: a part never ends in `-<n>`, an escalation juror's mark), then `rest`, every other
     commit of the diff: out-of-flow ones and the `PR fixes` epic's (FR-13). Exactly at the limit is not over it."""
-    limit = (records.config(root).get("jury") or {}).get("split_lines", 1500)
+    limit = (records.config(root).get("jury") or {}).get("split_lines", 2500)
     if changed_lines(root, slug) <= limit:
         return {}
     base, head = span(root, slug, "pr")
@@ -515,6 +540,8 @@ def collect(root, slug, epic, run):
     name = implement.runner(t.get("suite") or "", suite["output"])
     sc = name == "self-check"
     oks = re.findall(r"^ok (\S+)::(\S+)", suite["output"], re.M) if sc else []
+    green = e2e_greens(root, slug)
+    oks += [(f, n) for f, n in (re.findall(r"^skip (\S+)::(\S+)", suite["output"], re.M) if sc else []) if (f, n) in green]
     fail, _ = implement.SUMMARY.get(name, (None, None))
     failing = re.findall(fail, suite["output"], re.M) if fail else []
     crashed = bool(implement.wrong_reason(name, 0 if code_ok else 1, suite["output"])) or "\ntimed out after" in suite["output"] \
