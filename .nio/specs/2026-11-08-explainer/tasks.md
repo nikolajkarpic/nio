@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-explainer
-retired: [T-24, T-28]                      # task IDs removed from this file; never reused
+retired: [T-24, T-28, T-14]                      # task IDs removed from this file; never reused
 ---
 # Tasks: explainer
 
@@ -268,15 +268,18 @@ retired: [T-24, T-28]                      # task IDs removed from this file; ne
 - Effort: low
 - Mode: split: TC-25/42 lead the code
 
-### T-14 Add topic mode to the skill and its end-to-end tests (CT-11)
-- Files: `skills/explain/SKILL.md`, `tests/test_explain_e2e.py`
+#### Fixes
+
+### T-30 Fix: land T-14's topic-mode e2e tests as regression guards (T-14 retired, already delivered by T-8)
+- From: C-261115-ftot
+- Files: `tests/test_explain_e2e.py`
 - Serves: AC-18, AC-19, AC-35
 - Test: TC-23, TC-24, TC-27
-- Depends on: T-13
+- Depends on: none
 - Parallel: no
-- Tier: strong: skill prose plus e2e tests, patterned on plan mode
+- Tier: cheap: tests over existing behaviour
 - Effort: low
-- Mode: single: skill text and e2e tests are written together
+- Mode: direct: the behaviour exists; the tests guard it
 
 ## E-8 Drill down interactively (US-4)
 ### T-15 Add the `Drill-down` section to the skill and its end-to-end tests (CT-12)
