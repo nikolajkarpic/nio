@@ -1,7 +1,7 @@
 {
   "gate": "pr",
   "subject": "2026-11-15-effort-drilldown-install",
-  "round": 3,
+  "round": 4,
   "tier": "low",
   "expect": [
     "adversary",
@@ -28,63 +28,69 @@
     "R-261115-llh7/pr-conformance-3.md": "fd79e05445ff2607f07f6899564ee31337180836838b355f5eb36fabb0f9f159",
     "R-261115-llh7/pr-consistency-2.md": "f88cd4eddc3217f9c328992cd79fda82e4cc4af47303cadf0bd9a96624e78f31",
     "R-261115-llh7/pr-consistency-3.md": "dc7d68d69af849654cfe6c6474da43d0fdacc198ca49ab8c13cdb4b6742c19d2",
-    "R-261115-llh7/pr-integration.md": "09186cab33363a3e2ba7562c30af6c0e757ad9551c71568ae1f6c4e92aaedc4b"
+    "R-261115-llh7/pr-integration.md": "09186cab33363a3e2ba7562c30af6c0e757ad9551c71568ae1f6c4e92aaedc4b",
+    "R-261115-3jnf/pr-adversary.md": "7685f711d0908722b628c6278868ed95fb1b96ee3525ebd148e6c169011575d6",
+    "R-261115-3jnf/pr-conformance.md": "d09929bcab95eaf86ce99567c608eb893671eb65b3dbce1378fd00f768989d01",
+    "R-261115-3jnf/pr-consistency.md": "981623a34e158542ee4af7d003404d66856f526f72783c65082c0253c3aa0bb7",
+    "R-261115-3jnf/pr-correctness.md": "a08df39f5d42db4d6ee44371afdf1b90a21b4e4398f214398f1f13f6babb1214",
+    "R-261115-3jnf/pr-integration.md": "f22e9cb83fa494184af84d36bcfc18f4ca4c0eef902ad3bf2f8c0bfc4c3c6eae",
+    "R-261115-3jnf/pr-refuter.md": "e35b12e4482e7e8b9c88f3d40ba80403d877851c3fd4856e525229eafd4a4ec6"
   },
   "jurors": {
     "pr-adversary": {
       "attempts": 1,
       "lens": "adversary",
-      "by": "juror / claude-code / sonnet",
+      "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
-      "judged": 2
+      "round": 4,
+      "version": "2141f584d2435722c2da370c1ddfeae391fc89e7",
+      "judged": 4
     },
     "pr-conformance": {
       "attempts": 1,
       "lens": "conformance",
-      "by": "juror / claude-code / sonnet",
+      "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
-      "judged": 2
+      "round": 4,
+      "version": "2141f584d2435722c2da370c1ddfeae391fc89e7",
+      "judged": 4
     },
     "pr-consistency": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "consistency",
-      "by": "juror / claude-code / claude-haiku-5-5",
+      "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
-      "judged": 2
+      "round": 4,
+      "version": "2141f584d2435722c2da370c1ddfeae391fc89e7",
+      "judged": 4
     },
     "pr-correctness": {
       "attempts": 1,
       "lens": "correctness",
-      "by": "juror / claude-code / sonnet",
-      "context": "sufficient",
+      "by": "juror / claude-code / claude-opus-5-5",
+      "context": "limited",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
-      "judged": 2
+      "round": 4,
+      "version": "2141f584d2435722c2da370c1ddfeae391fc89e7",
+      "judged": 4
     },
     "pr-integration": {
       "attempts": 1,
       "lens": "integration",
-      "by": "juror / claude-code / claude-sonnet-5-5",
+      "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 3,
-      "version": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
-      "judged": 3
+      "round": 4,
+      "version": "2141f584d2435722c2da370c1ddfeae391fc89e7",
+      "judged": 4
     },
     "pr-conformance-2": {
       "attempts": 2,
@@ -817,9 +823,9 @@
         {
           "juror": "pr-conformance",
           "lens": "conformance",
-          "situation": "\"AC-13 cost as the CLI gives it\" at register.test.tsx:368 did not run, so the pane-equals-CLI claim is unproven",
-          "severity": "blocker",
-          "round": 1
+          "situation": "the suite result is `failed`. `tests/test_selfcheck.py::test_every_script_uses_selfcheck` fails because `tests/test_pane.py` calls its own `main()` and doesn't use `selfcheck.main`. The pane's AC evidence reaches the gate through that script. Its failure to meet the suite rule is the likely reason AC-24 didn't match.",
+          "severity": "major",
+          "round": 4
         }
       ],
       "validation": "confirmed",
@@ -828,10 +834,10 @@
       "disposition": "accepted-risk",
       "by": "human",
       "note": "Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.",
-      "baseline": "new",
+      "baseline": "unchanged",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 4
     },
     {
       "id": "J-19",
@@ -939,6 +945,13 @@
           "situation": "`test_mods_install_e2e` (tests/test_hooks.py:201) prints \"skip (NIO_E2E=1 runs it)\" and returns unless `NIO_E2E=1`, so its \"passed\" result is a skip. Even with the variable set, it exercises `nio mods install` only. It never checks that the skill's closing message names each mod as installed, skipped or already installed (AC-18, AC-19, AC-20). `test_install_skill_mods_step` only checks the step's text.",
           "severity": "blocker",
           "round": 1
+        },
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "test_mods_install_e2e prints \"skip\" and returns unless `NIO_E2E=1`. The pack lists it as passed three times, but a skip also exits green. Whether the real `claude` ran isn't visible. The unit-level fake-`claude` tests cover installed, skipped and failed. The \"already installed\" path (AC-20) is only exercised with a real `claude`.",
+          "severity": "major",
+          "round": 4
         }
       ],
       "validation": "confirmed",
@@ -948,10 +961,10 @@
       "by": "",
       "note": "",
       "baseline": "absent",
-      "rounds": 0,
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
-      "fixed_in": 2
+      "last_round": 4,
+      "fixed_in": 4
     },
     {
       "id": "J-22",
@@ -1015,9 +1028,9 @@
         {
           "juror": "pr-conformance",
           "lens": "conformance",
-          "situation": "the tests at register.test.tsx:207 and :215 are reported as \"AC-24 nio on PATH\" at line 0 and did not run. The hints say the suite's runner can't address them",
+          "situation": "the result for AC-24 is \"didn't run\" (line 0). Its two tests at register.test.tsx:207 and :215 are named `AC-24 nio on PATH: ...`, so the recorded name didn't match them. Nothing shows the PATH fallback or `nio not found` passing.",
           "severity": "blocker",
-          "round": 1
+          "round": 4
         }
       ],
       "validation": "confirmed",
@@ -1026,10 +1039,10 @@
       "disposition": "accepted-risk",
       "by": "human",
       "note": "Accept, noting they're fixed: fixed by T-36 (38e7d2f, the review's test run now runs and reads the pane tests); accepted only because re-ruling would spawn duplicate tasks; the next round's evidence re-checks them.",
-      "baseline": "new",
+      "baseline": "unchanged",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 4
     },
     {
       "id": "J-24",
@@ -1304,11 +1317,11 @@
       ],
       "validation": "confirmed",
       "reason": "register.tsx:235 reads `g.findings`, but flow.py juries() (CT-4) puts findings under `rounds[].findings`; nothing draws them.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "human",
       "note": "Fix all three: read the right field, add a timeout to the plugin calls, restore the deleted test (adjusted to the PATH fallback).",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 2,
       "last_round": 2,
@@ -1381,11 +1394,11 @@
       ],
       "validation": "confirmed",
       "reason": "hooks.py:36-38 returns `Path(__file__).parent / \"mods\"` with no fallback or check, and `src/nio/mods` does not exist (glob found nothing). CT-8's `tools/claude-mods` fallback and ValueError are missing.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "human",
       "note": "Fix the code: reject the change request; a fix task adds the checkout fallback the spec asks for, so install works from a checkout and from an installed package.",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 2,
       "last_round": 2,
@@ -1867,11 +1880,11 @@
       ],
       "validation": "confirmed",
       "reason": "CT-5 shape is `[{\"epic\",\"tasks\":[...]}]`, but register.tsx:254 passes each epic object to a row function that reads `t.id`, `t.status`, `t.attempts` and `t.title`. Those fields are undefined on an epic, so no task row is drawn.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "human",
       "note": "Fix, with re-check: two fix tasks; the reviewers that found them check the fixes once more.",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 2,
       "last_round": 2,
@@ -1993,6 +2006,575 @@
       "gap": "partial",
       "where": "src/nio/flow.py",
       "tampering": false
+    },
+    {
+      "id": "J-48",
+      "title": "T-36: src/nio/implement.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-5",
+        "AC-9",
+        "AC-11",
+        "AC-13",
+        "AC-16",
+        "AC-17",
+        "AC-24",
+        "AC-29",
+        "AC-30"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-36 names src/nio/implement.py, which no commit of the epic changed",
+      "where": "src/nio/implement.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-36 names src/nio/implement.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-49",
+      "title": "the test suite failed",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "`printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead",
+      "where": ".nio/project/architecture.md, .nio/project/stack.md, .nio/specs/2026-11-15-effort-drilldown-install/contracts.md, .nio/specs/2026-11-15-effort-drilldown-install/grill.md, .nio/specs/2026-11-15-effort-drilldown-install/intake.md, .nio/specs/2026-11-15-effort-drilldown-install/plan.md, .nio/specs/2026-11-15-effort-drilldown-install/quickstart.md, .nio/specs/2026-11-15-effort-drilldown-install/research.md, .nio/specs/2026-11-15-effort-drilldown-install/spec.md, .nio/specs/2026-11-15-effort-drilldown-install/tasks.md, .nio/specs/2026-11-15-effort-drilldown-install/tests.md, README.md, pyproject.toml, skills/install/SKILL.md, src/nio/cli.py, src/nio/evidence.py, src/nio/flow.py, src/nio/hooks.py, src/nio/index.py, src/nio/records.py, src/nio/tasks.py, src/nio/usage.py, tests/test_flow.py, tests/test_hooks.py, tests/test_pane.py, tests/test_records.py, tests/test_usage.py, tools/claude-mods/README.md, tools/claude-mods/background-nio-commands/README.md, tools/claude-mods/nio-status-pane/README.md, tools/claude-mods/nio-status-pane/hooks/register.test.tsx, tools/claude-mods/nio-status-pane/hooks/register.tsx, tools/claude-mods/nio-status-pane/types/index.d.ts",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "`printf '%s\\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead\nwarning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead",
+          "severity": "major",
+          "round": 3
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 3,
+      "last_round": 3
+    },
+    {
+      "id": "J-50",
+      "title": "`nio mods install` installs for the current directory, not the clone's root",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-25",
+        "FR-29"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "print(\"\\n\".join(hooks.mods_install(Path.cwd(), a.skip)))",
+        "Install: `<claude> plugin install <mod> --marketplace <mods_dir()> --scope local --json`, run in `root`"
+      ],
+      "fix": "resolve the root with `records.repo_root()` when inside a repo (fall back to `cwd` only when there is none), and test a run from a subfolder.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "the human runs `nio mods install` (or an agent runs it for `@nio:install`) from `src/` or any subfolder. `Path.cwd()` is passed as `root`. Claude Code's local scope is keyed to the project directory, so the mods are installed for the subfolder as a project. The command prints `installed` and exits 0, but the clone's pane never loads them. The `plugin list` check in a different directory also misses mods already installed at the repo root, so a second run reinstalls them. The failure is silent. CT-10 says `root` is \"the repo root\", and the code comment says \"needs no repo\", which is why it skips `records.repo_root()`.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "src/nio/cli.py:234 passes `Path.cwd()` to `hooks.mods_install`, while contracts.md (CT-10) says it accepts the repo root. FR-25 says the install is per clone. Nothing resolves the root, so a run from a subfolder installs for the subfolder.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "contradicts",
+      "where": "src/nio/cli.py (`mods` branch)",
+      "tampering": false
+    },
+    {
+      "id": "J-51",
+      "title": "A change in this PR weakens the committed-record immutability guard, outside the spec",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "FR-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "# a pending change request may still be settled once: its outcome set, and the decision appended to its body"
+      ],
+      "fix": "move the `records.py`, `evidence.py` and `tasks.py` changes to their own efforts. If they stay, give them an AC and a test, and have the guard require that `outcome` leaves `pending` at most once.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "`records.edits` used to reject any change to a committed record other than `paths` and `outdated_by`. The new `settle` branch lets a `type: change` record with `outcome: pending` have `outcome` and its body edited after commit. The only check is that the new body starts with the old one (`after[1][:len(before[1])] == before[1]`). Nothing requires a single settlement or an actual decision text. A pending record can also be set to `pending` and appended to repeatedly. The error text \"a committed record may only change `paths` and `outdated_by`\" is now untrue for these records. Nothing in the drill-down or install spec asks for this change. It is a hole in a memory-integrity check that arrives unreviewed. The same goes for the unrelated `evidence.py` regex change and the `tasks.release_claim` writer, which writes history lines and takes the flow lock.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "The `settle` branch in src/nio/records.py:205-210 lets a pending change record's outcome and body change after commit. It also allows `pending` to `pending` repeatedly, and the error text at line 212 still says only `paths` and `outdated_by` may change. spec.md has no FR or AC for settling change requests.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Keep them, accept the risk: they stay in this PR (this effort needed them to finish) with their tests; issues #154 and #157 track the cleaner follow-ups, including tightening the settle rule to once against main.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "unrequested",
+      "where": "src/nio/records.py (`edits`), src/nio/evidence.py, src/nio/tasks.py",
+      "tampering": false
+    },
+    {
+      "id": "J-52",
+      "title": "A slow drill-down response for a reopened effort can overwrite the current view",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-14"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "await update($, drill, cur => (cur && cur.slug === slug ? { slug, path, shown, context } : cur))"
+      ],
+      "fix": "key the guard on a per-open token (a counter stored in the atom), not on the slug.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "the human opens effort A, presses Back and opens A again, or opens it twice. `flow show` can take seconds (cost so far; the timeout is 60 s). Each press starts its own run, and every result is kept as long as the slug matches. An older, slower result lands after the newer one and replaces it. The drill-down then shows stale or error data, and a failed first run can replace a good second one with no sign of it. Opening the same effort from two worktrees that share a slug is the same case.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "partial",
+      "where": "tools/claude-mods/nio-status-pane/hooks/register.tsx (`open`)",
+      "tampering": false
+    },
+    {
+      "id": "J-53",
+      "title": "A failed review's reasons are hidden when they are not a list",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-2"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "row[\"reasons\"] = ev.get(\"reasons\") or \"-\"",
+        "Array.isArray(x.reasons) && x.reasons.length ? x.reasons.join('; ') : '-'"
+      ],
+      "fix": "in `timeline`, wrap a string in a list, and treat any other type as `-` there. Add a test row for a string value.",
+      "sources": [
+        {
+          "juror": "pr-adversary",
+          "lens": "adversary",
+          "situation": "`evidence.reasons` is hand-written history data. If a line holds `reasons` as a plain string (a malformed or older entry), `timeline` passes it through unchanged. The pane sees that it is not an array and prints `-`. The failure reasons are lost and the drill-down reads as \"no reasons\", which is the opposite of AC-2's \"contains each text of `evidence.reasons`\". Nothing flags the malformed entry.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "partial",
+      "where": "src/nio/flow.py (`timeline`), tools/claude-mods/nio-status-pane/hooks/register.tsx (`sections`)",
+      "tampering": false
+    },
+    {
+      "id": "J-54",
+      "title": "Background mod README tells target projects not to turn the mod on, which the decision now offers",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "D-261115-e6nx",
+        "FR-26",
+        "CT-16"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Don't turn it on in a target project: NIO must behave the",
+        "NIO's Claude Code mods are an optional part of the product, shipped in the nio package"
+      ],
+      "fix": "replace the \"Turning it on\" section and the \"Don't turn it on in a target project\" sentence with the install path (`@nio:install` or `nio mods install`, local scope), keeping the `--plugin-dir` option as the try-it-once route. If the decision's \"skills work the same without them\" is the point to keep, say that instead of \"NIO must behave the same on every host\".",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "a person runs `@nio:install` in a target project and chooses \"Install the mods (recommended)\". `nio mods install` turns the background mod on for that clone, while the mod's README (the one `claude plugin` and a reader see) says not to turn it on in a target project. The README's first paragraph says \"offered by `@nio:install`\", so it contradicts itself. CT-16 asks each README to say that `@nio:install` installs the mods for this clone; this one does not say so and keeps the instruction.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tools/claude-mods/background-nio-commands/README.md:31 still says \"Don't turn it on in a target project\". FR-26 and AC-27 require the READMEs to describe the mods as optional, and `@nio:install` now turns them on in target projects.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "contradicts",
+      "where": "tools/claude-mods/background-nio-commands/README.md",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-55",
+      "title": "The marketplace file that ships in the wheel still calls the mods dev tooling for NIO",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "D-261115-e6nx",
+        "FR-26",
+        "CT-9",
+        "AC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Claude Code mods for developing NIO"
+      ],
+      "fix": "change the description to the optional-part wording (for example \"Optional Claude Code mods for NIO\"), and add `tools/claude-mods/.claude-plugin/marketplace.json` to CT-16 or to FR-26's scope so the spec covers it.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "CT-9 force-includes all of `tools/claude-mods` into `nio/mods`, so `.claude-plugin/marketplace.json` ships in the wheel. `nio mods install` passes that folder as `--marketplace`, so `claude plugin` shows this description to the target project's user, and it says the mods are for developing NIO. The diff does not touch the file, and FR-26 and CT-16 list only the README files, so AC-27 never reaches it. The decision says the mods are an optional part of the product.",
+          "severity": "major",
+          "round": 4
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tools/claude-mods/.claude-plugin/marketplace.json:3 still reads \"Claude Code mods for developing NIO\". The folder ships in the wheel and is passed as `--marketplace`. FR-26 and AC-27 cover only READMEs, so nothing in the spec covers this file.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "human",
+      "note": "Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "contradicts",
+      "where": "tools/claude-mods/.claude-plugin/marketplace.json",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-56",
+      "title": "The pane README still describes the venv-missing row and the venv-only run, both replaced by FR-23",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-23",
+        "AC-24",
+        "CT-13"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A worktree with no `.venv` shows `no .venv: run uv sync` and runs nothing.",
+        "IF a worktree has no `.venv/bin/nio` THEN THE SYSTEM SHALL have the pane run the `nio` found on PATH, and show `nio not found` only when neither exists."
+      ],
+      "fix": "update the two sentences to the PATH fallback and `nio not found`, and add the `flow show` drill-down to the list of what the pane shows.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "after this change a worktree with no `.venv` runs the PATH `nio`, and its row reads `nio not found` only when that run fails (`register.tsx` now has `NO_NIO = 'nio not found'` and no `NO_VENV`). A reader of the pane README is told the opposite: the row says `no .venv: run uv sync` and nothing runs. The same README's \"It only reads\" paragraph also names only each worktree's own `.venv/bin/nio flow status`.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "contradicts",
+      "where": "tools/claude-mods/nio-status-pane/README.md",
+      "tampering": false,
+      "right": "code"
+    },
+    {
+      "id": "J-57",
+      "title": "The mods README still gives the manual two-step install from a checkout that CT-10 replaces",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-10",
+        "CT-16",
+        "FR-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Use the path of your own checkout. Claude Code reads the mods straight from this folder, so after a `git pull` run `/reload-plugins` in a session to pick up changes.",
+        "replacing the README's two-step `marketplace add` then `install <mod>@nio-mods`"
+      ],
+      "fix": "make \"Install (once)\" point to `@nio:install` or `nio mods install` (local scope, one line per mod), and keep the manual two-step form as a dev-only note for working from a checkout.",
+      "sources": [
+        {
+          "juror": "pr-consistency",
+          "lens": "consistency",
+          "situation": "CT-10 says the install goes through `claude plugin install <mod> --marketplace <mods_dir()> --scope local`, which is what `nio mods install` runs, and it names the README's two-step form as the thing being replaced. The README's \"Install (once)\" section still tells the reader to run `claude plugin marketplace add ~/nio/tools/claude-mods` and then two `install <mod>@nio-mods` lines from their checkout. A target project has no NIO checkout, so this guidance does not fit the packaged install that the same file's first line describes.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "partial",
+      "where": "tools/claude-mods/README.md",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-58",
+      "title": "`nio mods install` runs `claude` in the shell's cwd, not the repo root",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "CT-10",
+        "CT-11",
+        "FR-25"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "print(\"\\n\".join(hooks.mods_install(Path.cwd(), a.skip)))"
+      ],
+      "fix": "use `records.repo_root()` with a fallback to `Path.cwd()` when there is no repo, still before the `root = records.repo_root()` line that needs a repo.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "the human runs `nio mods install` (or the install skill does) from a subdirectory of the repo. CT-10 says `mods_install(root, ...)` takes \"the repo root\" and runs `claude` there. The command passes the cwd instead. Claude Code's local scope is tied to the project it runs in, so the mods could be installed for the subfolder and not for this clone, or the `plugin list` check could miss an existing install.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "partial",
+      "where": "src/nio/cli.py",
+      "tampering": false
+    },
+    {
+      "id": "J-59",
+      "title": "Transcript replies with no timestamp are counted in every stage window",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-7",
+        "FR-7"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "row[\"tokens\"] += sum(count(tokens(log, a, b)[0]) for log in logs)"
+      ],
+      "fix": "in `so_far`, count a reply only when it has a timestamp inside a half-open window `[a, b)`. Doing it in `tokens` for the windowed call is the smallest change.",
+      "sources": [
+        {
+          "juror": "pr-correctness",
+          "lens": "correctness",
+          "situation": "`so_far` calls `usage.tokens(log, a, b)` once per window and per log. `tokens` only skips a reply that has a timestamp outside the window, so a reply with no `timestamp` is added to every window. Stage figures and `total` would then overcount. Replies shared by two windows at the same instant, since both ends are inclusive, are also counted twice.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "partial",
+      "where": "src/nio/usage.py",
+      "tampering": false
+    },
+    {
+      "id": "J-60",
+      "title": "nio-status-pane README still says a worktree without .venv runs nothing, and omits the drill-down",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-21",
+        "FR-22"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "A worktree with no `.venv` shows `no .venv: run uv sync` and runs nothing."
+      ],
+      "fix": "update line 20 of tools/claude-mods/nio-status-pane/README.md to the PATH fallback and add a line on the drill-down.",
+      "sources": [
+        {
+          "juror": "pr-integration",
+          "lens": "integration",
+          "situation": "register.tsx now removes `NO_VENV` and `nioFor` falls back to `nio` on PATH. A worktree without `.venv` therefore runs `nio flow status`, and the pane only shows `nio not found` if that fails. The mod README, which this effort edited for its opening lines, still describes the old behaviour. It also never mentions the new click-to-drill-down view or `nio flow show`.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "partial",
+      "where": "tools/claude-mods/nio-status-pane/README.md, tools/claude-mods/nio-status-pane/hooks/register.tsx",
+      "tampering": false
+    },
+    {
+      "id": "J-61",
+      "title": "tools/claude-mods README still gives the manual two-step install as the only path",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-22",
+        "FR-29"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "claude plugin marketplace add ~/nio/tools/claude-mods"
+      ],
+      "fix": "say in the README that `nio mods install` is the install route, and that a new mod needs an entry in `hooks.MODS`, or derive `MODS` from marketplace.json.",
+      "sources": [
+        {
+          "juror": "pr-integration",
+          "lens": "integration",
+          "situation": "The intro now says `@nio:install` and `nio mods install` install the mods. The install steps below it (lines 13-20) still point at a `~/nio` checkout and the per-mod commands. They do not say that `nio mods install` is the normal route, or that a new mod must also be added to `MODS` in hooks.py. Line 20 tells a maintainer to run `claude plugin install <mod>@nio-mods` for a new mod. `hooks.MODS` is a hard-coded tuple that the marketplace.json does not feed, so a new mod would silently not be offered by `@nio:install`.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "partial",
+      "where": "tools/claude-mods/README.md, src/nio/hooks.py",
+      "tampering": false
+    },
+    {
+      "id": "J-62",
+      "title": "Leftovers in new code: stale `show` docstring, dead `[object Object]` replace and `j.name` fallback, repeated `load`",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "FR-13",
+        "FR-21"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "the five sections are placeholders until filled"
+      ],
+      "fix": "correct the docstring, drop the replace and `j.name`, and load once, keeping the per-section try for a section's own failure.",
+      "sources": [
+        {
+          "juror": "pr-integration",
+          "lens": "integration",
+          "situation": "The `flow.show` docstring says the sections are placeholders, but all five are built. In register.tsx `cost()` applies `.replace(/\\[object Object\\]/, '-')` to strings that can never contain it, because `l()` interpolates `x.tokens` and `x.seconds`, not an object. It also falls back to `j.name`, a field CT-7 never returns. `show` calls `load(root, slug)` four times, once for each of timeline, tasks and cost plus the first, so each section re-reads and re-parses history.jsonl. This is the kind of duplication the single `lines` variable would remove.",
+          "severity": "minor",
+          "round": 4
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 4,
+      "last_round": 4,
+      "gap": "unrequested",
+      "where": "src/nio/flow.py, tools/claude-mods/nio-status-pane/hooks/register.tsx",
+      "tampering": false
     }
   ],
   "outcome": "human",
@@ -2009,13 +2591,14 @@
   "versions": {
     "1": "f66b7bbb33f1942e7bd015111645da466fab17b9",
     "2": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
-    "3": "5cd971f3596d426b4eeeec2b1db725ddf9925004"
+    "3": "5cd971f3596d426b4eeeec2b1db725ddf9925004",
+    "4": "2141f584d2435722c2da370c1ddfeae391fc89e7"
   },
   "matched": {
     "AC-1": [
       [
-        "tests/test_flow.py",
-        "test_show_timeline_lists_stage_changes"
+        "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+        "AC-1 drill-down timeline"
       ]
     ],
     "AC-2": [
@@ -2036,7 +2619,12 @@
         "test_show_bad_history_line_keeps_other_sections"
       ]
     ],
-    "AC-5": [],
+    "AC-5": [
+      [
+        "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+        "AC-5 back to the list"
+      ]
+    ],
     "AC-6": [
       [
         "tests/test_flow.py",
@@ -2055,21 +2643,36 @@
         "test_show_juries_per_gate"
       ]
     ],
-    "AC-9": [],
+    "AC-9": [
+      [
+        "tests/test_flow.py",
+        "test_juries_none_yet"
+      ]
+    ],
     "AC-10": [
       [
         "tests/test_flow.py",
         "test_show_tasks_by_epic"
       ]
     ],
-    "AC-11": [],
+    "AC-11": [
+      [
+        "tests/test_flow.py",
+        "test_task_rows_none_yet"
+      ]
+    ],
     "AC-12": [
       [
         "tests/test_usage.py",
         "test_so_far"
       ]
     ],
-    "AC-13": [],
+    "AC-13": [
+      [
+        "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+        "AC-13 cost as the CLI gives it"
+      ]
+    ],
     "AC-14": [
       [
         "tests/test_usage.py",
@@ -2082,8 +2685,18 @@
         "test_show_memory_by_front_matter"
       ]
     ],
-    "AC-16": [],
-    "AC-17": [],
+    "AC-16": [
+      [
+        "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+        "AC-16 AC-17 context line"
+      ]
+    ],
+    "AC-17": [
+      [
+        "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+        "AC-16 AC-17 context line"
+      ]
+    ],
     "AC-18": [
       [
         "tests/test_hooks.py",
@@ -2117,7 +2730,7 @@
     "AC-23": [
       [
         "tests/test_flow.py",
-        "test_show_writes_only_caches"
+        "test_show_json_five_keys_writes_nothing"
       ]
     ],
     "AC-24": [],
@@ -2151,40 +2764,24 @@
         "test_show_unknown_or_done_slug"
       ]
     ],
-    "AC-30": []
+    "AC-30": [
+      [
+        "tools/claude-mods/nio-status-pane/hooks/register.test.tsx",
+        "AC-29 AC-30 drill-down errors"
+      ]
+    ]
   },
   "asked": {},
   "cap": {
-    "round": 3,
+    "round": 4,
     "auto": true,
     "batch": [
-      "J-1",
-      "J-17",
-      "J-18",
-      "J-19",
-      "J-20",
-      "J-23",
-      "J-24",
-      "J-27",
-      "J-30",
-      "J-31",
-      "J-32",
-      "J-35",
-      "J-38",
-      "J-39",
-      "J-41",
-      "J-42",
-      "J-43",
-      "J-44",
-      "J-46"
-    ],
-    "lenses": [
-      "adversary",
-      "conformance",
-      "consistency",
-      "correctness",
-      "integration"
-    ],
-    "allow": 4
+      "J-48",
+      "J-49",
+      "J-50",
+      "J-51",
+      "J-54",
+      "J-55"
+    ]
   }
 }
