@@ -3049,5 +3049,74 @@ def test_timeline_missing_fields_read_dash():
     print("ok")
 
 
+def two_round_spec(root):
+    """TC-7's ledger: spec gate, round 2 approved; J-1 confirmed major (logic), J-2 refuted minor (scope), both from round 1."""
+    led = jury.load(root, S, "spec")
+    juror = lambda lens: {"attempts": 1, "lens": lens, "by": "juror / test / test", "context": "sufficient", "valid": True,
+                          "errors": [], "round": 2}
+    finding = lambda i, sev, val, st, lens, disp: {
+        "id": i, "title": f"finding {i}", "kind": "gap", "severity": sev, "cites": [], "evidence": "observed", "quotes": [],
+        "fix": "", "sources": [{"juror": f"spec-{lens}", "lens": lens, "situation": "x", "severity": sev, "round": 1}],
+        "validation": val, "reason": "", "status": st, "disposition": disp, "by": "", "note": "", "baseline": "new",
+        "rounds": 0, "first_round": 1, "last_round": 1}
+    led.update(round=2, outcome="approved", jurors={"spec-logic": juror("logic"), "spec-scope": juror("scope")},
+               findings=[finding("J-1", "major", "confirmed", "fixed", "logic", "spec-fix"),
+                         finding("J-2", "minor", "refuted", "refuted", "scope", "")])
+    jury.save(root, led)
+
+
+def juries_of(root):
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    return json.loads(out)["juries"]
+
+
+def test_show_juries_two_rounds():
+    root = effort("plan_jury")
+    two_round_spec(root)
+    spec = next(j for j in juries_of(root) if j["gate"] == "spec")
+    assert spec["outcome"] == "approved" and len(spec["rounds"]) == 2, spec
+    lens = lambda v: [{"lens": l, "verdict": v[l]} for l in ("logic", "scope")]
+    assert spec["rounds"][0]["lenses"] == lens({"logic": "block", "scope": "approve"}), spec
+    assert spec["rounds"][1]["lenses"] == lens({"logic": "approve", "scope": "approve"}), spec
+    print("ok")
+
+
+def test_show_findings_and_fix_task():
+    root = effort("plan_jury")
+    two_round_spec(root)
+    (root / ".nio/specs" / S / "tasks.md").write_text((FIXTURES / "tasks/tasks.md").read_text() + (
+        "\n#### Fixes\n\n### T-9 Fix the finding\n- From: J-1 (spec, round 1)\n- Files: `app.py`\n- Serves: AC-1\n"
+        "- Test: TC-1\n- Depends on: none\n- Parallel: no\n- Tier: strong: a fix\n- Effort: med\n- Mode: single: a fix\n"))
+    spec = next(j for j in juries_of(root) if j["gate"] == "spec")
+    got = [(f["id"], f["validation"], f["fix_tasks"]) for f in spec["rounds"][0]["findings"]]
+    assert got == [("J-1", "confirmed", ["T-9"]), ("J-2", "refuted", [])], got
+    assert spec["rounds"][1]["findings"] == [], spec
+    print("ok")
+
+
+def test_show_juries_per_gate():
+    root = effort("tasks_jury")
+    led = jury.load(root, S, "tasks")
+    led.update(round=1, jurors={"tasks-executability": {"attempts": 1, "lens": "executability", "by": "juror / test / test",
+                                                       "context": "sufficient", "valid": True, "errors": [], "round": 1}})
+    jury.save(root, led)
+    juries = juries_of(root)
+    assert [j["gate"] for j in juries] == ["plan", "spec", "tasks"], juries
+    tasks = juries[2]["rounds"]
+    assert [r["lenses"] for r in tasks] == [[{"lens": "executability", "verdict": "approve"}]], tasks
+    for j in juries[:2]:
+        names = {l["lens"] for r in j["rounds"] for l in r["lenses"]}
+        assert "executability" not in names, j
+    print("ok")
+
+
+def test_juries_none_yet():
+    root = effort("plan_jury")
+    shutil.rmtree(root / ".nio/specs" / S / "jury")
+    assert flow.juries(root, S) == []
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
