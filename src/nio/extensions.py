@@ -359,3 +359,56 @@ def remove(root, name):
     write_record(root, rec)
     shutil.rmtree(d, ignore_errors=True)
     return 0, [f"removed {name}", "commit .nio/extensions to share it with the team"]
+
+
+def fire(root, slug, event, stage, who, run):
+    """CT-11: run every active extension's hooks on `event` (extension-name order, then manifest order) and record one
+    `hook` line each. Never raises for a hook's result; with no hook nothing runs and nothing is written (NFR-3).
+    ponytail: a hook line is written under its own short lock, one per hook; batch them if hooks get many."""
+    from nio import implement
+    try:
+        exts = active(root)
+    except ValueError:  # a hand-changed extension runs nothing
+        return
+    for m in exts:
+        for h in m.get("hooks", []):
+            if h["event"] != event:
+                continue
+            env = {"NIO_EVENT": event, "NIO_SLUG": slug, "NIO_STAGE": stage, "NIO_EXTENSION_DIR": m["dir"]}
+            code, out, cause = implement.run(root, h["command"], h.get("timeout", 300), env)
+            with flow.lock(root, slug):
+                state, lines = flow.load(root, slug)
+                here = flow.last_to(lines)  # the line keeps the effort where it is: a hook moves nothing
+                ev = {"extension": m["name"], "event": event, "command": h["command"], "code": code,
+                      "timed_out": cause == "time limit", "tail": out.splitlines()[-20:]}
+                flow.record(root, slug, [{"kind": "hook", "from": here, "to": here, "evidence": ev}], state, who, run or state.get("run"))
+
+
+def after(root, slug, n, old):
+    """CT-11: fire the events of the history lines added since line `n`, and of a hold the command set (`old` is the
+    state before it). Called outside the effort's lock, once the command's writes and approval commit have succeeded."""
+    try:
+        if not any(m.get("hooks") for m in active(root)):
+            return
+        state, lines = flow.load(root, slug)
+        G = flow.table(root)[1]
+    except (ValueError, flow.Broken):
+        return
+    new, held = lines[n:], lambda s: s["waiting"] or s["pause"]
+    for x in new:
+        f, t, kind, ev = x["from"], x["to"], x["kind"], x["evidence"]
+        events = []
+        if kind in ("pass", "override"):
+            if f in G:
+                events = ["gate-approved", "step-passed"]
+            elif not (t == f"{f}.jury" and "." in f):
+                events = ["step-passed"]
+            events += ["effort-done"] * (t == "done" and bool(events))
+        elif kind == "skip" and f not in G:
+            events = ["step-skipped"]
+        elif kind == "epic" or kind == "epic_test" and ev.get("passed"):
+            events = ["epic-closed"]
+        for e in events:
+            fire(root, slug, e, t if e in ("epic-closed", "effort-done") else f, x["who"], x["run"])
+    if new and held(state) and not held(old):
+        fire(root, slug, "waiting-on-human", flow.last_to(lines), new[-1]["who"], new[-1]["run"])

@@ -1304,7 +1304,7 @@ def check(root, slug, gate, record=False, human=""):
     closed = led.get("closed") or (human.strip() and [led["round"], current, human.strip()])
     if closed:
         outcome, reasons = "human", [f"the human closed the gate: {closed[2]}"] + [f"(the jury said {outcome}: {r})" for r in reasons]
-    appended, asked = [], []
+    appended, asked, fresh = [], [], False
     if record and outcome == "rejected" and not closed and impl_gate(gate):
         from nio import tasks
         save(root, led)  # append_fix disposes through the saved ledger
@@ -1337,6 +1337,7 @@ def check(root, slug, gate, record=False, human=""):
     if record and outcome in ("approved", "rejected", "human") and entry not in led["recorded"]:
         lines.append(f"recorded {verdict(root, led, outcome, reasons).relative_to(root)}")
         led["recorded"].append(entry)
+        fresh = outcome == "rejected"
     if gate == "plan":
         save(root, led)
         lines.insert(1, "state: {} ({})".format(*state(root, slug)))
@@ -1346,6 +1347,9 @@ def check(root, slug, gate, record=False, human=""):
         elif not led.get("list"):
             led["list"] = {"round": led["round"], "ids": listed, "final": None, "flagged": []}
     save(root, led)
+    if fresh and not closed:  # a round's rejection is a hook event (2026-11-15-extensions CT-11)
+        from nio import extensions
+        extensions.fire(root, slug, "gate-rejected", gate, {"role": "jury", "host": "", "model": ""}, None)
     if record and outcome != "approved" and impl_gate(gate):  # approved: `nio flow done` makes its commit (CT-17)
         from nio import flow
         with flow.lock(root, slug):

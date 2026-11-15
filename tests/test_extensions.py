@@ -358,9 +358,10 @@ def at_step(check, **kw):
 
 
 def test_check_zero_passes():
-    root = at_step(f'test "$NIO_SLUG" = {S} && test "$NIO_STAGE" = x.tests && test -d "$NIO_EXTENSION_DIR"')
+    root = at_step(f'test "$NIO_SLUG" = {S} && test "$NIO_STAGE" = x.tests && test -d "$NIO_EXTENSION_DIR" && echo ok >> passed.log')
     code, out = nio(root, "flow", "done", "x.tests", S, "--by", BY)
     assert code == 0, out
+    assert (root / "passed.log").read_text() == "ok\n"  # the check ran once
     last = flow.load(root, S)[1][-1]
     assert (last["kind"], last["from"], last["to"], last["who"]["role"]) == ("pass", "x.tests", "tasking", "driver"), last
     assert "state: tasking" in nio(root, "flow", "next", S)[1]
@@ -523,10 +524,8 @@ def gate_effort(auto=False):
     """S at x.tests with x's gate (lens x-lens), x.md written."""
     root = effort()
     n = test_flow.grant_on(root, "plan_jury") if auto else 0
-    add(root, "x", [step("tests", output="x.md", gate={"lenses": ["x-lens"]})], cards=["x-lens"])
-    # ponytail: extension cards join the card layers in T-13; until then the lens card is a team card
-    (root / ".nio/agents").mkdir(exist_ok=True)
-    (root / ".nio/agents/x-lens.md").write_text("---\nname: x-lens\ndescription: x lens\ntier: medium\neffort: low\n---\nJudge x.\n")
+    add(root, "x", [step("tests", output="x.md", gate={"lenses": ["x-lens"]})], cards=["x-lens"],
+        files={"agents/x-lens.md": "---\nname: x-lens\ndescription: x lens\ntier: medium\neffort: low\n---\nJudge x.\n"})
     pass_plan(root)
     (root / ".nio/specs" / S / "x.md").write_text("# x\n")
     return (root, n) if auto else root
@@ -597,6 +596,90 @@ def test_extension_gate_rejected_goes_back():
     jury.save(root, {**led, "round": 1, "outcome": "rejected", "versions": {"1": jury.version_now(root, S, "x.tests")}})
     code, out = nio(root, "flow", "next", S)
     assert code == 0 and "state: x.tests (working: the x.tests jury rejected round 1)" in out, out
+
+
+# --- cards and hooks (E-5) ---
+
+def test_agents_sync_renders_extension_cards():
+    root, tmp = fixture()
+    (root / ".nio").mkdir(exist_ok=True)
+    (root / ".nio/config.json").write_text(json.dumps({"agents": {"hosts": ["claude", "codex"]}}))
+    card = "---\nname: x-card\ndescription: x card\ntier: strong\neffort: low\n---\n## Job\n\nJudge the x thing.\n\n## Inputs\n\nThe pack.\n\n## Output format\n\nA list.\n\n## Stop when\n\nDone.\n"
+    assert nio(root, "extensions", "add", str(src(tmp, "x", cards=["x-card"], files={"agents/x-card.md": card})))[0] == 0
+    code, out = nio(root, "agents", "sync")
+    assert code == 0, out
+    for rel in (".claude/agents/nio-x-card.md", ".codex/agents/nio-x-card.toml"):
+        assert "Judge the x thing." in (root / rel).read_text(), rel
+
+
+def hook(command, event="step-passed", **kw):
+    return {"event": event, "command": command, **kw}
+
+
+def hooks_of(root):
+    return [x["evidence"] for x in flow.load(root, S)[1] if x["kind"] == "hook"]
+
+
+def test_gate_approved_hook_runs_once():
+    root = effort()
+    copy = Path(tempfile.mkdtemp()) / "copy"
+    shutil.copytree(root, copy)
+    add(root, "x", hooks=[hook("echo $NIO_EVENT $NIO_STAGE $(git log -1 --format=%s) >> hook.log", "gate-approved")])
+    pass_plan(root)
+    assert (root / "hook.log").read_text() == "gate-approved plan_jury nio: approve plan\n"
+    got = hooks_of(root)
+    assert len(got) == 1 and (got[0]["extension"], got[0]["event"], got[0]["code"]) == ("x", "gate-approved", 0), got
+    # a copy where git refuses the approval commit: no hook runs
+    add(copy, "x", hooks=[hook("echo hi >> hook.log", "gate-approved")])
+    h = copy / ".git/hooks/pre-commit"
+    h.write_text("#!/bin/sh\nexit 1\n")
+    h.chmod(0o755)
+    assert nio(copy, "flow", "done", "plan_jury", S, "--commit", "--by", "human")[0] != 0
+    assert not (copy / "hook.log").exists() and not hooks_of(copy)
+
+
+def at_planning(*named):
+    root = effort("plan_jury")
+    for name, hooks in named:
+        add(root, name, hooks=hooks)
+    return root
+
+
+def test_hooks_run_in_name_order():
+    root = at_planning(("b", [hook("echo b >> order.log")]), ("a", [hook("echo a >> order.log")]))
+    pass_plan(root)
+    assert (root / "order.log").read_text() == "a\nb\n"
+    assert [h["extension"] for h in hooks_of(root)] == ["a", "b"]
+
+
+def test_failing_hook_never_blocks():
+    root = at_planning(("x", [hook("echo nope; exit 4")]))
+    pass_plan(root)
+    (h,) = hooks_of(root)
+    assert h["code"] == 4 and h["tail"] == ["nope"], h
+    ref = effort("plan_jury")
+    pass_plan(ref)
+    assert flow.where(root, S)["stage"] == flow.where(ref, S)["stage"]
+
+
+def test_timeouts_stop_commands():
+    import time
+    root = effort()
+    add(root, "x", [step("tests", check="sleep 5 # nio-t-check", timeout=1)], hooks=[hook("sleep 5 # nio-t-hook", timeout=1)])
+    pass_plan(root)
+    t = time.time()
+    code, out = nio(root, "flow", "done", "x.tests", S, "--by", BY)
+    assert time.time() - t < 5 and code == 1 and "check timed out after 1 seconds" in out, out
+    assert flow.load(root, S)[1][-1]["evidence"]["timed_out"] is True
+    add(root, "x", [step("tests", check="true", timeout=1)], hooks=[hook("sleep 5 # nio-t-hook", timeout=1)])
+    t = time.time()
+    assert nio(root, "flow", "done", "x.tests", S, "--by", BY)[0] == 0
+    assert time.time() - t < 5 and hooks_of(root)[-1]["timed_out"] is True
+    r = subprocess.run(["pgrep", "-af", "^/bin/sh -c sleep 5 # nio-t-"], capture_output=True, text=True)
+    assert r.returncode == 1, r.stdout
+    for bad in (0, 1.5, "1"):
+        code, out = nio(root, "extensions", "add", str(src(tempfile.mkdtemp(), "y", [step("s", timeout=bad)])))
+        assert code == 1 and "steps[0].timeout must be a whole number of seconds of at least 1" in out, (bad, out)
 
 
 selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])

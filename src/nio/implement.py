@@ -553,6 +553,10 @@ def test_files(root, slug, task):
 
 
 def finish(root, slug, eid, by=None):
+    return flow.hooked(root, slug, lambda: _finish(root, slug, eid, by))
+
+
+def _finish(root, slug, eid, by=None):
     """`nio flow finish` (CT-2, FR-3, FR-4, FR-10, FR-42, FR-44, NFR-1): the agent handed the epic back; the flow runs
     the tests its tasks name once, itself, on the main tree (a worktree epic's changes landed there first) within
     EPIC_LIMIT. A pass writes the `epic_test` line and commits the epic (CT-3); a failed, broken, empty or hung run keeps

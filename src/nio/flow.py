@@ -1052,6 +1052,10 @@ def overridden(here):
 
 
 def next_step(root, slug=None, by=None):
+    return hooked(root, slug, lambda: _next_step(root, slug, by))
+
+
+def _next_step(root, slug=None, by=None):
     """`nio flow next` (CT-9, FR-7, FR-31, FR-43, NFR-1): the state, the skill, its inputs, exit criteria and done
     command; in the "Talking to the human" shape when the effort waits. Writes only with `by`, and only what it owes:
     a parked effort's resume, the `back` lines of a change, a stop-list pause, a torn line's cut. Returns (code, lines)."""
@@ -1477,13 +1481,38 @@ def stage_arg(name):
     raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(STAGES)}, implementation-E-n)")
 
 
-def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=False, auto=False):
+def hooked(root, slug, call):
+    """Run `call` (a command returning (code, lines)); after it succeeded, fire the extension hooks for the history
+    lines it added, outside the effort's lock (2026-11-15-extensions CT-11). With no extension added, just `call`."""
+    from nio import extensions
+    if not extensions.folder(root).is_dir():
+        return call()
+    try:
+        slug = pick(root, slug)
+        old, lines = load(root, slug)
+    except Exception:  # the command itself reports why
+        return call()
+    result = call()
+    if result[0] == 0:
+        extensions.after(root, slug, len(lines), old)
+    return result
+
+
+def done(root, stage, slug=None, *a, **kw):
+    return hooked(root, slug, lambda: _done(root, stage, slug, *a, **kw))
+
+
+def epic_done(root, gate, slug=None, by=None):
+    return hooked(root, slug, lambda: _epic_done(root, gate, slug, by))
+
+
+def _done(root, stage, slug=None, commit=False, human=None, by=None, terminal=False, auto=False):
     """`nio flow done` (CT-11, FR-12 to FR-27, FR-48, FR-62): run the stage's guard and, when it passes (or the human
     overrides a failing one), record the move and the skips after it; at a gate, `--commit` (or the auto flag on a
     spec, risky or not, but never the pr gate: 2026-11-15 FR-46) also makes the approval commit, rolled back when git fails. Returns (code, lines)."""
     from nio import jury
     if EPIC_GATE.fullmatch(stage):
-        return epic_done(root, stage, slug, by)
+        return _epic_done(root, stage, slug, by)
     stages, G, skill, _, _ = table(root)
     if stage not in stages:
         raise ValueError(f"unknown stage {stage}")
@@ -1617,7 +1646,7 @@ def approve(root, slug=None):
     return done(root, "pr", slug, commit=True, by="human", terminal=True)
 
 
-def epic_done(root, gate, slug=None, by=None):
+def _epic_done(root, gate, slug=None, by=None):
     """`nio flow done implementation-E-n` (CT-17): when the gate is approved or the human closed it, and that is recorded,
     write the epic's `epic` line with the outcome as its reason and, after the last epic, the `pass` line implementing ->
     done, and make the approval commit. Any other standing refuses, naming the gate. An `epic` line already there, an
