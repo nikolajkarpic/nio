@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from importlib import resources
 
-from nio import agents, evidence, explain, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
+from nio import agents, evidence, explain, extensions, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
 
 
 def report(errors, warnings, count):
@@ -98,6 +98,11 @@ def main():
     agsub.add_parser("sync", help="render the shipped, personal and team cards as .claude/agents and .codex/agents files")
     v = agsub.add_parser("verify", help="compare the model each recent Claude run of a nio-* agent used with its tier's model")
     v.add_argument("--limit", type=int, default=20)
+    ex = sub.add_parser("extensions", help="add, list or remove extensions: folders that add steps, cards and hooks")
+    exsub = ex.add_subparsers(dest="ext_cmd", required=True)
+    exsub.add_parser("add", help="copy an extension in (path, git URL or name); runs none of its commands").add_argument("source")
+    exsub.add_parser("list", help="each added extension with its source, version, steps, cards and hooks")
+    exsub.add_parser("remove", help="remove an added extension").add_argument("name")
     j = sub.add_parser("jury", help="jury gates: collect lens outputs into the findings ledger, dispose of findings, compose the outcome")
     jsub = j.add_subparsers(dest="jury_cmd", required=True)
     jsub.add_parser("template", help="print the lens output format, for a juror's context pack")
@@ -371,6 +376,11 @@ def main():
             sys.exit(1 if bad else 0)
         except ValueError as e:
             sys.exit(f"error: {e}")
+    elif a.cmd == "extensions":
+        code, out = {"add": lambda: extensions.add(root, a.source), "list": lambda: extensions.listing(root),
+                     "remove": lambda: extensions.remove(root, a.name)}[a.ext_cmd]()
+        print("\n".join(out))
+        sys.exit(code)
     elif a.cmd == "jury":
         try:
             if jury.impl_gate(getattr(a, "gate", "")):  # a ruling needn't wait for the fix tasks; a round does
