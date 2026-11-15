@@ -45,7 +45,7 @@ implement → pr gate (`.nio/specs/`, 25+ efforts), and its memory holds 330 rec
 flowchart LR
   classDef built fill:#7c3aed,stroke:#a78bfa,color:#fff
 
-  onboard --> spec --> grill --> plan["plan · contracts<br>tests · quickstart"] --> tasks["epics · tasks<br>tier · effort"] --> implement["implement<br>red → green · waves"] --> pr{{"⚖️ pr gate"}}
+  onboard --> spec --> grill --> plan["plan · contracts<br>tests · quickstart"] --> tasks["epics · tasks<br>tier · effort"] --> implement["implement<br>one agent per epic"] --> pr{{"⚖️ pr gate"}}
   jury{{"⚖️ jury"}} -. gates .-> spec & plan & tasks
   plan -. explain .-> explain["🗺️ explainer"]
   memory[("🧠 remember / recall")] -. every stage .-> jury
@@ -89,7 +89,7 @@ Skills are plain `SKILL.md` markdown in the open Agent Skills format, invoked as
 | [`@nio:grill`](skills/grill/SKILL.md) | Settles a draft one question at a time: looks facts up, asks only decisions (3 options, one recommended), makes small calls as `[agent]` for you to review, and stops when `nio check spec --gate` passes. You can delegate a session to an agent. |
 | [`@nio:plan`](skills/plan/SKILL.md) | Turns an approved spec into its plan, contracts, tests and quickstart, from the spec, the architecture and the code. Asks only what nothing upstream settled. |
 | [`@nio:tasks`](skills/tasks/SKILL.md) | Breaks the plan into epics and tasks, rates each with a model tier and an effort, and shows you the estimate. |
-| [`@nio:implement`](skills/implement/SKILL.md) | Builds the approved tasks, each by a fresh worker from its own pack; the CLI proves every test failed before the code and passes after it. Independent tasks run in parallel waves. |
+| [`@nio:implement`](skills/implement/SKILL.md) | Builds the approved tasks, one fresh agent per epic from its own pack; the CLI runs the epic's tests itself and closes the epic only if they pass. Independent epics run in parallel, each in its own worktree. |
 | [`@nio:jury`](skills/jury/SKILL.md) | Takes a spec, plan, tasks or a finished effort's whole diff (the pr gate) to a verdict: lens subagents judge it, the refuter validates their findings, a confirmed blocker escalates to 3 jurors, and rounds stop at a cap with your ruling. |
 | [`@nio:explain`](skills/explain/SKILL.md) | Explains an approved plan, or any topic, as a short Mermaid explainer: a component map, a build order, a flow per journey and a state diagram per table, each with a brief walk-through, then three items to drill into. `explain.format` picks a host diagram skill instead. |
 | [`@nio:remember`](skills/remember/SKILL.md) | Writes memory records: decisions, lessons, change requests and jury verdicts. Any agent leaves candidates that one memory writer promotes at the end of a run. |
@@ -152,8 +152,7 @@ awaiting you, `[agent]` a small call the agent made for you to review, `[derived
 - **Blocker / major / minor**: a finding's severity; only a confirmed blocker rejects a gate after the first round.
 - **Disposition**: how a finding closed: fixed, open question, accepted risk, out of scope or overruled.
 - **Round cap**: the most review rounds a gate runs before it hands you the rest as one batch to rule on.
-- **Red / green**: a task's test proven failing before the code, then passing after it.
-- **Wave**: tasks with no dependency between them, built in parallel.
+- **Epic**: a group of tasks one agent builds together; the flow runs its tests and closes it with one commit.
 - **Tier**: the model class a task or agent runs on (cheap, strong, frontier, max), mapped to real models in config.
 - **Pack**: the only context a worker or juror gets: its task or lens, the cited spec items and the memory that applies.
 - **Driver**: a short-lived agent that runs one stage or gate step and ends.
@@ -187,7 +186,7 @@ Every command has `--help`.
 | Command | Does |
 | --- | --- |
 | `nio flow start\|next\|done\|brief\|status` | Where each effort is and the skill to run next; a stage moves on only when its guard passes. `status` is one line per effort across worktrees |
-| `nio flow claim\|red\|green\|block\|unblock` | Implementing: claim the next ready task (or a wave), prove its test fails, then passes |
+| `nio flow claim\|finish\|block\|unblock` | Implementing: claim the next ready epic, then run its tests and close it if they pass |
 | `nio flow approve\|park\|abandon\|seen` | The human's moves: approve the pr gate at a terminal, park or abandon an effort |
 | `nio new <type>` | Create a record, or `new spec <name> --route full\|lite\|epic`, `new plan <slug>`, `new tasks <slug>` from templates |
 | `nio check [spec\|plan <slug>] [--gate]` | Lint every record, or a spec's or plan's mechanical checks; `--gate` lists the agent calls, deferred points and the lenses the risk flags trigger |

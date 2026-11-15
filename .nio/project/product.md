@@ -15,7 +15,7 @@
 ## Main flows
 
 - Per repo: install (git hooks, agent files, permission choice), then onboard (six project docs under `.nio/project/`). (source: README.md@f72a1897d4ff)
-- Per change, the full route: spec → grill → spec jury → plan → plan jury → tasks → tasks jury → implement (red → green, parallel waves) → pr gate on the whole effort diff. (source: README.md@f72a1897d4ff)
+- Per change, the full route: spec → grill → spec jury → plan → plan jury → tasks → tasks jury → implement (one agent per epic, independent epics in parallel) → pr gate on the whole effort diff. (source: README.md@f72a1897d4ff)
 - Per bug fix, the lite route: a grilled spec straight to tasks, with no spec jury and no plan; it offers the full route if the fix outgrows one module. (source: README.md@f72a1897d4ff)
 - `nio flow next <slug>` names the next skill to run, and a stage moves on only when its guard passes. (source: README.md@f72a1897d4ff)
 - Explain: turns an approved plan, or any topic, into a short Mermaid explainer. (source: README.md@f72a1897d4ff)
@@ -33,8 +33,7 @@
 - Gate: a point where the jury must approve before the effort moves on: spec, plan, tasks and pr. (source: README.md@f72a1897d4ff)
 - Lens: one juror's angle (logic, testability, security, conformance…); each runs as its own agent. (source: README.md@f72a1897d4ff)
 - Refuter: an agent that tries to disprove each blocker and major finding before the human sees it. (source: README.md@f72a1897d4ff)
-- Red / green: a task's test proven failing before the code, then passing after it. (source: README.md@f72a1897d4ff)
-- Wave: tasks with no dependency between them, built in parallel. (source: README.md@f72a1897d4ff)
+- Epic: a group of tasks one agent builds together; the flow runs its tests and closes it with one commit. (source: README.md)
 - Tier: the model class a task or agent runs on (cheap, strong, frontier, max), mapped to real models in config. (source: README.md@f72a1897d4ff)
 - Pack: the only context a worker or juror gets: its task or lens, the cited spec items and the memory that applies. (source: README.md@f72a1897d4ff)
 - Standing: how far to trust a memory record: `current`, `approved`, `drifted`, `challenged`, `conflict`, `superseded`. (source: README.md@f72a1897d4ff)

@@ -713,7 +713,7 @@ def test_nfr1_no_model_calls():
     env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(site), os.environ.get("PYTHONPATH")])), "NIO_REPORT": str(report)}
     env.pop("NIO_MAIN_PID", None)
     r = subprocess.run([sys.executable, "-c", DRIVER, f"claim|{S}|--by|{BY}", f"write:{TEST}:{test_text}",
-                        "write:app.py:def refund(x):\n    return x\n", f"finish|{S}|E-1|--run|{RUN}|--by|{BY}"],
+                        "write:app.py:def refund(x):\n    return x\n", f"finish|{S}|E-1|--by|{BY}"],
                        cwd=root, capture_output=True, text=True, env=env)
     assert r.returncode == 0, r.stdout + r.stderr
     assert st(root) == "done", st(root)
@@ -820,7 +820,7 @@ def test_second_claim_of_an_epic_is_refused():
 def test_finish_refuses_an_epic_with_no_test():
     """TC-10: an epic whose tasks name no test can't close."""
     root = claimed(tasks=re.sub(r"^- Test: .*$", "- Test: none", TWO, flags=re.M), route="lite")
-    code, out = flow(root, "finish", S, "E-1", "--run", RUN)
+    code, out = flow(root, "finish", S, "E-1")
     assert code != 0 and "E-1 has no test to run" in out, out
     assert not of(root, "epic_test") and epics(root)["E-1"][0] == "claimed"
     print("ok")
@@ -833,9 +833,11 @@ def test_epic_commit_leaves_untracked_files_out():
     code_with(root)
     (root / "notes").mkdir()
     (root / "notes/scratch.txt").write_text("mine\n")
+    (root / "tests/test_base.py").write_text("# the human's tracked edit\n")  # F-4: a tracked file no task lists
     code, out = flow(root, "finish", S, "E-1")
     assert code == 0, out
     assert "?? notes/" in git(root, "status", "--porcelain"), git(root, "status", "--porcelain")
+    assert " M tests/test_base.py" in git(root, "status", "--porcelain"), git(root, "status", "--porcelain")
     got = set(git(root, "show", "--name-only", "--format=", "HEAD").split())
     assert got == {"app.py", TEST, f".nio/specs/{S}/history.jsonl", f".nio/specs/{S}/state.json"}, got
     print("ok")
@@ -878,7 +880,7 @@ def test_in_flight_effort_converts_per_epic():
     shas = git(root, "log", "--format=%H").split()
     code, out = flow(root, "claim", S)
     assert code == 0 and "epic: E-1 (every task done: run its tests)" in out and "tasks: none" in out, out
-    code, out = flow(root, "finish", S, "E-1", "--run", RUN)
+    code, out = flow(root, "finish", S, "E-1")
     assert code == 0, out
     code, out = flow(root, "claim", S)
     assert code == 0 and "epic: E-2 " in out and "tasks: T-4, T-5" in out.splitlines(), out
@@ -907,7 +909,7 @@ def test_hung_or_broken_run_counts_as_failed():
     assert epics(root)["E-1"] == ("failed", 1)
     broken = claimed(tasks=TWO)
     (broken / TEST).write_text("def broken(:\n")
-    code, out = flow(broken, "finish", S, "E-1", "--run", RUN)
+    code, out = flow(broken, "finish", S, "E-1")
     ev = of(broken, "epic_test")[-1]["evidence"]
     assert code != 0 and ev["cause"].startswith("collection, import or syntax error"), ev
     assert epics(broken)["E-1"] == ("failed", 1) and len(ev["tail"]) <= 50
@@ -924,15 +926,17 @@ def test_live_old_wave_claim_converts():
     write_test(tree)
     code_with(tree)
     rel = str(tree.relative_to(root))
+    (root / "old.txt").write_text("an old task's commit after the wave's claim\n")
+    commit_all(root, "T-0: old flow")  # F-1: HEAD moved since the tree was made; landing must not revert this
     test_flow.history(root, S, {"kind": "baseline", "from": "implementing", "to": "implementing", "evidence": {}},
                       L("claim", "T-1", commit=head), L("claim", "T-2", commit=head, worktree=rel),
                       {**L("red", "T-2"), "state": {"claims": {"task": "T-1", "wave": ["T-1", "T-2"]}}})
     code, out = flow(root, "claim", S)
     assert code == 0 and "E-1 is claimed already" in out and f"worktree: {rel}" in out, out
-    code, out = flow(root, "finish", S, "E-1", "--run", RUN)
+    code, out = flow(root, "finish", S, "E-1")
     assert code == 0, out
     assert {"app.py", TEST} <= set(git(root, "show", "--name-only", "--format=", "HEAD").split())
-    assert rel not in git(root, "worktree", "list")
+    assert rel not in git(root, "worktree", "list") and (root / "old.txt").exists(), git(root, "show", "--stat", "HEAD")
     print("ok")
 
 
@@ -940,8 +944,7 @@ def test_rollback_old_status_reads_new_history():
     """TC-58: the implement module before this change reads an epic the new flow closed as done."""
     import importlib.util
     src = subprocess.run(["git", "show", "2153568:src/nio/implement.py"], cwd=Path(__file__).parent, capture_output=True, text=True)
-    if src.returncode:
-        return "skipped"
+    assert src.returncode == 0, f"TC-58 needs the old implement.py at 2153568 (a full clone): {src.stderr}"
     path = Path(tempfile.mkdtemp()) / "old_implement.py"
     path.write_text(src.stdout)
     spec_ = importlib.util.spec_from_file_location("old_implement", path)
@@ -959,9 +962,13 @@ def test_one_run_per_hand_back():
     root = claimed(tasks=TWO)
     write_test(root)
     code_with(root)
-    code, out = flow(root, "finish", S, "E-1", "--run", f"echo x >> runs.log; {RUN}")
-    assert code == 0, out
-    assert (root / "runs.log").read_text().splitlines() == ["x"]
+    calls, real = [], implement.run
+    implement.run = lambda *a: calls.append(a) or real(*a)
+    try:
+        code, out = flow(root, "finish", S, "E-1")
+    finally:
+        implement.run = real
+    assert code == 0 and len(calls) == 1, (out, calls)
     print("ok")
 
 
@@ -1002,14 +1009,27 @@ def test_one_claim_one_card_per_attempt():
     print("ok")
 
 
-def test_finish_refuses_wrong_command_and_unclaimed_epic():
-    """CT-2's refusals: an unclaimed epic, and a --run that doesn't run the TCs' test file."""
+def test_finish_refuses_an_agent_command_and_unclaimed_epic():
+    """CT-2's refusals: an unclaimed epic; and the agent can't hand over a command of its own (F-3: `--run "true #
+    tests/x.py"` closed an epic with no test run)."""
     root = impl(tasks=TWO)
-    code, out = flow(root, "finish", S, "E-1", "--run", RUN)
+    code, out = flow(root, "finish", S, "E-1")
     assert code != 0 and "E-1 is not claimed" in out, out
     assert flow(root, "claim", S)[0] == 0
-    code, out = flow(root, "finish", S, "E-1", "--run", "python -m unittest tests/test_other.py")
-    assert code != 0 and f"the command doesn't run {TEST}" in out and not of(root, "epic_test"), out
+    code, out = flow(root, "finish", S, "E-1", "--run", f"true # {TEST}")
+    assert code != 0 and not of(root, "epic_test") and epics(root)["E-1"][0] == "claimed", out
+    print("ok")
+
+
+def test_finish_without_tcs_runs_the_suite():
+    """F-3: an epic whose tests can't be built from TCs (a fix epic, a lite spec) runs the configured suite, not a
+    command from the agent."""
+    root = claimed(tasks=re.sub(r"^- Test: .*$", "- Test: the refund tests pass", TWO, flags=re.M), route="lite")
+    write_test(root)
+    code_with(root)
+    code, out = flow(root, "finish", S, "E-1")
+    assert code == 0, out
+    assert of(root, "epic_test")[-1]["evidence"]["command"] == SUITE
     print("ok")
 
 
@@ -1027,6 +1047,110 @@ def test_unblock_an_epic():
     code, out = flow(root, "unblock", S, "E-1", "--human", "fixed the fixture", "--by", "human")
     assert code == 0 and epics(root)["E-1"] == ("waiting", 0) and state(root)["waiting"] is None, out
     assert "E-1" not in state(root)["attempts"]
+    print("ok")
+
+
+# --- the pr gate's findings on per-epic implementation (F-1, F-4 to F-8) ---
+
+PAD = "def refund(x):\n    return x\n" + "".join(f"# line {i}\n" for i in range(20))
+
+
+def pair():
+    """IND with app.py and the test file committed first (the far ends of app.py are two epics' separate hunks); E-1
+    claimed in the main tree, E-2 in its worktree. Returns (root, E-2's worktree)."""
+    root = impl(tasks=IND)
+    write_test(root)
+    code_with(root, PAD)
+    commit_all(root, "app")
+    assert flow(root, "claim", S)[0] == 0
+    code, out = flow(root, "claim", S)
+    assert code == 0 and "epic: E-2 " in out, out
+    return root, root / next(x[10:] for x in out.splitlines() if x.startswith("worktree: "))
+
+
+def test_reclaimed_worktree_lands_against_its_own_base():
+    """F-1: E-2 fails in its worktree, E-1 closes, E-2 is claimed again on the same tree and passes: E-1's change stays."""
+    root, w = pair()
+    write_test(w, fail=("test_refund_p95",))
+    code, out = flow(root, "finish", S, "E-2")
+    assert code != 0 and "run 1 of 3" in out, out
+    code_with(root, PAD + "# E-1's line\n")
+    code, out = flow(root, "finish", S, "E-1")
+    assert code == 0, out
+    code, out = flow(root, "claim", S)
+    assert code == 0 and "epic: E-2 " in out and f"worktree: {w.relative_to(root)}" in out, out
+    write_test(w, before="pass  # E-2's test")
+    code, out = flow(root, "finish", S, "E-2")
+    assert code == 0, out
+    assert "# E-1's line" in (root / "app.py").read_text(), git(root, "show", "HEAD")
+    print("ok")
+
+
+def test_worktree_finish_beside_main_tree_work():
+    """F-5: E-2's worktree epic finishes while E-1's agent has uncommitted work in the main tree; E-1's work stays out."""
+    root, w = pair()
+    code_with(root, PAD + "# E-1 at work\n")
+    write_test(w, before="pass  # E-2's test")
+    code, out = flow(root, "finish", S, "E-2")
+    assert code == 0 and "closed: E-2 " in out, out
+    assert set(git(root, "show", "--name-only", "--format=", "HEAD").split()) == {TEST, f".nio/specs/{S}/history.jsonl", f".nio/specs/{S}/state.json"}
+    assert "# E-1 at work" in (root / "app.py").read_text() and " M app.py" in git(root, "status", "--porcelain")
+    print("ok")
+
+
+def test_failed_main_tree_epic_is_reclaimed_in_the_main_tree():
+    """F-6: E-1 fails in the main tree while E-2 holds a worktree; its re-claim gets the main tree back, where its work is."""
+    root, w = pair()
+    code_with(root, PAD + "# E-1's work\n")
+    write_test(root, fail=("test_second_refund",))
+    code, out = flow(root, "finish", S, "E-1")
+    assert code != 0 and "run 1 of 3" in out, out
+    code, out = flow(root, "claim", S)
+    assert code == 0 and "epic: E-1 " in out and "worktree:" not in out, out
+    assert "# E-1's work" in (root / "app.py").read_text()
+    print("ok")
+
+
+def test_converted_epic_keeps_its_old_trees_after_a_failed_run():
+    """F-7: a converted wave epic whose first run fails keeps its old wave tree on the re-claim, and lands it after."""
+    root = impl(tasks=TWO)
+    git(root, "checkout", "-q", "-b", f"nio/{S}")
+    head = git(root, "rev-parse", "HEAD").strip()
+    tree = root / ".nio/runs/R-old/worktree"
+    git(root, "worktree", "add", "--detach", str(tree), head)
+    write_test(tree, fail=("test_second_refund",))
+    code_with(tree)
+    rel = str(tree.relative_to(root))
+    test_flow.history(root, S, {"kind": "baseline", "from": "implementing", "to": "implementing", "evidence": {}},
+                      L("claim", "T-1", commit=head), L("claim", "T-2", commit=head, worktree=rel),
+                      {**L("red", "T-2"), "state": {"claims": {"task": "T-1", "wave": ["T-1", "T-2"]}}})
+    assert flow(root, "claim", S)[0] == 0
+    code, out = flow(root, "finish", S, "E-1")
+    assert code != 0 and "run 1 of 3" in out, out
+    code, out = flow(root, "claim", S)
+    assert code == 0 and f"worktree: {rel}" in out, out
+    write_test(tree)
+    code, out = flow(root, "finish", S, "E-1")
+    assert code == 0 and {"app.py", TEST} <= set(git(root, "show", "--name-only", "--format=", "HEAD").split()), out
+    assert rel not in git(root, "worktree", "list")
+    print("ok")
+
+
+def test_interrupted_finish_undoes_its_landing():
+    """F-8: a finish interrupted during its run leaves the main tree as it was, and the retry closes the epic."""
+    root, w = pair()
+    write_test(w, before="pass  # E-2's test")
+    real, implement.run = implement.run, lambda *a: (_ for _ in ()).throw(KeyboardInterrupt())
+    try:
+        implement.finish(root, S, "E-2", by=BY)
+        raise AssertionError("the run was not interrupted")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        implement.run = real
+    assert implement.dirty(root, S) == [], git(root, "status", "--porcelain")
+    code, out = flow(root, "finish", S, "E-2")
+    assert code == 0 and "closed: E-2 " in out, out
     print("ok")
 
 
@@ -1095,22 +1219,16 @@ def test_runner_runs_every_test():
     print("ok")
 
 
-def perf_suite(root, body):
-    (root / "tests/test_base.py").write_text(f"import os\nimport unittest\n\n\nclass B(unittest.TestCase):\n    def test_sum(self):\n        {body}\n")
-
-
 def test_ac14_finish_strips_nio_perf():
     """The epic's run strips NIO_PERF, so a perf-sensitive test doesn't fail the hand-back (CT-9, FR-11)."""
     root = impl()
-    perf_suite(root, "self.assertIsNone(os.environ.get('NIO_PERF'))")
-    commit_all(root, "perf-sensitive test")
     os.environ.pop("NIO_PERF", None)
     assert flow(root, "claim", S)[0] == 0
-    write_test(root)
+    write_test(root, before="import os; self.assertIsNone(os.environ.get('NIO_PERF'))")
     code_with(root)
     os.environ["NIO_PERF"] = "1"
     try:
-        code, out = flow(root, "finish", S, "E-1", "--run", f"{RUN} tests/test_base.py")
+        code, out = flow(root, "finish", S, "E-1")
     finally:
         del os.environ["NIO_PERF"]
     assert code == 0, out

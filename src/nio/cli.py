@@ -184,7 +184,6 @@ def main():
     ff = fsub.add_parser("finish", help="implementing: the agent handed an epic back; run its tests and close it if they pass")
     ff.add_argument("slug")
     ff.add_argument("epic", metavar="E-n")
-    ff.add_argument("--run", metavar="COMMAND", help="the command that runs the epic's tests, when its TCs can't build it")
     fu = fsub.add_parser("unblock", help="implementing: the human sets a blocked task or epic going again, with the reason")
     fb = fsub.add_parser("block", help="implementing: file an agent's blocked handoff as a pending change request")
     fu.add_argument("slug")
@@ -429,7 +428,7 @@ def main():
                 "drive": lambda: flow.drive(root, a.slug, a.by, token=a.token, release=a.release),
                 "claim": lambda: implement.claim(root, a.slug, by=a.by, epic=a.epic),
                 "brief": lambda: flow.brief(root, a.slug, a.all),
-                "finish": lambda: long(lambda: implement.finish(root, a.slug, a.epic, a.run, by=a.by)),
+                "finish": lambda: long(lambda: implement.finish(root, a.slug, a.epic, by=a.by)),
                 "show": lambda: flow.show(root, a.slug),
                 "block": lambda: implement.block(root, a.slug, a.task, a.handoff, by=a.by),
                 "unblock": lambda: implement.unblock(root, a.slug, a.task, a.human, by=a.by),

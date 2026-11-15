@@ -299,6 +299,12 @@ def version(led, rnd):
     return led.get("versions", {}).get(str(rnd))
 
 
+def raised_round(f):
+    """The last round a finding was raised in by a juror of its own: an escalation juror's (`<lens>-<n>`) is a vote,
+    so a fix made while that round ran is checked against the version before it (2026-11-15 FR-29)."""
+    return max((s["round"] for s in f["sources"] if s.get("round") and not re.search(r"-\d+$", s["juror"])), default=f["first_round"])
+
+
 def worst(*levels):
     return max(levels, key=SEVERITY.index)
 
@@ -980,7 +986,7 @@ def refute(led, path, asked):
     return out
 
 
-def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=False):
+def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=False, ruled=False):
     """`fid` one ID or comma-separated IDs, `note` a string or a list (one, or one per ID); all checks pass before the one save."""
     ids = fid.split(",")
     notes = [note] if isinstance(note, str) else list(note)
@@ -996,7 +1002,7 @@ def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=Fals
     bad = []
     for i, n in zip(ids, notes * len(ids) if len(notes) == 1 else notes):
         try:
-            _dispose_one(root, slug, gate, led, i, disposition, by, n, change, routed)
+            _dispose_one(root, slug, gate, led, i, disposition, by, n, change, routed, ruled)
         except ValueError as e:
             if len(ids) == 1:
                 raise
@@ -1007,7 +1013,7 @@ def dispose(root, slug, gate, fid, disposition, by, note, change="", routed=Fals
     return ids
 
 
-def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, routed):
+def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, routed, ruled=False):
     f = next((g for g in led["findings"] if g["id"] == fid), None)
     if not f:
         raise ValueError(f"no finding {fid} in the {gate} ledger of {slug}")
@@ -1039,6 +1045,11 @@ def _dispose_one(root, slug, gate, led, fid, disposition, by, note, change, rout
         note = f"{change}: {note}"
     if disposition in HUMAN_ONLY and by not in ("human", "auto"):
         raise ValueError(f"{disposition} is the human's call (--by human)")
+    if by == "auto" and not ruled:  # FR-19, FR-47: the driver accepts minors as risk; a capped batch only through `rule`
+        if fid in batch_open(led):
+            raise ValueError(f"{fid} is in the capped batch; under auto the driver rules it with nio jury rule")
+        if disposition in HUMAN_ONLY and (disposition != "accepted-risk" or f["severity"] != "minor"):
+            raise ValueError(f"{disposition} on a {f['severity']} is the human's call; under auto only a minor is accepted as risk")
     if any(s["lens"] == "deferred" for s in f["sources"]) and by == "agent":
         raise ValueError(f"{fid} was deferred by the grill; only the human closes it (--by human, or --by grill once a session settles it)")
     if any(s["lens"] == "deferred" for s in f["sources"]) and disposition == "spec-fix":
@@ -1134,7 +1145,7 @@ def compose(led, current):
     # disposed as a spec-fix, yet the artefact (== judged, see above) reads as it did when the finding was raised: the
     # fix never landed, or was undone; a fix judged in a later round that skipped the finding's lens counts
     unapplied = [f["id"] for f in led["findings"] if f["status"] == "disposed" and f["disposition"] in ("spec-fix", "plan-fix")
-                 and version(led, f["first_round"]) == judged]  # the version it was raised on (2026-11-15 FR-29)
+                 and version(led, raised_round(f)) == judged]  # the version it was raised on (2026-11-15 FR-29)
     if unapplied:
         return "human" if ph == "final" else "rejected", [f"{'plan' if led['gate'] == 'plan' else 'spec'}-fix without a change to the {led['gate']}: {', '.join(unapplied)}"], []
     if stuck or split or stale:
@@ -1892,12 +1903,12 @@ def rule(root, slug, gate, fid, ruling, note, by="human"):
             flow.write(root, slug, [{"kind": "ruling", "from": stage, "to": stage, "evidence": {"gate": gate, "ids": ids, "auto": w["auto"]}}],
                        state, w, stage)
     if ruling == "accept":
-        return dispose(root, slug, gate, fid, "accepted-risk", actor, note)
+        return dispose(root, slug, gate, fid, "accepted-risk", actor, note, ruled=True)
     if impl_gate(gate):
         from nio import tasks
         for f in [f for f in led["findings"] if f["id"] in ids]:
             tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)
-    dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in GATES else "spec-fix"), actor, note)
+    dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in GATES else "spec-fix"), actor, note, ruled=True)
     if ruling == "fix" and gate in GATES:
         led = load(root, slug, gate)
         led["cap"]["fix"] = sorted(set(led["cap"].get("fix", [])) | set(ids), key=lambda i: int(i[2:]))

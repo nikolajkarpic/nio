@@ -70,7 +70,7 @@ The plan is a set of documents, each grilled and each following a template:
 - A custom evaluator agent rates each task's difficulty.
 - The tasks jury reviews those ratings too.
 - The difficulties then become a **usage estimate** and an execution plan: model and
-  worker per task, and which tasks run in parallel versus in sequence.
+  agent per epic, and which epics run in parallel versus in sequence.
 - The human sees the estimate before anything is spent.
 
 ### Implement

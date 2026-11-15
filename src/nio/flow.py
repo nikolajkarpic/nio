@@ -1089,20 +1089,19 @@ def task_rows(root, slug, state, lines):
     if not tasks.path(root, slug).exists():
         return []
     st = implement.status(root, slug, lines) if lines is not None else {}
-    last = {}
-    for l in lines or []:
-        if t := (l.get("evidence") or {}).get("task"):
-            last[t] = l
+    ep = implement.epics(root, slug, lines) if lines is not None else {}
     claims = (state or {}).get("claims") or {}  # a claimed epic's tasks, or an old task or wave claim
     held = set(claims.get("epics") or {}) | {claims.get("task")} | set(claims.get("wave") or [])
+    attempts = (state or {}).get("attempts") or {}  # failed runs count per epic (an old per-task count stays)
     out = []
     for t in implement.tasks_of(root, slug):
         if not out or out[-1]["epic"] != t["epic"]:
             out.append({"epic": t["epic"], "tasks": []})
-        l = last.get(t["id"]) or {}
-        status = "-" if lines is None else "failing" if l.get("kind") == "review" and (l.get("evidence") or {}).get("passed") is False else st[t["id"]]
-        status = "claimed" if status in ("ready", "pending") and {t["id"], t["epic"]} & held else status
-        att = ((state or {}).get("attempts") or {}).get(t["id"], "-")
+        status = "-" if lines is None else st[t["id"]]
+        if status in ("ready", "pending"):  # an undone task reads as its epic: claimed, failed or blocked by its runs
+            now = ep[t["epic"]][0]
+            status = "claimed" if {t["id"], t["epic"]} & held else now if now in ("failed", "blocked") else status
+        att = attempts.get(t["epic"], attempts.get(t["id"], "-"))
         out[-1]["tasks"].append({"id": t["id"], "title": t["title"], "status": status, "attempts": att})
     return out
 

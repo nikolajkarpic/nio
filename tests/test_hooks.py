@@ -187,6 +187,18 @@ def test_mods_install_one_fails():
     print("ok")
 
 
+def test_mods_install_without_git():
+    """`nio mods` with no git on PATH (OSError) installs for the current directory instead of failing."""
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "claude"
+        fake.write_text('#!/bin/sh\necho "$PWD" >> "$0.log"\n[ "$2" = list ] && echo "[]"\nexit 0\n')
+        fake.chmod(0o755)
+        code, out, err = _mods(Path(tmp), path=tmp)
+        assert code == 0 and "nio-status-pane: installed" in out, (out, err)
+        assert Path(str(fake) + ".log").read_text().split("\n")[0] == str(Path(tmp).resolve()), Path(str(fake) + ".log").read_text()
+    print("ok")
+
+
 def test_mods_install_times_out():
     # J-10: a `claude` that hangs fails each mod with a timeout instead of hanging install
     with tempfile.TemporaryDirectory() as tmp:

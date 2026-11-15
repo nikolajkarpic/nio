@@ -102,7 +102,7 @@ def install(root, nio=None):
     return out
 
 
-# stage work an agent may run unprompted; finish is left out because it runs any command it is given (--run)
+# stage work an agent may run unprompted; finish is left out: it runs the tests and commits the epic
 ALLOW = ["check", "query", "get", "pack", "status", "index", "new", "run", "task", "agents sync", "agents verify",
          "flow next", "flow status", "flow start", "flow park", "flow done", "flow claim", "flow block",
          "jury template", "jury answers", "jury plan", "jury changed", "jury fixcheck", "jury collect", "jury dispose",

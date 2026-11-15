@@ -39,14 +39,14 @@ def test_two_independent_epics_claim_at_once():
         (root / f".nio/specs/{S}/running.json").write_text(json.dumps({
             "command": f"nio flow finish {S} E-2 --by x", "at": "2026-11-15T00:00:00Z", "pid": sleeper.pid,
             "host": __import__("socket").gethostname()}))
-        code, out = flow(root, "finish", S, "E-2", "--run", RUN, "--by", "b / test / test")
+        code, out = flow(root, "finish", S, "E-2", "--by", "b / test / test")
         assert code != 0 and "E-2's tests are running" in out, out
     finally:
         sleeper.kill()
         (root / f".nio/specs/{S}/running.json").unlink()
     write_test(w)
     code_with(w)
-    code, out = flow(root, "finish", S, "E-2", "--run", RUN, "--by", "b / test / test")
+    code, out = flow(root, "finish", S, "E-2", "--by", "b / test / test")
     assert code == 0 and "closed: E-2 " in out, out
     shown = set(git(root, "show", "--name-only", "--format=", "HEAD").split())
     assert {"app.py", "tests/test_refund.py"} <= shown and len(trees(root)) == 1, (shown, trees(root))
@@ -121,12 +121,16 @@ def test_ac5_nio_in_a_worktree_writes_the_root_state():
 def test_ac6_second_guard_is_told_to_try_again():
     root = impl(tasks=TWO)
     flow(root, "claim", S)
-    marker, before = Path(tempfile.mkdtemp()) / "m", len(lines(root))
-    with nio_flow.lock(root, S):
-        t = time.time()
-        code, o = flow(root, "finish", S, "E-1", "--run", f"touch {marker}; {RUN}")
+    before, calls, real = len(lines(root)), [], implement.run
+    implement.run = lambda *a: calls.append(a) or real(*a)
+    try:
+        with nio_flow.lock(root, S):
+            t = time.time()
+            code, o = flow(root, "finish", S, "E-1")
+    finally:
+        implement.run = real
     assert code == 1 and time.time() - t < 5 and "is being written by another nio flow call" in o and "try again" in o, o
-    assert not marker.exists() and len(lines(root)) == before
+    assert not calls and len(lines(root)) == before
     print("ok")
 
 
