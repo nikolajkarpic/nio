@@ -2,6 +2,8 @@
 rebases, and run the CI check before commits and pushes. Only the checks block git, and only when `nio` is installed."""
 import json
 import shutil
+import subprocess
+from importlib import resources
 from pathlib import Path
 
 from nio import records
@@ -30,6 +32,52 @@ BLOCKS = {
     "pre-push": 'base=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null) || base=$(git rev-parse --abbrev-ref "@{upstream}" 2>/dev/null) || base=HEAD\n'
     + check("$base"),
 }
+
+
+def mods_dir():
+    """The Claude Code mods: the packaged folder (an installed wheel), else the checkout's (an editable install)."""
+    for d in (resources.files("nio") / "mods", Path(__file__).parents[2] / "tools/claude-mods"):
+        if Path(str(d)).is_dir():
+            return Path(str(d))
+    raise ValueError("no NIO mods in this nio install")
+
+
+MODS = ("background-nio-commands", "nio-status-pane")
+CLAUDE_TIMEOUT = 120  # seconds per `claude plugin` call: a stalled install fails its mod instead of hanging setup (J-10)
+
+
+def _claude(root, claude, *args):
+    try:
+        r = subprocess.run([claude, *args], cwd=root, capture_output=True, text=True, timeout=CLAUDE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return 124, "", f"timed out after {CLAUDE_TIMEOUT}s"
+    return r.returncode, r.stdout, r.stderr
+
+
+def mods_install(root, skip=False, claude="claude"):
+    """One outcome line per mod; never raises, one mod failing never stops the other."""
+    try:
+        code, out, _ = _claude(root, claude, "plugin", "list", "--json")
+        have = {e.get("id") for e in json.loads(out)} if code == 0 else set()
+    except (OSError, ValueError, AttributeError):
+        have = set()
+    lines = []
+    for mod in MODS:
+        if f"{mod}@nio-mods" in have:
+            lines.append(f"{mod}: already installed" + (" (left as is)" if skip else ""))
+        elif skip:
+            lines.append(f"{mod}: skipped")
+        else:
+            try:
+                market = str(mods_dir())
+                code, out, err = _claude(root, claude, "plugin", "install", mod, "--marketplace", market, "--scope", "local", "--json")
+                text = (err.strip() or out.strip()).splitlines()
+                lines.append(f"{mod}: installed" if code == 0 else f"{mod}: failed: {text[-1] if text else 'exit ' + str(code)}")
+            except ValueError as e:
+                lines.append(f"{mod}: failed: {e}")
+            except OSError:
+                lines.append(f"{mod}: failed: claude not found")
+    return lines
 
 
 def install(root, nio=None):

@@ -136,5 +136,63 @@ def test_install_replaces_and_keeps():
     assert shared["hooks"]["Stop"][0]["hooks"][0]["command"].startswith("nio usage event"), shared
 
 
+def so_far_setup(events, hist, step=None):
+    root = repo()
+    (root / ".nio/specs" / SLUG).mkdir(parents=True)
+    if step:
+        run = root / ".nio/runs/R-261110-aaaa/jury/packs"
+        run.mkdir(parents=True)
+        (run / "step.json").write_text(json.dumps(step))
+    (root / usage.EVENTS).parent.mkdir(parents=True, exist_ok=True)
+    (root / usage.EVENTS).write_text("\n".join(map(json.dumps, events)) + "\n")
+    lines = [{"kind": "pass" if a != b else "claim", "at": at(m), "from": a, "to": b} for m, a, b in hist]
+    return root, lines
+
+
+def agent(tmp, name, start, stop, out, juror=False):
+    log = transcript(tmp / f"{name}.jsonl", [(name, start, out)])
+    if juror:
+        prompt = json.dumps({"type": "user", "message": {"content": "read .nio/runs/R-261110-aaaa/jury/packs/logic.md"}})
+        Path(log).write_text(prompt + "\n" + Path(log).read_text())
+    base = {"session": "s", "effort": SLUG}
+    return [{"at": at(start), "kind": "agent_start", "agent": name, "type": "w", **base},
+            {"at": at(stop), "kind": "agent_stop", "agent": name, "log": log, **base}]
+
+
+def test_so_far():
+    tmp = Path(tempfile.mkdtemp())
+    main = transcript(tmp / "main.jsonl", [("m1", 5, 100), ("m2", 35, 50)])
+    events = [{"at": at(0), "kind": "turn_start", "session": "s", "effort": SLUG, "transcript": main}]
+    events += agent(tmp, "j1", 2, 6, 10, juror=True) + agent(tmp, "w1", 12, 20, 20)
+    root, lines = so_far_setup(events, [(0, "grilling", "spec_jury"), (10, "spec_jury", "planning"), (30, "planning", "plan_jury")],
+                               {"gate": "spec", "round": 0, "lenses": ["logic"]})
+    r = usage.so_far(root, SLUG, lines, now=usage.when(at(40)))
+    got = [(s["stage"], s["seconds"], s["tokens"], s["juries"]) for s in r["stages"]]
+    assert got == [("spec_jury", 600, 110, [{"gate": "spec", "tokens": 10, "seconds": 240}]),
+                   ("planning", 1200, 20, []), ("plan_jury", 600, 50, [])], got
+    assert r["total"] == {"tokens": 180, "seconds": 2400}, r
+    assert not (root / ".nio/specs" / SLUG / "usage.json").exists()
+
+
+def test_so_far_visits_and_unattributed():
+    tmp = Path(tempfile.mkdtemp())
+    events = agent(tmp, "e", 1, 3, 7) + agent(tmp, "a", 12, 14, 5) + agent(tmp, "b", 32, 34, 8) + agent(tmp, "j", 22, 24, 4, juror=True)
+    root, lines = so_far_setup(events, [(10, "tasks_jury", "implementing"), (20, "implementing", "tasks_jury"), (30, "tasks_jury", "implementing")],
+                               {"gate": "tasks", "round": 0, "lenses": ["logic"]})
+    r = usage.so_far(root, SLUG, lines, now=usage.when(at(40)))
+    st = {s["stage"]: s for s in r["stages"]}
+    assert (st["implementing"]["tokens"], st["implementing"]["seconds"]) == (13, 1200), st
+    assert st["tasks_jury"]["tokens"] == 4 and st["tasks_jury"]["juries"] == [{"gate": "tasks", "tokens": 4, "seconds": 120}], st
+    assert r["unattributed"] == {"tokens": 7, "seconds": 120}, r
+    assert r["total"]["tokens"] == 24, r
+
+
+def test_so_far_nothing_recorded():
+    root, lines = so_far_setup([], [(0, "grilling", "spec_jury")])
+    r = usage.so_far(root, SLUG, lines, now=usage.when(at(40)))
+    dash = {"tokens": "-", "seconds": "-"}
+    assert r["stages"] == [] and r["unattributed"] == dash and r["total"] == dash, r
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_event_never_holds_a_prompt_or_a_command, test_a_bad_payload_never_raises, test_link_reads_the_run, test_report, test_install_replaces_and_keeps])
+    selfcheck.main([test_event_never_holds_a_prompt_or_a_command, test_a_bad_payload_never_raises, test_link_reads_the_run, test_report, test_install_replaces_and_keeps, test_so_far, test_so_far_visits_and_unattributed, test_so_far_nothing_recorded])

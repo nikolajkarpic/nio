@@ -3,6 +3,7 @@ import datetime
 import re
 import shlex
 import sys
+from pathlib import Path
 from importlib import resources
 
 from nio import agents, evidence, explain, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
@@ -72,6 +73,9 @@ def main():
     k.add_argument("--reader", choices=list(onboard.READERS), help="add the project docs this reader gets")
     k.add_argument("--slug", default="", help="effort slug; picks the apps its spec names")
     sub.add_parser("hooks", help="install git hooks: refresh the index and agent files after pulls, checkouts and rebases; check memory before commits and pushes")
+    md = sub.add_parser("mods", help="install NIO's Claude Code mods for this clone")
+    md.add_argument("mods_cmd", choices=["install"])
+    md.add_argument("--skip", action="store_true", help="install nothing; report what is already installed")
     al = sub.add_parser("allow", help="let agents run stage commands without a prompt on Claude Code; the human's decisions still prompt")
     scope = al.add_mutually_exclusive_group(required=True)
     scope.add_argument("--personal", action="store_true", help="this clone only: .claude/settings.local.json, gitignored")
@@ -161,6 +165,9 @@ def main():
     fbr.add_argument("--all", action="store_true", help="list every open task and finding, past the 80-line cap")
     for s in (fs, fd):
         s.add_argument("--auto", action="store_true", help="the human's auto-mode grant")
+    fsh = fsub.add_parser("show", help="an effort's drill-down data as one JSON line")
+    fsh.add_argument("slug")
+    fsh.add_argument("--json", action="store_true", required=True)
     fsub.add_parser("status", help="one line per effort, newest activity first")
     fap = fsub.add_parser("approve", help="the human approves the pr gate at a terminal, typing the effort's slug back")
     fap.add_argument("slug", nargs="?", help="default: the effort with the newest history line")
@@ -233,6 +240,13 @@ def main():
         for c, f, h in found:
             print(c, f, h) if h else print(c, f)
         print(f"{len(found)} candidate files" if found else "no candidate files found")
+        return
+    if a.cmd == "mods":  # local scope is keyed to the clone's root, so resolve it; no repo: use cwd
+        try:
+            top = records.repo_root()
+        except (IndexError, OSError):  # OSError: no git on PATH either
+            top = Path.cwd()
+        print("\n".join(hooks.mods_install(top, a.skip)))
         return
     root = records.repo_root()
 
@@ -416,6 +430,7 @@ def main():
                 "claim": lambda: implement.claim(root, a.slug, by=a.by, epic=a.epic),
                 "brief": lambda: flow.brief(root, a.slug, a.all),
                 "finish": lambda: long(lambda: implement.finish(root, a.slug, a.epic, a.run, by=a.by)),
+                "show": lambda: flow.show(root, a.slug),
                 "block": lambda: implement.block(root, a.slug, a.task, a.handoff, by=a.by),
                 "unblock": lambda: implement.unblock(root, a.slug, a.task, a.human, by=a.by),
             }[a.flow_cmd]()

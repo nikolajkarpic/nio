@@ -182,6 +182,23 @@ def test_history():
     assert records.check(root)[0] == [] and any("only change `paths`" in e for e in records.check(root, added)[0])
     fill(p, paths='["new.py"]', title='"Sessions"')
     commit(root, "undo")
+    # a committed pending change request may be settled once: outcome set, decision appended; nothing else changes
+    c = records.new(root, "change", "auth", "Sessions spec is stale")
+    c.write_text(c.read_text().replace('paths: []', 'paths: ["new.py"]').replace('against: ""', 'against: "new.py"', 1)
+                 .replace("TODO", "Stale"))
+    assert not [e for e in records.check(root)[0] if c.name in e], records.check(root)[0]
+    errs = []
+    commit(root, "change request")
+    pending = c.read_text()
+    c.write_text(pending.replace("outcome: pending", "outcome: rejected", 1) + "\n## Human decision\nRejected.\n")
+    assert [e for e in records.check(root)[0] if c.name in e] == errs, records.check(root)[0]
+    c.write_text(pending.replace("outcome: pending", "outcome: rejected", 1).replace("## ", "## Changed ", 1))
+    assert any(c.name in e and "may only change" in e for e in records.check(root)[0])
+    c.write_text(pending.replace("outcome: pending", "outcome: rejected", 1) + "\n## Human decision\nRejected.\n")
+    commit(root, "settle")
+    c.write_text(c.read_text().replace("outcome: rejected", "outcome: accepted", 1))
+    assert any(c.name in e and "may only change" in e for e in records.check(root)[0])
+    c.write_text(c.read_text().replace("outcome: accepted", "outcome: rejected", 1))
     # moving a record to another area keeps its ID's commit
     (root / ".nio/config.json").write_text(json.dumps({"memory": {"areas": ["auth", "core"]}}))
     (root / ".nio/memory/core").mkdir()

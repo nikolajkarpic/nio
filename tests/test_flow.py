@@ -2,6 +2,7 @@
 which wait for #43, which builds the task machine (change request C-261028-xcg6), as the tasks-stage spec's non-goal
 says. Until then each of those says so and passes.
 Run: uv run python tests/test_flow.py"""
+import datetime
 import hashlib
 import json
 import os
@@ -2953,6 +2954,28 @@ def test_ac11_retired_fix_task_closes_its_finding():
     print("ok")
 
 
+def test_retire_releases_its_claim():
+    """#157: a fix task retired while claimed no longer blocks every later claim."""
+    root, _ = with_fix(finding=True)
+    st = root / ".nio/specs" / S / "state.json"
+    history(root, S, {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-4"},
+                      "state": {"claims": {"task": "T-4"}}})
+    assert json.loads(st.read_text())["claims"] == {"task": "T-4"}
+    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "duplicate", "--by", "agent")
+    assert code == 0 and "claim released" in out, (out, err)
+    assert json.loads(st.read_text())["claims"] == {}
+    last = json.loads((root / ".nio/specs" / S / "history.jsonl").read_text().splitlines()[-1])
+    assert (last["kind"], last["evidence"]["task"]) == ("retire", "T-4"), last
+    # a task retired before this fix kept its claim: retiring it again releases it, and is refused once nothing is left
+    history(root, S, {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-4"},
+                      "state": {"claims": {"task": "T-4"}}})
+    code, out, err = run_main(root, "task", "retire", S, "T-4", "--reason", "stale claim", "--by", "agent")
+    assert code == 0 and "already retired; its claim released" in out, (out, err)
+    assert json.loads(st.read_text())["claims"] == {}
+    assert run_main(root, "task", "retire", S, "T-4", "--reason", "again", "--by", "agent")[0] != 0
+    print("ok")
+
+
 def test_ac28_retire_without_reason_is_refused():
     root, tasks_md = with_fix(finding=True)
     before = tasks_md.read_text()
@@ -3330,6 +3353,313 @@ def test_auto_pause_and_end():
     code, out = cli(pr, "done", "pr", S)
     assert code != 0 and "only the human approves the pr gate" in out, out
     print("ok")
+
+
+def test_show_unknown_or_done_slug():
+    root = effort("done")
+    shipped(root, S)
+    for slug, want in (("2026-01-01-nothing", "no effort 2026-01-01-nothing"), (S, f"{S} is done")):
+        code, out, err = run_main(root, "flow", "show", slug, "--json")
+        assert code == 1 and not err, (code, err)
+        assert json.loads(out) == {"error": want}, out
+    print("ok")
+
+def test_show_timeline_lists_stage_changes():
+    root = effort("tasking")
+    ev = {"paths": [], "verdict": "", "output": ""}
+    rows = [("pass", "planning", "plan_jury", 10), ("pass", "plan_jury", "tasking", 11), ("back", "tasking", "planning", 12)]
+    history(root, S, *({"kind": k, "from": a, "to": b, "evidence": ev,
+                        "at": datetime.datetime(2026, 11, 10, h, tzinfo=datetime.timezone.utc)} for k, a, b, h in rows))
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0 and len(out.strip().splitlines()) == 1, (code, out, err)
+    want = [{"kind": k, "from": a, "to": b, "role": "orchestrator", "host": "test", "model": "test",
+             "at": f"2026-11-10T{h}:00:00Z"} for k, a, b, h in rows]
+    assert json.loads(out)["timeline"] == want, out
+    print("ok")
+
+
+def test_show_survives_malformed_ledger():
+    root = effort("tasking")
+    j = root / ".nio/specs" / S / "jury"
+    j.mkdir(parents=True, exist_ok=True)
+    (j / "zz.json").write_text("{}")
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    d = json.loads(out)
+    assert "error" in d["juries"] and d["stage"] != "-", (code, out, err)
+    print("ok")
+
+
+def test_show_timeline_failed_review():
+    root = effort("implementing")
+    rev = lambda t, passed, reasons: {"kind": "review", "from": "implementing", "to": "implementing",
+                                      "evidence": {"task": t, "passed": passed, "reasons": reasons}}
+    history(root, S, rev("T-1", False, ["test still fails", "file outside the task"]), rev("T-2", False, []), rev("T-3", True, []))
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    rows = json.loads(out)["timeline"]
+    assert [r["kind"] for r in rows] == ["review", "review"], rows
+    assert rows[0]["reasons"] == ["test still fails", "file outside the task"] and rows[1]["reasons"] == "-", rows
+    print("ok")
+
+
+def test_timeline_missing_fields_read_dash():
+    a = {"kind": "pass", "from": "grilling", "to": "spec_jury", "who": {"role": "human", "host": "", "model": ""},
+         "at": "2026-11-10T10:00:00Z"}
+    b = {"kind": "pass", "from": "grilling", "to": "spec_jury", "at": "2026-11-10T10:00:00Z"}
+    r1, r2 = flow.timeline([a, b])
+    assert (r1["role"], r1["host"], r1["model"]) == ("human", "-", "-"), r1
+    assert (r2["role"], r2["host"], r2["model"]) == ("-", "-", "-"), r2
+    print("ok")
+
+
+def two_round_spec(root):
+    """TC-7's ledger: spec gate, round 2 approved; J-1 confirmed major (logic), J-2 refuted minor (scope), both from round 1."""
+    led = jury.load(root, S, "spec")
+    juror = lambda lens: {"attempts": 1, "lens": lens, "by": "juror / test / test", "context": "sufficient", "valid": True,
+                          "errors": [], "round": 2}
+    finding = lambda i, sev, val, st, lens, disp: {
+        "id": i, "title": f"finding {i}", "kind": "gap", "severity": sev, "cites": [], "evidence": "observed", "quotes": [],
+        "fix": "", "sources": [{"juror": f"spec-{lens}", "lens": lens, "situation": "x", "severity": sev, "round": 1}],
+        "validation": val, "reason": "", "status": st, "disposition": disp, "by": "", "note": "", "baseline": "new",
+        "rounds": 0, "first_round": 1, "last_round": 1}
+    led.update(round=2, outcome="approved", jurors={"spec-logic": juror("logic"), "spec-scope": juror("scope")},
+               findings=[finding("J-1", "major", "confirmed", "fixed", "logic", "spec-fix"),
+                         finding("J-2", "minor", "refuted", "refuted", "scope", "")])
+    jury.save(root, led)
+
+
+def juries_of(root):
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    return json.loads(out)["juries"]
+
+
+def test_show_juries_two_rounds():
+    root = effort("plan_jury")
+    two_round_spec(root)
+    spec = next(j for j in juries_of(root) if j["gate"] == "spec")
+    assert spec["outcome"] == "approved" and len(spec["rounds"]) == 2, spec
+    lens = lambda v: [{"lens": l, "verdict": v[l]} for l in ("logic", "scope")]
+    assert spec["rounds"][0]["lenses"] == lens({"logic": "block", "scope": "approve"}), spec
+    assert spec["rounds"][1]["lenses"] == lens({"logic": "approve", "scope": "approve"}), spec
+    print("ok")
+
+
+def test_show_findings_and_fix_task():
+    root = effort("plan_jury")
+    two_round_spec(root)
+    (root / ".nio/specs" / S / "tasks.md").write_text((FIXTURES / "tasks/tasks.md").read_text() + (
+        "\n#### Fixes\n\n### T-9 Fix the finding\n- From: J-1 (spec, round 1)\n- Files: `app.py`\n- Serves: AC-1\n"
+        "- Test: TC-1\n- Depends on: none\n- Parallel: no\n- Tier: strong: a fix\n- Effort: med\n- Mode: single: a fix\n"))
+    spec = next(j for j in juries_of(root) if j["gate"] == "spec")
+    got = [(f["id"], f["validation"], f["fix_tasks"]) for f in spec["rounds"][0]["findings"]]
+    assert got == [("J-1", "confirmed", ["T-9"]), ("J-2", "refuted", [])], got
+    assert spec["rounds"][1]["findings"] == [], spec
+    print("ok")
+
+
+def test_show_juries_per_gate():
+    root = effort("tasks_jury")
+    led = jury.load(root, S, "tasks")
+    led.update(round=1, jurors={"tasks-executability": {"attempts": 1, "lens": "executability", "by": "juror / test / test",
+                                                       "context": "sufficient", "valid": True, "errors": [], "round": 1}})
+    jury.save(root, led)
+    juries = juries_of(root)
+    assert [j["gate"] for j in juries] == ["plan", "spec", "tasks"], juries
+    tasks = juries[2]["rounds"]
+    assert [r["lenses"] for r in tasks] == [[{"lens": "executability", "verdict": "approve"}]], tasks
+    for j in juries[:2]:
+        names = {l["lens"] for r in j["rounds"] for l in r["lenses"]}
+        assert "executability" not in names, j
+    print("ok")
+
+
+def test_juries_none_yet():
+    root = effort("plan_jury")
+    shutil.rmtree(root / ".nio/specs" / S / "jury")
+    assert flow.juries(root, S) == []
+    print("ok")
+
+
+def test_show_tasks_by_epic():
+    root = effort("implementing")
+    f = root / ".nio/specs" / S / "tasks.md"
+    f.write_text(f.read_text() + (
+        "\n## E-2 Second epic (US-1)\n\n### T-4 Another task\n- Files: `app.py`\n- Serves: AC-1\n- Test: TC-1\n"
+        "- Depends on: none\n- Parallel: no\n- Tier: strong: x\n- Effort: med\n- Mode: single: x\n"))
+    t = task_line
+    history(root, S, t("claim", "T-1"), t("red", "T-1"), t("green", "T-1"), t("review", "T-1", passed=True),
+            t("task_done", "T-1"), t("claim", "T-2"), t("claim", "T-4"), t("review", "T-4", passed=False, reasons=[]),
+            {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-2"},
+             "state": {"claims": {"task": "T-2"}, "attempts": {"T-2": 2, "T-4": 1}}})
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)["tasks"]
+    assert [e["epic"] for e in got] == ["E-1", "E-2"], got
+    row = lambda e, i: next(x for x in got[e]["tasks"] if x["id"] == i)
+    assert (row(0, "T-1")["status"], row(0, "T-1")["attempts"]) == ("done", "-"), got
+    assert (row(0, "T-2")["status"], row(0, "T-2")["attempts"]) == ("claimed", 2), got
+    assert (row(1, "T-4")["status"], row(1, "T-4")["attempts"]) == ("failing", 1), got
+    print("ok")
+
+
+def test_task_rows_none_yet():
+    root = effort("planning")
+    assert flow.task_rows(root, S, *flow.load(root, S)) == []
+    print("ok")
+
+
+def test_show_memory_by_front_matter():
+    """TC-17: memory lists the records whose front matter points at the effort, with the index's standing."""
+    from nio import index
+    root = effort("planning")
+    own = next((root / ".nio/memory/project").glob("V-*-spec-gate-for-*.md"))
+    own_id = records.parse(own)[0]["id"]
+
+    def write(rtype, title, **fields):
+        path = records.new(root, rtype, "project", title)
+        head, body = path.read_text().split("\n---\n", 1)
+        lines = [ln for ln in head.splitlines() if ln.split(":")[0] not in fields]
+        path.write_text("\n".join(lines + [f"{k}: {v}" for k, v in fields.items()]) + "\n---\n" + body)
+        return records.parse(path)[0]["id"]
+
+    a = write("verdict", "points by paths", paths=f"[.nio/specs/{S}/spec.md]")
+    b = write("change", "points by against", against=S)
+    c = write("decision", "elsewhere", paths="[src/other.py]")
+    real = index.embed
+    index.embed = lambda model, texts: [bytes(index.DIM)] * len(texts)
+    try:
+        index.build(root)
+    finally:
+        index.embed = real
+    d = write("lesson", "written after the index", paths=f"[.nio/specs/{S}/plan.md]")
+    stands = dict(index.connect(root).execute("select id, standing from nodes where kind='record'"))
+    saved = sys.modules.get("fastembed", 0)
+    sys.modules["fastembed"] = None
+    try:
+        got = flow.memory(root, S)
+    finally:
+        if saved == 0:
+            del sys.modules["fastembed"]
+        else:
+            sys.modules["fastembed"] = saved
+    assert [r["id"] for r in got] == sorted([own_id, a, b, d]), got
+    by = {r["id"]: r for r in got}
+    for rid in (own_id, a, b):
+        assert by[rid]["standing"] == stands[rid], by[rid]
+    assert by[d]["standing"] == "-", by[d]
+    assert (by[a]["kind"], by[b]["kind"], by[d]["kind"]) == ("verdict", "change", "lesson"), got
+    assert by[a]["title"] == "points by paths" and by[own_id]["title"].startswith("spec gate for"), got
+    print("ok")
+
+
+def show_effort(events=2):
+    """TC-25's effort: history with a stage change, a ledger (real, from the spec approval), tasks.md and `events` events."""
+    root = effort("implementing")
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ago = lambda m: now - datetime.timedelta(minutes=m)
+    history(root, S, {"kind": "pass", "from": "tasks_jury", "to": "implementing", "at": ago(60)}, task_line("claim", "T-1"))
+    (root / ".nio/runs").mkdir(parents=True, exist_ok=True)
+    rows = [{"at": ago(50 - i % 40).isoformat(), "kind": "agent_start" if i % 2 == 0 else "agent_stop", "session": "s",
+             "effort": S, "agent": f"a{i // 2}", "type": "w", "log": ""} for i in range(events)]
+    (root / ".nio/runs/events.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    return root
+
+
+def test_show_json_five_keys_writes_nothing():
+    """TC-25."""
+    root = show_effort()
+    git(root, "add", "-A")
+    git(root, "commit", "-qm", "setup")
+    before = git(root, "status", "--porcelain")
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)
+    assert {"timeline", "juries", "tasks", "cost", "memory", "slug", "stage"} <= set(got), got
+    for key in ("timeline", "juries", "tasks", "cost", "memory"):
+        assert not (isinstance(got[key], dict) and "error" in got[key]), (key, got[key])
+    assert isinstance(got["cost"], dict) and got["cost"].get("stages"), got["cost"]
+    after = git(root, "status", "--porcelain")
+    assert after == before, (before, after)
+    assert not (root / ".nio/specs" / S / "usage.json").exists()
+    print("ok")
+
+
+def test_show_writes_only_caches():
+    """TC-34."""
+    root = show_effort()
+    from nio import index
+    real = index.embed
+    index.embed = lambda model, texts: [bytes(index.DIM)] * len(texts)
+    try:
+        index.build(root)
+    finally:
+        index.embed = real
+    snap = lambda: sorted((str(p), p.stat().st_size, p.stat().st_mtime_ns) for p in root.rglob("*")
+                          if p.is_file() and ".git" not in p.relative_to(root).parts
+                          and p.relative_to(root).parts[:2] != (".nio", "cache"))
+    before = snap()
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)
+    for key in ("cost", "memory"):
+        assert not (isinstance(got[key], dict) and "error" in got[key]), (key, got[key])
+    assert isinstance(got["cost"], dict) and got["cost"].get("stages"), got["cost"]
+    assert snap() == before
+    print("ok")
+
+
+def test_show_bad_history_line_keeps_other_sections():
+    """TC-5."""
+    root = effort("implementing")
+    history(root, S, {"kind": "claim", "from": "implementing", "to": "implementing", "evidence": {"task": "T-1"}})
+    with (root / ".nio/specs" / S / "history.jsonl").open("a") as f:
+        f.write("not json\n")
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    got = json.loads(out)
+    assert got["timeline"] == {"error": f"{S}: history.jsonl, line 2"}, got["timeline"]
+    assert isinstance(got["cost"], dict) and "error" in got["cost"], got["cost"]
+    assert isinstance(got["juries"], list) and "spec" in [j["gate"] for j in got["juries"]], got["juries"]
+    assert isinstance(got["tasks"], list) and isinstance(got["memory"], list), got
+    print("ok")
+
+
+def test_show_speed():
+    """TC-33: 200 history lines, 10 ledgers, 2,000 events; the 5-second limit holds only if NIO_PERF=1."""
+    root = effort("implementing")
+    folder = root / ".nio/specs" / S
+    now = datetime.datetime.now(datetime.timezone.utc)
+    ago = lambda m: now - datetime.timedelta(minutes=m)
+    state = flow.load(root, S)[0]
+    for i in range(200):
+        t = f"T-{i % 50 + 1}"
+        line = ({"kind": "pass", "from": "tasks_jury", "to": "implementing"} if i == 0 else
+                task_line(("claim", "red", "green", "review")[i % 4], t, passed=True))
+        line["at"] = ago(400 - i)
+        history(root, S, line)
+    ledger = (folder / "jury/spec.json").read_text()
+    for gate in ["plan", "tasks"] + [f"implementation-E-{n}" for n in range(1, 7)]:
+        (folder / "jury" / f"{gate}.json").write_text(ledger)
+    (root / ".nio/runs").mkdir(parents=True, exist_ok=True)
+    tmp, rows = Path(tempfile.mkdtemp()), []
+    for a in range(40):
+        log = tmp / f"a{a}.jsonl"
+        log.write_text("".join(json.dumps({"type": "assistant", "requestId": f"r{a}-{r}", "timestamp": ago(300).isoformat(),
+                                           "message": {"model": "m", "usage": {"output_tokens": 5}}}) + "\n" for r in range(20)))
+        base = {"session": "s", "effort": S, "agent": f"a{a}"}
+        rows += [{"at": ago(300 - a).isoformat(), "kind": "agent_start", "type": "w", **base},
+                 {"at": ago(299 - a).isoformat(), "kind": "agent_stop", "log": str(log), **base}]
+    rows += [{"at": ago(200 - i % 100).isoformat(), "kind": "shell_start", "session": "s", "effort": S} for i in range(2000 - len(rows))]
+    (root / ".nio/runs/events.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    start = time.perf_counter()
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    took = time.perf_counter() - start
+    assert code == 0, (code, out, err)
+    if os.environ.get("NIO_PERF") == "1":
+        assert took < 5.0, f"show took {took:.2f}s, over the limit of 5 seconds"
+    print(f"ok ({took:.2f}s)")
 
 
 if __name__ == "__main__":

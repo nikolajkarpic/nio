@@ -37,6 +37,8 @@ def settings(root):
 def connect(root, name="index.db"):
     path = root / ".nio/cache" / name
     path.parent.mkdir(parents=True, exist_ok=True)
+    if not (path.parent / ".gitignore").exists():
+        (path.parent / ".gitignore").write_text("*\n")  # keep the cache out of `git status`
     db = sqlite3.connect(path)
     db.enable_load_extension(True)
     sqlite_vec.load(db)

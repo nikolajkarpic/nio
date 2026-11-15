@@ -1117,5 +1117,11 @@ def test_ac14_finish_strips_nio_perf():
     print("ok")
 
 
+def test_suite_reads_self_check_name_with_spaces():
+    cmd = "printf 'FAIL tests/x.py::a name with spaces\\nran 1 tests, 1 failed\\n'; exit 1"
+    r = implement.suite(Path(tempfile.gettempdir()), {"tests": {"suite": cmd}})
+    assert r["failing"] == ["tests/x.py::a name with spaces"], r["failing"]
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
