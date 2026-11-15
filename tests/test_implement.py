@@ -233,6 +233,14 @@ def done(task):
     return [L("claim", task), L("red", task), L("green", task), L("review", task, passed=True), L("task_done", task, commit="c")]
 
 
+def test_retired_dependency_is_met():
+    """A task whose dependency was retired after approval is ready, not waiting forever (C-261115-ftot)."""
+    text = LIST[:LIST.index("### T-1")] + LIST[LIST.index("### T-2"):]
+    t2 = next(t for t in implement.tasks_of(lst(text), "s") if t["id"] == "T-2")
+    assert t2["deps"] == [], t2
+    print("ok")
+
+
 def test_ac8_tasks_of_reads_fields_and_mode():
     root = lst()
     ts = implement.tasks_of(root, "s")

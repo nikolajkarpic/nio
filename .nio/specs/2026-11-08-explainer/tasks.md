@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-08-explainer
-retired: []                      # task IDs removed from this file; never reused
+retired: [T-24, T-28, T-14, T-31, T-32, T-33, T-34, T-35, T-36, T-37, T-38, T-40, T-41, T-43, T-42, T-44]                      # task IDs removed from this file; never reused
 ---
 # Tasks: explainer
 
@@ -25,6 +25,63 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: split: CLI behaviour has a test (TC-16)
 
+#### Fixes
+
+### T-17 Fix: Node cap undercounts common Mermaid syntax, so oversized diagrams pass
+- From: J-1 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-2, AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-18 Fix: Any non-parse render failure becomes "unreachable", which skips the check and hides every later block
+- From: J-2 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-3, CT-4, AC-9
+- Test: TC-14
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-19 Fix: A node whose ID starts with `end` is skipped
+- From: J-9 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-2, FR-7, J-9
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-20 Fix: AC-9 has no passing evidence
+- From: J-14 (implementation-E-1, round 1)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: AC-9
+- Test: TC-14
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-21 Fix: Node cap still undercounts: labels cleaned across lines and arrow forms `<-->`, `--o`, `--x` missed
+- From: J-1 (implementation-E-1, round 2)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: CT-2, AC-5
+- Test: TC-5
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-2 Check the explainer (US-2)
 ### T-3 Add the plan-mode checks of `explain.check` (CT-4)
 - Files: `src/nio/explain.py`, `tests/test_explain.py`
@@ -46,6 +103,30 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: split: TC-14/15 lead the code
 
+#### Fixes
+
+### T-22 Fix: CT-1 counts as named when only CT-10 is in the map
+- From: J-1 (implementation-E-2, round 1)
+- Files: `src/nio/explain.py`
+- Serves: AC-7, CT-4
+- Test: TC-12
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-23 Fix: A path that resolves to a plan explainer but is spelled differently runs as topic mode
+- From: J-2 (implementation-E-2, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-4, AC-7
+- Test: TC-12
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
 ## E-3 Images beside the explainer (US-3)
 ### T-5 Add `explain.finish`: refusals, hashes, drill-down markers, one atomic write (CT-5 steps 1-4, 7, 8)
 - Files: `src/nio/explain.py`, `tests/test_explain.py`
@@ -66,6 +147,52 @@ retired: []                      # task IDs removed from this file; never reused
 - Tier: max: deletes files, which can't be undone, so the safety rules must be exact
 - Effort: med
 - Mode: split: four tests lead the code
+
+#### Fixes
+
+### T-25 Fix: A drill-down heading containing ", " locks finishing forever
+- From: J-1 (implementation-E-3, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-5, J-1
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-26 Fix: A quickstart with unusual front matter fails after explainer.md is already written and images deleted
+- From: J-2 (implementation-E-3, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-5, J-2
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-27 Fix: Step 6 strips every `> ` line and image line, not only the ones an earlier finish wrote
+- From: J-4 (implementation-E-3, round 1)
+- Files: `src/nio/explain.py`
+- Serves: CT-5, J-4
+- Test: TC-4
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
+
+### T-29 Fix: A drill-down heading containing "; " still locks finishing
+- From: J-1 (implementation-E-3, round 2)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: CT-5, AC-33
+- Test: TC-43
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: a fix from a jury finding
 
 ## E-4 Explain an approved plan (US-1)
 ### T-7 Make the plan gate ignore the quickstart `Read first` line (CT-9)
@@ -141,15 +268,29 @@ retired: []                      # task IDs removed from this file; never reused
 - Effort: low
 - Mode: split: TC-25/42 lead the code
 
-### T-14 Add topic mode to the skill and its end-to-end tests (CT-11)
-- Files: `skills/explain/SKILL.md`, `tests/test_explain_e2e.py`
+#### Fixes
+
+### T-30 Fix: land T-14's topic-mode e2e tests as regression guards (T-14 retired, already delivered by T-8)
+- From: C-261115-ftot
+- Files: `tests/test_explain_e2e.py`
 - Serves: AC-18, AC-19, AC-35
 - Test: TC-23, TC-24, TC-27
-- Depends on: T-13
+- Depends on: none
 - Parallel: no
-- Tier: strong: skill prose plus e2e tests, patterned on plan mode
+- Tier: cheap: tests over existing behaviour
 - Effort: low
-- Mode: single: skill text and e2e tests are written together
+- Mode: direct: the behaviour exists; the tests guard it
+
+### T-39 Fix: A multi-line or padded topic never continues, and silently spawns a new file every run
+- From: J-9 (implementation-E-7, round 1)
+- Files: `src/nio/explain.py`, `tests/test_explain.py`
+- Serves: FR-27, AC-34
+- Test: TC-26
+- Depends on: none
+- Parallel: no
+- Tier: strong: a fix from a jury finding
+- Effort: med
+- Mode: single: unit test on explain.topic, then the fix
 
 ## E-8 Drill down interactively (US-4)
 ### T-15 Add the `Drill-down` section to the skill and its end-to-end tests (CT-12)

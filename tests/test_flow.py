@@ -872,7 +872,7 @@ def test_ac11_no_hand_edit_instruction():
     command, and none tells an agent to edit, write, append to or change one."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 29, paths
+    assert len(paths) == 30, paths
     for path in paths:
         lines = path.read_text().splitlines()
         assert lines.count(RULE) == 1, path
@@ -1734,6 +1734,21 @@ def test_ac34_next_resumes():
     flow.next_step(root, S, by=BY)
     assert "working" in line_for(root, S)
     assert [x["kind"] for x in lines_of(root)[n:]] == ["resume"] and flow.load(root, S)[0]["pause"] is None
+    print("ok")
+
+
+def test_ac24_suggests_explain():
+    """TC-32: once the plan gate is approved, next adds one `suggest:` line naming @nio:explain and the slug."""
+    out = nxt(effort("tasking"))
+    sug = [x for x in out.splitlines() if x.startswith("suggest:")]
+    assert len(sug) == 1 and "nio:explain" in sug[0] and S in sug[0], out
+    print("ok")
+
+
+def test_ac25_no_suggestion_open_gate():
+    """TC-33: while the plan gate is open, next never mentions nio:explain."""
+    out = nxt(effort("plan_jury"))
+    assert "nio:explain" not in out, out
     print("ok")
 
 
@@ -2721,6 +2736,37 @@ def test_lite_skill_texts():
     assert any(all(k in ln for k in ("auth", "money", "data-deletion", "migration", "pii", "full"))
                for ln in s1.splitlines()), "TC-14"
     assert any(all(k in ln for k in ("one line", "by what it means", "can change")) for ln in s1.splitlines()), "TC-15"
+
+
+def test_ac23_explainer_never_blocks():
+    """TC-30 (AC-23, CT-8, CT-9): a stale or missing explainer blocks no flow command; the `Read first` line finish adds
+    to quickstart.md is not an edit to the approved plan."""
+    root = effort("tasking")
+    from nio import plan
+    ok0 = plan.approved(root, S)
+    assert ok0[0], ok0
+    folder = root / ".nio/specs" / S
+    drop = lambda o: "\n".join(l for l in o.splitlines() if not l.startswith("suggest:"))
+    base = nxt(root)  # no explainer.md yet: the only difference allowed is the suggest line
+    assert "suggest: run" in base and "explainer.md" in base, base
+    q = folder / "quickstart.md"
+    line = "Read first: [explainer.md](explainer.md)"
+    text = q.read_text()
+    assert jury.planned("quickstart.md", line + "\n\n" + text) == text
+    assert jury.planned("quickstart.md", text) == text
+    (folder / "explainer.md").write_text("# Explainer\n")
+    present = nxt(root)
+    assert drop(present) == drop(base) and "suggest:" not in present, present
+    q.write_text(line + "\n\n" + text)  # stale: the Read first line was added after the explainer
+    out = nxt(root)
+    assert "back" not in out and "state: tasking" in out, out
+    assert drop(out) == drop(base), (out, base)
+    ok = plan.approved(root, S)
+    assert ok[0], ok
+    assert run_main(root, "check", "plan", S, "--approved")[0] == 0
+    for d in (jury.GATES, flow.SKILL, flow.EXIT):
+        assert "explain" not in str(d), d
+    print("ok")
 
 
 

@@ -1,0 +1,856 @@
+{
+  "gate": "implementation-E-7",
+  "subject": "2026-11-08-explainer",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "adversary",
+    "conformance",
+    "consistency",
+    "correctness"
+  ],
+  "collected": {
+    "R-261115-6hcf/implementation-E-7-adversary.md": "aa32248d84c25a5ecedf168214b02ef9e51cb5469046359050f8834c6fe307cb",
+    "R-261115-6hcf/implementation-E-7-conformance.md": "bfd11022c7131191969048be96da7a28a07aee36d26e4dc4d6c48d9ac1f523fc",
+    "R-261115-6hcf/implementation-E-7-consistency.md": "7c470bbd2858137feed6c8b7ab31927746575163783f3074a1700e2b0075b81d",
+    "R-261115-6hcf/implementation-E-7-correctness.md": "aba46621c44536c51d0849b33ed7061e4921e6e5fe6a8de74d11956c5e430413",
+    "R-261115-6hcf/implementation-E-7-refuter.md": "8fb1d62100d0d4ea84ef1ce8c296884c3bef3aeb1935cf228721d9fd9ef89569",
+    "R-261115-uxds/implementation-E-7-adversary.md": "c83f75b8cfd5978365cf4faaa9696adffe1266212135d1aa4a2b7ce4d683dd4a"
+  },
+  "jurors": {
+    "implementation-E-7-adversary": {
+      "attempts": 1,
+      "lens": "adversary",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "d69ddc816d957861cabe1c3225447060163bf24f",
+      "judged": 2
+    },
+    "implementation-E-7-conformance": {
+      "attempts": 1,
+      "lens": "conformance",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d39787e528740592b9a1344f0558a9b0d088fb21",
+      "judged": 1
+    },
+    "implementation-E-7-consistency": {
+      "attempts": 2,
+      "lens": "consistency",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d39787e528740592b9a1344f0558a9b0d088fb21",
+      "judged": 1
+    },
+    "implementation-E-7-correctness": {
+      "attempts": 1,
+      "lens": "correctness",
+      "by": "juror / claude-code / sonnet",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 1,
+      "version": "d39787e528740592b9a1344f0558a9b0d088fb21",
+      "judged": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "test tampering: test_ac16_new_failure_only in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_ac16_new_failure_only from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_ac16_new_failure_only from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-2",
+      "title": "test tampering: test_ac35_unknown_runner_review in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_ac35_unknown_runner_review from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_ac35_unknown_runner_review from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-3",
+      "title": "test tampering: test_ac44_broken_or_fewer in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_ac44_broken_or_fewer from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_ac44_broken_or_fewer from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-4",
+      "title": "test tampering: test_full_suite_waits_for_the_epic_to_close in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_full_suite_waits_for_the_epic_to_close from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_full_suite_waits_for_the_epic_to_close from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-5",
+      "title": "test tampering: test_tests_epic_replaces_the_suite_until_the_last_epic in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_tests_epic_replaces_the_suite_until_the_last_epic from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_tests_epic_replaces_the_suite_until_the_last_epic from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-6",
+      "title": "test tampering: test_review_fails_a_crashed_self_check_suite in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_review_fails_a_crashed_self_check_suite from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_review_fails_a_crashed_self_check_suite from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-7",
+      "title": "test tampering: test_review_fails_a_crash_beside_a_baseline_failure in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_review_fails_a_crash_beside_a_baseline_failure from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_review_fails_a_crash_beside_a_baseline_failure from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-8",
+      "title": "test tampering: test_ac15_review_still_fails in tests/test_implement.py is deleted",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "the diff deletes the test test_ac15_review_still_fails from tests/test_implement.py",
+      "where": "tests/test_implement.py",
+      "tampering": true,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "the diff deletes the test test_ac15_review_still_fails from tests/test_implement.py",
+          "severity": "major",
+          "round": 0
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "False positive: the test was removed on purpose on main by 373b3ee (one PR gate per effort, #77/#100) and arrived via merge 5fd1645; E-7 never touched tests/test_implement.py (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 0,
+      "last_round": 0
+    },
+    {
+      "id": "J-9",
+      "title": "A multi-line or padded topic never continues, and silently spawns a new file every run",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "FR-27",
+        "AC-34"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "if f\"(topic: {text})\" in p.read_text().splitlines():"
+      ],
+      "fix": "have `topic` reject or collapse whitespace and newlines in the text (error, as it does for an empty name), and match the stored line after the same normalisation.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-adversary",
+          "lens": "adversary",
+          "situation": "the topic is \"Auth tokens\\nrefresh\" (a pasted multi-line prompt). The skill writes `(topic: <text as typed>)`, which spans two lines. `splitlines()` can never equal a one-line `(topic: ...)` string, so the match fails. Every re-run returns `new:` with the next `-explainer-N.md`. This breaks AC-34 (\"no second file is written\") with no error, and the reply may not name the new file. A topic with trailing spaces breaks the same way if the skill trims the stored line. A topic containing `)` and a newline can also forge the stored-topic line of another topic.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "`topic()` in src/nio/explain.py matches `f\"(topic: {text})\" in p.read_text().splitlines()`. A stored `(topic: ...)` that spans two lines, or one the skill trimmed, never equals that string. SKILL.md line 60 says only \"(topic: <text as typed>)\", with no one-line or trim rule, and `topic` does no whitespace normalisation. So each re-run returns `new:` with the next `-N` name.",
+      "status": "fixed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-39",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:topic",
+      "tampering": false,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-10",
+      "title": "An unreadable file at a candidate path crashes the command instead of being skipped or refused",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-14",
+        "CT-6"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "if f\"(topic: {text})\" in p.read_text().splitlines():"
+      ],
+      "fix": "catch `OSError` in the loop and treat that path as taken (`n += 1`), or refuse with a named error.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-adversary",
+          "lens": "adversary",
+          "situation": "a file at today's path that is not valid UTF-8, or a directory with that name, makes `p.read_text()` raise `UnicodeDecodeError` or `IsADirectoryError`. The CLI turns only `ValueError` into `error:` and exit 1 (CT-10), so the human gets a traceback and topic mode is blocked for that topic. `UnicodeDecodeError` is a `ValueError` subclass, so that one may be caught. `IsADirectoryError` and `PermissionError` are not.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py:topic",
+      "tampering": false
+    },
+    {
+      "id": "J-11",
+      "title": "Two runs of the same new topic get the same path, and the second overwrites the first with no warning",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "FR-27",
+        "AC-34"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "the first that doesn't exist (`new:`), unless an earlier one stores this exact topic text (`continue:` with that path)"
+      ],
+      "fix": "have `topic` create the file exclusively (`open(..., \"x\")`) with the `# ` title and topic line, so the second caller sees it exist and gets `continue:` or `-2`.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-adversary",
+          "lens": "adversary",
+          "situation": "`topic` only reports a free name and creates nothing, and the skill writes the file later. Two agents or sessions asking the same new topic in that gap both get `new: ...-explainer.md`. Both write it, and the later write silently replaces the earlier one. Nothing reserves the name, so an earlier explainer with its drill-downs can be lost.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "src/nio/explain.py:topic",
+      "tampering": false
+    },
+    {
+      "id": "J-12",
+      "title": "No test for AC-34 (same topic continues its file)",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-34"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Given a topic explainer already exists at today's path for that topic, when `@nio:explain` runs on the same topic, then the same file keeps its earlier sections and gains the new ones; no second file is written."
+      ],
+      "fix": "add `test_ac34_same_topic` per TC-26: seed today's `git-hooks-explainer.md`, run the skill on `git hooks` with a pick then `stop`, assert one file, earlier sections byte-equal, and one more `## Drill-down: ` section.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-conformance",
+          "lens": "conformance",
+          "situation": "the file `tests/test_explain_e2e.py` defines `test_ac18_topic_path`, `test_ac19_no_research_skill` and `test_ac35_clash`, and no test for AC-34. A skill that wrote a second file, or rewrote the earlier sections, on a repeated topic would pass every test.",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "refuted",
+      "reason": "tasks.md gives TC-26 (`test_ac34_same_topic` in tests/test_explain_e2e.py) to T-15 in epic E-8 as well as T-13. T-30, the only E-7 e2e task, lists TC-23, TC-24 and TC-27 and serves AC-18, AC-19 and AC-35, not AC-34. `explain.topic`'s `continue:` and `-2` behaviour is already unit-tested in `test_ct6_topic` (tests/test_explain.py). The e2e test is planned for the next epic, so it is not missing from the plan.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_explain_e2e.py",
+      "tampering": false
+    },
+    {
+      "id": "J-13",
+      "title": "AC-18, AC-19 and AC-35 are proved only by tests that skipped",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-18",
+        "AC-19",
+        "AC-35"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "skipped test_ac18_topic_path (set NIO_E2E=1)",
+        "skipped test_ac35_clash (set NIO_E2E=1)"
+      ],
+      "fix": "run `test_ac18_topic_path`, `test_ac19_no_research_skill` and `test_ac35_clash` with `NIO_E2E=1` so the evidence holds real passes. For AC-18, consider a non-model unit test of `nio explain topic` for \"../Auth / Tokens!\" and \"//\". It could sit in tests/test_explain.py beside `test_ct6_topic`, which may already cover it.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-conformance",
+          "lens": "conformance",
+          "situation": "the evidence run had no `NIO_E2E=1`, so the three e2e tests returned before any assertion and still printed \"ok\". The ACs have no recorded passing result. Of the three, only AC-18's `nio explain topic` slug and refusal cases could be shown without a model, and they were not run apart from the e2e wrapper.",
+          "severity": "blocker",
+          "round": 1,
+          "run": "TC-23"
+        }
+      ],
+      "validation": "refuted",
+      "reason": "history.jsonl records `NIO_E2E=1 uv run python tests/test_explain_e2e.py test_ac18_topic_path test_ac19_no_research_skill test_ac35_clash` with `\"code\": 0` in the T-30 evidence (run R-261115-52ya). The skipped output the finding quotes comes from a run without the env var, and a real passing run is on record. I did not check the line's output text beyond the exit code.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_explain_e2e.py:193",
+      "tampering": false
+    },
+    {
+      "id": "J-14",
+      "title": "Missing-file error can raise on an unresolved root",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "CT-4"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "`return [f\"explainer missing: {p.relative_to(root)}\"], []`"
+      ],
+      "fix": "use `root.resolve()` in `relative_to`.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-correctness",
+          "lens": "correctness",
+          "situation": "`p` is resolved with `.resolve()`, but `root` is used as given. If the repo root is reached through a symlink (for example a macOS /tmp path), `relative_to` raises ValueError instead of returning the missing-file error. For `nio check explainer`, the CLI's handling of a ValueError is not shown in the files I read. `finish` already uses `root.resolve()` for the same purpose.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "src/nio/explain.py (check)",
+      "tampering": false
+    },
+    {
+      "id": "J-15",
+      "title": "Topic-mode check test never makes the check fail",
+      "kind": "gap",
+      "severity": "minor",
+      "cites": [
+        "AC-20"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`assert \"core diagram\" not in out and \"CT-\" not in out, out`"
+      ],
+      "fix": "add a topic-file case whose block the fake npx rejects, and assert exit 1 with `broken diagram: <title>`.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-correctness",
+          "lens": "correctness",
+          "situation": "test_ac20_topic_render_only only shows that a good topic file passes. No test runs the check on a topic file with a broken Mermaid block. A topic-mode check that never rendered would still pass this test.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "partial",
+      "where": "tests/test_explain.py",
+      "tampering": false
+    },
+    {
+      "id": "J-16",
+      "title": "AC-18 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-18"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-18",
+      "gap": "missing",
+      "where": "tests/test_explain_e2e.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-18: test_ac18_topic_path didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Standing rule: e2e AC evidence skipped only because jury evidence runs without NIO_E2E; T-30's green run R-261115-52ya used NIO_E2E=1 and passed (refuter refuted J-13) (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-17",
+      "title": "AC-19 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-19"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-19",
+      "gap": "missing",
+      "where": "tests/test_explain_e2e.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-19: test_ac19_no_research_skill didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Standing rule: e2e AC evidence skipped only because jury evidence runs without NIO_E2E; T-30's green run R-261115-52ya used NIO_E2E=1 and passed (refuter refuted J-13) (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-18",
+      "title": "AC-34 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-34"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-34",
+      "gap": "missing",
+      "where": "src/nio/explain.py, tests/test_explain.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-34: no test no match",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "AC-34's e2e test TC-26 is owned by T-15 in E-8 (refuter refuted J-12); unit-covered by test_ct6_topic (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-19",
+      "title": "AC-35 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-35"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-35",
+      "gap": "missing",
+      "where": "tests/test_explain_e2e.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-35: test_ac35_clash didn't run",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Standing rule: e2e AC evidence skipped only because jury evidence runs without NIO_E2E; T-30's green run R-261115-52ya used NIO_E2E=1 and passed (refuter refuted J-13) (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-20",
+      "title": "Renderer failures other than a parse error are reported as broken",
+      "kind": "contradiction",
+      "severity": "major",
+      "cites": [
+        "CT-3",
+        "FR-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "`\"unreachable\"` for any other failure",
+        "return \"broken: \" + next((l for l in lines if \"Parse error\" in l), lines[0] if lines else \"exit %d\" % r.returncode)"
+      ],
+      "fix": "return `broken` only when the output holds \"Parse error\", and return `unreachable` for every other non-zero exit. If the marker list is wanted as the default, that is a change request against CT-3 first.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-consistency",
+          "lens": "consistency",
+          "situation": "`npx` is on the PATH and exits 1 with a message that is neither a parse error nor on COULD_NOT_RUN (for example a registry error such as `npm error code E403`, inferred). `render` then returns `broken: npm error code E403`, and `check` prints `broken diagram: <title>` and exits 1. CT-3 says this is `unreachable`, which gives `render skipped: the renderer could not be fetched` with the check still passing (FR-11: only a diagram that fails to render fails the check; NFR-2: text-only is allowed). The marker list is written as the exceptions to `broken`, which inverts the contract's default.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "In `render`, any non-zero exit whose output holds none of the `COULD_NOT_RUN` markers returns `\"broken: \" + lines[0]`. The `COULD_NOT_RUN` list is case-sensitive \"npm ERR\", which the lowercase \"npm error\" of newer npm would not match. CT-3 (contracts.md line 33) says `unreachable` for \"any other failure\", so code and contract disagree. The divergence was introduced deliberately by T-18 and CT-3 lags it, which the caller says issue #127 records. It is real, but it sits outside E-7's own code.",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "human",
+      "note": "Known accepted risk: CT-3 broken-vs-unreachable wording lags the deliberate T-18 change; tracked in issue #127, fix at next plan change (orchestrator, delegated human authority)",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "contradicts",
+      "where": "src/nio/explain.py:render, used by src/nio/explain.py:check (topic mode and plan mode)",
+      "tampering": false,
+      "right": "spec"
+    },
+    {
+      "id": "J-21",
+      "title": "TC-26 is claimed by T-13 but its test is not delivered in E-7",
+      "kind": "inconsistency",
+      "severity": "minor",
+      "cites": [
+        "AC-34"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Test: TC-25, TC-42, TC-23 (its `nio explain topic` calls), TC-26, TC-27",
+        "File: `tests/test_explain_e2e.py:test_ac34_same_topic` (new)"
+      ],
+      "fix": "drop TC-26 from T-13's Test line and leave it to T-15.",
+      "sources": [
+        {
+          "juror": "implementation-E-7-consistency",
+          "lens": "consistency",
+          "situation": "T-13's files are `src/nio/explain.py` and `tests/test_explain.py`, and it lists TC-26 as its test. TC-26's file is tests/test_explain_e2e.py:test_ac34_same_topic, which the E-7 diff does not contain. T-15 also lists TC-26 with that file. When E-7 closes, TC-26 looks covered by a task that did not write it, and it is actually E-8's.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "disposed",
+      "disposition": "accepted-risk",
+      "by": "system",
+      "note": "minor, skipped at the round cap",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "gap": "missing",
+      "where": "tests/test_explain_e2e.py (TC-26, test_ac34_same_topic)",
+      "tampering": false
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "d39787e528740592b9a1344f0558a9b0d088fb21",
+    "2": "d69ddc816d957861cabe1c3225447060163bf24f"
+  },
+  "matched": {
+    "AC-18": [
+      [
+        "tests/test_explain_e2e.py",
+        "test_ac18_topic_path"
+      ]
+    ],
+    "AC-19": [
+      [
+        "tests/test_explain_e2e.py",
+        "test_ac19_no_research_skill"
+      ]
+    ],
+    "AC-20": [
+      [
+        "tests/test_explain.py",
+        "test_ac20_topic_render_only"
+      ]
+    ],
+    "AC-34": [],
+    "AC-35": [
+      [
+        "tests/test_explain_e2e.py",
+        "test_ac35_clash"
+      ]
+    ]
+  },
+  "asked": {},
+  "cap": {
+    "round": 2,
+    "auto": false,
+    "batch": []
+  }
+}
