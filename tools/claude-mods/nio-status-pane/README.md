@@ -1,6 +1,6 @@
 # nio-status-pane
 
-A Claude Code mod for working on NIO itself (dev tooling, not part of the NIO product). It shows where
+An optional Claude Code part of NIO, shipped in the `nio` package and offered by `@nio:install`; the skills work the same without it. It shows where
 every NIO effort stands across this repo's git worktrees, with no model turn (issues #131, #132):
 
 - a side pane, **NIO efforts**: one row per active effort, with its stage and status, jury round,

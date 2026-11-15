@@ -4,7 +4,7 @@
 
 - Python 3.11 or newer for the `nio` CLI under `src/nio/`. (source: pyproject.toml@4faabd2fb0e6)
 - Skills and agent cards are plain markdown: `skills/<name>/SKILL.md` and `src/nio/agents/*.md`. (source: CLAUDE.md@b0e3cba2321c)
-- TypeScript for the Claude-only dev mods under `tools/claude-mods/`, which are not part of the NIO product. (source: tools/claude-mods/README.md@975e0d334c44)
+- TypeScript for the optional Claude Code part of NIO under `tools/claude-mods/`, shipped in the `nio` package and offered by `@nio:install`. (source: dev, D-261115-e6nx)
 
 ## Dependencies
 

@@ -279,7 +279,26 @@ def test_mods_install_local_scope():
     print("ok")
 
 
+def test_readmes_call_mods_optional():
+    texts = [(ROOT / f).read_text() for f in (
+        "README.md", "tools/claude-mods/README.md",
+        "tools/claude-mods/nio-status-pane/README.md",
+        "tools/claude-mods/background-nio-commands/README.md")]
+    docs = [(ROOT / f).read_text() for f in (".nio/project/architecture.md", ".nio/project/stack.md")]
+    for text in texts + docs:
+        assert "not part of the NIO product" not in text
+        assert "dev tooling" not in text
+    for text in texts:
+        assert "optional Claude Code part of NIO" in text, text[:80]
+        assert "the skills work the same without" in text, text[:80]
+    for text in docs:
+        assert "optional Claude Code part of NIO" in text
+        assert "D-261115-e6nx" in text
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
                     test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_without_claude,
-                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope])
+                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope,
+                    test_readmes_call_mods_optional])

@@ -1,6 +1,6 @@
-# Claude Code mods for developing NIO
+# Optional Claude Code mods for NIO
 
-Claude-only dev tooling for working on this repo. They are not part of the NIO product.
+The mods are an optional Claude Code part of NIO, shipped in the `nio` package and offered by `@nio:install`, which installs them for this clone (`nio mods install`); the skills work the same without them.
 
 | Mod | What it does |
 | --- | --- |
