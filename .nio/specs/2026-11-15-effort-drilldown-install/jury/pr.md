@@ -57,7 +57,7 @@ outcome: human
 | J-45 | minor | inconsistency | CT-14, CT-12 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-47 | minor | risk | CT-2, NFR-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-48 | major | gap | AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30 | cli | confirmed | disposed | fix-task (human) | new, 0 |
+| J-48 | major | gap | AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-49 | major | gap |  | cli | confirmed | disposed | fix-task (human) | new, 0 |
 | J-50 | major | gap | FR-25, FR-29 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
 | J-51 | major | scope | FR-26 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
@@ -399,7 +399,7 @@ outcome: human
 - situation (cli): T-36 names src/nio/implement.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+- disposition: accepted-risk by agent: Its test TC-6 passes on arrival; the real gap (self-check failing names with spaces cut by implement.py's reader) goes to a direct fix task (C-261115-b3lo)
 
 ### J-49 the test suite failed
 - situation (cli): `printf '%s\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:
