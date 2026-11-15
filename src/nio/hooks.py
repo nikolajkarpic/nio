@@ -2,6 +2,7 @@
 rebases, and run the CI check before commits and pushes. Only the checks block git, and only when `nio` is installed."""
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 from nio import records
@@ -35,6 +36,37 @@ BLOCKS = {
 def mods_dir():
     """The Claude Code mods shipped inside the package (see pyproject.toml's force-include)."""
     return Path(__file__).parent / "mods"
+
+
+MODS = ("background-nio-commands", "nio-status-pane")
+
+
+def _claude(root, claude, *args):
+    r = subprocess.run([claude, *args], cwd=root, capture_output=True, text=True)
+    return r.returncode, r.stdout, r.stderr
+
+
+def mods_install(root, skip=False, claude="claude"):
+    """One outcome line per mod; never raises, one mod failing never stops the other."""
+    try:
+        code, out, _ = _claude(root, claude, "plugin", "list", "--json")
+        have = {e.get("id") for e in json.loads(out)} if code == 0 else set()
+    except (OSError, ValueError, AttributeError):
+        have = set()
+    lines = []
+    for mod in MODS:
+        if f"{mod}@nio-mods" in have:
+            lines.append(f"{mod}: already installed" + (" (left as is)" if skip else ""))
+        elif skip:
+            lines.append(f"{mod}: skipped")
+        else:
+            try:
+                code, out, err = _claude(root, claude, "plugin", "install", mod, "--marketplace", str(mods_dir()), "--scope", "local", "--json")
+                text = (err.strip() or out.strip()).splitlines()
+                lines.append(f"{mod}: installed" if code == 0 else f"{mod}: failed: {text[-1] if text else 'exit ' + str(code)}")
+            except OSError:
+                lines.append(f"{mod}: failed: claude not found")
+    return lines
 
 
 def install(root, nio=None):
