@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import zipfile
 from pathlib import Path
 
 from test_index import flag
@@ -11,6 +12,8 @@ from test_records import GOOD_BODY, commit, fill, repo
 
 from nio import hooks, records
 import selfcheck
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def git(root, *args):
@@ -131,5 +134,22 @@ def test_allow():
             assert local.read_text() == "{broken"
 
 
+def test_wheel_ships_mods():
+    # TC-30: the built wheel carries both mods and the marketplace file
+    with tempfile.TemporaryDirectory() as tmp:
+        built = subprocess.run(["uv", "build", "--wheel", "--out-dir", tmp], cwd=ROOT, capture_output=True, text=True)
+        assert built.returncode == 0, built.stderr
+        wheels = list(Path(tmp).glob("*.whl"))
+        assert len(wheels) == 1, wheels
+        with zipfile.ZipFile(wheels[0]) as wheel:
+            names = set(wheel.namelist())
+        for want in ("nio/mods/.claude-plugin/marketplace.json",
+                     "nio/mods/background-nio-commands/.claude-plugin/plugin.json",
+                     "nio/mods/nio-status-pane/.claude-plugin/plugin.json"):
+            assert want in names, want
+    print("ok")
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision])
+    selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
+                    test_wheel_ships_mods])
