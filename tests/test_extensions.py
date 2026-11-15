@@ -517,4 +517,86 @@ def test_half_states_are_recoverable():
     assert code == 0 and out.count("x \u00b7") == 1 and ".x.new" not in out, out
 
 
+# --- an extension step can have its own jury gate (E-4) ---
+
+def gate_effort(auto=False):
+    """S at x.tests with x's gate (lens x-lens), x.md written."""
+    root = effort()
+    n = test_flow.grant_on(root, "plan_jury") if auto else 0
+    add(root, "x", [step("tests", output="x.md", gate={"lenses": ["x-lens"]})], cards=["x-lens"])
+    # ponytail: extension cards join the card layers in T-13; until then the lens card is a team card
+    (root / ".nio/agents").mkdir(exist_ok=True)
+    (root / ".nio/agents/x-lens.md").write_text("---\nname: x-lens\ndescription: x lens\ntier: medium\neffort: low\n---\nJudge x.\n")
+    pass_plan(root)
+    (root / ".nio/specs" / S / "x.md").write_text("# x\n")
+    return (root, n) if auto else root
+
+
+def gate_approved(root, gate, commit=True):
+    """A real jury round that approves the extension gate with its lens, then the `nio: approve` commit."""
+    run = f"R-{gate}"
+    path = root / ".nio/runs" / run / "jury" / f"{gate}-x-lens.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\nlens: x-lens\ngate: {gate}\nsubject: {S}\nby: \"juror / claude-code / opus\"\n"
+                    "context: sufficient\n---\n## Reasoning\nChecked.\n\n## Findings\nnone\n")
+    from nio import jury
+    jury.collect(root, S, gate, run)
+    assert jury.check(root, S, gate, record=True)[0] == "approved"
+    if commit:
+        test_flow.git(root, "add", "-A")
+        test_flow.git(root, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", f"nio: approve {gate}")
+
+
+def test_extension_gate_runs_its_jury():
+    root = gate_effort()
+    assert nio(root, "flow", "done", "x.tests", S, "--by", BY)[0] == 0
+    assert flow.where(root, S)["stage"] == "x.tests.jury"
+    code, out = nio(root, "jury", "plan", S, "x.tests")
+    assert code == 0 and "x-lens (core)" in out and out.count("(") == out.count("(core)") + out.count("(~"), out
+    assert "lenses: x-lens (core)" in out, out
+    code, out = nio(root, "flow", "done", "x.tests.jury", S, "--commit", "--by", "human")
+    assert code != 0 and flow.where(root, S)["stage"] == "x.tests.jury", out
+    gate_approved(root, "x.tests", commit=False)
+    code, out = nio(root, "flow", "done", "x.tests.jury", S, "--commit", "--by", "human")
+    assert code == 0, out
+    assert (root / ".nio/specs" / S / "jury/x.tests.json").exists()
+    assert "nio: approve x.tests" in test_flow.git(root, "log", "--format=%s")
+    assert flow.where(root, S)["stage"] == "tasking"
+
+
+def test_auto_extension_gate():
+    root, n = gate_effort(auto=True)
+    nio(root, "flow", "done", "x.tests", S, "--by", BY)
+    gate_approved(root, "x.tests", commit=False)
+    code, out = nio(root, "flow", "done", "x.tests.jury", S, "--by", BY)
+    assert code == 0, out
+    line = next(x for x in flow.load(root, S)[1] if x["kind"] == "pass" and x["from"] == "x.tests.jury")
+    assert line["to"] == "tasking" and line["who"]["role"] == "driver" and line["evidence"]["auto"]["grant"] == n, line
+    assert "nio: approve x.tests" in test_flow.git(root, "log", "--format=%s")
+    # case two: the outcome is human with a finding open
+    root, _ = gate_effort(auto=True)
+    nio(root, "flow", "done", "x.tests", S, "--by", BY)
+    test_flow.ledger(root, "x.tests", round=1, outcome="human", findings=[test_flow.finding("J-1")])
+    code, out = nio(root, "flow", "done", "x.tests.jury", S, "--by", BY)
+    assert code == 1 and not [x for x in flow.load(root, S)[1] if x["kind"] == "pass" and x["from"] == "x.tests.jury"], out
+    _, got = nio(root, "flow", "next", S)
+    ref = test_flow.effort("plan_jury")
+    test_flow.grant_on(ref, "plan_jury")
+    test_flow.ledger(ref, "plan", round=1, outcome="human", findings=[test_flow.finding("J-1")])
+    nio(ref, "flow", "done", "plan_jury", S, "--by", BY)
+    _, want = nio(ref, "flow", "next", S)
+    pick = lambda t: [x for x in t.replace("x.tests.jury", "plan_jury").splitlines() if x.split(":")[0] in ("state", "skill", "next", "done")]
+    assert pick(got) == pick(want) and pick(got), (got, want)
+
+
+def test_extension_gate_rejected_goes_back():
+    root = gate_effort()
+    nio(root, "flow", "done", "x.tests", S, "--by", BY)
+    from nio import jury
+    led = jury.load(root, S, "x.tests")
+    jury.save(root, {**led, "round": 1, "outcome": "rejected", "versions": {"1": jury.version_now(root, S, "x.tests")}})
+    code, out = nio(root, "flow", "next", S)
+    assert code == 0 and "state: x.tests (working: the x.tests jury rejected round 1)" in out, out
+
+
 selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])

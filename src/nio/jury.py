@@ -62,12 +62,29 @@ def lens_of(stem, gate):
     return re.sub(r"(~\w+)?(-\d+)?$", "", stem[len(gate) + 1:])
 
 
+def gates(root):
+    """{gate: (files, core lenses)}: `GATES` and `CORE`, plus each extension step that declares a jury gate, as
+    `<ext>.<step>` with its output and spec.md, the step's lenses as core (2026-11-15-extensions CT-9)."""
+    from nio import extensions
+    out = {g: (f, CORE[g]) for g, f in GATES.items()}
+    for m in extensions.active(root, guard=False):
+        for st in m.get("steps", []):
+            if st.get("gate"):
+                out[f"{m['name']}.{st['name']}"] = ([st["output"], "spec.md"], st["gate"]["lenses"])
+    return out
+
+
 def gate_arg(name):
     """argparse type: a known gate, `pr`, or an implementation name that `epic_gate` then accepts or refuses."""
     import argparse
-    if name in GATES or impl_gate(name):
+    from nio import records
+    try:
+        known = gates(records.repo_root())
+    except Exception:  # not in a repo: the built-in gates
+        known = GATES
+    if name in known or impl_gate(name):
         return name
-    raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(sorted(GATES))}, implementation-E-n)")
+    raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(sorted(known))}, implementation-E-n)")
 
 
 def epic_gate(root, slug, gate, finished=True):
@@ -245,7 +262,7 @@ def artefact(root, slug, gate):
     """The gate's artefacts as one text, in a fixed order; empty when none exists. At the tasks gate, tasks.md as
     `planned` reads it."""
     text = lambda p: planned(p.name, p.read_text())
-    return "\n".join(text(p) for p in (root / ".nio/specs" / slug / n for n in GATES[gate]) if p.exists())
+    return "\n".join(text(p) for p in (root / ".nio/specs" / slug / n for n in gates(root)[gate][0]) if p.exists())
 
 
 LIKE = re.compile(r"^- (?:Binding|Like):\s*`([^`:]+)", re.M)
@@ -255,11 +272,11 @@ def sources(root, slug, gate, lens=""):
     """The files a juror at this gate is given, which are also the only files its quotes may come from (#57 FR-42,
     FR-43). The plan gate adds CLAUDE.md and every file a contract binds or a `Like:` line names."""
     folder = root / ".nio/specs" / slug
-    if gate not in GATES:  # an implementation gate: the spec and tasks, and what the epic's commits changed
+    if gate not in gates(root):  # an implementation gate: the spec and tasks, and what the epic's commits changed
         from nio import evidence
         changed = evidence.code_diff(root, *evidence.span(root, slug, epic_gate(root, slug, gate, finished=False)), "--name-only", "--diff-filter=d")
         return [p for p in [folder / n for n in ("spec.md", "contracts.md", "tasks.md")] + [root / n for n in changed] if p.is_file()]
-    files = [folder / n for n in GATES[gate]]
+    files = [folder / n for n in gates(root)[gate][0]]
     if gate == "plan":
         contracts = folder / "contracts.md"
         named = LIKE.findall(contracts.read_text()) if contracts.exists() else []
@@ -324,9 +341,15 @@ def plan(root, slug, gate, extra=(), pick=None):
     impl = impl_gate(gate)
     if impl:
         epic = epic_gate(root, slug, gate)
-    elif gate not in CORE:
+    elif gate not in gates(root):
         raise ValueError(f"only the {', '.join(CORE)} gates are built so far")
+    ext = "." in gate
     if impl:
+        notes = [""]
+    elif ext:
+        out = gates(root)[gate][0][0]
+        if not (root / ".nio/specs" / slug / out).exists():
+            return [f"no {out} yet: run {gate} first"], False
         notes = [""]
     elif gate == "plan":
         from nio import plan as plans  # plan.py reads the jury's ledger for `approved`
@@ -344,9 +367,9 @@ def plan(root, slug, gate, extra=(), pick=None):
             return [f"`nio check spec {slug} --gate` fails ({len(errors)} errors): finish the grill first"], False
     meta, _ = records.parse(spec.path(root, slug)) if spec.path(root, slug).exists() else ({}, "")
     risk = [r for r in meta.get("risk") or [] if r in spec.RISKS]
-    lenses = {lens: "core" for lens in (PR_CORE if gate == "pr" else ["conformance", "correctness"] if impl else CORE[gate])}
+    lenses = {lens: "core" for lens in (PR_CORE if gate == "pr" else ["conformance", "correctness"] if impl else gates(root)[gate][1])}
     table = IMPL_LENSES if impl else PLAN_LENSES if gate == "plan" else {k: v for k, v in spec.LENSES.items() if "(plan gate)" not in k}
-    for lens, flags in table.items() if gate != "tasks" else []:
+    for lens, flags in table.items() if gate != "tasks" and not ext else []:
         if flags & set(risk):
             lenses.setdefault(lens, "risk: " + ", ".join(sorted(flags & set(risk))))
     if impl and gate != "pr":  # a module that existed before the epic is changed: a file modified from the parent of its first commit
@@ -517,7 +540,7 @@ def changed(root, slug, gate):
         rerun = {lens for lens, js in votes(led).items() if any(v == "block" for _, v in js)}
         rerun |= {s["lens"] for f in led["findings"] if set(f["cites"]) & set(ids) for s in f["sources"] if s["lens"] not in ("deferred", "cli")}
     if not rerun and (ids or secs) and led["recorded"] and (
-            led["recorded"][-1][1] in ("approved", "human", "closed") or (gate in GATES and any(o == "rejected" for _, o in led["recorded"]))):
+            led["recorded"][-1][1] in ("approved", "human", "closed") or (gate in gates(root) and any(o == "rejected" for _, o in led["recorded"]))):
         # an approved or closed gate whose artefact changed since (a change request, #57 FR-35, FR-47): every lens that
         # judged it re-checks only what changed, from its fix-check pack
         rerun = set(votes(led))
@@ -672,13 +695,13 @@ def collect(root, slug, gate, run, expect=(), tier=None, ask=True):
         human = ""
         planned = plan(root, slug, gate)[0].lenses
         expect = set(expect) | {x for x in planned if x not in led.get("dropped", [])}
-    elif gate not in GATES:
-        raise ValueError(f"gate must be one of {sorted(GATES)}")
+    elif gate not in gates(root):
+        raise ValueError(f"gate must be one of {sorted(gates(root))}")
     else:
         led = load(root, slug, gate)
         text = artefact(root, slug, gate)
         if not text:
-            raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(GATES[gate])})")
+            raise ValueError(f"no {gate} artefact under .nio/specs/{slug}/ ({', '.join(gates(root)[gate][0])})")
         moved(root, slug, gate, run, led)
         human = human_words(root, slug)
         ground = lambda lens="": grounding(root, slug, gate, lens)
@@ -1234,7 +1257,7 @@ def composed(root, slug, gate, led, current, rejected=()):
     spec, plan and tasks gates: a fix the round check flags, or a finding held, goes to the human; a minor is accepted as
     the gate's risk."""
     from nio import flow
-    if gate in GATES and flow.load(root, slug)[0]["auto"]:
+    if gate in gates(root) and flow.load(root, slug)[0]["auto"]:
         if hits := cuts(root, slug, gate, led):
             return "human", hits, []
         for f in led["findings"]:
@@ -1614,7 +1637,7 @@ def _pack_text(root, slug, gate, run, lens, fix, part=None):
     """What the skill gives a lens today, then the lens output format and where its output goes (CT-2)."""
     from importlib import resources
     from nio import plan as plans, pack as memory, query, tasks
-    if gate not in GATES:
+    if gate not in gates(root):
         body = evidence.pack(root, slug, gate, lens, run, part)
     elif fix:
         body = "\n".join(fixcheck(root, slug, gate, lens)) + "\n"
@@ -1684,7 +1707,7 @@ def _begin(root, slug, gate, run, lenses, fix):
         return [f"next: show the human: the {gate} changed but no lens has a fix to check"]
     pushed = publish(root, slug) if gate == "pr" and not run else []  # each pr round starts on the pushed branch (FR-16, FR-17)
     run = run or _reusable(root, slug, gate) or records.new_run(root)
-    if gate not in GATES and not evidence.path(root, run).exists():
+    if gate not in gates(root) and not evidence.path(root, run).exists():
         sj = root / ".nio/runs" / run / "jury/packs/step.json"
         sj.parent.mkdir(parents=True, exist_ok=True)
         led = load(root, slug, gate)
@@ -1768,7 +1791,7 @@ def step(root, slug, gate, run="", add=(), pick=None):
         return lines + cl
     outcome, cl = check(root, slug, gate, record=True)
     lines += cl
-    impl = gate not in GATES
+    impl = gate not in gates(root)
     if outcome == "rerun":
         return lines + _begin(root, slug, gate, "", next_lenses(root, slug, gate), True)
     return lines + [{
@@ -1818,12 +1841,12 @@ def capped(root, slug, gate, led, names):
     A finished round at or over `jury.max_rounds` decides once: 2+ open blockers start one automatic round on their
     lenses, once per gate; else open minors are skipped, and open majors and blockers go to the human in one batch.
     Once the human ruled every finding of it, the gate closes, unless they asked for one more round."""
-    cap, impl = led.get("cap") or {}, gate not in GATES
+    cap, impl = led.get("cap") or {}, gate not in gates(root)
     if cap.get("round") != led["round"]:
         if led["round"] < max(max_rounds(root), cap.get("allow", 0)):
             return None
         open_ = [f for f in led["findings"] if f["status"] == "open"]
-        if gate not in GATES:  # a later epic's finding is the system's out-of-scope before the cap counts it (#126 FR-12)
+        if gate not in gates(root):  # a later epic's finding is the system's out-of-scope before the cap counts it (#126 FR-12)
             later_epic(root, slug, gate, led)
             open_ = [f for f in open_ if f["status"] == "open"]
         if not open_:
@@ -1869,7 +1892,7 @@ def owed_fixes(root, slug, gate, led):
     """The capped batch's findings the human ruled `fix` at a spec, plan or tasks gate while the artefact is still the
     version the capped round judged: the edit is owed before the gate closes."""
     cap = led.get("cap") or {}
-    if gate not in GATES or cap.get("round") != led["round"] or "version" not in cap:
+    if gate not in gates(root) or cap.get("round") != led["round"] or "version" not in cap:
         return []
     return cap.get("fix", []) if version_now(root, slug, gate) == cap["version"] else []
 
@@ -1908,8 +1931,8 @@ def rule(root, slug, gate, fid, ruling, note, by="human"):
         from nio import tasks
         for f in [f for f in led["findings"] if f["id"] in ids]:
             tasks.append_fix(root, slug, gate.removeprefix("implementation-"), f)
-    dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in GATES else "spec-fix"), actor, note, ruled=True)
-    if ruling == "fix" and gate in GATES:
+    dispose(root, slug, gate, fid, {"plan": "plan-fix"}.get(gate, "fix-task" if gate not in gates(root) else "spec-fix"), actor, note, ruled=True)
+    if ruling == "fix" and gate in gates(root):
         led = load(root, slug, gate)
         led["cap"]["fix"] = sorted(set(led["cap"].get("fix", [])) | set(ids), key=lambda i: int(i[2:]))
         save(root, led)
