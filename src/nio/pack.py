@@ -62,9 +62,11 @@ def build(root, text, paths=(), acs=(), task="", diff=None, worker=True, reader=
     if full:
         out.append("## On your files, AC and task\n")
         for rid, rtype, standing, title, shared in full:
+            found = sorted((root / ".nio/memory").glob(f"*/{rid}-*.md"))
+            if not found:  # FR-31: the index names a record whose file is gone (deleted since it was built): skip it
+                continue
             out.append(f"### {rid} {rtype} {standing}: {title}" + (f"  [shares {', '.join(shared)}]" if shared else ""))
             out += [f"- {link}" for link in query.links(db, rid, at)]
-            found = sorted((root / ".nio/memory").glob(f"*/{rid}-*.md"))
             out += [f"##{l}" if l.startswith("## ") else l for l in records.parse(found[0])[1]] + [""]  # nest under the record
             used.add(standing)
     if lines:

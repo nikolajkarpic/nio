@@ -1,0 +1,30 @@
+---
+id: V-261115-hnnu
+type: verdict
+title: "spec gate for 2026-11-15-faster-flow: approved (round 3)"
+answers: jury             # why | reuse | jury
+date: 2026-11-15
+by: "jury"                # role / host / model, or human
+run: ""              # run ID; empty when written by hand
+subject: "spec:2026-11-15-faster-flow"
+outcome: approved
+tier: high
+paths: [".nio/specs/2026-11-15-faster-flow/jury/spec.md"]
+tags: []
+supersedes: []
+---
+## Ruling
+The spec jury ruled **approved** for `2026-11-15-faster-flow` in round 3 (4 disposed, 11 fixed, 1 noted). Ledger: `.nio/specs/2026-11-15-faster-flow/jury/spec.md`.
+## Jurors
+| Lens | Host | Model | Vote |
+| --- | --- | --- | --- |
+| logic | claude-code | sonnet | approve |
+| scope | claude-code | claude-haiku-5-5 | approve |
+| testability | claude-code | sonnet | approve |
+## Reasons
+- J-7 [minor/scope] A new test-proof lens is tied to a parallel-epic choice the human did not confirm: disposed accepted-risk
+- J-9 [minor/scope] One spec covering 45 FRs with independent slices: disposed accepted-risk
+- J-10 [minor/scope] The 3-attempt cap on a failed epic has no source in the pack: disposed accepted-risk
+- J-14 [minor/untestable] AC-46 checks a model's judgement, with no stated pass condition: disposed accepted-risk
+## What was rejected
+Nothing.

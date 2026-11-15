@@ -32,8 +32,8 @@ HOME = {"A": ["Actors and journeys"], "UJ": ["Actors and journeys"], "US": ["Use
 LEVELS = {"unit", "integration", "e2e"}
 # provenance (#20, #22): the human said it; the agent proposed it; an agent decided it (delegated, or below the grill's
 # bar); research backs it; it follows from other items; or the grill deferred it
-TAG = re.compile(r"\[(human|default|agent|research: RF-\d+|derived: [A-Z]+-\d+(?:,\s*[A-Z]+-\d+)*|deferred: DF-\d+)\]\s*$")
-TAGS = "[human], [default], [agent], [research: RF-n], [derived: <IDs>] or [deferred: DF-n]"
+TAG = re.compile(r"\[(human|default|agent|auto|research: RF-\d+|derived: [A-Z]+-\d+(?:,\s*[A-Z]+-\d+)*|deferred: DF-\d+)\]\s*$")
+TAGS = "[human], [default], [agent], [auto], [research: RF-n], [derived: <IDs>] or [deferred: DF-n]"
 # a spec ID is not followed by another dash, so a memory record ID like **D-261025-k2m4** isn't read as one
 DEF = re.compile(r"^(?:- )?\*\*([A-Z]+-\d+)(?![-\w])[^*]*\*\*|^### ([A-Z]+-\d+)(?![-\w])")
 CITE = re.compile(r"^\(([A-Z]+-\d+(?:,\s*[A-Z]+-\d+)*)\)")
@@ -396,7 +396,7 @@ def check_tags(body, found, rfs):
                 t = TAG.search(found[src][0][1][0]) if src in found else None
                 if src not in found:
                     errs.append(f"{where} is derived from {src}, which isn't defined")
-                elif not t or not t[1].startswith(("human", "agent", "research")):
+                elif not t or not t[1].startswith(("human", "agent", "auto", "research")):
                     errs.append(f"{where} is derived from {src}, which is {t[1] if t else 'untagged'}; derive only from answers and research")
         for did in re.findall(r"\[deferred: (DF-\d+)\]", text):
             if did not in found:

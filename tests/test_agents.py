@@ -233,7 +233,7 @@ def test_ac7_worker_card_scopes_its_tests():
     _, errors = agents.sync(root)
     assert not errors, errors
     rendered = (root / ".claude/agents/nio-worker-strong.md").read_text()
-    for text in ["scoped to the task's own tests", "File:", "in the foreground", "never polled with sleep", "Don't re-run the tests before your first edit", "the short wait on `try again` stays"]:
+    for text in ["scoped to the epic's tests", "File:", "in the foreground", "never polled with sleep", "Don't re-run the tests before your first edit"]:
         assert text in rendered, (text, rendered)
     print("ok")
 

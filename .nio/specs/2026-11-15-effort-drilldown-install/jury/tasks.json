@@ -1,0 +1,264 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-15-effort-drilldown-install",
+  "round": 2,
+  "tier": "low",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261115-5axh/tasks-executability.md": "e2ad7f0dda72d1152f54db422abdab614117ab348399a7ba4324a1486a089da0",
+    "R-261115-5axh/tasks-refuter.md": "f44fd849126d89b554cf51c63f3449b967c35e5d35461df4d92805cbada4f73a",
+    "R-261115-bhw6/tasks-executability.md": "4943d07bfe07035076c33f05a1d1b347308d793db8914772fc562e8142ec0c79"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "c6c7506078d7e2412ce70832442572a09b8b5682",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-10 cannot pass its tests before T-11 builds the memory section",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "T-10",
+        "T-11",
+        "TC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Depends on: T-4, T-8, T-9",
+        "`json.loads(stdout)` has the keys `timeline`, `juries`, `tasks`, `cost`, `memory` (plus `slug`, `stage`)",
+        "Build the memory section from front matter and wire it into `show`"
+      ],
+      "fix": "add T-11 to T-10's `Depends on:` (or move T-11 before T-10).",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "a worker takes T-10 after T-9, as the file orders them, and T-11 has not run yet. `show` has no `memory` key, so TC-25's assert that the output has the keys `timeline`, `juries`, `tasks`, `cost`, `memory` fails. TC-34 (which reads the memory section) fails the same way.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-10 depends on T-4, T-8 and T-9, not T-11. TC-25 and TC-34 need a non-error `memory` key, and only T-11 builds it. TC-26, the only test T-1 owns, covers error cases only, so nothing else supplies the key.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-10 now depends on T-11 too",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-2",
+      "title": "T-5 is tested against sections that T-5 does not build",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "T-5",
+        "TC-5",
+        "T-7",
+        "T-8",
+        "T-10",
+        "T-11"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Build the timeline section from history",
+        "`juries` is a list holding the `spec` gate; `tasks` is a list; `memory` is a list.",
+        "Depends on: T-1, T-3"
+      ],
+      "fix": "move TC-5 to a later task that builds the other sections (T-10 or T-11), or have TC-5 assert only the timeline and juries-free parts. Replace T-3 in T-5's dependencies with what the timeline actually needs.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-5 builds only the timeline and wires it into `show`. TC-5, which T-5 lists under `Test:`, asserts that `juries` holds the spec gate, that `tasks` and `memory` are lists, and that `cost` is an error object. Only T-7, T-8, T-10 and T-11 produce those sections, and T-5 depends on none of them. Run as written, T-5's test cannot pass. T-5's dependency on T-3 (a pane task) is also not needed for CLI timeline work.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-5 lists TC-5 and depends on T-1 and T-3. TC-5 asserts that `juries` holds the spec gate, that `tasks` and `memory` are lists, and that `cost` is an error object. Those sections come from T-7, T-8, T-10 and T-11, which run later. T-3 is a pane task and the timeline build doesn't need it.",
+      "status": "disposed",
+      "disposition": "spec-fix",
+      "by": "human",
+      "note": "Fix it: move TC-5 to the cost task (T-10) via a change request to the plan; human approved the change request",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "T-13 owns TC-31, whose skill half is written by T-14",
+      "kind": "inconsistency",
+      "severity": "major",
+      "cites": [
+        "T-13",
+        "T-14",
+        "TC-31",
+        "AC-26"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Test: TC-20, TC-21, TC-22, TC-23, TC-31, TC-36",
+        "the skill's mods step holds exactly one question (one line ending `?` whose options are the two commands).",
+        "Depends on: T-13"
+      ],
+      "fix": "move the skill assertion of TC-31 to T-14's `Test:`, or list TC-31 under T-14 and keep only its mods_dir and local-scope asserts under T-13.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-13's files are `src/nio/hooks.py`, `src/nio/cli.py` and `tests/test_hooks.py`, with no SKILL.md. T-13 must pass TC-31, which includes an assert on `skills/install/SKILL.md`. The worker of T-13 cannot edit that file, and T-14 (which does) runs after T-13. TC-31 fails on the skill half for the whole of T-13.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "T-13 lists TC-31 and its Files list has no `skills/install/SKILL.md`. TC-31 reads that skill and asserts the one-question step, which only T-14 writes. T-14 runs after T-13, so TC-31 fails on its skill half during T-13.",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "TC-31 moved from T-13 to T-14, which writes the skill step",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-4",
+      "title": "T-1 names per-section isolation, but nothing tests it and the sections do not exist yet",
+      "kind": "ambiguity",
+      "severity": "minor",
+      "cites": [
+        "T-1",
+        "TC-26",
+        "TC-5",
+        "CT-2"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "with its error cases and per-section isolation",
+        "Each of the five section keys holds the value of CT-3, CT-4, CT-5, CT-6 or CT-7, or `{\"error\": \"<text>\"}` when building that section raised (FR-13)",
+        "Test: TC-26"
+      ],
+      "fix": "state in T-1 what each section key holds until its task lands (for example `[]` or `\"-\"`), and give T-1 a test for the isolation wrapper, or move \"per-section isolation\" to T-5.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-1's only test is TC-26, which covers the error cases. Per-section isolation is tested in TC-5 under T-5, and T-1 cannot build section values for CT-3 to CT-7, which come in later tasks. A worker of T-1 does not know what the five keys hold, or whether a section's `try` must already exist, so two workers could ship different isolation rules.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-1 states each section key is an empty placeholder until its task fills it; isolation is proven by TC-5 (no new test: the plan's TC list is fixed)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    },
+    {
+      "id": "J-5",
+      "title": "T-3 and T-6 both own the timeline drawing and the same tests",
+      "kind": "scope",
+      "severity": "minor",
+      "cites": [
+        "T-3",
+        "T-6",
+        "TC-2",
+        "TC-6",
+        "TC-27",
+        "TC-28",
+        "TC-29"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "draw the timeline, Back, errors, old-nio message, no actions",
+        "Pane draws the timeline rows and failed-review reasons from real `flow show` output",
+        "Test: TC-2, TC-6, TC-27, TC-28, TC-35, TC-37",
+        "Test: TC-2, TC-6, TC-27, TC-28, TC-29"
+      ],
+      "fix": "give timeline rendering to one task. Drop TC-2, TC-6, TC-27 and TC-28 from the other, and drop TC-29 from T-6 (T-2 owns it).",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-3 says it draws the timeline and lists TC-2, TC-6, TC-27 and TC-28. T-6 says it draws the timeline rows and failed-review reasons and lists the same four tests. A worker of T-6 cannot tell what is left to build after T-3, and the two tasks may edit the same rendering code twice. TC-29 is owned by T-2 and is listed again under T-6.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "grounded",
+      "reason": "",
+      "status": "fixed",
+      "disposition": "spec-fix",
+      "by": "agent",
+      "note": "T-3 is the one task that draws the timeline; T-6 drops TC-6/27/28/29 and only adds the failed-review reason lines, re-checking TC-2 on T-5's output (TC-2 must stay in Foundation per the plan's build order)",
+      "baseline": "absent",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1,
+      "fixed_in": 2
+    }
+  ],
+  "outcome": "human",
+  "recorded": [
+    [
+      1,
+      "rejected"
+    ],
+    [
+      2,
+      "closed"
+    ]
+  ],
+  "versions": {
+    "1": "d4dcdfcc1e96aa756ca82b13aac9e99b972693bd",
+    "2": "c6c7506078d7e2412ce70832442572a09b8b5682"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  },
+  "asked": {},
+  "cap": {
+    "round": 2,
+    "auto": false,
+    "batch": [
+      "J-2"
+    ],
+    "version": "c6c7506078d7e2412ce70832442572a09b8b5682",
+    "fix": [
+      "J-2"
+    ]
+  },
+  "closed": [
+    2,
+    "ce313715a0d4fddf51e5935cb8828c67d3c47ae8",
+    "the human ruled every finding of the capped batch"
+  ]
+}

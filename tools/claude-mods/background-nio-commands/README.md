@@ -1,12 +1,12 @@
 # background-nio-commands
 
-A Claude Code mod for working on NIO itself (dev tooling, not part of the NIO product). It turns
+An optional Claude Code part of NIO, shipped in the `nio` package and offered by `@nio:install`; the skills work the same without it. It turns
 foreground Bash calls that run a long nio command into background runs, so the harness wakes the
 agent when the command exits instead of the agent sitting in a `sleep`/poll wait loop (issue #130).
 
 Long commands:
 
-- `nio jury run …` and `nio flow green …`, also as `uv run nio …` and after `cd <dir> &&`;
+- `nio jury evidence …` and `nio flow finish …`, also as `uv run nio …` and after `cd <dir> &&`;
 - the exact `tests.suite` command from `.nio/config.json` (also after `cd <dir> &&`).
 
 It only sets `run_in_background: true` and adds no text. A call that already sets

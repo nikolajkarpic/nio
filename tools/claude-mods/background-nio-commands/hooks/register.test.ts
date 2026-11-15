@@ -20,13 +20,13 @@ const call = async ($: any, command: unknown, extra: object = {}) =>
   $.tool.call({ tool: 'Bash', command, description: 'Run it', timeout: 600000, ...extra })
 
 const BACKGROUNDED = [
-  'nio jury run 2026-11-14-x implementation-E-1', // AC-1
-  'nio flow green 2026-11-14-x T-3', // AC-2
+  'nio jury evidence S pr --run R', // AC-1
+  'nio flow finish 2026-11-14-x E-3 --by x', // AC-2
   SUITE, // AC-3
-  'uv run nio jury run x', // AC-4
-  'uv run nio flow green x T-1',
-  'cd /home/work/nio && nio jury run x',
-  'cd /home/work/nio && uv run nio flow green x T-1 2>&1 | tail -40',
+  'uv run nio jury evidence x pr', // AC-4
+  'uv run nio flow finish S E-1 --by x',
+  'cd /w && nio jury evidence S pr',
+  'cd /home/work/nio && uv run nio flow finish x E-1 2>&1 | tail -40',
   `cd /home/work/nio && ${SUITE}`,
 ]
 
@@ -51,10 +51,12 @@ const UNCHANGED = [
   'nio check spec 2026-11-14-x',
   'uv run python tests/test_flow.py',
   'uv run nio jury collect x',
+  'nio jury run S spec', // no such command since 2026-11-15
+  'nio flow green S T-1', // removed with red/green (2026-11-15)
   'ls -la',
-  'echo "nio jury run"', // AC-9
-  "grep 'nio flow green' skills/implement/SKILL.md",
-  'grep -n "nio jury run" a && echo "x; nio flow green"',
+  'echo "nio jury evidence"', // AC-9
+  "grep 'nio flow finish' skills/implement/SKILL.md",
+  'grep -n "nio jury evidence" a && echo "x; nio flow finish"',
   `echo "${SUITE.replace(/'/g, '')}"`,
 ]
 
@@ -85,9 +87,9 @@ for (const [name, config] of [
 ] as const) {
   test(`AC-11: with the config ${name}, only the nio commands are backgrounded`, async ($, on) => {
     const seen = setup(on, config)
-    await call($, 'nio jury run x')
+    await call($, 'nio jury evidence x pr')
     expect(seen.pop()!.run_in_background).toBe(true)
-    await call($, 'cd /tmp && uv run nio flow green x T-1')
+    await call($, 'cd /tmp && uv run nio flow finish x E-1')
     expect(seen.pop()!.run_in_background).toBe(true)
     await expectUnchanged($, seen, SUITE)
   })

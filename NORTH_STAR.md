@@ -70,20 +70,15 @@ The plan is a set of documents, each grilled and each following a template:
 - A custom evaluator agent rates each task's difficulty.
 - The tasks jury reviews those ratings too.
 - The difficulties then become a **usage estimate** and an execution plan: model and
-  worker per task, and which tasks run in parallel versus in sequence.
+  agent per epic, and which epics run in parallel versus in sequence.
 - The human sees the estimate before anything is spent.
 
 ### Implement
-NIO has its own workers:
-- TDD
-- test writer
-- builder
-- adversarial evaluator
-- adversarial tester
-- swarm: one orchestrator and several workers, sized by effort and model
-
-Work runs in parallel or in sequence. An epic closes when its tasks' own tests pass; after the
-last one, a jury reviews the whole effort diff against the spec, and the whole suite runs once.
+One agent per epic implements its tasks' tests and code, from one pack. `nio flow` runs the
+tests the epic's tasks name itself, once, and closes the epic only if they pass; a failed run
+goes to a fresh agent with the failing tests, and the third blocks the epic for the human.
+Independent epics run in parallel, each in its own worktree. After the last epic, the pr gate's
+jury reviews the whole effort diff against the spec, and the whole suite runs once.
 
 ## Jury (Byzantine review)
 
