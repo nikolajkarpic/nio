@@ -3146,5 +3146,49 @@ def test_task_rows_none_yet():
     print("ok")
 
 
+def test_show_memory_by_front_matter():
+    """TC-17: memory lists the records whose front matter points at the effort, with the index's standing."""
+    from nio import index
+    root = effort("planning")
+    own = next((root / ".nio/memory/project").glob("V-*-spec-gate-for-*.md"))
+    own_id = records.parse(own)[0]["id"]
+
+    def write(rtype, title, **fields):
+        path = records.new(root, rtype, "project", title)
+        head, body = path.read_text().split("\n---\n", 1)
+        lines = [ln for ln in head.splitlines() if ln.split(":")[0] not in fields]
+        path.write_text("\n".join(lines + [f"{k}: {v}" for k, v in fields.items()]) + "\n---\n" + body)
+        return records.parse(path)[0]["id"]
+
+    a = write("verdict", "points by paths", paths=f"[.nio/specs/{S}/spec.md]")
+    b = write("change", "points by against", against=S)
+    c = write("decision", "elsewhere", paths="[src/other.py]")
+    real = index.embed
+    index.embed = lambda model, texts: [bytes(index.DIM)] * len(texts)
+    try:
+        index.build(root)
+    finally:
+        index.embed = real
+    d = write("lesson", "written after the index", paths=f"[.nio/specs/{S}/plan.md]")
+    stands = dict(index.connect(root).execute("select id, standing from nodes where kind='record'"))
+    saved = sys.modules.get("fastembed", 0)
+    sys.modules["fastembed"] = None
+    try:
+        got = flow.memory(root, S)
+    finally:
+        if saved == 0:
+            del sys.modules["fastembed"]
+        else:
+            sys.modules["fastembed"] = saved
+    assert [r["id"] for r in got] == sorted([own_id, a, b, d]), got
+    by = {r["id"]: r for r in got}
+    for rid in (own_id, a, b):
+        assert by[rid]["standing"] == stands[rid], by[rid]
+    assert by[d]["standing"] == "-", by[d]
+    assert (by[a]["kind"], by[b]["kind"], by[d]["kind"]) == ("verdict", "change", "lesson"), got
+    assert by[a]["title"] == "points by paths" and by[own_id]["title"].startswith("spec gate for"), got
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])
