@@ -230,8 +230,12 @@ def main():
             print(c, f, h) if h else print(c, f)
         print(f"{len(found)} candidate files" if found else "no candidate files found")
         return
-    if a.cmd == "mods":  # needs no repo: installs for the clone it runs in
-        print("\n".join(hooks.mods_install(Path.cwd(), a.skip)))
+    if a.cmd == "mods":  # local scope is keyed to the clone's root, so resolve it; no repo: use cwd
+        try:
+            top = records.repo_root()
+        except IndexError:
+            top = Path.cwd()
+        print("\n".join(hooks.mods_install(top, a.skip)))
         return
     root = records.repo_root()
 
