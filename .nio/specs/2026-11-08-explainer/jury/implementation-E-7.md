@@ -1,8 +1,8 @@
 ---
 gate: implementation-E-7
 subject: 2026-11-08-explainer
-round: 1
-outcome: rejected
+round: 2
+outcome: approved
 ---
 # Implementation-e-7 jury: 2026-11-08-explainer
 
@@ -18,19 +18,19 @@ outcome: rejected
 | J-6 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-7 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-8 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-9 | major | gap | FR-27, AC-34 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-10 | minor | risk | FR-14, CT-6 | adversary | grounded | open |  | new, 0 |
-| J-11 | minor | risk | FR-27, AC-34 | adversary | grounded | open |  | new, 0 |
+| J-9 | major | gap | FR-27, AC-34 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-10 | minor | risk | FR-14, CT-6 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-11 | minor | risk | FR-27, AC-34 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-12 | blocker | gap | AC-34 | conformance | refuted | refuted |  | new, 0 |
 | J-13 | blocker | gap | AC-18, AC-19, AC-35 | conformance | refuted | refuted |  | new, 0 |
-| J-14 | minor | risk | CT-4 | correctness | grounded | open |  | new, 0 |
-| J-15 | minor | gap | AC-20 | correctness | grounded | open |  | new, 0 |
+| J-14 | minor | risk | CT-4 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
+| J-15 | minor | gap | AC-20 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-16 | blocker | gap | AC-18 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-17 | blocker | gap | AC-19 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-18 | blocker | gap | AC-34 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-19 | blocker | gap | AC-35 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-20 | major | contradiction | CT-3, FR-11 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-21 | minor | inconsistency | AC-34 | consistency | grounded | open |  | new, 0 |
+| J-21 | minor | inconsistency | AC-34 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
 
 ### J-1 test tampering: test_ac16_new_failure_only in tests/test_implement.py is deleted
 - situation (cli): the diff deletes the test test_ac16_new_failure_only from tests/test_implement.py
@@ -91,11 +91,13 @@ outcome: rejected
 - quote: "if f"(topic: {text})" in p.read_text().splitlines():"
 - situation (adversary): a file at today's path that is not valid UTF-8, or a directory with that name, makes `p.read_text()` raise `UnicodeDecodeError` or `IsADirectoryError`. The CLI turns only `ValueError` into `error:` and exit 1 (CT-10), so the human gets a traceback and topic mode is blocked for that topic. `UnicodeDecodeError` is a `ValueError` subclass, so that one may be caught. `IsADirectoryError` and `PermissionError` are not.
 - fix: catch `OSError` in the loop and treat that path as taken (`n += 1`), or refuse with a named error.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-11 Two runs of the same new topic get the same path, and the second overwrites the first with no warning
 - quote: "the first that doesn't exist (`new:`), unless an earlier one stores this exact topic text (`continue:` with that path)"
 - situation (adversary): `topic` only reports a free name and creates nothing, and the skill writes the file later. Two agents or sessions asking the same new topic in that gap both get `new: ...-explainer.md`. Both write it, and the later write silently replaces the earlier one. Nothing reserves the name, so an earlier explainer with its drill-downs can be lost.
 - fix: have `topic` create the file exclusively (`open(..., "x")`) with the `# ` title and topic line, so the second caller sees it exist and gets `continue:` or `-2`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-12 No test for AC-34 (same topic continues its file)
 - quote: "Given a topic explainer already exists at today's path for that topic, when `@nio:explain` runs on the same topic, then the same file keeps its earlier sections and gains the new ones; no second file is written."
@@ -114,11 +116,13 @@ outcome: rejected
 - quote: "`return [f"explainer missing: {p.relative_to(root)}"], []`"
 - situation (correctness): `p` is resolved with `.resolve()`, but `root` is used as given. If the repo root is reached through a symlink (for example a macOS /tmp path), `relative_to` raises ValueError instead of returning the missing-file error. For `nio check explainer`, the CLI's handling of a ValueError is not shown in the files I read. `finish` already uses `root.resolve()` for the same purpose.
 - fix: use `root.resolve()` in `relative_to`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-15 Topic-mode check test never makes the check fail
 - quote: "`assert "core diagram" not in out and "CT-" not in out, out`"
 - situation (correctness): test_ac20_topic_render_only only shows that a good topic file passes. No test runs the check on a topic file with a broken Mermaid block. A topic-mode check that never rendered would still pass this test.
 - fix: add a topic-file case whose block the fake npx rejects, and assert exit 1 with `broken diagram: <title>`.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ### J-16 AC-18 has no passing evidence
 - situation (cli): no passing test proves AC-18: test_ac18_topic_path didn't run
@@ -157,12 +161,13 @@ outcome: rejected
 - quote: "File: `tests/test_explain_e2e.py:test_ac34_same_topic` (new)"
 - situation (consistency): T-13's files are `src/nio/explain.py` and `tests/test_explain.py`, and it lists TC-26 as its test. TC-26's file is tests/test_explain_e2e.py:test_ac34_same_topic, which the E-7 diff does not contain. T-15 also lists TC-26 with that file. When E-7 closes, TC-26 looks covered by a task that did not write it, and it is actually E-8's.
 - fix: drop TC-26 from T-13's Test line and leave it to T-15.
+- disposition: accepted-risk by system: minor, skipped at the round cap
 
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| implementation-E-7-adversary | adversary | juror / claude-code / claude-sonnet-5-5 | sufficient | yes | 1 | 1 |
+| implementation-E-7-adversary | adversary | juror / claude-code / sonnet | sufficient | yes | 1 | 2 |
 | implementation-E-7-conformance | conformance | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
 | implementation-E-7-consistency | consistency | juror / claude-code / claude-haiku-5-5 | sufficient | yes | 2 | 1 |
 | implementation-E-7-correctness | correctness | juror / claude-code / sonnet | sufficient | yes | 1 | 1 |
