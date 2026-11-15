@@ -1993,9 +1993,9 @@ def planned_task(tid, file, serves, tc, deps="none"):
             "- Parallel: no\n- Tier: cheap: x\n- Effort: low\n- Mode: split: x\n\n")
 
 
-FIX_E1 = "## E-1 First (US-1)\n\n" + planned_task("T-1", "src/one.py", "AC-1", "TC-1") + planned_task("T-2", "src/two.py", "AC-2", "TC-2", "T-1") \
+FIX_E1 = "## E-1 First (US-1)\n- Tier: cheap: x\n- Effort: low\n\n" + planned_task("T-1", "src/one.py", "AC-1", "TC-1") + planned_task("T-2", "src/two.py", "AC-2", "TC-2", "T-1") \
     + planned_task("T-3", "src/three.py", "AC-4", "TC-1", "T-2")
-FIX_E2 = "## E-2 Second (US-2)\n\n" + planned_task("T-4", "src/four.py", "AC-3", "TC-3")
+FIX_E2 = "## E-2 Second (US-2)\n- Tier: cheap: x\n- Effort: low\n\n" + planned_task("T-4", "src/four.py", "AC-3", "TC-3")
 
 
 def earlier_fix(cite):
