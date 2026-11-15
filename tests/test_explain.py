@@ -415,12 +415,12 @@ def test_ct5_keeps_author_lines():
 
 
 def npx_bin():
-    """A PATH dir with a fake npx: copies -i to -o; FAKE_NPX=hang sleeps 5 s first."""
+    """A PATH dir with a fake npx: copies -i to -o; FAKE_NPX=hang sleeps 5 s first, FAKE_NPX=down fails as offline npm."""
     import stat
     import tempfile
     b = Path(tempfile.mkdtemp())
     n = b / "npx"
-    n.write_text('#!/bin/sh\n[ "$FAKE_NPX" = hang ] && sleep 5\nwhile [ $# -gt 0 ]; do case $1 in -i) i=$2;; -o) o=$2;; esac; shift; done\ncat "$i" > "$o"\n')
+    n.write_text('#!/bin/sh\n[ "$FAKE_NPX" = hang ] && sleep 5\n[ "$FAKE_NPX" = down ] && { echo "npm ERR! code ENOTFOUND" >&2; exit 1; }\nwhile [ $# -gt 0 ]; do case $1 in -i) i=$2;; -o) o=$2;; esac; shift; done\ncat "$i" > "$o"\n')
     n.chmod(n.stat().st_mode | stat.S_IEXEC)
     return b
 
