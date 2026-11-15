@@ -1047,9 +1047,11 @@ def show(root, slug, now=None):
         tl = timeline(load(root, slug)[1])
     except Broken as e:
         tl = {"error": str(e)}
+    except Exception as e:
+        tl = {"error": f"{slug}: {e}"}
     try:
         ju = juries(root, slug)
-    except (ValueError, OSError) as e:  # json.JSONDecodeError is a ValueError
+    except Exception as e:
         ju = {"error": f"{slug}: {e}"}
     try:
         tk = task_rows(root, slug, state, load(root, slug)[1])

@@ -3048,6 +3048,18 @@ def test_show_timeline_lists_stage_changes():
     print("ok")
 
 
+def test_show_survives_malformed_ledger():
+    root = effort("tasking")
+    j = root / ".nio/specs" / S / "jury"
+    j.mkdir(parents=True, exist_ok=True)
+    (j / "zz.json").write_text("{}")
+    code, out, err = run_main(root, "flow", "show", S, "--json")
+    assert code == 0, (code, out, err)
+    d = json.loads(out)
+    assert "error" in d["juries"] and d["stage"] != "-", (code, out, err)
+    print("ok")
+
+
 def test_show_timeline_failed_review():
     root = effort("implementing")
     rev = lambda t, passed, reasons: {"kind": "review", "from": "implementing", "to": "implementing",
