@@ -53,7 +53,7 @@ def e2e(test):
     def run():
         if not E2E:
             print(f"skipped {test.__name__} (set NIO_E2E=1)")
-            return
+            return "skipped"
         test()
         print("ok")
     run.__name__ = test.__name__
