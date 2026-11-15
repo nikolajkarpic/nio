@@ -962,6 +962,35 @@ def timeline(lines):
     return rows
 
 
+def juries(root, slug):
+    """Juries section (CT-4): per committed ledger, its rounds with lenses, verdicts and findings."""
+    from nio import jury, tasks
+    out = []
+    for f in sorted(jury.folder(root, slug).glob("*.json")):
+        led = jury.load(root, slug, f.stem)
+        votes = jury.votes(led)
+        has_tasks = tasks.path(root, slug).exists()
+        rounds = []
+        for n in range(1, led["round"] + 1):
+            mine = [x for x in led["findings"] if x["first_round"] == n]
+            names = {s["lens"] for x in led["findings"] for s in x["sources"] if s["round"] == n}
+            names |= {j["lens"] for j in led["jurors"].values() if j["round"] == n}
+            lenses = []
+            for lens in sorted(names):
+                if n == led["round"] and lens in votes:
+                    v = [x[1] for x in votes[lens]]
+                    verdict = "block" if "block" in v else v[0]
+                else:
+                    verdict = "block" if any(x["validation"] == "confirmed" and x["severity"] != "minor" and any(
+                        s["lens"] == lens and s["round"] == n for s in x["sources"]) for x in led["findings"]) else "approve"
+                lenses.append({"lens": lens, "verdict": verdict})
+            rounds.append({"round": n, "lenses": lenses, "findings": [
+                {"id": x["id"], "title": x["title"], "severity": x["severity"], "validation": x["validation"],
+                 "fix_tasks": tasks.fixes_of(root, slug, f.stem, x["id"]) if has_tasks else []} for x in mine]})
+        out.append({"gate": f.stem, "outcome": led["outcome"] or "-", "rounds": rounds})
+    return out
+
+
 def show(root, slug, now=None):
     """Drill-down data for `nio flow show` (CT-2): one JSON line; the five sections are placeholders until filled."""
     if not (root / ".nio/specs" / slug).is_dir() or kind(root, slug) != "effort":
@@ -979,7 +1008,11 @@ def show(root, slug, now=None):
         tl = timeline(load(root, slug)[1])
     except Broken as e:
         tl = {"error": f"{slug}: {e}"}
-    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": [], "tasks": [], "cost": "-", "memory": []})]
+    try:
+        ju = juries(root, slug)
+    except (ValueError, OSError) as e:  # json.JSONDecodeError is a ValueError
+        ju = {"error": f"{slug}: {e}"}
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": [], "cost": "-", "memory": []})]
 
 
 def brief(root, slug, everything=False):
