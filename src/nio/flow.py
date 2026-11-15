@@ -1046,7 +1046,7 @@ def show(root, slug, now=None):
     try:
         tl = timeline(load(root, slug)[1])
     except Broken as e:
-        tl = {"error": f"{slug}: {e}"}
+        tl = {"error": str(e)}
     try:
         ju = juries(root, slug)
     except (ValueError, OSError) as e:  # json.JSONDecodeError is a ValueError
@@ -1057,7 +1057,18 @@ def show(root, slug, now=None):
         tk = task_rows(root, slug, state, None)
     except Exception as e:
         tk = {"error": f"{slug}: {e}"}
-    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": tk, "cost": "-", "memory": memory(root, slug)})]
+    try:
+        from nio import usage
+        cost = usage.so_far(root, slug, load(root, slug)[1], now or datetime.datetime.now(datetime.timezone.utc))
+    except Broken as e:
+        cost = {"error": str(e)}
+    except Exception as e:
+        cost = {"error": f"{slug}: {e}"}
+    try:
+        mem = memory(root, slug)
+    except Exception as e:
+        mem = {"error": f"{slug}: {e}"}
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": tk, "cost": cost, "memory": mem})]
 
 
 def brief(root, slug, everything=False):
