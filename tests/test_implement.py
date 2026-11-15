@@ -1807,6 +1807,12 @@ def test_lite_red_refuses_passing_test():
     print("ok")
 
 
+def test_suite_reads_self_check_name_with_spaces():
+    cmd = "printf 'FAIL tests/x.py::a name with spaces\\nran 1 tests, 1 failed\\n'; exit 1"
+    r = implement.suite(Path(tempfile.gettempdir()), {"tests": {"suite": cmd}})
+    assert r["failing"] == ["tests/x.py::a name with spaces"], r["failing"]
+
+
 if __name__ == "__main__":
     if "--demo" in sys.argv:
         tempfile.tempdir = tempfile.mkdtemp(prefix="nio-demo-", dir=Path(tempfile.tempdir).parent)  # outlives this run
