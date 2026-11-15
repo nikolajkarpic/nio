@@ -3,6 +3,7 @@ import datetime
 import re
 import shlex
 import sys
+from pathlib import Path
 from importlib import resources
 
 from nio import agents, evidence, explain, flow, hooks, implement, index, jury, onboard, pack, plan, query, records, spec, tasks, usage
@@ -72,6 +73,9 @@ def main():
     k.add_argument("--reader", choices=list(onboard.READERS), help="add the project docs this reader gets")
     k.add_argument("--slug", default="", help="effort slug; picks the apps its spec names")
     sub.add_parser("hooks", help="install git hooks: refresh the index and agent files after pulls, checkouts and rebases; check memory before commits and pushes")
+    md = sub.add_parser("mods", help="install NIO's Claude Code mods for this clone")
+    md.add_argument("mods_cmd", choices=["install"])
+    md.add_argument("--skip", action="store_true", help="install nothing; report what is already installed")
     al = sub.add_parser("allow", help="let agents run stage commands without a prompt on Claude Code; the human's decisions still prompt")
     scope = al.add_mutually_exclusive_group(required=True)
     scope.add_argument("--personal", action="store_true", help="this clone only: .claude/settings.local.json, gitignored")
@@ -225,6 +229,9 @@ def main():
         for c, f, h in found:
             print(c, f, h) if h else print(c, f)
         print(f"{len(found)} candidate files" if found else "no candidate files found")
+        return
+    if a.cmd == "mods":  # needs no repo: installs for the clone it runs in
+        print("\n".join(hooks.mods_install(Path.cwd(), a.skip)))
         return
     root = records.repo_root()
 

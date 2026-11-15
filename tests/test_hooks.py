@@ -150,6 +150,96 @@ def test_wheel_ships_mods():
     print("ok")
 
 
+FAKE_CLAUDE = """#!/bin/sh
+echo "$@" >> "$0.log"
+case "$*" in
+  "plugin list --json") echo "[]";;
+  "plugin install background-nio-commands"*) echo "boom: marketplace unreadable" >&2; exit 1;;
+  *) exit 0;;
+esac
+"""
+
+
+def _mods(root, *args, path):
+    import os
+    from test_flow import run_main
+    old = os.environ["PATH"]
+    os.environ["PATH"] = path
+    try:
+        return run_main(root, "mods", "install", *args)
+    finally:
+        os.environ["PATH"] = old
+
+
+def test_mods_install_one_fails():
+    # TC-23 and the AC-26 recording
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "claude"
+        fake.write_text(FAKE_CLAUDE)
+        fake.chmod(0o755)
+        code, out, err = _mods(Path(tmp), path=f"{tmp}:{os.environ['PATH']}")
+        assert code == 0, err
+        assert out == "background-nio-commands: failed: boom: marketplace unreadable\nnio-status-pane: installed\n", out
+        log = Path(str(fake) + ".log").read_text()
+        assert "plugin install nio-status-pane" in log and "--scope local" in log and str(hooks.mods_dir()) in log, log
+    print("ok")
+
+
+def test_mods_install_without_claude():
+    # TC-36
+    with tempfile.TemporaryDirectory() as tmp:
+        code, out, _ = _mods(Path(tmp), path=tmp)
+        assert code == 0
+        assert out == "background-nio-commands: failed: claude not found\nnio-status-pane: failed: claude not found\n", out
+        code, out, _ = _mods(Path(tmp), "--skip", path=tmp)
+        assert code == 0 and out == "background-nio-commands: skipped\nnio-status-pane: skipped\n", out
+    print("ok")
+
+
+def test_mods_install_e2e():
+    # TC-20..22: real claude, only with NIO_E2E=1, in a temp CLAUDE_CONFIG_DIR
+    import os
+    if os.environ.get("NIO_E2E") != "1":
+        print("skip (NIO_E2E=1 runs it)")
+        return
+    ids = ("background-nio-commands", "nio-status-pane")
+    from test_flow import run_main
+
+    def listed(root, cfg):
+        r = subprocess.run(["claude", "plugin", "list", "--json"], cwd=root, capture_output=True, text=True,
+                           env={**os.environ, "CLAUDE_CONFIG_DIR": cfg})
+        return [e["id"] for e in json.loads(r.stdout)]
+
+    old = os.environ.get("CLAUDE_CONFIG_DIR")
+    try:
+        with tempfile.TemporaryDirectory() as cfg, tempfile.TemporaryDirectory() as cfg2:
+            os.environ["CLAUDE_CONFIG_DIR"] = cfg
+            root = repo()
+            code, out, err = run_main(root, "mods", "install")
+            assert code == 0 and out == "background-nio-commands: installed\nnio-status-pane: installed\n", (out, err)
+            assert all(f"{i}@nio-mods" in listed(root, cfg) for i in ids)
+            before = git(root, "status", "--porcelain").stdout
+            code, out, _ = run_main(root, "mods", "install")
+            assert out == "background-nio-commands: already installed\nnio-status-pane: already installed\n", out
+            code, out, _ = run_main(root, "mods", "install", "--skip")
+            assert out == "background-nio-commands: already installed (left as is)\nnio-status-pane: already installed (left as is)\n", out
+            assert [i for i in listed(root, cfg) if i.endswith("@nio-mods")].count(f"{ids[0]}@nio-mods") == 1
+            assert git(root, "status", "--porcelain").stdout == before
+            os.environ["CLAUDE_CONFIG_DIR"] = cfg2
+            root2 = repo()
+            code, out, _ = run_main(root2, "mods", "install", "--skip")
+            assert out == "background-nio-commands: skipped\nnio-status-pane: skipped\n", out
+            assert not [i for i in listed(root2, cfg2) if i.endswith("@nio-mods")]
+    finally:
+        if old is None:
+            os.environ.pop("CLAUDE_CONFIG_DIR", None)
+        else:
+            os.environ["CLAUDE_CONFIG_DIR"] = old
+    print("ok")
+
+
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
-                    test_wheel_ships_mods])
+                    test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_without_claude,
+                    test_mods_install_e2e])
