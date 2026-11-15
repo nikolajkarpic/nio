@@ -295,6 +295,24 @@ def test_mods_install_local_scope():
     print("ok")
 
 
+def test_mods_install_from_subfolder():
+    # FR-25: run from a subfolder, the mods install for the clone's root
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "bin" / "claude"
+        fake.parent.mkdir()
+        fake.write_text('#!/bin/sh\necho "$PWD $@" >> "' + tmp + '/log"\nif [ "$1 $2" = "plugin list" ]; then echo "[]"; fi\nexit 0\n')
+        fake.chmod(0o755)
+        root = Path(tmp).resolve() / "repo"
+        (root / "src").mkdir(parents=True)
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+        env = {**os.environ, "PATH": f"{fake.parent}:{os.environ['PATH']}"}
+        subprocess.run([sys.executable, "-c", "import sys; from nio.cli import main; sys.argv = ['nio', 'mods', 'install']; main()"], cwd=root / "src", env=env, check=True, capture_output=True)
+        log = (Path(tmp) / "log").read_text().splitlines()
+        assert all(l.startswith(f"{root} ") for l in log), log
+    print("ok")
+
+
 def test_mods_dir_fallback():
     # CT-8: the packaged folder when present, else the checkout's tools/claude-mods, else ValueError; install reports it
     assert hooks.mods_dir() == ROOT / "tools/claude-mods", hooks.mods_dir()
@@ -338,5 +356,5 @@ def test_readmes_call_mods_optional():
 if __name__ == "__main__":
     selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
                     test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_times_out, test_mods_install_without_claude,
-                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope, test_mods_dir_fallback,
+                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope, test_mods_install_from_subfolder, test_mods_dir_fallback,
                     test_readmes_call_mods_optional])
