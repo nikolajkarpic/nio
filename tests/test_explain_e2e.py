@@ -304,5 +304,30 @@ def test_uj2_no_repeat():
     assert len(d) == 2 and d[0] != d[1], d
 
 
+def with_format(fmt):
+    root = approved(None)
+    if fmt:
+        (root / ".nio").mkdir(exist_ok=True)
+        (root / ".nio/config.json").write_text('{"explain": {"format": "%s"}}' % fmt)
+    return root
+
+
+@e2e
+def test_ac26_mermaid_default():
+    root = with_format(None)
+    explain_run(root)
+    ds = [s for s in secs(root) if s["block"] or s["fence"]]
+    assert ds and all(s["fence"] == "mermaid" for s in ds), ds
+
+
+@e2e
+def test_ac28_fallback():
+    root = with_format("no-such-skill")
+    out = explain_run(root)
+    ds = [s for s in secs(root) if s["block"] or s["fence"]]
+    assert ds and all(s["fence"] == "mermaid" for s in ds), ds
+    assert "no-such-skill" in out or "no-such-skill" in (folder(root) / "explainer.md").read_text(), out
+
+
 if __name__ == "__main__":
     selfcheck.main([f for n, f in list(globals().items()) if n.startswith("test_") and callable(f)])

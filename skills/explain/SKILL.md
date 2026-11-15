@@ -84,6 +84,14 @@ Label them `component`, `flow` and `decision`, then wait for the human.
 
 Credit: Mermaid syntax notes adapted from https://github.com/Agents365-ai/mermaid-skill and https://agent-skills.md/skills/ccheney/robust-skills/mermaid-diagrams
 
+## Format
+
+Draw in Mermaid unless `explain.format` in `.nio/config.json` (read with its local and global layers; default
+`mermaid`) names another format.
+- A host skill by that name: draw with it instead. Keep the section headings of plan mode, name every `CT-n` in the
+  component map section's text, and still run `nio explain finish` (it renders nothing then).
+- No such skill on this host: draw Mermaid and say so in your reply, naming the missing skill.
+
 ## Diagram rules
 
 - Draw **one question per diagram**. If a diagram needs "and", split it.
