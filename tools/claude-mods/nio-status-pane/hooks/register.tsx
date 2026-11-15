@@ -248,7 +248,7 @@ const cost = (c: any): string[] => {
 const sections = (d: any): string[] => [
   ...list(d.timeline, SECTION.timeline, x =>
     x.kind === 'review'
-      ? [`review ${x.from} · ${x.at} · ${x.reasons?.length ? x.reasons.join('; ') : '-'}`]
+      ? [`review ${x.from} · ${x.at} · ${Array.isArray(x.reasons) && x.reasons.length ? x.reasons.join('; ') : '-'}`]
       : [`${x.from} → ${x.to} · ${x.role} · ${x.host} · ${x.model} · ${x.at}`]),
   ...list(d.juries, SECTION.juries, jury),
   ...list(d.tasks, SECTION.tasks, t => [`${t.id} ${t.status} · attempts ${t.attempts} · ${t.title}`]),

@@ -294,6 +294,18 @@ test('AC-1 drill-down timeline', async ($, on) => {
   expect(model).toEqual([])
 })
 
+test('AC-1 drill-down timeline: a failed review shows its reasons, or - when flow show gives none', async ($, on) => {
+  const shown = { ...SHOWN, timeline: [
+    { kind: 'stage', ...ROW(1, 'plan_jury') },
+    { kind: 'review', from: 'plan_jury', to: 'plan_jury', role: '-', host: '-', model: '-', at: '2026-11-10T11:30:00Z', reasons: ['no tests', 'bad ids'] },
+    { kind: 'review', from: 'tasking', to: 'tasking', role: '-', host: '-', model: '-', at: '2026-11-10T12:30:00Z', reasons: '-' },
+  ] }
+  const { read } = await open($, on, () => result(0, JSON.stringify(shown)))
+  const all = (await read()).join('\n')
+  expect(all).toContain('review plan_jury · 2026-11-10T11:30:00Z · no tests; bad ids')
+  expect(all).toContain('review tasking · 2026-11-10T12:30:00Z · -')
+})
+
 test('AC-5 back to the list', async ($, on) => {
   const { ui, read, clock } = await open($, on, ok)
   await ui.press({ key: 'back' })
