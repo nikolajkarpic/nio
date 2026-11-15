@@ -1,6 +1,6 @@
 ---
 slug: 2026-11-15-effort-drilldown-install
-retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-33, T-34, T-38]                      # task IDs removed from this file; never reused
+retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28, T-29, T-30, T-31, T-33, T-34, T-38, T-41, T-42]                      # task IDs removed from this file; never reused
 ---
 # Tasks: Effort drill-down in the NIO pane, and @nio:install installs the Claude Code mods
 
@@ -219,6 +219,17 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - Effort: low
 - Mode: direct: T-38's TC-6 passed on arrival; the new test and the fix land together
 
+### T-44 Fix: the background mod README and the marketplace file no longer treat the mods as off-limits or dev-only (T-41, T-42 retired, their tests passed on arrival)
+- From: C-261115-s4kj
+- Files: `tools/claude-mods/background-nio-commands/README.md`, `tools/claude-mods/.claude-plugin/marketplace.json`, `tests/test_hooks.py`
+- Serves: FR-26, CT-9, CT-16, AC-25, AC-27
+- Test: TC-32, plus new test_mods_texts_offer_mods_to_target_projects (the background mod README no longer holds `Don't turn it on in a target project`, and marketplace.json's `description` no longer holds `for developing NIO` and holds `Optional`)
+- Depends on: none
+- Parallel: no
+- Tier: strong: two one-line text fixes with a real test
+- Effort: low
+- Mode: direct: T-41's TC-32 and T-42's TC-30 passed on arrival; the new test and the fix land together
+
 ### T-32 Fix: Pane drops every jury finding and fix task
 - From: J-30 (pr, round 3)
 - Files: `tools/claude-mods/nio-status-pane/hooks/register.tsx`
@@ -263,24 +274,3 @@ retired: [T-4, T-18, T-19, T-20, T-21, T-22, T-23, T-24, T-25, T-26, T-27, T-28,
 - Effort: med
 - Mode: single: a fix from a jury finding
 
-### T-41 Fix: Background mod README tells target projects not to turn the mod on, which the decision now offers
-- From: J-54 (pr, round 4)
-- Files: `tools/claude-mods/background-nio-commands/README.md`
-- Serves: FR-26, CT-16, J-54
-- Test: TC-32
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding
-
-### T-42 Fix: The marketplace file that ships in the wheel still calls the mods dev tooling for NIO
-- From: J-55 (pr, round 4)
-- Files: `tools/claude-mods/.claude-plugin/marketplace.json`
-- Serves: FR-26, CT-9, AC-25
-- Test: TC-30
-- Depends on: none
-- Parallel: no
-- Tier: strong: a fix from a jury finding
-- Effort: med
-- Mode: single: a fix from a jury finding

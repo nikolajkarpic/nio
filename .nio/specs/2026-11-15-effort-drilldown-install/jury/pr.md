@@ -57,14 +57,14 @@ outcome: human
 | J-45 | minor | inconsistency | CT-14, CT-12 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-46 | major | contradiction | CT-8, CT-9, FR-22 | integration | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-47 | minor | risk | CT-2, NFR-1 | integration | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-48 | major | gap | AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-48 | major | gap | AC-5, AC-9, AC-11, AC-13, AC-16, AC-17, AC-24, AC-29, AC-30 | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-49 | major | gap |  | cli | confirmed | disposed | fix-task (human) | new, 0 |
 | J-50 | major | gap | FR-25, FR-29 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
 | J-51 | major | scope | FR-26 | adversary | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-52 | minor | risk | FR-14 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-53 | minor | gap | AC-2 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
-| J-54 | major | contradiction | D-261115-e6nx, FR-26, CT-16 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
-| J-55 | major | contradiction | D-261115-e6nx, FR-26, CT-9, AC-25 | consistency | confirmed | disposed | fix-task (human) | new, 0 |
+| J-54 | major | contradiction | D-261115-e6nx, FR-26, CT-16 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
+| J-55 | major | contradiction | D-261115-e6nx, FR-26, CT-9, AC-25 | consistency | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-56 | minor | inconsistency | FR-23, AC-24, CT-13 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-57 | minor | inconsistency | CT-10, CT-16, FR-25 | consistency | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-58 | minor | inconsistency | CT-10, CT-11, FR-25 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
@@ -399,7 +399,7 @@ outcome: human
 - situation (cli): T-36 names src/nio/implement.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: accepted-risk by agent: Its test TC-6 passes on arrival; the real gap (self-check failing names with spaces cut by implement.py's reader) goes to a direct fix task (C-261115-b3lo)
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-43 (fc1eeef, self-check names with spaces reported whole); accepted only because retirement reset the fix ruling.
 
 ### J-49 the test suite failed
 - situation (cli): `printf '%s\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:
@@ -446,14 +446,14 @@ warning: `VIRTUAL_ENV=/home/work/nio/.venv` does not match the project environme
 - situation (consistency): a person runs `@nio:install` in a target project and chooses "Install the mods (recommended)". `nio mods install` turns the background mod on for that clone, while the mod's README (the one `claude plugin` and a reader see) says not to turn it on in a target project. The README's first paragraph says "offered by `@nio:install`", so it contradicts itself. CT-16 asks each README to say that `@nio:install` installs the mods for this clone; this one does not say so and keeps the instruction.
 - fix: replace the "Turning it on" section and the "Don't turn it on in a target project" sentence with the install path (`@nio:install` or `nio mods install`, local scope), keeping the `--plugin-dir` option as the try-it-once route. If the decision's "skills work the same without them" is the point to keep, say that instead of "NIO must behave the same on every host".
 - validation: confirmed: tools/claude-mods/background-nio-commands/README.md:31 still says "Don't turn it on in a target project". FR-26 and AC-27 require the READMEs to describe the mods as optional, and `@nio:install` now turns them on in target projects.
-- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-44 (3727b69, README and marketplace no longer treat the mods as off-limits or dev-only); accepted only because retirement reset the fix ruling.
 
 ### J-55 The marketplace file that ships in the wheel still calls the mods dev tooling for NIO
 - quote: "Claude Code mods for developing NIO"
 - situation (consistency): CT-9 force-includes all of `tools/claude-mods` into `nio/mods`, so `.claude-plugin/marketplace.json` ships in the wheel. `nio mods install` passes that folder as `--marketplace`, so `claude plugin` shows this description to the target project's user, and it says the mods are for developing NIO. The diff does not touch the file, and FR-26 and CT-16 list only the README files, so AC-27 never reaches it. The decision says the mods are an optional part of the product.
 - fix: change the description to the optional-part wording (for example "Optional Claude Code mods for NIO"), and add `tools/claude-mods/.claude-plugin/marketplace.json` to CT-16 or to FR-26's scope so the spec covers it.
 - validation: confirmed: tools/claude-mods/.claude-plugin/marketplace.json:3 still reads "Claude Code mods for developing NIO". The folder ships in the wheel and is passed as `--marketplace`. FR-26 and AC-27 cover only READMEs, so nothing in the spec covers this file.
-- disposition: fix-task by human: Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.
+- disposition: accepted-risk by human: Accept, noting they're fixed: fixed by T-44 (3727b69, README and marketplace no longer treat the mods as off-limits or dev-only); accepted only because retirement reset the fix ruling.
 
 ### J-56 The pane README still describes the venv-missing row and the venv-only run, both replaced by FR-23
 - quote: "A worktree with no `.venv` shows `no .venv: run uv sync` and runs nothing."

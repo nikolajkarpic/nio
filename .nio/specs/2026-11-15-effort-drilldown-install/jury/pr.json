@@ -2043,8 +2043,8 @@
       "reason": "the CLI's own check; no refuter",
       "status": "disposed",
       "disposition": "accepted-risk",
-      "by": "agent",
-      "note": "Its test TC-6 passes on arrival; the real gap (self-check failing names with spaces cut by implement.py's reader) goes to a direct fix task (C-261115-b3lo)",
+      "by": "human",
+      "note": "Accept, noting they're fixed: fixed by T-43 (fc1eeef, self-check names with spaces reported whole); accepted only because retirement reset the fix ruling.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 3,
@@ -2258,9 +2258,9 @@
       "validation": "confirmed",
       "reason": "tools/claude-mods/background-nio-commands/README.md:31 still says \"Don't turn it on in a target project\". FR-26 and AC-27 require the READMEs to describe the mods as optional, and `@nio:install` now turns them on in target projects.",
       "status": "disposed",
-      "disposition": "fix-task",
+      "disposition": "accepted-risk",
       "by": "human",
-      "note": "Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.",
+      "note": "Accept, noting they're fixed: fixed by T-44 (3727b69, README and marketplace no longer treat the mods as off-limits or dev-only); accepted only because retirement reset the fix ruling.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 4,
@@ -2298,9 +2298,9 @@
       "validation": "confirmed",
       "reason": "tools/claude-mods/.claude-plugin/marketplace.json:3 still reads \"Claude Code mods for developing NIO\". The folder ships in the wheel and is passed as `--marketplace`. FR-26 and AC-27 cover only READMEs, so nothing in the spec covers this file.",
       "status": "disposed",
-      "disposition": "fix-task",
+      "disposition": "accepted-risk",
       "by": "human",
-      "note": "Fix, no re-check: small fix tasks get built and tested through the build stage; no further review round.",
+      "note": "Accept, noting they're fixed: fixed by T-44 (3727b69, README and marketplace no longer treat the mods as off-limits or dev-only); accepted only because retirement reset the fix ruling.",
       "baseline": "new",
       "rounds": 0,
       "first_round": 4,
@@ -2586,6 +2586,10 @@
     [
       2,
       "human"
+    ],
+    [
+      4,
+      "closed"
     ]
   ],
   "versions": {
@@ -2783,5 +2787,10 @@
       "J-54",
       "J-55"
     ]
-  }
+  },
+  "closed": [
+    4,
+    "3727b69c12ae7abd9d13ddbd33f12b15aed1b848",
+    "the human ruled every finding of the capped batch"
+  ]
 }
