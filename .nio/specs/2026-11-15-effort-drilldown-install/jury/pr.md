@@ -40,7 +40,7 @@ outcome: human
 | J-28 | blocker | gap | AC-1, AC-5, AC-13, AC-16, AC-17, AC-24, AC-30 | conformance | merged | merged |  | new, 0 |
 | J-29 | blocker | gap | AC-18, AC-19, AC-20 | conformance | merged | merged |  | new, 0 |
 | J-30 | major | contradiction | CT-12, CT-4 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
-| J-31 | major | contradiction | CT-2, FR-13 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
+| J-31 | major | contradiction | CT-2, FR-13 | adversary | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-32 | major | contradiction | CT-8, CT-10, FR-22 | adversary | confirmed | disposed | fix-task (human) | new, 0 |
 | J-33 | minor | risk | CT-10, CT-11, FR-25 | adversary | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-34 | minor | scope | CT-17 | adversary, integration | grounded | disposed | accepted-risk (system) | new, 0 |
@@ -260,7 +260,7 @@ outcome: human
 - situation (adversary): CT-2 says "one section's failure never stops the others" and a failing section returns `{"error": ...}`. The juries try catches only ValueError and OSError. A ledger that is valid JSON but lacks `sources`, `round` or `jurors` raises KeyError or TypeError. The timeline try catches only `Broken`, so a history line that is not an object raises AttributeError. Either one escapes `show` as a traceback with exit 1 and empty stdout. The pane then shows the last stderr line and no sections, and a hand-edited or merge-damaged committed ledger hides all five sections.
 - fix: use `except Exception` for timeline and juries, as the tasks, cost and memory blocks already do.
 - validation: confirmed: flow.py:1050-1053 catches only ValueError/OSError, and jury.load (jury.py:101) does no validation. A ledger that is valid JSON but lacks `round`, `sources` or `jurors` raises KeyError in juries() and escapes show(). The tasks, cost and memory blocks use `except Exception`.
-- disposition: fix-task by human: Fix, with re-check: two fix tasks; the reviewers that found them check the fixes once more.
+- disposition: accepted-risk by agent: named test TC-1 passes on arrival; replaced by direct fix task T-37 carrying a real J-31 test (C-261115-hkrz, pass-on-arrival rule)
 
 ### J-32 `mods_dir()` has no checkout fallback, so install fails in the editable dev checkout
 - quote: "return Path(__file__).parent / "mods""

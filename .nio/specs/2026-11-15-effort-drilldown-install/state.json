@@ -10,6 +10,10 @@
   "auto": false,
   "claims": {},
   "pause": null,
-  "run": "R-261115-hezr",
-  "waiting": null
+  "run": "R-261115-x6cb",
+  "waiting": {
+    "change": "C-261115-hkrz",
+    "task": "T-34",
+    "why": "spec problem in T-34"
+  }
 }
