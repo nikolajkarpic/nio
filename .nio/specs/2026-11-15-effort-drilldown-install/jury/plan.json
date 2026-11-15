@@ -1,7 +1,7 @@
 {
   "gate": "plan",
   "subject": "2026-11-15-effort-drilldown-install",
-  "round": 2,
+  "round": 3,
   "tier": "low",
   "expect": [
     "architecture-fit",
@@ -12,30 +12,32 @@
     "R-261115-cl67/plan-test-proof.md": "cf65cb499d3a1259cbdaae0ff2aaab52ce839891662d007d8315d11b81701afd",
     "R-261115-cl67/plan-refuter.md": "a0d3da3192acba8144b0f488a8ef5c6b76231da858ea045aff5da1324b51bd56",
     "R-261115-hjet/plan-architecture-fit.md": "70b4c646ebc2113613bb7aacebad845d43d57a420ebdb1b4a02a8ae36fd8f549",
-    "R-261115-hjet/plan-test-proof.md": "c31275799af610e22279e762758066690c529fa4998d2aa1c4e9ab0cd2cf8ce2"
+    "R-261115-hjet/plan-test-proof.md": "c31275799af610e22279e762758066690c529fa4998d2aa1c4e9ab0cd2cf8ce2",
+    "R-261115-ivry/plan-architecture-fit.md": "8cbe58f538fc46b28aa94bb79f090688c1eb6f76936bae5515197dda578bbcf5",
+    "R-261115-ivry/plan-test-proof.md": "aa6166921b55dee9dae44653c54d7483b4ac14d75b2090f713b74bfee12ca72a"
   },
   "jurors": {
     "plan-architecture-fit": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "architecture-fit",
-      "by": "juror / claude-code / claude-opus-5-5",
+      "by": "juror / claude-code / opus-5.5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "ef6238b8448e5f30ab1084d8a34f8e25b1b3cfe1",
-      "judged": 2
+      "round": 3,
+      "version": "c4c76a52fe1862b882ee902f278cacef90c4dd6c",
+      "judged": 3
     },
     "plan-test-proof": {
       "attempts": 1,
       "lens": "test-proof",
-      "by": "juror / claude-code / opus",
+      "by": "juror / claude-code / opus-5.5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 2,
-      "version": "ef6238b8448e5f30ab1084d8a34f8e25b1b3cfe1",
-      "judged": 2
+      "round": 3,
+      "version": "c4c76a52fe1862b882ee902f278cacef90c4dd6c",
+      "judged": 3
     }
   },
   "findings": [
@@ -431,11 +433,16 @@
     [
       2,
       "approved"
+    ],
+    [
+      3,
+      "approved"
     ]
   ],
   "versions": {
     "1": "8f5a24aa2c90873d3edf6707dfe9d6e5f8318568",
-    "2": "ef6238b8448e5f30ab1084d8a34f8e25b1b3cfe1"
+    "2": "ef6238b8448e5f30ab1084d8a34f8e25b1b3cfe1",
+    "3": "c4c76a52fe1862b882ee902f278cacef90c4dd6c"
   },
   "asked": {}
 }
