@@ -71,7 +71,7 @@ def wrong_reason(name, code, output):
 SUMMARY = {
     "pytest": (r"^(?:FAILED|ERROR) (\S+)", r"collected (\d+) items?"),
     "unittest": (r"^(?:FAIL|ERROR): (.+?)\s*$", r"^Ran (\d+) tests?"),
-    "self-check": (r"^FAIL (\S+)", r"^ran (\d+) tests?"),
+    "self-check": (r"^FAIL (.+?)\s*$", r"^ran (\d+) tests?"),
 }
 
 

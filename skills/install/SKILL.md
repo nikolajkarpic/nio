@@ -28,9 +28,9 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Inputs and outputs
 
-- **Input:** the repo, and the human's answer to one question.
-- **Outputs:** git hooks, agent files under `.claude/agents` or `.codex/agents`, and on Claude Code the chosen
-  settings file.
+- **Input:** the repo, and the human's answers to one question (two on Claude Code).
+- **Outputs:** git hooks, agent files under `.claude/agents` or `.codex/agents`, on Claude Code the chosen
+  settings file, and on Claude Code the mods the human chose, installed for this clone (local scope, nothing to commit).
 
 ## Steps
 
@@ -44,8 +44,14 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
    Either way approvals, overrides and other human decisions still prompt, and so does `nio flow finish`,
    because it runs any command it is given.
+3. On Claude Code, ask once whether to install the Claude Code mods for this clone: a status pane and a background command runner?
+   - **Install the mods (recommended):** runs `nio mods install`. Installed for this clone only (local scope), changing
+     nothing to commit.
+   - **Skip:** runs `nio mods install --skip`. Nothing is installed; NIO works the same without the mods.
+
+   Run the choice and quote each line the command printed in the closing message. Elsewhere skip this step.
 
 ## When to stop
 
-Stop after step 2. Don't commit. End with a message that tells the human what was set up, then that the next step is
+Stop after step 3. Don't commit. End with a message that tells the human what was set up, then that the next step is
 onboarding: `/nio:onboard` on Claude Code, the onboard skill elsewhere. Install never starts onboarding.

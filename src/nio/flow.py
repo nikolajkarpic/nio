@@ -1037,6 +1037,137 @@ def next_step(root, slug=None, by=None):
 BRIEF = 80  # NFR-2: a brief's most lines
 
 
+def timeline(lines):
+    """Timeline section (CT-3): stage changes and failed reviews, a missing field reads `-`."""
+    rows = []
+    for l in lines:
+        ev = l.get("evidence") or {}
+        failed = l.get("kind") == "review" and ev.get("passed") is False
+        if l.get("from") == l.get("to") and not failed:
+            continue
+        who = l.get("who") or {}
+        row = {"kind": l.get("kind") or "-", "from": l.get("from") or "-", "to": l.get("to") or "-",
+               **{k: who.get(k) or "-" for k in ("role", "host", "model")}, "at": l.get("at") or "-"}
+        if failed:
+            row["reasons"] = ev.get("reasons") or "-"
+        rows.append(row)
+    return rows
+
+
+def juries(root, slug):
+    """Juries section (CT-4): per committed ledger, its rounds with lenses, verdicts and findings."""
+    from nio import jury, tasks
+    out = []
+    for f in sorted(jury.folder(root, slug).glob("*.json")):
+        led = jury.load(root, slug, f.stem)
+        votes = jury.votes(led)
+        has_tasks = tasks.path(root, slug).exists()
+        rounds = []
+        for n in range(1, led["round"] + 1):
+            mine = [x for x in led["findings"] if x["first_round"] == n]
+            names = {s["lens"] for x in led["findings"] for s in x["sources"] if s["round"] == n}
+            names |= {j["lens"] for j in led["jurors"].values() if j["round"] == n}
+            lenses = []
+            for lens in sorted(names):
+                if n == led["round"] and lens in votes:
+                    v = [x[1] for x in votes[lens]]
+                    verdict = "block" if "block" in v else v[0]
+                else:
+                    verdict = "block" if any(x["validation"] == "confirmed" and x["severity"] != "minor" and any(
+                        s["lens"] == lens and s["round"] == n for s in x["sources"]) for x in led["findings"]) else "approve"
+                lenses.append({"lens": lens, "verdict": verdict})
+            rounds.append({"round": n, "lenses": lenses, "findings": [
+                {"id": x["id"], "title": x["title"], "severity": x["severity"], "validation": x["validation"],
+                 "fix_tasks": tasks.fixes_of(root, slug, f.stem, x["id"]) if has_tasks else []} for x in mine]})
+        out.append({"gate": f.stem, "outcome": led["outcome"] or "-", "rounds": rounds})
+    return out
+
+
+def task_rows(root, slug, state, lines):
+    """Tasks section (CT-5): per epic its tasks with status and attempts; `[]` when tasks.md is missing."""
+    from nio import implement, tasks
+    if not tasks.path(root, slug).exists():
+        return []
+    st = implement.status(root, slug, lines) if lines is not None else {}
+    last = {}
+    for l in lines or []:
+        if t := (l.get("evidence") or {}).get("task"):
+            last[t] = l
+    claims = (state or {}).get("claims") or {}  # a claimed epic's tasks, or an old task or wave claim
+    held = set(claims.get("epics") or {}) | {claims.get("task")} | set(claims.get("wave") or [])
+    out = []
+    for t in implement.tasks_of(root, slug):
+        if not out or out[-1]["epic"] != t["epic"]:
+            out.append({"epic": t["epic"], "tasks": []})
+        l = last.get(t["id"]) or {}
+        status = "-" if lines is None else "failing" if l.get("kind") == "review" and (l.get("evidence") or {}).get("passed") is False else st[t["id"]]
+        status = "claimed" if status in ("ready", "pending") and {t["id"], t["epic"]} & held else status
+        att = ((state or {}).get("attempts") or {}).get(t["id"], "-")
+        out[-1]["tasks"].append({"id": t["id"], "title": t["title"], "status": status, "attempts": att})
+    return out
+
+
+def memory(root, slug):
+    """CT-6: records whose front matter `paths` sit under the effort's folder or whose `against` is the slug."""
+    from nio import index
+    pre = f".nio/specs/{slug}/"
+    try:
+        stands = dict(index.connect(root).execute("select id, standing from nodes where kind='record'"))
+    except Exception:
+        stands = {}
+    out = []
+    for rid, (_, meta, _, _) in index.load(root).items():
+        paths = meta.get("paths") or []
+        if isinstance(paths, str):
+            paths = [paths]
+        if meta.get("against") == slug or any(str(x).startswith(pre) for x in paths):
+            out.append({"id": rid, "kind": meta.get("type"), "standing": stands.get(rid, "-"), "title": meta.get("title")})
+    return sorted(out, key=lambda r: r["id"])
+
+
+def show(root, slug, now=None):
+    """Drill-down data for `nio flow show` (CT-2): one JSON line; the five sections are placeholders until filled."""
+    if not (root / ".nio/specs" / slug).is_dir() or kind(root, slug) != "effort":
+        return 1, [json.dumps({"error": f"no effort {slug}"})]
+    try:
+        state, lines = load(root, slug)
+        stage = where(root, slug, state, lines)["stage"]
+    except Broken:
+        state, stage = None, "-"
+    if stage == "done":
+        return 1, [json.dumps({"error": f"{slug} is done"})]
+    if state and state["abandon"] is not None:
+        return 1, [json.dumps({"error": f"{slug} is abandoned"})]
+    try:
+        tl = timeline(load(root, slug)[1])
+    except Broken as e:
+        tl = {"error": str(e)}
+    except Exception as e:
+        tl = {"error": f"{slug}: {e}"}
+    try:
+        ju = juries(root, slug)
+    except Exception as e:
+        ju = {"error": f"{slug}: {e}"}
+    try:
+        tk = task_rows(root, slug, state, load(root, slug)[1])
+    except Broken:
+        tk = task_rows(root, slug, state, None)
+    except Exception as e:
+        tk = {"error": f"{slug}: {e}"}
+    try:
+        from nio import usage
+        cost = usage.so_far(root, slug, load(root, slug)[1], now or datetime.datetime.now(datetime.timezone.utc))
+    except Broken as e:
+        cost = {"error": str(e)}
+    except Exception as e:
+        cost = {"error": f"{slug}: {e}"}
+    try:
+        mem = memory(root, slug)
+    except Exception as e:
+        mem = {"error": f"{slug}: {e}"}
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": tk, "cost": cost, "memory": mem})]
+
+
 def brief(root, slug, everything=False):
     """`nio flow brief` (#128 FR-14): what a fresh driver starts from, read from saved state alone: `nio flow next`'s
     lines, a running long command, the open tasks and the current gate's open findings. Over BRIEF lines it gives the

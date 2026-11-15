@@ -29,7 +29,7 @@
 - Skills hold the instructions; the CLI holds only what instructions can't be followed reliably for. (source: CLAUDE.md@b0e3cba2321c)
 - Skills must not depend on Claude-only tools; a host-specific feature is noted as optional. (source: CLAUDE.md@b0e3cba2321c)
 - Only `nio flow` writes an effort's `state.json` and `history.jsonl`. (source: skills/onboard/SKILL.md@622c005a8ef1)
-- The Claude Code mods under `tools/claude-mods/` are dev tooling, outside the product. (source: tools/claude-mods/README.md@975e0d334c44)
+- The Claude Code mods under `tools/claude-mods/` are an optional Claude Code part of NIO, shipped in the `nio` package and offered by `@nio:install`. (source: dev, D-261115-e6nx)
 
 ## Data flow
 

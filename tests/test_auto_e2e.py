@@ -112,5 +112,34 @@ def test_grill_under_auto():
     assert errs == [], errs
 
 
+@e2e
+def test_installed_mod_backgrounds_evidence():
+    """TC-15: after `nio mods install` (the install skill's mods step, #142) a fresh session, started with no
+    --plugin-dir and no CLAUDE_CODE_PLUGIN_DIRS, runs `nio jury evidence` in the background, with no sleep loop."""
+    import shutil
+    work = Path(tempfile.mkdtemp())
+    root, cfg = work / "nio", work / "cfg"
+    subprocess.run(["git", "clone", "-q", "--local", str(NIO), str(root)], check=True)
+    cfg.mkdir()
+    creds = Path.home() / ".claude/.credentials.json"  # the model calls need the person's login in the fresh config
+    if creds.exists():
+        shutil.copy(creds, cfg / ".credentials.json")
+    env = {**os.environ, "CLAUDE_CONFIG_DIR": str(cfg)}
+    env.pop("CLAUDE_CODE_PLUGIN_DIRS", None)
+    r = subprocess.run(["uv", "run", "nio", "mods", "install"], cwd=root, env=env, capture_output=True, text=True)
+    assert "background-nio-commands: installed" in r.stdout, r.stdout + r.stderr
+    r = subprocess.run(["claude", "-p", "run uv run nio jury evidence --help and report its first line", "--output-format",
+                        "stream-json", "--verbose", "--dangerously-skip-permissions"], cwd=root, env=env, capture_output=True,
+                       text=True, timeout=900)
+    events = [json.loads(x) for x in r.stdout.splitlines() if x.startswith("{")]
+    uses = [c for e in events if e.get("type") == "assistant" for c in e["message"].get("content", []) if c.get("type") == "tool_use"]
+    results = {c.get("tool_use_id"): str(c.get("content")) for e in events if e.get("type") == "user"
+               for c in e["message"].get("content", []) if isinstance(c, dict) and c.get("type") == "tool_result"}
+    runs = [u for u in uses if u["name"] == "Bash" and "nio jury evidence" in u["input"].get("command", "")]
+    assert runs, uses
+    assert all(u["input"].get("run_in_background") or "background" in results.get(u["id"], "") for u in runs), (runs, results)
+    assert not [u for u in uses if "sleep" in json.dumps(u["input"])], uses
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_grill_under_auto, test_driver_runs_every_stage, test_auto_implements_per_epic, test_one_fix_agent_per_round])
+    selfcheck.main([test_installed_mod_backgrounds_evidence, test_grill_under_auto, test_driver_runs_every_stage, test_auto_implements_per_epic, test_one_fix_agent_per_round])

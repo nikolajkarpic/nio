@@ -1,9 +1,11 @@
 """Self-check for nio hooks and the cross-branch merge check. Run: uv run python tests/test_hooks.py"""
 import json
+import re
 import subprocess
 import sys
 import tempfile
 import time
+import zipfile
 from pathlib import Path
 
 from test_index import flag
@@ -11,6 +13,8 @@ from test_records import GOOD_BODY, commit, fill, repo
 
 from nio import hooks, records
 import selfcheck
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def git(root, *args):
@@ -131,5 +135,226 @@ def test_allow():
             assert local.read_text() == "{broken"
 
 
+def test_wheel_ships_mods():
+    # TC-30: the built wheel carries both mods and the marketplace file
+    with tempfile.TemporaryDirectory() as tmp:
+        built = subprocess.run(["uv", "build", "--wheel", "--out-dir", tmp], cwd=ROOT, capture_output=True, text=True)
+        assert built.returncode == 0, built.stderr
+        wheels = list(Path(tmp).glob("*.whl"))
+        assert len(wheels) == 1, wheels
+        with zipfile.ZipFile(wheels[0]) as wheel:
+            names = set(wheel.namelist())
+        for want in ("nio/mods/.claude-plugin/marketplace.json",
+                     "nio/mods/background-nio-commands/.claude-plugin/plugin.json",
+                     "nio/mods/nio-status-pane/.claude-plugin/plugin.json"):
+            assert want in names, want
+    print("ok")
+
+
+FAKE_CLAUDE = """#!/bin/sh
+echo "$@" >> "$0.log"
+case "$*" in
+  "plugin list --json") echo "[]";;
+  "plugin install background-nio-commands"*) echo "boom: marketplace unreadable" >&2; exit 1;;
+  *) exit 0;;
+esac
+"""
+
+
+def _mods(root, *args, path):
+    import os
+    from test_flow import run_main
+    old = os.environ["PATH"]
+    os.environ["PATH"] = path
+    try:
+        return run_main(root, "mods", "install", *args)
+    finally:
+        os.environ["PATH"] = old
+
+
+def test_mods_install_one_fails():
+    # TC-23 and the AC-26 recording
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "claude"
+        fake.write_text(FAKE_CLAUDE)
+        fake.chmod(0o755)
+        code, out, err = _mods(Path(tmp), path=f"{tmp}:{os.environ['PATH']}")
+        assert code == 0, err
+        assert out == "background-nio-commands: failed: boom: marketplace unreadable\nnio-status-pane: installed\n", out
+        log = Path(str(fake) + ".log").read_text()
+        assert "plugin install nio-status-pane" in log and "--scope local" in log and str(hooks.mods_dir()) in log, log
+    print("ok")
+
+
+def test_mods_install_times_out():
+    # J-10: a `claude` that hangs fails each mod with a timeout instead of hanging install
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "claude"
+        fake.write_text("#!/bin/sh\nexec sleep 30\n")
+        fake.chmod(0o755)
+        old, hooks.CLAUDE_TIMEOUT = hooks.CLAUDE_TIMEOUT, 0.5
+        try:
+            lines = hooks.mods_install(Path(tmp), claude=str(fake))
+        finally:
+            hooks.CLAUDE_TIMEOUT = old
+        assert lines == ["background-nio-commands: failed: timed out after 0.5s",
+                         "nio-status-pane: failed: timed out after 0.5s"], lines
+    print("ok")
+
+
+def test_mods_install_without_claude():
+    # TC-36
+    with tempfile.TemporaryDirectory() as tmp:
+        code, out, _ = _mods(Path(tmp), path=tmp)
+        assert code == 0
+        assert out == "background-nio-commands: failed: claude not found\nnio-status-pane: failed: claude not found\n", out
+        code, out, _ = _mods(Path(tmp), "--skip", path=tmp)
+        assert code == 0 and out == "background-nio-commands: skipped\nnio-status-pane: skipped\n", out
+    print("ok")
+
+
+def test_mods_install_e2e():
+    # TC-20..22: real claude, only with NIO_E2E=1, in a temp CLAUDE_CONFIG_DIR
+    import os
+    if os.environ.get("NIO_E2E") != "1":
+        print("skip (NIO_E2E=1 runs it)")
+        return
+    ids = ("background-nio-commands", "nio-status-pane")
+    from test_flow import run_main
+
+    def listed(root, cfg):
+        r = subprocess.run(["claude", "plugin", "list", "--json"], cwd=root, capture_output=True, text=True,
+                           env={**os.environ, "CLAUDE_CONFIG_DIR": cfg})
+        return [e["id"] for e in json.loads(r.stdout)]
+
+    old = os.environ.get("CLAUDE_CONFIG_DIR")
+    try:
+        with tempfile.TemporaryDirectory() as cfg, tempfile.TemporaryDirectory() as cfg2:
+            os.environ["CLAUDE_CONFIG_DIR"] = cfg
+            root = repo()
+            code, out, err = run_main(root, "mods", "install")
+            assert code == 0 and out == "background-nio-commands: installed\nnio-status-pane: installed\n", (out, err)
+            assert all(f"{i}@nio-mods" in listed(root, cfg) for i in ids)
+            before = git(root, "status", "--porcelain").stdout
+            code, out, _ = run_main(root, "mods", "install")
+            assert out == "background-nio-commands: already installed\nnio-status-pane: already installed\n", out
+            code, out, _ = run_main(root, "mods", "install", "--skip")
+            assert out == "background-nio-commands: already installed (left as is)\nnio-status-pane: already installed (left as is)\n", out
+            assert [i for i in listed(root, cfg) if i.endswith("@nio-mods")].count(f"{ids[0]}@nio-mods") == 1
+            assert git(root, "status", "--porcelain").stdout == before
+            os.environ["CLAUDE_CONFIG_DIR"] = cfg2
+            root2 = repo()
+            code, out, _ = run_main(root2, "mods", "install", "--skip")
+            assert out == "background-nio-commands: skipped\nnio-status-pane: skipped\n", out
+            assert not [i for i in listed(root2, cfg2) if i.endswith("@nio-mods")]
+    finally:
+        if old is None:
+            os.environ.pop("CLAUDE_CONFIG_DIR", None)
+        else:
+            os.environ["CLAUDE_CONFIG_DIR"] = old
+    print("ok")
+
+
+def _skill_steps():
+    text = (ROOT / "skills/install/SKILL.md").read_text()
+    steps_text = text.split("## Steps", 1)[1].split("## When to stop", 1)[0]
+    pieces = re.split(r"^(?=\d+\. )", steps_text, flags=re.M)
+    return [re.sub(r"^\d+\. ", "", p).strip() for p in pieces if re.match(r"\d+\. ", p)]
+
+
+def test_install_skill_mods_step():
+    # TC-24 (AC-22)
+    steps = _skill_steps()
+    mods = [s for s in steps if "mod" in s.lower()]
+    assert len(mods) == 1, mods
+    assert mods[0].startswith("On Claude Code"), mods[0]
+    assert "nio mods install" in mods[0] and "nio mods install --skip" in mods[0], mods[0]
+    print("ok")
+
+
+def test_mods_install_local_scope():
+    # TC-31 (AC-26): a fake claude that records its working directory and arguments, succeeding for both mods
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "claude"
+        fake.write_text('#!/bin/sh\necho "$PWD $@" >> "$0.log"\nif [ "$1 $2" = "plugin list" ]; then echo "[]"; fi\nexit 0\n')
+        fake.chmod(0o755)
+        root = Path(tmp) / "repo"
+        root.mkdir()
+        assert hooks.mods_install(root, claude=str(fake)) == [
+            "background-nio-commands: installed", "nio-status-pane: installed"]
+        log = Path(str(fake) + ".log").read_text().splitlines()
+        for mod in ("background-nio-commands", "nio-status-pane"):
+            want = f"{root} plugin install {mod} --marketplace {hooks.mods_dir()} --scope local --json"
+            assert want in log, (want, log)
+    text = (ROOT / "skills/install/SKILL.md").read_text()
+    questions = [line for line in text.splitlines() if line.rstrip().endswith("?")]
+    mods_q = [q for q in questions if "nio mods install" in q or "mod" in q.lower()]
+    assert len(questions) == 1 and len(mods_q) == 1, questions
+    print("ok")
+
+
+def test_mods_install_from_subfolder():
+    # FR-25: run from a subfolder, the mods install for the clone's root
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "bin" / "claude"
+        fake.parent.mkdir()
+        fake.write_text('#!/bin/sh\necho "$PWD $@" >> "' + tmp + '/log"\nif [ "$1 $2" = "plugin list" ]; then echo "[]"; fi\nexit 0\n')
+        fake.chmod(0o755)
+        root = Path(tmp).resolve() / "repo"
+        (root / "src").mkdir(parents=True)
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+        env = {**os.environ, "PATH": f"{fake.parent}:{os.environ['PATH']}"}
+        subprocess.run([sys.executable, "-c", "import sys; from nio.cli import main; sys.argv = ['nio', 'mods', 'install']; main()"], cwd=root / "src", env=env, check=True, capture_output=True)
+        log = (Path(tmp) / "log").read_text().splitlines()
+        assert all(l.startswith(f"{root} ") for l in log), log
+    print("ok")
+
+
+def test_mods_dir_fallback():
+    # CT-8: the packaged folder when present, else the checkout's tools/claude-mods, else ValueError; install reports it
+    assert hooks.mods_dir() == ROOT / "tools/claude-mods", hooks.mods_dir()
+    real = hooks.__file__
+    with tempfile.TemporaryDirectory() as tmp:
+        hooks.__file__ = str(Path(tmp) / "a/b/hooks.py")  # parents[2] = tmp, with no tools/claude-mods
+        try:
+            try:
+                hooks.mods_dir()
+                raise AssertionError("expected ValueError")
+            except ValueError as e:
+                assert "no NIO mods in this nio install" in str(e), e
+            fake = Path(tmp) / "claude"
+            fake.write_text("#!/bin/sh\necho '[]'\nexit 0\n")
+            fake.chmod(0o755)
+            lines = hooks.mods_install(Path(tmp), claude=str(fake))
+            assert len(lines) == 2 and all(l.startswith(f"{m}: failed: no NIO mods") for l, m in zip(lines, hooks.MODS)), lines
+        finally:
+            hooks.__file__ = real
+    print("ok")
+
+
+def test_readmes_call_mods_optional():
+    texts = [(ROOT / f).read_text() for f in (
+        "README.md", "tools/claude-mods/README.md",
+        "tools/claude-mods/nio-status-pane/README.md",
+        "tools/claude-mods/background-nio-commands/README.md")]
+    docs = [(ROOT / f).read_text() for f in (".nio/project/architecture.md", ".nio/project/stack.md")]
+    for text in texts + docs:
+        assert "not part of the NIO product" not in text
+        assert "dev tooling" not in text
+    for text in texts:
+        assert "optional Claude Code part of NIO" in text, text[:80]
+        assert "the skills work the same without" in text, text[:80]
+    for text in docs:
+        assert "optional Claude Code part of NIO" in text
+        assert "D-261115-e6nx" in text
+    print("ok")
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision])
+    selfcheck.main([test_install, test_allow, test_checks_block_commit_and_push, test_two_branches_supersede_the_same_decision,
+                    test_wheel_ships_mods, test_mods_install_one_fails, test_mods_install_times_out, test_mods_install_without_claude,
+                    test_mods_install_e2e, test_install_skill_mods_step, test_mods_install_local_scope, test_mods_install_from_subfolder, test_mods_dir_fallback,
+                    test_readmes_call_mods_optional])
