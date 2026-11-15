@@ -132,9 +132,9 @@ the clock, read every `Text`. [agent]
 ### TC-17 Memory lists the records that point at the effort (AC-15; integration) [derived: AC-15]
 - File: `tests/test_flow.py:test_show_memory_by_front_matter` (new)
 - Covers: CT-6
-- Setup: `effort("planning")`; with `records.new` (or written files) three records: a verdict whose `paths` holds `.nio/specs/<S>/spec.md`, a change request whose `against` is S, and a decision whose `paths` holds `src/other.py`; `nio index` built so the first two have standings; a fourth record pointing at the effort written after the index build. `fastembed` must not be imported: set `sys.modules["fastembed"] = None` before the call.
+- Setup: `effort("planning")`; with `records.new` (or written files) three records: a verdict whose `paths` holds `.nio/specs/<S>/spec.md`, a change request whose `against` is S, and a decision whose `paths` holds `src/other.py`; `nio index` built so the first two have standings; a fourth record pointing at the effort written after the index build. `effort("planning")` has already written its own spec-jury verdict (`.nio/memory/project/V-*-spec-gate-for-2026-10-20.md`, title `spec gate for <S>: approved (round 1)`, random ID, `paths` holds `.nio/specs/<S>/jury/spec.md`); the test reads its ID from that file before writing the other records. `fastembed` must not be imported: set `sys.modules["fastembed"] = None` before the call.
 - Action: `flow.memory(root, S)`.
-- Assert: the IDs are exactly the three records pointing at the effort, sorted; the indexed ones carry the index's standing, the unindexed one `"-"`; each has `kind` and `title` from its front matter; the `src/other.py` decision is absent.
+- Assert: the IDs are exactly the four records pointing at the effort (the three written above that point at it, plus the fixture's own verdict), sorted; the indexed ones carry the index's standing, the unindexed one `"-"`; each has `kind` and `title` from its front matter; the `src/other.py` decision is absent.
 
 ### TC-18 The host's context fill is shown (AC-16; integration) [derived: AC-16]
 - File: `tools/claude-mods/nio-status-pane/hooks/register.test.tsx:AC-16 AC-17 context line` (new)
