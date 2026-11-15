@@ -12,7 +12,7 @@ from test_records import repo
 
 import selfcheck
 import test_flow
-from nio import flow
+from nio import extensions, flow
 
 S, BY = test_flow.S, "driver / test / test"
 
@@ -449,6 +449,72 @@ def test_remove_hand_broken_extension():
         code, out = nio(root, "extensions", "remove", "x")
         assert code == 0 and not d.exists(), (broken, out)
         assert flowfiles(root, S2) == files, broken
+
+
+def test_hand_edit_skipping_gate_stops_flow():
+    root = effort()
+    add(root, "x", [step("tests")])
+    pass_plan(root)
+    d = root / ".nio/extensions/x"
+    m = json.loads((d / "manifest.json").read_text())
+    m["skip"] = ["plan_jury"]
+    (d / "manifest.json").write_text(json.dumps(m))
+    rec = json.loads((root / ".nio/extensions/record.json").read_text())
+    rec["x"]["hash"] = extensions.digest(d)
+    (root / ".nio/extensions/record.json").write_text(json.dumps(rec))
+    files = flowfiles(root)
+    for args in (("next", S, "--by", BY), ("done", "planning", S, "--by", BY)):
+        code, out = nio(root, "flow", *args)
+        assert code != 0 and "extension x breaks the add-only rule: skip would change built-in plan_jury" in out, out
+    assert flowfiles(root) == files
+
+
+def test_hand_edited_check_needs_add_again():
+    root = effort()
+    add(root, "x", [step("tests")])
+    pass_plan(root)
+    d = root / ".nio/extensions/x"
+    before = json.loads((root / ".nio/extensions/record.json").read_text())["x"]
+    m = json.loads((d / "manifest.json").read_text())
+    m["steps"][0]["check"] = "false"
+    (d / "manifest.json").write_text(json.dumps(m))
+    files = flowfiles(root)
+    for args in (("next", S, "--by", BY), ("done", "x.tests", S, "--by", BY)):
+        code, out = nio(root, "flow", *args)
+        assert code != 0 and "extension x changed since it was added" in out and "nio extensions add .nio/extensions/x" in out, out
+    assert flowfiles(root) == files
+    assert nio(root, "extensions", "add", ".nio/extensions/x")[0] == 0
+    code, out = nio(root, "flow", "next", S)
+    assert code == 0 and "x.tests" in out, out
+    after = json.loads((root / ".nio/extensions/record.json").read_text())["x"]
+    assert after["source"] == before["source"] and after["version"] == before["version"] and after["hash"] != before["hash"]
+
+
+def test_half_states_are_recoverable():
+    def fresh():
+        root = effort()
+        add(root, "x", [step("tests")])
+        return root, root / ".nio/extensions"
+    for case in "abc":
+        root, d = fresh()
+        if case == "a":
+            shutil.rmtree(d / "x")
+        elif case == "b":
+            (d / "record.json").write_text("{}")
+        else:
+            (d / "x/manifest.json").write_text("{not json")
+        code, out = nio(root, "flow", "next", S, "--by", BY)
+        want = "extension x changed since it was added" if case == "c" else "extension x is half added or removed: run nio extensions remove x"
+        assert code != 0 and want in out, (case, out)
+        assert nio(root, "extensions", "remove", "x")[0] == 0
+        assert not (d / "x").exists() and "x" not in json.loads((d / "record.json").read_text()), case
+        assert nio(root, "flow", "next", S, "--by", BY)[0] == 0, case
+    root, d = fresh()
+    (d / ".x.new").mkdir()
+    (d / ".x.new/manifest.json").write_text("{}")
+    assert nio(root, "flow", "next", S, "--by", BY)[0] == 0
+    code, out = nio(root, "extensions", "list")
+    assert code == 0 and out.count("x \u00b7") == 1 and ".x.new" not in out, out
 
 
 selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])

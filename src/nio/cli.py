@@ -378,8 +378,11 @@ def main():
         except ValueError as e:
             sys.exit(f"error: {e}")
     elif a.cmd == "extensions":
-        code, out = {"add": lambda: extensions.add(root, a.source), "list": lambda: extensions.listing(root),
-                     "remove": lambda: extensions.remove(root, a.name)}[a.ext_cmd]()
+        try:
+            code, out = {"add": lambda: extensions.add(root, a.source), "list": lambda: extensions.listing(root),
+                         "remove": lambda: extensions.remove(root, a.name)}[a.ext_cmd]()
+        except ValueError as e:
+            sys.exit(f"error: {e}")
         print("\n".join(out))
         sys.exit(code)
     elif a.cmd == "jury":

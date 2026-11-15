@@ -178,15 +178,31 @@ def digest(path):
     return h.hexdigest()
 
 
+def verify(root, manifests):
+    """CT-18: raise ValueError when an added extension was hand-changed, half added or removed, or breaks the add-only rule."""
+    rec, d = read_record(root), folder(root)
+    for name in sorted(set(rec) | {p.name for p in d.glob("*") if p.is_dir() and not p.name.startswith(".")}):
+        if name not in rec or not (d / name).is_dir():
+            raise ValueError(f"extension {name} is half added or removed: run nio extensions remove {name}, or add it again from its source")
+        if digest(d / name) != rec[name].get("hash"):
+            raise ValueError(f"extension {name} changed since it was added: review the change, then run nio extensions add .nio/extensions/{name} (or add it again from its source)")
+    for m in manifests:
+        others = [o for o in manifests if o is not m]
+        if reasons := check(m["dir"], {k: v for k, v in m.items() if k != "dir"}, others, stage_names(others)):
+            raise ValueError(f"extension {m['name']} breaks the add-only rule: {reasons[0]}")
+
+
 def active(root, guard=True):
-    """The added extensions' manifests, each with `dir`, in name order. ponytail: guard (CT-18) comes with its task."""
+    """The added extensions' manifests, each with `dir`, in name order; `guard` runs verify (CT-18)."""
     out = []
     for p in sorted(folder(root).glob("*")) if folder(root).is_dir() else []:
         if p.is_dir() and not p.name.startswith("."):
             try:
                 out.append({**json.loads((p / "manifest.json").read_text()), "dir": str(p)})
-            except (OSError, ValueError):
+            except (OSError, ValueError):  # J-19: a broken manifest counts as no stages
                 pass
+    if guard:
+        verify(root, out)
     return out
 
 
