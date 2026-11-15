@@ -99,6 +99,7 @@ def check(root, target, gate=False, base="HEAD"):
     p = p.resolve()
     if not p.exists():
         return [f"explainer missing: {p.relative_to(root)}"], []
+    fmt = "mermaid"
     errors, secs = [], sections(p.read_text())
     plan_mode = target in {p.parent.name} or p == (spec.path(root, p.parent.name).parent / "explainer.md").resolve()
     if plan_mode:
@@ -122,6 +123,9 @@ def check(root, target, gate=False, base="HEAD"):
                 elif n > 120:
                     errors.append(f"walk-through too long: {s['title']} ({n} words)")
     notes = []
+    if plan_mode and fmt != "mermaid":
+        notes.append(f"render skipped: diagrams drawn with {fmt}")
+        return errors, notes
     for s in secs:
         if s["fence"] == "mermaid" and s["block"]:
             with tempfile.TemporaryDirectory() as d:

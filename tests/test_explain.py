@@ -741,8 +741,23 @@ def test_finish_rerun_is_byte_stable():
     assert "Images not rendered" in once
 
 
+def test_ac27_host_format():
+    # TC-35: a host-skill format skips only the render check; the contract IDs still count
+    go = good()
+    root = go.root
+    (root / ".nio").mkdir(exist_ok=True)
+    (root / ".nio/config.json").write_text('{"explain": {"format": "excalidraw"}}')
+    ex = root / ".nio/specs/checkout-refunds/explainer.md"
+    ex.write_text("## Component map\n\n![map](map.png)\n\nCT-1 and CT-2 meet here.\n\n## Build order\n\n![order](order.png)\n\nOrder walk.\n")
+    c, out = go()
+    assert c == 0 and "render skipped: diagrams drawn with excalidraw" in out, (c, out)
+    ex.write_text(ex.read_text().replace("CT-2 ", ""))
+    c, out = go()
+    assert c == 1 and "ERROR component map misses CT-2" in out, (c, out)
+
+
 if __name__ == "__main__":
-    selfcheck.main([test_finish_rerun_is_byte_stable, test_ac20_topic_render_only, test_uj3_topic_not_plan, test_ct6_topic, test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
+    selfcheck.main([test_ac27_host_format, test_finish_rerun_is_byte_stable, test_ac20_topic_render_only, test_uj3_topic_not_plan, test_ct6_topic, test_ac29_skill_text, test_ac33_drill_title_separators, test_ac5_node_cap, test_ac11_missing, test_ac9_broken_block, test_ac5_node_cap_check, test_ac36_walk_limit,
                     test_ac6_passes, test_ac7_missing_contract, test_ac8_missing_build_order, test_uj1_huge_diagram, test_ac10_no_node,
                     test_ct5_refusals, test_ac33_dropped_drill_down, test_ct5_hashes_and_warning, test_uj4_marker_once, test_ac4_read_first_once,
                     test_ac33_safe_delete, test_nfr2_no_tools, test_ac33_rerun_after_partial, test_ac33_unique_names, test_ct5_comma_drill_title, test_ct5_bad_quickstart_writes_nothing, test_ct5_keeps_author_lines,
