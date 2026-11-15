@@ -1,6 +1,8 @@
 """Self-check for the pr gate (2026-11-14-effort-jury): one implementation jury on the whole effort diff, after the last
 task, on the pull request. GitHub is faked through `jury.hub`; nothing here touches the network.
 Run: uv run python tests/test_effort.py"""
+import tempfile
+from pathlib import Path
 import json
 import re
 
@@ -227,8 +229,8 @@ def split_root(extra):
 
 
 def test_effort_ac17_over_the_limit_one_pack_per_epic_plus_rest_and_integration_whole():
-    root = split_root(1501)
-    assert evidence.changed_lines(root, S) == 1501 and list(evidence.split(root, S)) == ["E1", "E2", "rest"]
+    root = split_root(2501)
+    assert evidence.changed_lines(root, S) == 2501 and list(evidence.split(root, S)) == ["E1", "E2", "rest"]
     fake_hub()
     run = next(x[5:] for x in step(root) if x.startswith("run: "))
     evidence.collect(root, S, "pr", run)
@@ -243,7 +245,7 @@ def test_effort_ac17_over_the_limit_one_pack_per_epic_plus_rest_and_integration_
 
 
 def test_effort_ac17_earlier_efforts_task_commit_goes_to_rest():
-    root = split_root(1501)
+    root = split_root(2501)
     branch = test_flow.git(root, "branch", "--show-current").strip()
     init = test_flow.git(root, "rev-list", "--max-parents=0", "HEAD").strip()
     test_flow.git(root, "branch", "-f", evidence.default_branch(root), init)  # the effort's own tasks.md is in its diff
@@ -271,14 +273,37 @@ def test_effort_ac3_base_without_main_is_the_upstream_else_a_clear_error():
     print("ok")
 
 
+def test_split_counts_no_nio_lines():
+    root = split_root(10)
+    before = evidence.changed_lines(root, S)
+    (root / ".nio/specs" / S / "notes.md").write_text("x\n" * 5000)
+    commit_all(root, "a long spec note")
+    assert evidence.changed_lines(root, S) == before and evidence.split(root, S) == {}
+    print("ok")
+
+
+def test_skipped_e2e_test_passes_on_a_recorded_e2e_green():
+    import subprocess, sys
+    lines = [{"kind": "green", "evidence": {"command": "uv run python tests/a.py t_unit && NIO_E2E=1 uv run python tests/b_e2e.py test_x test_y"}},
+             {"kind": "refused", "evidence": {"command": "NIO_E2E=1 uv run python tests/b_e2e.py test_z"}},
+             {"kind": "green", "evidence": {"command": "uv run python tests/b_e2e.py test_w"}}]
+    assert evidence.e2e_from(lines) == {("tests/b_e2e.py", "test_x"), ("tests/b_e2e.py", "test_y")}
+    d = Path(tempfile.mkdtemp())
+    (d / "t.py").write_text("import sys; sys.path.insert(0, %r)\nimport selfcheck\ndef test_a(): return 'skipped'\ndef test_b(): pass\n"
+                            "selfcheck.main([test_a, test_b])\n" % str(Path(__file__).parent))
+    out = subprocess.run([sys.executable, "t.py"], cwd=d, capture_output=True, text=True).stdout
+    assert "skip t.py::test_a" in out and "ok t.py::test_b" in out, out
+    print("ok")
+
+
 def test_effort_ac17_exactly_at_the_limit_is_not_split():
-    root = split_root(1500)
-    assert evidence.changed_lines(root, S) == 1500 and evidence.split(root, S) == {}
+    root = split_root(2500)
+    assert evidence.changed_lines(root, S) == 2500 and evidence.split(root, S) == {}
     print("ok")
 
 
 def test_effort_ac27_hand_fix_and_pr_fixes_task_only_in_the_rest_pack():
-    root = split_root(1501)
+    root = split_root(2501)
     fake_hub()
     gate_round(root, {"correctness~E1": [{"title": "Refund pays twice"}]})
     tid = tasks.parse("\n".join(records.parse(tasks.path(root, S))[1]))["epics"][-1]["tasks"][0]
