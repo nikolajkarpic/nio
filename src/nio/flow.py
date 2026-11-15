@@ -1012,6 +1012,24 @@ def task_rows(root, slug, state, lines):
     return out
 
 
+def memory(root, slug):
+    """CT-6: records whose front matter `paths` sit under the effort's folder or whose `against` is the slug."""
+    from nio import index
+    pre = f".nio/specs/{slug}/"
+    try:
+        stands = dict(index.connect(root).execute("select id, standing from nodes where kind='record'"))
+    except Exception:
+        stands = {}
+    out = []
+    for rid, (_, meta, _, _) in index.load(root).items():
+        paths = meta.get("paths") or []
+        if isinstance(paths, str):
+            paths = [paths]
+        if meta.get("against") == slug or any(str(x).startswith(pre) for x in paths):
+            out.append({"id": rid, "kind": meta.get("type"), "standing": stands.get(rid, "-"), "title": meta.get("title")})
+    return sorted(out, key=lambda r: r["id"])
+
+
 def show(root, slug, now=None):
     """Drill-down data for `nio flow show` (CT-2): one JSON line; the five sections are placeholders until filled."""
     if not (root / ".nio/specs" / slug).is_dir() or kind(root, slug) != "effort":
@@ -1039,7 +1057,7 @@ def show(root, slug, now=None):
         tk = task_rows(root, slug, state, None)
     except Exception as e:
         tk = {"error": f"{slug}: {e}"}
-    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": tk, "cost": "-", "memory": []})]
+    return 0, [json.dumps({"slug": slug, "stage": stage, "timeline": tl, "juries": ju, "tasks": tk, "cost": "-", "memory": memory(root, slug)})]
 
 
 def brief(root, slug, everything=False):
