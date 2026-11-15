@@ -143,3 +143,17 @@ All confirmed blockers/majors were plan-rooted; fixed in the plan files by the a
 - Also fixed, though dropped as ungrounded: TC-40 is a new pr-gate test; TC-33 and TC-14 name the lines they replace.
 - Left as minors: J-4 (`reopen` vs `reopen_dropped`), J-9 (US-1 delivers a refusal US-4's code completes; one agent builds both).
 - **Call · J-7, J-8 (round 2)** [agent]: the logic fix check found both still open; fixed before the round's re-run: a task-blocked epic keeps its claim and a fresh driver resumes it from `nio flow brief`; the worker hands back `command:` and the `then:` line carries `--run` for an epic whose tests can't be built from TCs. Round 2 approved.
+
+## Tasks jury round 1 · 2026-11-15
+The step dropped all five executability findings as ungrounded and approved; each was checked against contracts.md and tests.md, found real, and fixed in tasks.md by the agent (task file lists and test placement only, no spec or plan change).
+## Call · J-1
+T-16's `Files:` add the skills, the cards and `tests/test_talk.py`/`tests/test_effort.py` the `--by human` ban line touches (CT-34).
+## Call · J-2
+T-2's `Files:` add the tasks template, `evaluator.md` and `tasks-drafter.md` (CT-6); `one_fix` is in `tasks.py`, already listed.
+## Call · J-3
+T-15 adds no install step: its tier reason says #142's mods step turns the mod on (CT-12); `Mode: single`, one e2e test. #142 stays named in its title.
+## Call · J-4
+T-4's `Files:` add `skills/jury/SKILL.md`, whose "Waiting for long work" list CT-8 changes (TC-56).
+## Call · J-5
+TC-5 and TC-49, which read the implement skill, move from T-3 to T-4 (which rewrites it); T-4 also serves AC-5.
+- Also: T-16 depends on T-10 (US-5), not T-15, as the plan's US-4 entry says, so US-4 no longer waits on #142.
