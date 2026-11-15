@@ -48,7 +48,7 @@ outcome: human
 | J-36 | major | gap | AC-1, AC-2, AC-4, AC-9, AC-11 | conformance | merged | merged |  | new, 0 |
 | J-37 | minor | risk | AC-26, AC-13 | conformance | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-38 | major | contradiction | CT-8 | correctness | confirmed | disposed | accepted-risk (agent) | new, 0 |
-| J-39 | major | contradiction | FR-5, CT-12 | correctness | confirmed | disposed | fix-task (human) | new, 0 |
+| J-39 | major | contradiction | FR-5, CT-12 | correctness | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-40 | minor | contradiction | CT-12, FR-2 | correctness | grounded | disposed | accepted-risk (system) | new, 0 |
 | J-41 | blocker | gap | AC-9 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-42 | blocker | gap | AC-11 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
@@ -318,7 +318,7 @@ outcome: human
 - situation (correctness): CT-4 puts findings inside each round (`rounds[].findings`). The `jury` renderer reads `g.findings` at the gate level, which is always undefined. The `?? []` hides the mismatch, so no finding row, validation or fix task is drawn. Only the gate line and the round lens lines appear. The test fixtures may use the same wrong shape and so pass.
 - fix: draw each round's findings from `r.findings`, after that round's line.
 - validation: confirmed: register.tsx:235 reads gate-level `g.findings`, but CT-4 and flow.py:987 nest findings in `rounds[]`. `?? []` hides the mismatch, so FR-5's finding and fix-task rows never draw.
-- disposition: fix-task by human: Fix all three: read the right field, add a timeout to the plugin calls, restore the deleted test (adjusted to the PATH fallback).
+- disposition: accepted-risk by agent: duplicate of T-32, fixed there
 
 ### J-40 Timeline draws a stage-changing review as a failed review
 - quote: "x.kind === 'review'"
