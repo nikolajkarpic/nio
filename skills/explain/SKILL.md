@@ -55,7 +55,8 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
 
 ## Topic mode (given a topic)
 
-Run `nio explain topic "<topic>"`.
+Run `nio explain topic '<topic>'`, the topic in single quotes as one argument, each `'` in it written `'\''`, so the
+shell expands nothing in it.
 - `continue:` shows an existing explainer: show its overview and go to the drill-down.
 - `new:` write `# <topic>`, a `(topic: <text as typed>)` line and a `## Overview` section, then run
   `nio explain finish <path>`. When the file name ends `-explainer-<n>.md`, say which file you wrote. Then go to the

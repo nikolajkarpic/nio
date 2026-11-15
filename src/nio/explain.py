@@ -101,7 +101,7 @@ def check(root, target, gate=False, base="HEAD"):
         return [f"explainer missing: {p.relative_to(root)}"], []
     fmt = "mermaid"
     errors, secs = [], sections(p.read_text())
-    plan_mode = target in {p.parent.name} or p == (spec.path(root, p.parent.name).parent / "explainer.md").resolve()
+    plan_mode = not target.endswith(".md") or p == (spec.path(root, p.parent.name).parent / "explainer.md").resolve()  # J-6: a slug is plan mode, symlink or not
     if plan_mode:
         from nio import records
         fmt = records.config(root).get("explain", {}).get("format", "mermaid")
@@ -124,8 +124,7 @@ def check(root, target, gate=False, base="HEAD"):
                     errors.append(f"walk-through too long: {s['title']} ({n} words)")
     notes = []
     if plan_mode and fmt != "mermaid":
-        notes.append(f"render skipped: diagrams drawn with {fmt}")
-        return errors, notes
+        notes.append(f"render skipped: diagrams drawn with {fmt}")  # J-42: a Mermaid fallback block is still rendered below
     for s in secs:
         if s["fence"] == "mermaid" and s["block"]:
             with tempfile.TemporaryDirectory() as d:
@@ -152,12 +151,39 @@ def _put(path, text):
     os.replace(f.name, path)
 
 
+READ_FIRST = "Read first: [explainer.md](explainer.md)\n\n"
+
+
+def _front(text):
+    """(front matter with its closing `---` line, the rest)."""
+    j = text.find("\n---\n", 3) if text.startswith("---\n") else -1
+    return (text[:j + 5], text[j + 5:]) if j >= 0 else ("", text)
+
+
+def read_first(text):
+    """quickstart.md with the `Read first` line right after its front matter (J-48): `unread_first` is its exact inverse."""
+    fm, rest = _front(text)
+    if text.startswith("---\n") and not fm:
+        raise ValueError("quickstart.md's front matter has no closing `---`; fix it before finishing")
+    return text if rest.startswith(READ_FIRST) else fm + READ_FIRST + rest
+
+
+def unread_first(text):
+    """quickstart.md without the `Read first` line finish adds, and only there: the plan gate judges the rest (J-116)."""
+    fm, rest = _front(text)
+    return fm + rest[len(READ_FIRST):] if rest.startswith(READ_FIRST) else text
+
+
 def finish(root, path):
     """The lines `nio explain finish` prints (CT-5 steps 1-8). ValueError refuses."""
     from nio import flow, implement, plan
+    if not path:
+        raise ValueError("finish needs the explainer's path")
     p = (Path(path) if Path(path).is_absolute() else root / path).resolve()
     d = p.parent
     plan_mode = p == (spec.path(root, d.name).parent / "explainer.md").resolve()
+    if not (p.suffix == ".md" and p.is_file() and (plan_mode or d == (root / ".nio/research").resolve())):  # J-10
+        raise ValueError(f"{path} is not an explainer: finish takes .nio/specs/<slug>/explainer.md or a .md under .nio/research/")
     rel = lambda f: str((d / f).relative_to(root.resolve()))
     if plan_mode:
         try:
@@ -167,11 +193,9 @@ def finish(root, path):
         if not ok:
             raise ValueError(f"the plan jury comes first ({why}); explain a topic instead")
     q = d / "quickstart.md"
-    line = "Read first: [explainer.md](explainer.md)"
     qtext = None
-    if plan_mode and q.exists() and line not in q.read_text():
-        pre, fm, rest = q.read_text().split("---\n", 2) if q.read_text().startswith("---\n") else ("", "", q.read_text())
-        qtext = ((f"---\n{fm}---\n" if fm else "") + f"\n{line}\n\n" + rest.lstrip("\n"))
+    if plan_mode and q.exists() and (added := read_first(q.read_text())) != q.read_text():
+        qtext = added
     rec, body = {}, []
     for l in p.read_text().splitlines():
         m = REC.match(l.strip())
@@ -270,7 +294,7 @@ def finish(root, path):
         f = (d / x).resolve()
         if f.parent != d or not f.name.startswith(prefix):
             out.append(f"warning: ignored {x}: not this explainer's own image")
-        elif f.is_file() and x not in keep and f.name not in used:
+        elif f.is_file() and x not in keep and f.name not in drawn:  # J-11: an image this run didn't redraw is stale
             dels.append(f)
     text = "\n".join(new).rstrip() + "\n"
     recs = [f"({k}: {v})" for k in ("source", "diagrams") for v in rec.get(k, [])]
@@ -297,11 +321,16 @@ def stale(root):
     from nio import implement
     out = []
     for e in sorted((root / ".nio/specs").glob("*/explainer.md")):
-        for l in e.read_text().splitlines():
+        try:
+            text = e.read_text()
+        except (OSError, UnicodeDecodeError):  # J-19: one bad file never breaks `nio status`
+            out += [f"error: can't read .nio/specs/{e.parent.name}/explainer.md"]
+            continue
+        for l in text.splitlines():
             m = REC.match(l.strip())
             if m and m[1] == "source":
                 f, _, h = m[2].rpartition("@")
-                if implement.digest(root, f)[:12] != h:
+                if not (root / f).is_file() or implement.digest(root, f)[:12] != h:  # J-41: a gone source is stale
                     out += ["stale: explainer.md (spec, plan or contracts changed)", f"  in .nio/specs/{e.parent.name}/: re-run @nio:explain"]
                     break
     return out
