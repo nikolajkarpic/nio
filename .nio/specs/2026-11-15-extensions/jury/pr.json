@@ -1,7 +1,7 @@
 {
   "gate": "pr",
   "subject": "2026-11-15-extensions",
-  "round": 1,
+  "round": 2,
   "tier": "medium",
   "expect": [
     "adversary",
@@ -23,7 +23,15 @@
     "R-261116-2g2d/pr-conformance-3.md": "e03580c60db464907e4795fba61d61bbdb301a1bd3a1bfc9849ac841fa24c8bb",
     "R-261116-2g2d/pr-refuter-2.md": "7f59254912529957d62856b7526c2070785712c148a238dc24cc775238a15153",
     "R-261116-2g2d/pr-test-proof-2.md": "d3b21a17523df309ba5641c7d52ee0e450a6225339c731f09664aca95ed1b381",
-    "R-261116-2g2d/pr-test-proof-3.md": "3088fa53ba184219d7abae52b3e72093aee1c34ac27444f853e52df27da20127"
+    "R-261116-2g2d/pr-test-proof-3.md": "3088fa53ba184219d7abae52b3e72093aee1c34ac27444f853e52df27da20127",
+    "R-261116-5bqk/pr-adversary.md": "d81809abac2ef7f42833362c0411ca54b082e0f4bbd48968e05cc34c73930116",
+    "R-261116-5bqk/pr-conformance.md": "64c264d95c50375b950b930c1a0039a3820a20884ace92aa433c2c062ce37bcd",
+    "R-261116-5bqk/pr-consistency.md": "75dd5671b9e8bd7473c8c3bd412b60d4de725599781fe3ca4c404c93cdb0a299",
+    "R-261116-5bqk/pr-correctness.md": "8f653182d5bb1cf5a11f0e827146c25498fe950e1cd4b28387a51ad2a0f0cbe2",
+    "R-261116-5bqk/pr-test-proof.md": "6ec51e8c75724484b27a8850905eb9dfc0b1861e1f5f8d96aab46ca3a7cdcd8f",
+    "R-261116-5bqk/pr-refuter-1.md": "9239000cfed2f514aaa089e5bcde25d313c4a7f0d2183a28674283c1e4a58ee8",
+    "R-261116-5bqk/pr-conformance-2.md": "6812e453ccb588e91c8be9021068f769b994785e24620178e941fd9b4502b042",
+    "R-261116-5bqk/pr-conformance-3.md": "f02b4593439f6d36dd3b81b0c3bb656ddbac5eebb4c30241ec9de1b7d3c16258"
   },
   "jurors": {
     "pr-adversary": {
@@ -33,9 +41,9 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
-      "judged": 1
+      "round": 2,
+      "version": "7d91d727897e80934159d9ed49147004a71f2bfc",
+      "judged": 2
     },
     "pr-conformance": {
       "attempts": 1,
@@ -44,31 +52,31 @@
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
-      "judged": 1
+      "round": 2,
+      "version": "7d91d727897e80934159d9ed49147004a71f2bfc",
+      "judged": 2
     },
     "pr-consistency": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "consistency",
       "by": "juror / claude-code / claude-opus-5-5",
-      "context": "limited",
+      "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
-      "judged": 1
+      "round": 2,
+      "version": "7d91d727897e80934159d9ed49147004a71f2bfc",
+      "judged": 2
     },
     "pr-correctness": {
-      "attempts": 2,
+      "attempts": 1,
       "lens": "correctness",
       "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
-      "judged": 1
+      "round": 2,
+      "version": "7d91d727897e80934159d9ed49147004a71f2bfc",
+      "judged": 2
     },
     "pr-integration": {
       "attempts": 2,
@@ -82,36 +90,40 @@
       "judged": 1
     },
     "pr-test-proof": {
-      "attempts": 3,
+      "attempts": 1,
       "lens": "test-proof",
       "by": "juror / claude-code / claude-opus-5-5",
       "context": "sufficient",
       "valid": true,
       "errors": [],
-      "round": 1,
-      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
-      "judged": 1
+      "round": 2,
+      "version": "7d91d727897e80934159d9ed49147004a71f2bfc",
+      "judged": 2
     },
     "pr-conformance-2": {
       "attempts": 1,
       "lens": "conformance",
       "by": "juror / claude-code / claude-opus-5-5",
-      "context": "sufficient",
-      "valid": true,
-      "errors": [],
-      "round": 1,
-      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "context": "",
+      "valid": false,
+      "errors": [
+        "missing `context`"
+      ],
+      "round": 2,
+      "version": "7d91d727897e80934159d9ed49147004a71f2bfc",
       "judged": 1
     },
     "pr-conformance-3": {
       "attempts": 1,
       "lens": "conformance",
       "by": "juror / claude-code / claude-opus-5-5",
-      "context": "limited",
-      "valid": true,
-      "errors": [],
-      "round": 1,
-      "version": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+      "context": "",
+      "valid": false,
+      "errors": [
+        "missing `context`"
+      ],
+      "round": 2,
+      "version": "7d91d727897e80934159d9ed49147004a71f2bfc",
       "judged": 1
     },
     "pr-test-proof-2": {
@@ -165,15 +177,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-21",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 1
     },
     {
       "id": "J-2",
@@ -202,15 +214,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-22",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 1
     },
     {
       "id": "J-3",
@@ -237,15 +249,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-23",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 1
     },
     {
       "id": "J-4",
@@ -272,15 +284,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-24",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 1
     },
     {
       "id": "J-5",
@@ -307,15 +319,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-25",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 1
     },
     {
       "id": "J-6",
@@ -345,15 +357,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-26",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 1
     },
     {
       "id": "J-7",
@@ -381,15 +393,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-27",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 0,
-      "last_round": 0
+      "last_round": 1
     },
     {
       "id": "J-8",
@@ -450,17 +462,18 @@
       ],
       "validation": "confirmed",
       "reason": "flow.py `hooked` calls `extensions.after` only when `result[0] == 0`, and the `_done` stop-list path writes the pause line then returns `1, talk(...)`, so no waiting-on-human fires for that hold.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-28",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/flow.py (hooked, _done stop path)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-10",
@@ -525,17 +538,18 @@
       ],
       "validation": "confirmed",
       "reason": "`check` only requires step `name` to be a non-empty string (lines 76-80). NAME is applied to the extension name only (line 61). The duplicate-step test at line 146 compares against other extensions, never within `own`, so same-named steps pass and `table` keys collide.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-29",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "missing",
       "where": "src/nio/extensions.py (check), src/nio/flow.py (stage_arg, table)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-12",
@@ -647,21 +661,21 @@
         {
           "juror": "pr-test-proof",
           "lens": "test-proof",
-          "situation": "the webServer is left running after a run, the trace or screenshot is not kept, or the tester card writes two tests per AC. Nothing at this gate catches any of these, because the bodies of test_app_started_and_stopped, test_failure_keeps_trace_and_screenshot and test_tester_writes_one_test_per_e2e_ac (TC-34, TC-35, TC-29) never executed.",
-          "severity": "major",
-          "round": 1
+          "situation": "`uv run python tests/test_extensions.py` or `NIO_E2E=1 uv run python tests/test_extensions_e2e.py` is run. Importing `test_extensions` reaches its module-level `selfcheck.main(...)` (test_extensions.py:917), which runs test_extensions' 49 tests labelled as test_extensions_e2e.py and calls sys.exit. `test_app_started_and_stopped`, `test_failure_keeps_trace_and_screenshot` and `test_tester_writes_one_test_per_e2e_ac` never execute, yet the file can exit 0. The run's output shows \"ran 49 tests, 0 failed\" for test_extensions_e2e.py, with none of the e2e tests in it.",
+          "severity": "blocker",
+          "round": 2
         }
       ],
       "validation": "confirmed",
-      "reason": "The three e2e tests in tests/test_extensions_e2e.py skip without NIO_E2E=1, and the evidence run did not set it. No passing result exists for AC-29, AC-34 or AC-35.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-30",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "tests/test_extensions.py:917 calls `selfcheck.main(...)` unguarded, and `selfcheck.main` ends in `sys.exit`. tests/test_extensions_e2e.py imports `from test_extensions import ...` at line 15, so the import runs the whole suite and exits before any `@e2e` test is defined or run. The three e2e tests can never execute, with or without NIO_E2E.",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "missing",
       "where": "tests/test_extensions_e2e.py",
       "tampering": false
@@ -695,16 +709,16 @@
           "round": 1
         }
       ],
-      "validation": "confirmed",
-      "reason": "tests/test_extensions.py line 249 runs `git diff main -- tests/test_flow.py` and line 251 requires a changed `test_status_speed_with_three_extensions` line. In a copy without a `main` ref the diff is empty, so the assert fails. After the branch merges it breaks the same way.",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-31",
-      "baseline": "new",
-      "rounds": 0,
+      "validation": "refuted",
+      "reason": "tests/test_extensions.py:242-250 no longer uses `git diff main`. The test now checks `flow.table` identity, runs test_flow.py, and looks for the new test's name in the file text (line 249, \"no `main` ref needed\"). The failure the finding describes can't happen in a copy without `main`. The finding's own validation note says the same, and the weaker check is a separate matter that J-35 and J-41 already cover.",
+      "status": "refuted",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1,
+      "last_round": 2,
       "gap": "partial",
       "where": "tests/test_extensions.py:242",
       "tampering": false
@@ -733,17 +747,18 @@
       ],
       "validation": "confirmed",
       "reason": "The test at tests/test_extensions.py:254 does exercise AC-8, and the recorded failure comes from garbled interleaved output. It is a real evidence inconsistency that needs re-collection, although it is not a code defect.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-32",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "tests/test_extensions.py:254",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-17",
@@ -807,15 +822,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-33",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-19",
@@ -843,14 +858,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-34",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-20",
@@ -877,15 +893,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-35",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-21",
@@ -912,15 +928,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-36",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-22",
@@ -947,15 +963,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-37",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-23",
@@ -982,15 +998,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-38",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-24",
@@ -1017,15 +1033,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-39",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-25",
@@ -1052,15 +1068,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-40",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-26",
@@ -1087,15 +1103,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-41",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-27",
@@ -1122,15 +1138,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-42",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-28",
@@ -1157,15 +1173,15 @@
         }
       ],
       "validation": "confirmed",
-      "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
-      "disposition": "fix-task",
-      "by": "agent",
-      "note": "fix task T-43",
-      "baseline": "new",
-      "rounds": 0,
+      "reason": "the CLI still reports it after its fix task",
+      "status": "open",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "unchanged",
+      "rounds": 1,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 2
     },
     {
       "id": "J-29",
@@ -1193,14 +1209,15 @@
       ],
       "validation": "confirmed",
       "reason": "the CLI's own check; no refuter",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-44",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
-      "last_round": 1
+      "last_round": 1,
+      "fixed_in": 2
     },
     {
       "id": "J-30",
@@ -1234,17 +1251,18 @@
       ],
       "validation": "confirmed",
       "reason": "contracts.md line 110 says the hook line is `{\"from\": stage, \"to\": stage, ...}`. `fire` ignores `stage` for the record and writes `here = flow.last_to(lines)` into from/to (extensions.py lines 381-384), so the contract and the code differ.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-45",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/extensions.py (fire, line 381)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-31",
@@ -1309,17 +1327,18 @@
       ],
       "validation": "confirmed",
       "reason": "extensions.py lines 340 and 342 nest `f'{m['name']}...'` inside an f-string using the same single quote, which parses only from Python 3.12 (PEP 701). pyproject.toml says `requires-python = \">=3.11\"`, and cli.py line 9 imports extensions at the top, so 3.11 fails every nio command.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-46",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "contradicts",
       "where": "src/nio/extensions.py (listing)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-33",
@@ -1346,17 +1365,18 @@
       ],
       "validation": "confirmed",
       "reason": "`remove` never matches `name` against NAME and cli.py passes `a.name` straight through. With `.`, `d` is `.nio/extensions`, which is a directory, so the not-added refusal is skipped. `sitting` and `followers` find nothing, and line 360 runs `shutil.rmtree(d)`.",
-      "status": "disposed",
+      "status": "fixed",
       "disposition": "fix-task",
       "by": "agent",
       "note": "fix task T-47",
-      "baseline": "new",
+      "baseline": "absent",
       "rounds": 0,
       "first_round": 1,
       "last_round": 1,
       "gap": "partial",
       "where": "src/nio/extensions.py (remove)",
-      "tampering": false
+      "tampering": false,
+      "fixed_in": 2
     },
     {
       "id": "J-34",
@@ -1887,6 +1907,330 @@
       "gap": "partial",
       "where": "tests/test_flow.py",
       "tampering": false
+    },
+    {
+      "id": "J-48",
+      "title": "T-21: tests/test_spec.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-12",
+        "AC-13",
+        "AC-14"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-21 names tests/test_spec.py, which no commit of the epic changed",
+      "where": "tests/test_spec.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-21 names tests/test_spec.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-48",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-49",
+      "title": "T-22: tests/test_implement.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-15",
+        "AC-16",
+        "AC-17"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-22 names tests/test_implement.py, which no commit of the epic changed",
+      "where": "tests/test_implement.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-22 names tests/test_implement.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-49",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-50",
+      "title": "T-23: tests/test_jury.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-23"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-23 names tests/test_jury.py, which no commit of the epic changed",
+      "where": "tests/test_jury.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-23 names tests/test_jury.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-50",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-51",
+      "title": "T-24: tests/test_agents.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-25"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-24 names tests/test_agents.py, which no commit of the epic changed",
+      "where": "tests/test_agents.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-24 names tests/test_agents.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-51",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-52",
+      "title": "T-25: tests/test_tasks.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-32"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-25 names tests/test_tasks.py, which no commit of the epic changed",
+      "where": "tests/test_tasks.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-25 names tests/test_tasks.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-52",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-53",
+      "title": "T-26: tests/test_implement.py isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-32",
+        "AC-33",
+        "AC-34",
+        "AC-36"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-26 names tests/test_implement.py, which no commit of the epic changed",
+      "where": "tests/test_implement.py",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-26 names tests/test_implement.py, which no commit of the epic changed",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-53",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-54",
+      "title": "T-27: pyproject.toml isn't in the epic's diff",
+      "kind": "gap",
+      "severity": "major",
+      "cites": [
+        "AC-3",
+        "AC-37"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "",
+      "gap": "T-27 names pyproject.toml, which no commit of the epic changed",
+      "where": "pyproject.toml",
+      "tampering": false,
+      "origin": "checks",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "T-27 names pyproject.toml, which no commit of the epic changed",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-54",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-55",
+      "title": "AC-47's timeout test fails in the evidence run",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-47"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "FAIL tests/test_extensions.py::test_timeouts_stop_commands"
+      ],
+      "fix": "make the no-leftover check specific to this test's own commands (a unique marker per run or per root), or stop the e2e file from re-running the whole of test_extensions. Then re-collect.",
+      "sources": [
+        {
+          "juror": "pr-conformance",
+          "lens": "conformance",
+          "situation": "the evidence run records the AC-47 test failed, because `pgrep` found `sleep 60 # nio-t-hook` still running. The suite runs test_extensions.py and test_extensions_e2e.py in parallel, and the second file re-runs the same tests. The `pgrep` pattern is machine-wide, so one process sees the other's live sleep. The T-30/T-31 round changed this test from `sleep 5` to `sleep 60`, which widens the overlap.",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "tests/test_extensions.py:711 runs `pgrep -af \"^/bin/sh -c sleep 60 # nio-t-\"`, which matches every process on the machine and has no per-run marker. test_extensions_e2e.py re-runs the whole suite through its import (see J-14), and the suite files run in parallel (`xargs -P8`). A concurrent copy's live `sleep 60 # nio-t-hook` therefore makes `returncode == 1` fail.",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-55",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2,
+      "gap": "partial",
+      "where": "tests/test_extensions.py",
+      "tampering": false
+    },
+    {
+      "id": "J-56",
+      "title": "AC-47 has no passing evidence",
+      "kind": "gap",
+      "severity": "blocker",
+      "cites": [
+        "AC-47"
+      ],
+      "evidence": "observed",
+      "quotes": [],
+      "fix": "add or fix a test that proves AC-47",
+      "gap": "missing",
+      "where": "tests/test_extensions.py",
+      "tampering": false,
+      "origin": "join",
+      "sources": [
+        {
+          "juror": "cli",
+          "lens": "cli",
+          "situation": "no passing test proves AC-47: test_timeouts_stop_commands failed",
+          "severity": "blocker",
+          "round": 2
+        }
+      ],
+      "validation": "confirmed",
+      "reason": "the CLI's own check; no refuter",
+      "status": "disposed",
+      "disposition": "fix-task",
+      "by": "agent",
+      "note": "fix task T-56",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 2,
+      "last_round": 2
     }
   ],
   "outcome": "rejected",
@@ -1898,10 +2242,15 @@
     [
       1,
       "rejected"
+    ],
+    [
+      2,
+      "rejected"
     ]
   ],
   "versions": {
-    "1": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac"
+    "1": "a6c5fdd6766ecd866ab06f69593a4e3c3dff5bac",
+    "2": "7d91d727897e80934159d9ed49147004a71f2bfc"
   },
   "matched": {
     "AC-1": [
@@ -2184,7 +2533,8 @@
     ]
   },
   "batches": {
-    "R-261116-2g2d": 2
+    "R-261116-2g2d": 2,
+    "R-261116-5bqk": 1
   },
   "asked": {},
   "notes": [
@@ -2248,5 +2598,14 @@
       "title": "The add and remove confirmation lines are never asserted",
       "round": 1
     }
-  ]
+  ],
+  "cap": {
+    "round": 2,
+    "auto": true,
+    "allow": 3,
+    "lenses": [
+      "conformance",
+      "test-proof"
+    ]
+  }
 }

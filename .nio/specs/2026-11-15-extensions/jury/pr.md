@@ -1,7 +1,7 @@
 ---
 gate: pr
 subject: 2026-11-15-extensions
-round: 1
+round: 2
 outcome: rejected
 ---
 # Pr jury: 2026-11-15-extensions
@@ -10,39 +10,39 @@ outcome: rejected
 
 | ID | Severity | Kind | Cites | Lenses | Validation | Status | Disposition | Baseline, failed rounds |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| J-1 | major | gap | AC-12, AC-13, AC-14 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-2 | major | gap | AC-15, AC-16, AC-17 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-3 | major | gap | AC-23 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-4 | major | gap | AC-25 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-5 | major | gap | AC-32 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-6 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-7 | major | gap | AC-3, AC-37 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-1 | major | gap | AC-12, AC-13, AC-14 | cli | confirmed | open |  | unchanged, 1 |
+| J-2 | major | gap | AC-15, AC-16, AC-17 | cli | confirmed | open |  | unchanged, 1 |
+| J-3 | major | gap | AC-23 | cli | confirmed | open |  | unchanged, 1 |
+| J-4 | major | gap | AC-25 | cli | confirmed | open |  | unchanged, 1 |
+| J-5 | major | gap | AC-32 | cli | confirmed | open |  | unchanged, 1 |
+| J-6 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | open |  | unchanged, 1 |
+| J-7 | major | gap | AC-3, AC-37 | cli | confirmed | open |  | unchanged, 1 |
 | J-8 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
-| J-9 | major | gap | FR-26 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-9 | major | gap | FR-26 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-10 | major | risk | FR-37 | adversary | refuted | refuted |  | new, 0 |
-| J-11 | major | gap | FR-5 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-11 | major | gap | FR-5 | adversary | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-12 | minor | gap | FR-3 | adversary | grounded | open |  | new, 0 |
 | J-13 | minor | risk | FR-27 | adversary | grounded | open |  | new, 0 |
-| J-14 | blocker | gap | AC-29, AC-34, AC-35 | conformance, test-proof | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-15 | blocker | gap | AC-48 | conformance, test-proof | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-16 | major | inconsistency | AC-8 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-14 | blocker | gap | AC-29, AC-34, AC-35 | conformance, test-proof | confirmed | open |  | unchanged, 1 |
+| J-15 | blocker | gap | AC-48 | conformance, test-proof | refuted | refuted |  | unchanged, 1 |
+| J-16 | major | inconsistency | AC-8 | conformance | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-17 | minor | contradiction | CT-11 | conformance | grounded | open |  | new, 0 |
-| J-18 | blocker | gap | AC-5 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-19 | blocker | gap | AC-8 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-20 | blocker | gap | AC-11 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-21 | blocker | gap | AC-20 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-22 | blocker | gap | AC-22 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-23 | blocker | gap | AC-28 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-24 | blocker | gap | AC-29 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-25 | blocker | gap | AC-34 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-26 | blocker | gap | AC-35 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-27 | blocker | gap | AC-38 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-28 | blocker | gap | AC-46 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-29 | blocker | gap | AC-48 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-30 | major | inconsistency | CT-11, FR-27 | consistency, correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-18 | blocker | gap | AC-5 | cli | confirmed | open |  | unchanged, 1 |
+| J-19 | blocker | gap | AC-8 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-20 | blocker | gap | AC-11 | cli | confirmed | open |  | unchanged, 1 |
+| J-21 | blocker | gap | AC-20 | cli | confirmed | open |  | unchanged, 1 |
+| J-22 | blocker | gap | AC-22 | cli | confirmed | open |  | unchanged, 1 |
+| J-23 | blocker | gap | AC-28 | cli | confirmed | open |  | unchanged, 1 |
+| J-24 | blocker | gap | AC-29 | cli | confirmed | open |  | unchanged, 1 |
+| J-25 | blocker | gap | AC-34 | cli | confirmed | open |  | unchanged, 1 |
+| J-26 | blocker | gap | AC-35 | cli | confirmed | open |  | unchanged, 1 |
+| J-27 | blocker | gap | AC-38 | cli | confirmed | open |  | unchanged, 1 |
+| J-28 | blocker | gap | AC-46 | cli | confirmed | open |  | unchanged, 1 |
+| J-29 | blocker | gap | AC-48 | cli | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-30 | major | inconsistency | CT-11, FR-27 | consistency, correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-31 | minor | inconsistency | CT-12, FR-31 | consistency | grounded | open |  | new, 0 |
-| J-32 | major | risk | CT-3, FR-6 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-33 | major | risk | CT-4, FR-7 | correctness | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-32 | major | risk | CT-3, FR-6 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
+| J-33 | major | risk | CT-4, FR-7 | correctness | confirmed | fixed | fix-task (agent) | absent, 0 |
 | J-34 | minor | gap | FR-19, CT-6 | correctness | grounded | open |  | new, 0 |
 | J-35 | minor | risk | CT-6 | correctness | grounded | open |  | new, 0 |
 | J-36 | minor | inconsistency | FR-19 | integration | grounded | open |  | new, 0 |
@@ -57,48 +57,50 @@ outcome: rejected
 | J-45 | blocker | risk | AC-48, CT-5, CT-6 | test-proof | merged | merged |  | new, 0 |
 | J-46 | major | gap | AC-29, AC-34, AC-35, CT-13, CT-15, CT-16 | test-proof | merged | merged |  | new, 0 |
 | J-47 | minor | gap | AC-46, CT-5, CT-6 | test-proof | grounded | overruled |  | new, 0 |
+| J-48 | major | gap | AC-12, AC-13, AC-14 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-49 | major | gap | AC-15, AC-16, AC-17 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-50 | major | gap | AC-23 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-51 | major | gap | AC-25 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-52 | major | gap | AC-32 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-53 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-54 | major | gap | AC-3, AC-37 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-55 | blocker | gap | AC-47 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-56 | blocker | gap | AC-47 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
 
 ### J-1 T-6: tests/test_spec.py isn't in the epic's diff
 - situation (cli): T-6 names tests/test_spec.py, which no commit of the epic changed
 - fix: 
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-21
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-2 T-7: tests/test_implement.py isn't in the epic's diff
 - situation (cli): T-7 names tests/test_implement.py, which no commit of the epic changed
 - fix: 
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-22
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-3 T-11: tests/test_jury.py isn't in the epic's diff
 - situation (cli): T-11 names tests/test_jury.py, which no commit of the epic changed
 - fix: 
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-23
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-4 T-13: tests/test_agents.py isn't in the epic's diff
 - situation (cli): T-13 names tests/test_agents.py, which no commit of the epic changed
 - fix: 
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-24
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-5 T-16: tests/test_tasks.py isn't in the epic's diff
 - situation (cli): T-16 names tests/test_tasks.py, which no commit of the epic changed
 - fix: 
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-25
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-6 T-17: tests/test_implement.py isn't in the epic's diff
 - situation (cli): T-17 names tests/test_implement.py, which no commit of the epic changed
 - fix: 
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-26
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-7 T-18: pyproject.toml isn't in the epic's diff
 - situation (cli): T-18 names pyproject.toml, which no commit of the epic changed
 - fix: 
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-27
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-8 the test suite failed
 - situation (cli): `printf '%s\n' tests/test_*.py | xargs -P8 -I{} sh -c 'uv run python {} || exit 1'` failed:
@@ -155,18 +157,16 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - quote: "skipped test_tester_writes_one_test_per_e2e_ac (set NIO_E2E=1)"
 - situation (conformance): AC-29 (the tester writes one test per e2e AC), AC-34 (the app is started and stopped around the run) and AC-35 (trace and screenshots are kept) are covered only by tests/test_extensions_e2e.py. In the evidence run all three printed skip and the pack lists them as failed. There is no passing result for any of the three. TC-29 also calls `check.py` directly, not `nio flow done e2e.tests`.
 - situation (conformance): test_tester_writes_one_test_per_e2e_ac, test_app_started_and_stopped and test_failure_keeps_trace_and_screenshot (tests/test_extensions_e2e.py:77, 41, 59) are the only tests for these ACs and each is reported as failed. The file's header says they run only with NIO_E2E and otherwise print skipped and pass, so these results most likely come from an environment problem (npm install, Chromium, or the claude model). The cause is not visible in the pack. As it stands, the Playwright webServer start and stop (FR-32), the trace and screenshots (FR-33) and the tester writing the tests (FR-29) have no passing evidence.
-- situation (test-proof): the webServer is left running after a run, the trace or screenshot is not kept, or the tester card writes two tests per AC. Nothing at this gate catches any of these, because the bodies of test_app_started_and_stopped, test_failure_keeps_trace_and_screenshot and test_tester_writes_one_test_per_e2e_ac (TC-34, TC-35, TC-29) never executed.
+- situation (test-proof): `uv run python tests/test_extensions.py` or `NIO_E2E=1 uv run python tests/test_extensions_e2e.py` is run. Importing `test_extensions` reaches its module-level `selfcheck.main(...)` (test_extensions.py:917), which runs test_extensions' 49 tests labelled as test_extensions_e2e.py and calls sys.exit. `test_app_started_and_stopped`, `test_failure_keeps_trace_and_screenshot` and `test_tester_writes_one_test_per_e2e_ac` never execute, yet the file can exit 0. The run's output shows "ran 49 tests, 0 failed" for test_extensions_e2e.py, with none of the e2e tests in it.
 - fix: run them with NIO_E2E=1, Playwright, Chromium and a model, and put the passing results in the evidence; or the human accepts these three ACs as unproven.
-- validation: confirmed: The three e2e tests in tests/test_extensions_e2e.py skip without NIO_E2E=1, and the evidence run did not set it. No passing result exists for AC-29, AC-34 or AC-35.
-- disposition: fix-task by agent: fix task T-30
+- validation: confirmed: tests/test_extensions.py:917 calls `selfcheck.main(...)` unguarded, and `selfcheck.main` ends in `sys.exit`. tests/test_extensions_e2e.py imports `from test_extensions import ...` at line 15, so the import runs the whole suite and exits before any `@e2e` test is defined or run. The three e2e tests can never execute, with or without NIO_E2E.
 
 ### J-15 The no-extensions test fails in the evidence copy
 - quote: "FAIL tests/test_extensions.py::test_no_extensions_changes_nothing"
 - situation (conformance): AC-48 (NFR-3, existing flow tests pass unchanged) is proven by this test. In the evidence run it failed on the `git diff main -- tests/test_flow.py` assertion. The test inspects git history in the throwaway copy, so it depends on the checkout and not only on the code. The pack result for it is failed.
 - situation (test-proof): after this PR merges, `git diff main` on main is empty, so the assert at tests/test_extensions.py:251 finds no added test function and test_extensions.py fails on main for good. It already failed in the evidence suite's throwaway copy, which had no `main` ref. The assert checks the test file's own history, not code the diff decides.
 - fix: make the unchanged-tests check not depend on a `main` ref in the copy, for example by comparing a recorded hash of the expected stage table, or by running it where `main` exists. Then re-collect.
-- validation: confirmed: tests/test_extensions.py line 249 runs `git diff main -- tests/test_flow.py` and line 251 requires a changed `test_status_speed_with_three_extensions` line. In a copy without a `main` ref the diff is empty, so the assert fails. After the branch merges it breaks the same way.
-- disposition: fix-task by agent: fix task T-31
+- validation: refuted: tests/test_extensions.py:242-250 no longer uses `git diff main`. The test now checks `flow.table` identity, runs test_flow.py, and looks for the new test's name in the file text (line 249, "no `main` ref needed"). The failure the finding describes can't happen in a copy without `main`. The finding's own validation note says the same, and the weaker check is a separate matter that J-35 and J-41 already cover.
 
 ### J-16 AC-8's test is recorded failed although its output line reads ok
 - quote: "is_appended_andok tests/test_extensions.py::test_shipped_off_until_added"
@@ -183,8 +183,7 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 ### J-18 AC-5 has no passing evidence
 - situation (cli): no passing test proves AC-5: test_manifest_missing_or_bad_field no assertion
 - fix: add or fix a test that proves AC-5
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-33
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-19 AC-8 has no passing evidence
 - situation (cli): no passing test proves AC-8: test_shipped_off_until_added failed
@@ -195,56 +194,47 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 ### J-20 AC-11 has no passing evidence
 - situation (cli): no passing test proves AC-11: test_after_unknown_step_refused no assertion
 - fix: add or fix a test that proves AC-11
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-35
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-21 AC-20 has no passing evidence
 - situation (cli): no passing test proves AC-20: test_add_only_rule no assertion
 - fix: add or fix a test that proves AC-20
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-36
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-22 AC-22 has no passing evidence
 - situation (cli): no passing test proves AC-22: test_card_named_like_shipped_refused no assertion
 - fix: add or fix a test that proves AC-22
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-37
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-23 AC-28 has no passing evidence
 - situation (cli): no passing test proves AC-28: test_unknown_event_refused no assertion
 - fix: add or fix a test that proves AC-28
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-38
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-24 AC-29 has no passing evidence
 - situation (cli): no passing test proves AC-29: test_tester_writes_one_test_per_e2e_ac failed
 - fix: add or fix a test that proves AC-29
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-39
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-25 AC-34 has no passing evidence
 - situation (cli): no passing test proves AC-34: test_app_started_and_stopped failed
 - fix: add or fix a test that proves AC-34
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-40
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-26 AC-35 has no passing evidence
 - situation (cli): no passing test proves AC-35: test_failure_keeps_trace_and_screenshot failed
 - fix: add or fix a test that proves AC-35
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-41
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-27 AC-38 has no passing evidence
 - situation (cli): no passing test proves AC-38: no test no match
 - fix: add or fix a test that proves AC-38
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-42
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-28 AC-46 has no passing evidence
 - situation (cli): no passing test proves AC-46: no test no match
 - fix: add or fix a test that proves AC-46
-- validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-43
+- validation: confirmed: the CLI still reports it after its fix task
 
 ### J-29 AC-48 has no passing evidence
 - situation (cli): no passing test proves AC-48: test_no_extensions_changes_nothing failed
@@ -361,17 +351,72 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - fix: run `NIO_PERF=1 uv run python tests/test_flow.py` (CLAUDE.md asks for this after a status change) and record it as evidence.
 - validation: grounded: test-proof: 2 of 3 jurors approved (pr-test-proof-2, pr-test-proof-3)
 
+### J-48 T-21: tests/test_spec.py isn't in the epic's diff
+- situation (cli): T-21 names tests/test_spec.py, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-48
+
+### J-49 T-22: tests/test_implement.py isn't in the epic's diff
+- situation (cli): T-22 names tests/test_implement.py, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-49
+
+### J-50 T-23: tests/test_jury.py isn't in the epic's diff
+- situation (cli): T-23 names tests/test_jury.py, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-50
+
+### J-51 T-24: tests/test_agents.py isn't in the epic's diff
+- situation (cli): T-24 names tests/test_agents.py, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-51
+
+### J-52 T-25: tests/test_tasks.py isn't in the epic's diff
+- situation (cli): T-25 names tests/test_tasks.py, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-52
+
+### J-53 T-26: tests/test_implement.py isn't in the epic's diff
+- situation (cli): T-26 names tests/test_implement.py, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-53
+
+### J-54 T-27: pyproject.toml isn't in the epic's diff
+- situation (cli): T-27 names pyproject.toml, which no commit of the epic changed
+- fix: 
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-54
+
+### J-55 AC-47's timeout test fails in the evidence run
+- quote: "FAIL tests/test_extensions.py::test_timeouts_stop_commands"
+- situation (conformance): the evidence run records the AC-47 test failed, because `pgrep` found `sleep 60 # nio-t-hook` still running. The suite runs test_extensions.py and test_extensions_e2e.py in parallel, and the second file re-runs the same tests. The `pgrep` pattern is machine-wide, so one process sees the other's live sleep. The T-30/T-31 round changed this test from `sleep 5` to `sleep 60`, which widens the overlap.
+- fix: make the no-leftover check specific to this test's own commands (a unique marker per run or per root), or stop the e2e file from re-running the whole of test_extensions. Then re-collect.
+- validation: confirmed: tests/test_extensions.py:711 runs `pgrep -af "^/bin/sh -c sleep 60 # nio-t-"`, which matches every process on the machine and has no per-run marker. test_extensions_e2e.py re-runs the whole suite through its import (see J-14), and the suite files run in parallel (`xargs -P8`). A concurrent copy's live `sleep 60 # nio-t-hook` therefore makes `returncode == 1` fail.
+- disposition: fix-task by agent: fix task T-55
+
+### J-56 AC-47 has no passing evidence
+- situation (cli): no passing test proves AC-47: test_timeouts_stop_commands failed
+- fix: add or fix a test that proves AC-47
+- validation: confirmed: the CLI's own check; no refuter
+- disposition: fix-task by agent: fix task T-56
+
 ## Jurors
 
 | Juror | Lens | By | Context | Valid | Attempts | Round |
 | --- | --- | --- | --- | --- | --- | --- |
-| pr-adversary | adversary | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 1 |
-| pr-conformance | conformance | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 1 |
-| pr-conformance-2 | conformance | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 1 |
-| pr-conformance-3 | conformance | juror / claude-code / claude-opus-5-5 | limited | yes | 1 | 1 |
-| pr-consistency | consistency | juror / claude-code / claude-opus-5-5 | limited | yes | 2 | 1 |
-| pr-correctness | correctness | juror / claude-code / claude-opus-5-5 | sufficient | yes | 2 | 1 |
+| pr-adversary | adversary | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
+| pr-conformance | conformance | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
+| pr-conformance-2 | conformance | juror / claude-code / claude-opus-5-5 |  | no: missing `context` | 1 | 2 |
+| pr-conformance-3 | conformance | juror / claude-code / claude-opus-5-5 |  | no: missing `context` | 1 | 2 |
+| pr-consistency | consistency | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
+| pr-correctness | correctness | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
 | pr-integration | integration | juror / claude-code / claude-opus-5-5 | sufficient | yes | 2 | 1 |
-| pr-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 3 | 1 |
+| pr-test-proof | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 2 |
 | pr-test-proof-2 | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 1 |
 | pr-test-proof-3 | test-proof | juror / claude-code / claude-opus-5-5 | sufficient | yes | 1 | 1 |

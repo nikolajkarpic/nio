@@ -414,3 +414,75 @@ state. Work added after approval goes under the epic's `#### Fixes` heading, wit
 - Test: TC-7
 - Depends on: none
 - Parallel: no
+
+### T-48 Fix: T-21: tests/test_spec.py isn't in the epic's diff
+- From: J-48 (pr, round 2)
+- Files: `tests/test_spec.py`
+- Serves: AC-12, AC-13, AC-14
+- Test: TC-12
+- Depends on: none
+- Parallel: no
+
+### T-49 Fix: T-22: tests/test_implement.py isn't in the epic's diff
+- From: J-49 (pr, round 2)
+- Files: `tests/test_implement.py`
+- Serves: AC-15, AC-16, AC-17
+- Test: TC-15
+- Depends on: none
+- Parallel: no
+
+### T-50 Fix: T-23: tests/test_jury.py isn't in the epic's diff
+- From: J-50 (pr, round 2)
+- Files: `tests/test_jury.py`
+- Serves: AC-23
+- Test: TC-23
+- Depends on: none
+- Parallel: no
+
+### T-51 Fix: T-24: tests/test_agents.py isn't in the epic's diff
+- From: J-51 (pr, round 2)
+- Files: `tests/test_agents.py`
+- Serves: AC-25
+- Test: TC-25
+- Depends on: none
+- Parallel: no
+
+### T-52 Fix: T-25: tests/test_tasks.py isn't in the epic's diff
+- From: J-52 (pr, round 2)
+- Files: `tests/test_tasks.py`
+- Serves: AC-32
+- Test: TC-32
+- Depends on: none
+- Parallel: no
+
+### T-53 Fix: T-26: tests/test_implement.py isn't in the epic's diff
+- From: J-53 (pr, round 2)
+- Files: `tests/test_implement.py`
+- Serves: AC-32, AC-33, AC-34, AC-36
+- Test: TC-32
+- Depends on: none
+- Parallel: no
+
+### T-54 Fix: T-27: pyproject.toml isn't in the epic's diff
+- From: J-54 (pr, round 2)
+- Files: `pyproject.toml`
+- Serves: AC-3, AC-37
+- Test: TC-3
+- Depends on: none
+- Parallel: no
+
+### T-55 Fix: AC-47's timeout test fails in the evidence run
+- From: J-55 (pr, round 2)
+- Files: `tests/test_extensions.py`
+- Serves: AC-47
+- Test: TC-47
+- Depends on: none
+- Parallel: no
+
+### T-56 Fix: AC-47 has no passing evidence
+- From: J-56 (pr, round 2)
+- Files: `tests/test_extensions.py`
+- Serves: AC-47
+- Test: TC-47
+- Depends on: none
+- Parallel: no
