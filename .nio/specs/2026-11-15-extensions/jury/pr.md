@@ -57,13 +57,13 @@ outcome: rejected
 | J-45 | blocker | risk | AC-48, CT-5, CT-6 | test-proof | merged | merged |  | new, 0 |
 | J-46 | major | gap | AC-29, AC-34, AC-35, CT-13, CT-15, CT-16 | test-proof | merged | merged |  | new, 0 |
 | J-47 | minor | gap | AC-46, CT-5, CT-6 | test-proof | grounded | overruled |  | new, 0 |
-| J-48 | major | gap | AC-12, AC-13, AC-14 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-49 | major | gap | AC-15, AC-16, AC-17 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-50 | major | gap | AC-23 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-51 | major | gap | AC-25 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-52 | major | gap | AC-32 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-53 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-54 | major | gap | AC-3, AC-37 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
+| J-48 | major | gap | AC-12, AC-13, AC-14 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-49 | major | gap | AC-15, AC-16, AC-17 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-50 | major | gap | AC-23 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-51 | major | gap | AC-25 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-52 | major | gap | AC-32 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-53 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
+| J-54 | major | gap | AC-3, AC-37 | cli | confirmed | disposed | accepted-risk (agent) | new, 0 |
 | J-55 | blocker | gap | AC-47 | conformance | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-56 | blocker | gap | AC-47 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
 
@@ -355,43 +355,43 @@ warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project envir
 - situation (cli): T-21 names tests/test_spec.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-48
+- disposition: accepted-risk by agent: delegated by the human, 2026-11-15 (recommended option): the task's Files line names a file the fix never needs (its TC's test lives in tests/test_extensions.py and passes); touching the file only to enter the diff would fake the fix, and each round re-raises it as a new task
 
 ### J-49 T-22: tests/test_implement.py isn't in the epic's diff
 - situation (cli): T-22 names tests/test_implement.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-49
+- disposition: accepted-risk by agent: delegated by the human, 2026-11-15 (recommended option): the task's Files line names a file the fix never needs (its TC's test lives in tests/test_extensions.py and passes); touching the file only to enter the diff would fake the fix, and each round re-raises it as a new task
 
 ### J-50 T-23: tests/test_jury.py isn't in the epic's diff
 - situation (cli): T-23 names tests/test_jury.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-50
+- disposition: accepted-risk by agent: delegated by the human, 2026-11-15 (recommended option): the task's Files line names a file the fix never needs (its TC's test lives in tests/test_extensions.py and passes); touching the file only to enter the diff would fake the fix, and each round re-raises it as a new task
 
 ### J-51 T-24: tests/test_agents.py isn't in the epic's diff
 - situation (cli): T-24 names tests/test_agents.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-51
+- disposition: accepted-risk by agent: delegated by the human, 2026-11-15 (recommended option): the task's Files line names a file the fix never needs (its TC's test lives in tests/test_extensions.py and passes); touching the file only to enter the diff would fake the fix, and each round re-raises it as a new task
 
 ### J-52 T-25: tests/test_tasks.py isn't in the epic's diff
 - situation (cli): T-25 names tests/test_tasks.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-52
+- disposition: accepted-risk by agent: delegated by the human, 2026-11-15 (recommended option): the task's Files line names a file the fix never needs (its TC's test lives in tests/test_extensions.py and passes); touching the file only to enter the diff would fake the fix, and each round re-raises it as a new task
 
 ### J-53 T-26: tests/test_implement.py isn't in the epic's diff
 - situation (cli): T-26 names tests/test_implement.py, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-53
+- disposition: accepted-risk by agent: delegated by the human, 2026-11-15 (recommended option): the task's Files line names a file the fix never needs (its TC's test lives in tests/test_extensions.py and passes); touching the file only to enter the diff would fake the fix, and each round re-raises it as a new task
 
 ### J-54 T-27: pyproject.toml isn't in the epic's diff
 - situation (cli): T-27 names pyproject.toml, which no commit of the epic changed
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: fix-task by agent: fix task T-54
+- disposition: accepted-risk by agent: delegated by the human, 2026-11-15 (recommended option): the task's Files line names a file the fix never needs (its TC's test lives in tests/test_extensions.py and passes); touching the file only to enter the diff would fake the fix, and each round re-raises it as a new task
 
 ### J-55 AC-47's timeout test fails in the evidence run
 - quote: "FAIL tests/test_extensions.py::test_timeouts_stop_commands"
