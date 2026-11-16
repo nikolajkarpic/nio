@@ -78,6 +78,8 @@ def check(folder, manifest, others, stages):
                 errs.append(f"{m}missing field {p}.{k}")
             elif not isinstance(s[k], str) or not s[k]:
                 errs.append(f"{m}{p}.{k} must be a non-empty string")
+        if isinstance(s.get("name"), str) and s["name"] and not NAME.fullmatch(s["name"]):
+            errs.append(f"{m}{p}.name must be a word of letters, digits, - and _")
         if "gate" in s and "output" not in s:
             errs.append(f"{m}missing field {p}.output")
         errs += [f"{m}unknown field {p}.{k}" for k in s if k not in STEP and k not in CHANGE]
@@ -114,6 +116,11 @@ def check(folder, manifest, others, stages):
         for k in CHANGE:
             if k in d:
                 errs.append(f"{k} would change built-in {', '.join(_named(d[k]))}: extensions only add steps")
+    seen = set()
+    for s in steps:
+        if isinstance(s, dict) and s.get("name") in seen:
+            errs.append(f"manifest.json: step name {s['name']} is repeated")
+        seen.add(s.get("name") if isinstance(s, dict) else None)
     own = [s for s in steps if isinstance(s, dict) and isinstance(s.get("name"), str) and isinstance(s.get("after"), str)]
     name = manifest.get("name") if isinstance(manifest.get("name"), str) else "?"
     order = list(flow.STAGES)
@@ -336,10 +343,11 @@ def listing(root):
     out = []
     for m in exts:
         join = lambda xs, sep: sep.join(xs) or "none"
-        out += [f"{m['name']} · {m['version']} · {rec.get(m['name'], {}).get('source', '?')}",
-                f"  steps: {join([f'{m['name']}.{s['name']} (after {s['after']})' for s in m['steps']], ', ')}",
-                f"  cards: {join(m['cards'], ', ')}",
-                f"  hooks: {join([f'{h['event']}: {h['command']}' for h in m['hooks']], '; ')}"]
+        n = m["name"]
+        steps = join([f"{n}.{s['name']} (after {s['after']})" for s in m["steps"]], ", ")
+        hooks = join([f"{h['event']}: {h['command']}" for h in m["hooks"]], "; ")
+        out += [f"{n} · {m['version']} · {rec.get(n, {}).get('source', '?')}",
+                f"  steps: {steps}", f"  cards: {join(m['cards'], ', ')}", f"  hooks: {hooks}"]
     return 0, out
 
 
@@ -347,7 +355,7 @@ def remove(root, name):
     """`nio extensions remove` (CT-4): the record first, then the folder; refused while an effort sits at one of its
     stages. Writes no effort file."""
     rec, d = read_record(root), folder(root) / name
-    if name not in rec and not d.is_dir():
+    if not NAME.fullmatch(name) or (name not in rec and not d.is_dir()):
         return 1, [f"refused: no extension named {name} in .nio/extensions"]
     others = [m for m in active(root, guard=False) if m["name"] != name]
     if at := sitting(root, name):
@@ -378,7 +386,7 @@ def fire(root, slug, event, stage, who, run):
             code, out, cause = implement.run(root, h["command"], h.get("timeout", 300), env)
             with flow.lock(root, slug):
                 state, lines = flow.load(root, slug)
-                here = flow.last_to(lines)  # the line keeps the effort where it is: a hook moves nothing
+                here = stage  # CT-11: the line carries the event's stage
                 ev = {"extension": m["name"], "event": event, "command": h["command"], "code": code,
                       "timed_out": cause == "time limit", "tail": out.splitlines()[-20:]}
                 flow.record(root, slug, [{"kind": "hook", "from": here, "to": here, "evidence": ev}], state, who, run or state.get("run"))

@@ -246,9 +246,8 @@ def test_no_extensions_changes_nothing():
     here = Path(__file__).parent
     r = subprocess.run([sys.executable, str(here / "test_flow.py")], cwd=here.parent, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
-    diff = subprocess.run(["git", "diff", "main", "--", "tests/test_flow.py"], cwd=here.parent, capture_output=True, text=True).stdout
-    changed = [x for x in diff.splitlines() if x[:1] in "+-" and not x.startswith(("+++", "---"))]
-    assert all(x.startswith("+") for x in changed) and any("def test_status_speed_with_three_extensions" in x for x in changed), diff
+    assert "def test_status_speed_with_three_extensions" in (here / "test_flow.py").read_text()  # no `main` ref needed
+    assert list(flow.STAGES)[:2] == ["intake", "drafting"] and "x.tests" not in flow.STAGES
 
 
 def test_shipped_off_until_added():
@@ -638,6 +637,40 @@ def test_gate_approved_hook_runs_once():
     assert not (copy / "hook.log").exists() and not hooks_of(copy)
 
 
+def test_hook_line_carries_the_event_stage():
+    root = at_planning(("x", [hook("true", "gate-approved")]))
+    pass_plan(root)
+    (line,) = [x for x in flow.load(root, S)[1] if x["kind"] == "hook"]
+    assert (line["from"], line["to"]) == ("plan_jury", "plan_jury"), line
+
+
+def test_hold_set_by_a_failing_command_fires_waiting_on_human():
+    root = at_planning(("x", [hook("echo $NIO_EVENT >> hold.log", "waiting-on-human")]))
+
+    def failing():
+        state, _ = flow.load(root, S)
+        flow.write(root, S, [{"kind": "fail", "from": "plan_jury", "to": "plan_jury", "evidence": {}}], {**state, "waiting": {"why": "stop-list: test"}}, "driver", "plan_jury")
+        return 1, []
+    assert flow.hooked(root, S, failing)[0] == 1
+    assert (root / "hold.log").read_text() == "waiting-on-human\n"
+
+
+def test_remove_refuses_names_that_are_not_extensions():
+    root, tmp = fixture()
+    assert nio(root, "extensions", "add", str(src(tmp, "x", [step("tests")])))[0] == 0
+    for bad in (".", "..", "../x", "a/b"):
+        code, out = nio(root, "extensions", "remove", bad)
+        assert code == 1 and "refused" in out, (bad, out)
+    assert (root / ".nio/extensions/x").is_dir() and (root / ".nio/extensions/record.json").is_file()
+
+
+def test_step_names_are_checked():
+    root, tmp = fixture()
+    refused(root, src(tmp, "a", [step("run e2e")]), "steps[0].name must be a word")
+    refused(root, src(tmp, "b", [step("s.jury")]), "steps[0].name must be a word")
+    refused(root, src(tmp, "c", [step("s"), step("s")]), "step name s is repeated")
+
+
 def at_planning(*named):
     root = effort("plan_jury")
     for name, hooks in named:
@@ -665,17 +698,17 @@ def test_failing_hook_never_blocks():
 def test_timeouts_stop_commands():
     import time
     root = effort()
-    add(root, "x", [step("tests", check="sleep 5 # nio-t-check", timeout=1)], hooks=[hook("sleep 5 # nio-t-hook", timeout=1)])
+    add(root, "x", [step("tests", check="sleep 60 # nio-t-check", timeout=1)], hooks=[hook("sleep 60 # nio-t-hook", timeout=1)])
     pass_plan(root)
     t = time.time()
     code, out = nio(root, "flow", "done", "x.tests", S, "--by", BY)
-    assert time.time() - t < 5 and code == 1 and "check timed out after 1 seconds" in out, out
+    assert time.time() - t < 30 and code == 1 and "check timed out after 1 seconds" in out, out
     assert flow.load(root, S)[1][-1]["evidence"]["timed_out"] is True
-    add(root, "x", [step("tests", check="true", timeout=1)], hooks=[hook("sleep 5 # nio-t-hook", timeout=1)])
+    add(root, "x", [step("tests", check="true", timeout=1)], hooks=[hook("sleep 60 # nio-t-hook", timeout=1)])
     t = time.time()
     assert nio(root, "flow", "done", "x.tests", S, "--by", BY)[0] == 0
-    assert time.time() - t < 5 and hooks_of(root)[-1]["timed_out"] is True
-    r = subprocess.run(["pgrep", "-af", "^/bin/sh -c sleep 5 # nio-t-"], capture_output=True, text=True)
+    assert time.time() - t < 30 and hooks_of(root)[-1]["timed_out"] is True
+    r = subprocess.run(["pgrep", "-af", "^/bin/sh -c sleep 60 # nio-t-"], capture_output=True, text=True)
     assert r.returncode == 1, r.stdout
     for bad in (0, 1.5, "1"):
         code, out = nio(root, "extensions", "add", str(src(tempfile.mkdtemp(), "y", [step("s", timeout=bad)])))

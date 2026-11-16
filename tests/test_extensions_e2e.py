@@ -12,6 +12,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from test_extensions import effort, nio, pass_plan
+from test_flow import S as FLOW_S
 from test_lenses import e2e
 
 from nio import agents, evidence, implement
@@ -47,9 +49,9 @@ def test_app_started_and_stopped():
         assert refused()
 
 
-def spec_files(root, acs):
-    d = root / ".nio/specs" / S
-    d.mkdir(parents=True)
+def spec_files(root, acs, slug=S):
+    d = root / ".nio/specs" / slug
+    d.mkdir(parents=True, exist_ok=True)
     (d / "spec.md").write_text("## Acceptance criteria\n\n" + "".join(f"- **{ac}** (FR-1) {t} [agent]\n  Observable: {o}. Level: e2e.\n" for ac, t, o in acs))
     (d / "tests.md").write_text("## Acceptance tests\n\n" + "".join(
         f"### TC-{n} {t} ({ac}; e2e) [agent]\n- File: `e2e/{ac}.spec.ts:{ac} {t}` (new)\n\n" for n, (ac, t, _) in enumerate(acs, 1)))
@@ -75,26 +77,32 @@ def test_failure_keeps_trace_and_screenshot():
 
 @e2e
 def test_tester_writes_one_test_per_e2e_ac():
-    root = app_copy()
+    root = effort()  # an effort at plan_jury with its ledger approved; the app is copied into it
+    shutil.copytree(APP, root, dirs_exist_ok=True)
+    subprocess.run(["npm", "install", "--no-audit", "--no-fund"], cwd=root, check=True, capture_output=True)
     for f in ("pass", "fail"):
         (root / f"e2e/{f}.spec.ts").unlink()
-    spec_files(root, [("AC-1", "shows the title", "the page title is NIO Demo"), ("AC-2", "shows the message", "clicking Greet shows Hello from NIO")])
-    subprocess.run([sys.executable, "-c", "import sys; from nio.cli import main; sys.argv = ['nio', 'extensions', 'add', 'e2e']; main()"],
-                   cwd=root, check=True, capture_output=True)
+    code, out = nio(root, "extensions", "add", "e2e")
+    assert code == 0, out
+    pass_plan(root, FLOW_S)
+    (root / ".nio/specs" / FLOW_S / "spec.md").unlink()
+    (root / ".nio/specs" / FLOW_S / "tests.md").unlink()
+    spec_files(root, [("AC-1", "shows the title", "the page title is NIO Demo"), ("AC-2", "shows the message", "clicking Greet shows Hello from NIO")], FLOW_S)
     meta, body, _ = agents.load(root)["e2e-tester"]
-    ask = (f"Read .nio/specs/{S}/spec.md and tests.md and write the Playwright tests as your instructions say, then list them in "
-           f".nio/specs/{S}/e2e.md. Run no other command.")
+    ask = (f"Read .nio/specs/{FLOW_S}/spec.md and tests.md and write the Playwright tests as your instructions say, then list them in "
+           f".nio/specs/{FLOW_S}/e2e.md. Run no other command.")
     r = subprocess.run(["claude", "-p", "--model", agents.DEFAULT_TIERS["claude"][meta["tier"]], "--system-prompt", body, "--allowedTools", "Read Edit Write Bash"],
                        input=ask, cwd=root, capture_output=True, text=True, timeout=1500)
     assert r.stdout.strip(), r.stderr
     for ac in ("AC-1", "AC-2"):
         text = next((root / "e2e").glob(f"{ac}.spec.ts")).read_text()
         assert len(re.findall(r"\btest\(", text)) == 1 and re.search(rf"test\(\s*['\"`][^'\"`]*{ac}", text), text
-    assert "AC-1" in (root / f".nio/specs/{S}/e2e.md").read_text() and "AC-2" in (root / f".nio/specs/{S}/e2e.md").read_text()
+    listed = (root / f".nio/specs/{FLOW_S}/e2e.md").read_text()
+    assert "AC-1" in listed and "AC-2" in listed
     config = (root / "playwright.config.ts").read_text()
     assert "timeout: 12345" in config and "outputDir: 'pw-out'" in config and "pw-out" in (root / ".gitignore").read_text()
-    r = subprocess.run([sys.executable, str(SHIPPED / "check.py")], cwd=root, capture_output=True, text=True, env={**os.environ, "NIO_SLUG": S})
-    assert r.returncode == 0, r.stdout + r.stderr
+    code, out = nio(root, "flow", "done", "e2e.tests", FLOW_S, "--by", "driver / test / test")  # AC-29: through the flow
+    assert code == 0, out
 
 
 selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])

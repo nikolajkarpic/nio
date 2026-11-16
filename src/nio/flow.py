@@ -1493,8 +1493,7 @@ def hooked(root, slug, call):
     except Exception:  # the command itself reports why
         return call()
     result = call()
-    if result[0] == 0:
-        extensions.after(root, slug, len(lines), old)
+    extensions.after(root, slug, len(lines), old)  # a failing command can set a hold (a stop-list pause): fire what it wrote
     return result
 
 
