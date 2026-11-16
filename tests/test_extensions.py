@@ -698,17 +698,17 @@ def test_failing_hook_never_blocks():
 def test_timeouts_stop_commands():
     import time
     root = effort()
-    add(root, "x", [step("tests", check="sleep 60 # nio-t-check", timeout=1)], hooks=[hook("sleep 60 # nio-t-hook", timeout=1)])
+    add(root, "x", [step("tests", check=f"sleep 60 # nio-t-{os.getpid()}", timeout=1)], hooks=[hook(f"sleep 60 # nio-t-{os.getpid()}", timeout=1)])
     pass_plan(root)
     t = time.time()
     code, out = nio(root, "flow", "done", "x.tests", S, "--by", BY)
     assert time.time() - t < 30 and code == 1 and "check timed out after 1 seconds" in out, out
     assert flow.load(root, S)[1][-1]["evidence"]["timed_out"] is True
-    add(root, "x", [step("tests", check="true", timeout=1)], hooks=[hook("sleep 60 # nio-t-hook", timeout=1)])
+    add(root, "x", [step("tests", check="true", timeout=1)], hooks=[hook(f"sleep 60 # nio-t-{os.getpid()}", timeout=1)])
     t = time.time()
     assert nio(root, "flow", "done", "x.tests", S, "--by", BY)[0] == 0
     assert time.time() - t < 30 and hooks_of(root)[-1]["timed_out"] is True
-    r = subprocess.run(["pgrep", "-af", "^/bin/sh -c sleep 60 # nio-t-"], capture_output=True, text=True)
+    r = subprocess.run(["pgrep", "-af", f"^/bin/sh -c sleep 60 # nio-t-{os.getpid()}"], capture_output=True, text=True)
     assert r.returncode == 1, r.stdout
     for bad in (0, 1.5, "1"):
         code, out = nio(root, "extensions", "add", str(src(tempfile.mkdtemp(), "y", [step("s", timeout=bad)])))
@@ -914,4 +914,5 @@ def test_e2e_check_failure_kinds():
         assert code == 1 and text in out, out
 
 
-selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])
+if __name__ == "__main__":
+    selfcheck.main([v for k, v in list(globals().items()) if k.startswith("test_") and callable(v)])
