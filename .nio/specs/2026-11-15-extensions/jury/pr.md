@@ -17,7 +17,7 @@ outcome: rejected
 | J-5 | major | gap | AC-32 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-6 | major | gap | AC-32, AC-33, AC-34, AC-36 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-7 | major | gap | AC-3, AC-37 | cli | confirmed | disposed | fix-task (agent) | new, 0 |
-| J-8 | major | gap |  | cli | confirmed | disposed | spec-change (agent) | new, 0 |
+| J-8 | major | gap |  | cli | confirmed | disposed | accepted-risk (human) | new, 0 |
 | J-9 | major | gap | FR-26 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
 | J-10 | major | risk | FR-37 | adversary | refuted | refuted |  | new, 0 |
 | J-11 | major | gap | FR-5 | adversary | confirmed | disposed | fix-task (agent) | new, 0 |
@@ -109,7 +109,7 @@ warning: warning`VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the projec
 warning: `VIRTUAL_ENV=/home/work/nio-ext/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
 - fix: 
 - validation: confirmed: the CLI's own check; no refuter
-- disposition: spec-change by agent: C-261116-6jps: change asked against architecture.md
+- disposition: accepted-risk by human: delegated by the human, 2026-11-15 (recommended option): covered by fix tasks T-31/T-34/T-44
 
 ### J-9 A hold set by a failing command fires no waiting-on-human hook
 - quote: "fire the events `step-passed`, `step-skipped`, `gate-approved`, `gate-rejected`, `epic-closed`, `waiting-on-human` and `effort-done`"
