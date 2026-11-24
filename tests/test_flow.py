@@ -878,7 +878,7 @@ def test_ac11_no_hand_edit_instruction():
     command, and none tells an agent to edit, write, append to or change one."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 30, paths
+    assert len(paths) == 32, paths
     for path in paths:
         lines = path.read_text().splitlines()
         assert lines.count(RULE) == 1, path
@@ -895,7 +895,7 @@ def test_auto_misuse():
     """TC-47 (the agent-side part): every skill and card carries the ban on passing `--by human` (CT-19)."""
     here = Path(__file__).parent.parent
     paths = sorted(here.glob("skills/*/SKILL.md")) + sorted(here.glob("src/nio/agents/*.md"))
-    assert len(paths) == 30, paths
+    assert len(paths) == 32, paths
     for path in paths:
         assert BAN in path.read_text(), path
     print("ok")

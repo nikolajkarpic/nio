@@ -46,7 +46,8 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    - `full`: everything else.
 
    Tell the human, starting "Nothing needed unless you want to change the name or route", the name and the route in one line, by what it means ("a bug fix", "several slices that ship on their own", "one change"), and that they can change either. The name and route values go in
-   `Refs:`. Ask nothing about the content: the
+   `Refs:`. If the work is an issue that still lists open questions no `Decided` comment answers, add to that line
+   that @nio:brainstorm can settle them first. Ask nothing about the content: the
    grill does that later.
 2. **Create the spec:** `nio new spec <name> --route <route>`. It stamps today's date on the folder,
    `.nio/specs/<YYYY-MM-DD>-<name>/`, and prints the path. That dated folder name is the spec's `<slug>` from here on
@@ -54,7 +55,9 @@ Before sending, ask: could they act on this without opening a file? If not, rewr
    ask the human to pick, each option saying what happens: another name, or continue the existing spec at its current
    stage.
 3. **Record the intake** in `.nio/specs/<slug>/intake.md`: the human's words exactly as given, never paraphrased or
-   summarised. For an issue or file, copy its text under a `## Source: <link or path>` heading.
+   summarised. For an issue or file, copy its text under a `## Source: <link or path>` heading. For an issue, copy
+   its body and each `Decided` comment, nothing else from the comments (optional: `gh issue view <n> --comments`;
+   without it, ask the human to paste them).
 4. **Memory:** start a run with `nio run`, then `nio pack "<the intake in one sentence>" --run <run> --reader spec --slug <slug>`.
    The pack is saved under `.nio/runs/<run>/packs/`. It carries the project docs for drafting (personas, product), when
    the project has them.

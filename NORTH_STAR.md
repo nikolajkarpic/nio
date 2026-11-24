@@ -25,6 +25,10 @@ An evaluator reads what the user asked for and routes it:
   the fix, and a jury.
 - **The full pipeline** below for features and complex bugs.
 
+Before either, an issue whose direction is still open can go through **`@nio:brainstorm`** (optional):
+its open questions are settled with the human, facts first, and posted as one `Decided` comment
+that the spec starts from.
+
 ### Onboard
 - **New project:** this is the main path.
 - **Existing project:** the human describes the project, what they want to do, and the
