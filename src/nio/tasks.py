@@ -190,12 +190,17 @@ def check(root, slug, gate=False, base="HEAD"):
     tasks, epics = parsed["tasks"], parsed["epics"]
     _, sbody = records.parse(spec.path(root, slug))
     acs = {i for _, lines in spec.sections(sbody).items() for i, _ in spec.items(lines) if i.startswith("AC-")}
+    e2e = {i for _, lines in spec.sections(sbody).items() for i, b in spec.items(lines) if i.startswith("AC-") and spec.level(b) == "e2e"}
     errs = [f"`slug` must be `{slug}`"] * (meta.get("slug") != slug)
     errs += [f"{t} is defined {1 + parsed['dupes'].count(t)} times" for t in dict.fromkeys(parsed["dupes"])]
     errs += [f"{e} is defined {n} times" for e, n in collections.Counter(e["id"] for e in epics).items() if n > 1]
     full = kind == "full"
     old = approved_before(root, slug, TIER_SINCE, base)
     entries, tcs = plan_parts(root, slug) if full else ({}, set())
+    aimed = {}  # TC -> ACs its heading names (CT-12)
+    if full and e2e:
+        _, tbody = records.parse(spec.path(root, slug).parent / "tests.md")
+        aimed = {m[1]: set(ids(m[2])) for m in re.finditer(r"^### (TC-\d+)[^\n]*\(([^)\n]*)\)", "\n".join(tbody), re.M)}
     approved = records.git(root, "log", "-1", "--format=%H", "--grep=^nio: approve tasks$", base, "--", str(p.relative_to(root)))
     for t, task in tasks.items():
         f = task["fields"]
@@ -223,6 +228,8 @@ def check(root, slug, gate=False, base="HEAD"):
         if "Parallel" in f and f["Parallel"] not in ("yes", "no"):
             errs.append(f"{t}: `Parallel:` must be yes or no, not `{f['Parallel']}`")
         errs += rating(t, f)
+        errs += [f"{t} serves {ac} (Level: e2e) but its Test: cites no TC aimed at it" for ac in ids(f.get("Serves", ""))
+                 if ac in e2e and not any(ac in aimed.get(tc, ()) for tc in ids(f.get("Test", "")))]
         if full and "Test" in f and not ids(f["Test"]):
             errs.append(f"{t}: on a full spec `Test:` cites the plan's `TC-n`")
         if "Serves" in f and not [i for i in ids(f["Serves"]) if i.startswith("AC-")] and not (

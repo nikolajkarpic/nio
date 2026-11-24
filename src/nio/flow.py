@@ -418,13 +418,78 @@ def skips(root, slug):
     return NOT_BUILT | ROUTE_SKIPS.get(route, set())
 
 
+def table(root, guard=True):
+    """(stages, gates, skill, inputs, exit) for this project (2026-11-15-extensions CT-6): the module's own tables when no
+    extension is added (NFR-3), else with each extension step spliced in after the stage it follows, in extension-name
+    then manifest order, its `.jury` stage after it when it declares a gate. A step left unplaced raises ValueError,
+    or under `guard=False` is left out."""
+    from nio import extensions
+    exts = extensions.active(root, guard)
+    if not exts:
+        return STAGES, GATES, SKILL, INPUTS, EXIT
+    follows, steps = {}, {}
+    for m in exts:
+        for s in m.get("steps", []):
+            follows.setdefault(s["after"], []).append(f"{m['name']}.{s['name']}")
+            steps[f"{m['name']}.{s['name']}"] = (m, s)
+    order = []
+
+    def put(after):
+        for n in follows.get(after, []):
+            if n not in order:
+                order.append(n)
+                if steps[n][1].get("gate"):
+                    order.append(f"{n}.jury")
+                put(n)
+    for b in STAGES:
+        order.append(b)
+        put(b)
+    if guard and (left := [n for n in steps if n not in order]):
+        raise ValueError(f"extension step {left[0]} follows {steps[left[0]][1]['after']}, which never reaches a built-in step")
+    stages, gates, skill, inputs, exit_ = {}, dict(GATES), dict(SKILL), dict(INPUTS), dict(EXIT)
+    for i, n in enumerate(order):
+        nxt = order[i + 1] if i + 1 < len(order) else None
+        stages[n] = (nxt, STAGES[n][1] if n in STAGES else n[:-5] if n.endswith(".jury") else None)
+        if n.endswith(".jury"):
+            gates[n] = (n[:-5], f"nio: approve {n[:-5]}")
+            skill[n], exit_[n] = "@nio:jury", f"the {n[:-5]} jury approved, or the human closed it with a reason"
+        elif n not in STAGES:
+            m, s = steps[n]
+            skill[n] = os.path.relpath(os.path.join(m["dir"], s["skill"]), root)
+            inputs[n], exit_[n] = ["spec.md", *plan_files()], f"its check exits 0: {s['check']}"
+    return stages, gates, skill, inputs, exit_
+
+
+def ext_step(root, stage):
+    """(manifest, step) of an extension stage `<ext>.<step>`, or None."""
+    from nio import extensions
+    for m in extensions.active(root, guard=False):
+        for s in m.get("steps", []):
+            if f"{m['name']}.{s['name']}" == stage:
+                return m, s
+    return None
+
+
 def guard(root, slug, stage, evidence=True):
     """(result, output, evidence) of the stage's guard, per the decision table "Guards" (CT-5, FR-12 to FR-15, FR-27):
     `pass`, `fail` or `closed` (a jury gate the human closed, `output` holding their reason). Decided only from files
     and the stage checks' results, never from an agent's word. `evidence` is CT-2's: paths read, verdict ID, output hash;
     `where`, which records nothing, skips the verdict lookup (NFR-3)."""
     from nio import jury, plan, spec, tasks
-    if stage not in STAGES or stage == "done" or stage in skips(root, slug):
+    if stage not in STAGES and (found := ext_step(root, stage)):  # CT-8: the step's own check, in the repo root
+        from nio import implement
+        m, s = found
+        limit = s.get("timeout") or 300
+        code, out, cause = implement.run(root, s["check"], limit, env={
+            "NIO_SLUG": slug, "NIO_STAGE": stage, "NIO_EXTENSION_DIR": str(m["dir"])})
+        tail = out.splitlines()[-50:]
+        if code == 0:
+            return "pass", [], {"paths": [], "verdict": "", "output": ""}
+        output = [f"check timed out after {limit} seconds" if cause == "time limit" else f"check failed: exit {code}", *tail]
+        return "fail", output, {"paths": [], "verdict": "", "output": sha("\n".join(output).encode()),
+                                "code": code, "timed_out": cause == "time limit", "tail": tail}
+    ext_gate = stage not in STAGES and stage in table(root, False)[1]
+    if not ext_gate and (stage not in STAGES or stage == "done" or stage in skips(root, slug)):
         raise ValueError(f"{stage} has no guard to run")
     folder = root / ".nio/specs" / slug
     rel = lambda *names: [str((folder / n).relative_to(root)) for n in names]
@@ -470,16 +535,16 @@ def guard(root, slug, stage, evidence=True):
                 if not output and evidence:
                     vid = verdict(root, slug, "pr", led["round"], "approved")
         else:
-            gate = GATES[stage][0]
-            paths = rel(*jury.GATES[gate], f"jury/{gate}.json")
+            gate = table(root, False)[1][stage][0]
+            paths = rel(*jury.gates(root)[gate][0], f"jury/{gate}.json")
             led = jury.load(root, slug, gate)
             now = jury.standing(root, slug, gate)  # a closure is read the same way at every gate (CT-5)
             if now == "closed":
                 pass
-            elif stage == "spec_jury":
+            elif stage == "spec_jury" or ext_gate:  # an extension gate reads its own ledger as the spec gate does
                 left = sum(f["status"] == "open" for f in led["findings"])
                 output = [] if now == "approved" and not left else \
-                    [f"the spec jury's outcome is {now}" + (f", {left} findings open" if left else "")]
+                    [f"the {gate} jury's outcome is {now}" + (f", {left} findings open" if left else "")]
             else:
                 ok, why = (plan if stage == "plan_jury" else tasks).approved(root, slug)
                 output = [] if ok else [why]
@@ -574,7 +639,7 @@ ANSWERED = re.compile(r"^## (Q\d+)\b", re.M)
 
 def commits(root, slug):
     """The `nio: approve <gate>` commits touching the effort folder, newest first: (hash, commit time, gate stage)."""
-    stage_of = {message: s for s, (_, message) in GATES.items()}
+    stage_of = {message: s for s, (_, message) in table(root, False)[1].items()}
     out = []
     for x in records.git(root, "log", "--format=%H %cI %s", "--grep", "^nio: approve ", "--", f".nio/specs/{slug}"):
         h, when, message = x.split(" ", 2)
@@ -588,8 +653,9 @@ def approvals(root, slug, found=None):
     one `git log` and one `git show`."""
     folder = f".nio/specs/{slug}"
     found = [(h, s) for h, _, s in (commits(root, slug) if found is None else found)]
-    specs = [f"{h}:{folder}/jury/{GATES[s][0]}.json" for h, s in found]
-    out = {s: set() for s in GATES}
+    G = table(root, False)[1]
+    specs = [f"{h}:{folder}/jury/{G[s][0]}.json" for h, s in found]
+    out = {s: set() for s in G}
     code, text, _ = records.git(root, "show", *specs, full=True) if specs else (1, "", "")
     docs = []
     if code == 0:
@@ -769,16 +835,19 @@ def backs(here, lines, slug, auto=False):
     return out
 
 
-def where(root, slug, state=None, lines=None):
+def where(root, slug, state=None, lines=None, guard=True):
     """Where the effort is (CT-6, FR-2, FR-8, FR-22, FR-23, FR-47, FR-49, FR-55, FR-56): the first stage of the state
     table "Flow" that has not passed, read from the files, the ledgers, git and history; never writes."""
     from nio import jury
+    table_ = table(root, guard)
+    G = table_[1]
+    guard = globals()["guard"]  # the parameter is the extension guard; below, `guard` is the stage guard
     if state is None:
         state, lines = load(root, slug)
     skill = ""
     stage, why, ready, results, ledgers, approved, sent_by, task = "done", "", None, {}, {}, [], None, ""
     passes = lambda s: results[s] if s in results else results.setdefault(s, guard(root, slug, s, evidence=False)[0])
-    ledger = lambda s: ledgers[s] if s in ledgers else ledgers.setdefault(s, jury.load(root, slug, GATES[s][0]))
+    ledger = lambda s: ledgers[s] if s in ledgers else ledgers.setdefault(s, jury.load(root, slug, G[s][0]))
 
     found = commits(root, slug)
 
@@ -786,26 +855,35 @@ def where(root, slug, state=None, lines=None):
         approved[:] = approved or [approvals(root, slug, found)]
         return passes(s) in ("pass", "closed") and gate_passed(s, ledger(s), lines, approved[0])
 
-    order, off = list(STAGES), skips(root, slug)
+    order, off = list(table_[0]), skips(root, slug)
     last = next((x for x in reversed(lines) if x["kind"] == "back" or x["kind"] in ("pass", "override") and x["from"] == "implementing"), {})
     old_done = last.get("kind") in ("pass", "override") and last["to"] == "done"  # a later `back` builds it again, to the pr gate
-    for s in STAGES:
+    for s in order:
         if s == "done" or s in off:
             continue
+        if s not in STAGES:  # an extension stage counts only once reached, and holds until a line leaves it (CT-6)
+            prev = order[order.index(s) - 1]
+            leave = [i for i, x in enumerate(lines) if x["kind"] in ("pass", "override", "skip") and x["from"] == prev]
+            if not leave or lines[leave[-1]]["to"] != s or any(
+                    x["kind"] in ("pass", "override", "skip") and x["from"] == s for x in lines[leave[-1] + 1:]):
+                continue
+            if s not in G:
+                stage = s
+                break
         if s == "pr" and old_done:
             continue  # done before the pr gate existed (2026-11-14-effort-jury FR-12)
-        if s in GATES:
-            gate, led = GATES[s][0], ledger(s)
+        if s in G:
+            gate, led = G[s][0], ledger(s)
             judged = jury.version(led, led["round"])
-            if STAGES[s][1] and led.get("outcome") == "rejected" and judged and jury.version_now(root, slug, gate) == judged:
-                stage, why, sent_by = STAGES[s][1], f"the {gate} jury rejected round {led['round']}", s
+            if table_[0][s][1] and led.get("outcome") == "rejected" and judged and jury.version_now(root, slug, gate) == judged:
+                stage, why, sent_by = table_[0][s][1], f"the {gate} jury rejected round {led['round']}", s
                 break
             if cleared(s):
                 continue
             stage, ready = s, passes(s)
             break
         # a stage before a gate that has passed needs no check of its own: the gate's approval covers its files (NFR-3)
-        gate = next((g for g in order[order.index(s):] if g in GATES and g not in off), None)
+        gate = next((g for g in order[order.index(s):] if g in G and g not in off), None)
         if gate and cleared(gate):
             continue
         if s == "drafting" and passes("grilling") == "pass":  # the gate's spec check is a superset of drafting's
@@ -817,20 +895,20 @@ def where(root, slug, state=None, lines=None):
     entries, unreadable = scan(root, slug, lines, found)
     if state["abandon"] is not None:  # frozen where it was abandoned until `nio flow start` resumes it (FR-52)
         stage, entries = next((x["from"] for x in reversed(lines) if x["kind"] == "abandon"), stage), []
-    at = list(STAGES).index
+    at = order.index
     for e in entries:  # a change sends the effort back to the stage that owns the file (FR-35, FR-36)
         if state["auto"] and not named(e, lines):
             continue  # FR-42: an auto effort waits for the human before a change moves it (CT-8)
         if at(e["target"]) < at(stage) or e["target"] == stage and ready:
             stage, ready, why = e["target"], None, f"{e['change']} moved it back"
     skipped = []
-    for s in reversed(order[:order.index(stage)]):
+    for s in reversed(order[:order.index(stage)] if stage in order else []):
         if s not in off:
             break
         skipped.insert(0, s)
     folder = root / ".nio/specs" / slug
     rel = lambda name: str((folder / name).relative_to(root))
-    names = jury_files(stage) if stage in GATES else INPUTS.get(stage, [])
+    names = jury_files(stage, root) if stage in G else table_[3].get(stage, [])
     command = f"nio flow done {stage} {slug}"
     asked = question(root, slug)
     pending = [e for e in entries if e["pending"] and (not state["auto"] or named(e, lines))]  # FR-38
@@ -851,7 +929,7 @@ def where(root, slug, state=None, lines=None):
     elif (ready == "pass" or ready == "closed") and stage != "pr" and state["auto"]:  # FR-46: the driver's done approves it
         status, command = "working", f"nio flow done {stage} {slug}"
     elif ready == "pass" or stage == "pr" and ready == "closed":
-        status, command = f"waiting_for_human: approve {GATES[stage][0]}", f"nio flow done {stage} --commit {slug} --by human"
+        status, command = f"waiting_for_human: approve {G[stage][0]}", f"nio flow done {stage} --commit {slug} --by human"
         if stage == "pr":
             command = f"nio flow approve {slug}"  # FR-9: the human, at a terminal
     elif stage == "implementing":  # implement CT-1: the claimed epics, else the next ready one
@@ -871,16 +949,16 @@ def where(root, slug, state=None, lines=None):
     else:
         status = "working"
         command = "" if stage == "pr" else command  # its driver runs `nio jury next <slug> pr`; `done` never passes it
-    return {"stage": stage, "status": status, "why": why, "skill": skill or SKILL.get(stage, ""),
-            "inputs": [rel(n) for n in names if (folder / n).exists()], "exit": EXIT.get(stage, ""),
+    return {"stage": stage, "status": status, "why": why, "skill": skill or table_[2].get(stage, ""),
+            "inputs": [rel(n) for n in names if (folder / n).exists()], "exit": table_[4].get(stage, ""),
             "command": command, "skipped": skipped, "changes": entries, "overrides": unseen(lines),
             "unreadable": unreadable, "refs": pending[0]["record"] if pending else "",
-            "gate": sent_by or (stage if stage in GATES else None), "ready": ready, "task": task}
+            "gate": sent_by or (stage if stage in G else None), "ready": ready, "task": task}
 
 
-def jury_files(stage):
+def jury_files(stage, root):
     from nio import jury
-    return ["spec.md", "tasks.md"] if stage == "pr" else jury.GATES[GATES[stage][0]]
+    return ["spec.md", "tasks.md"] if stage == "pr" else jury.gates(root)[table(root, False)[1][stage][0]][0]
 
 
 def refuse(root, slug):
@@ -939,6 +1017,8 @@ def held(state):
 def typed(skill):
     """What the human types to run a skill on this host, a host we can't identify getting the plain name; with the
     skill's file, for a session without the NIO plugin (FR-34)."""
+    if not skill.startswith("@"):  # an extension step's skill file (2026-11-15-extensions FR-13)
+        return f"the skill at {skill}"
     # ponytail: only Claude Code is detected; add a host's form here once it is verified on that host
     name = f"/{skill[1:]}" if os.environ.get("CLAUDECODE") else f"the {skill[1:]} skill"
     return f"{name} (skills/{skill.split(':')[-1]}/SKILL.md)"
@@ -972,6 +1052,10 @@ def overridden(here):
 
 
 def next_step(root, slug=None, by=None):
+    return hooked(root, slug, lambda: _next_step(root, slug, by))
+
+
+def _next_step(root, slug=None, by=None):
     """`nio flow next` (CT-9, FR-7, FR-31, FR-43, NFR-1): the state, the skill, its inputs, exit criteria and done
     command; in the "Talking to the human" shape when the effort waits. Writes only with `by`, and only what it owes:
     a parked effort's resume, the `back` lines of a change, a stop-list pause, a torn line's cut. Returns (code, lines)."""
@@ -1195,7 +1279,8 @@ def brief(root, slug, everything=False):
         epic = implement.open_gate(root, slug, lines)
         gate = f"implementation-{epic}" if epic else None
     else:
-        gate = GATES[here["gate"]][0] if here["gate"] in GATES else None
+        G = table(root)[1]
+        gate = G[here["gate"]][0] if here["gate"] in G else None
     if gate:
         found = [f for f in jury.load(root, slug, gate)["findings"] if f.get("status") == "open"]
         heads.append(f"open findings ({gate}): {len(found)}")
@@ -1358,14 +1443,23 @@ def park(root, slug, why, by):
 
 # --- nio flow done (CT-11, CT-19) ---
 
-def moves(stage, off=NOT_BUILT):
-    """The `skip` lines after `stage` up to the next built stage (FR-21), and that stage."""
-    out, s = [], STAGES[stage][0]
-    while s in off:
-        out.append({"kind": "skip", "from": s, "to": STAGES[s][0],
-                    "reason": "skipped: not built" if s in NOT_BUILT else "skipped: lite route"})
-        s = STAGES[s][0]
-    return out, s
+def moves(stage, off=NOT_BUILT, root=None, slug=None):
+    """The `skip` lines after `stage` up to the next built stage (FR-21), and that stage; given the effort, also past
+    each extension step (and its `.jury` stage) whose trigger doesn't apply (2026-11-15-extensions CT-7)."""
+    from nio import extensions
+    stages = table(root)[0] if root is not None else STAGES
+    out, s = [], stages[stage][0]
+    while True:
+        if s in off:
+            why = "skipped: not built" if s in NOT_BUILT else "skipped: lite route"
+        elif s and s not in STAGES and not s.endswith(".jury") and not (ok := extensions.applies(root, slug, ext_step(root, s)[1]))[0]:
+            why = f"skipped: {ok[1]}"
+        elif s and s.endswith(".jury") and out and out[-1]["from"] == s[:-5] and out[-1]["kind"] == "skip":
+            why = out[-1]["reason"]
+        else:
+            return out, s
+        out.append({"kind": "skip", "from": s, "to": stages[s][0], "reason": why})
+        s = stages[s][0]
 
 
 def pending_pass(lines, stage, verdict_id):
@@ -1379,28 +1473,54 @@ def pending_pass(lines, stage, verdict_id):
 
 
 def stage_arg(name):
-    """argparse type: a stage, or an epic's gate as `implementation-E-n`."""
+    """argparse type: a stage, an extension stage `<ext>.<step>[.jury]` (checked against the table by `done`), or an
+    epic's gate as `implementation-E-n`."""
     import argparse
-    if name in STAGES or EPIC_GATE.fullmatch(name):
+    if name in STAGES or EPIC_GATE.fullmatch(name) or re.fullmatch(r"[\w-]+\.[\w-]+(\.jury)?", name):
         return name
     raise argparse.ArgumentTypeError(f"invalid choice: {name!r} (choose from {', '.join(STAGES)}, implementation-E-n)")
 
 
-def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=False, auto=False):
+def hooked(root, slug, call):
+    """Run `call` (a command returning (code, lines)); after it succeeded, fire the extension hooks for the history
+    lines it added, outside the effort's lock (2026-11-15-extensions CT-11). With no extension added, just `call`."""
+    from nio import extensions
+    if not extensions.folder(root).is_dir():
+        return call()
+    try:
+        slug = pick(root, slug)
+        old, lines = load(root, slug)
+    except Exception:  # the command itself reports why
+        return call()
+    result = call()
+    extensions.after(root, slug, len(lines), old)  # a failing command can set a hold (a stop-list pause): fire what it wrote
+    return result
+
+
+def done(root, stage, slug=None, *a, **kw):
+    return hooked(root, slug, lambda: _done(root, stage, slug, *a, **kw))
+
+
+def epic_done(root, gate, slug=None, by=None):
+    return hooked(root, slug, lambda: _epic_done(root, gate, slug, by))
+
+
+def _done(root, stage, slug=None, commit=False, human=None, by=None, terminal=False, auto=False):
     """`nio flow done` (CT-11, FR-12 to FR-27, FR-48, FR-62): run the stage's guard and, when it passes (or the human
     overrides a failing one), record the move and the skips after it; at a gate, `--commit` (or the auto flag on a
     spec, risky or not, but never the pr gate: 2026-11-15 FR-46) also makes the approval commit, rolled back when git fails. Returns (code, lines)."""
     from nio import jury
     if EPIC_GATE.fullmatch(stage):
-        return epic_done(root, stage, slug, by)
-    if stage not in STAGES:
+        return _epic_done(root, stage, slug, by)
+    stages, G, skill, _, _ = table(root)
+    if stage not in stages:
         raise ValueError(f"unknown stage {stage}")
     slug = pick(root, slug)
     refuse(root, slug)
     if stage == "pr" and not terminal:  # FR-9: whatever --by, --commit, the auto flag or the jury's verdict
         return 1, [f"only the human approves the pr gate, at a terminal: nio flow approve {slug}"]
-    if human is not None and stage in GATES:  # FR-62: the jury closes its own gates
-        gate = GATES[stage][0]
+    if human is not None and stage in G:  # FR-62: the jury closes its own gates
+        gate = G[stage][0]
         return 1, [f"--human can't pass a jury gate; the human closes it through the jury:",
                    f'nio jury check {slug} {gate} --human "{human}" --record']
     if human is not None and not human.strip():
@@ -1425,7 +1545,7 @@ def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=Fal
                 line, new = stop_line(stop, here["stage"], state)
                 write(root, slug, [line], new, w, here["stage"])
         return 1, talk(slug, stopped(here, stop, slug) if stop else here)
-    at, rec = list(STAGES).index, last_to(lines)
+    at, rec = list(stages).index, last_to(lines)
     for e in here["changes"]:  # FR-38: settle the change request first
         if e["pending"] and at(stage) >= at(e["target"]):
             raise ValueError(f"{e['change']} is outcome: pending against {e['file']}; settle it first")
@@ -1433,53 +1553,53 @@ def done(root, stage, slug=None, commit=False, human=None, by=None, terminal=Fal
         raise ValueError(f"{slug} is at {here['stage']}, not {stage}")
     # FR-47: the files may be past stages history hasn't recorded yet; `done` records those from where history stands.
     # A stage before both is already passed (FR-17).
-    if at(stage) < at(here["stage"]) and (rec is None or at(stage) < at(rec)):
+    if at(stage) < at(here["stage"]) and (rec is None or rec not in stages or at(stage) < at(rec)):
         return 0, [f"{slug} is past {stage}; nothing to do"]
     if stage == "done":
         return 0, [f"{slug} is done; nothing to do"]
     result, output, ev = guard(root, slug, stage)
-    skipl, to = moves(stage, skips(root, slug))
+    skipl, to = moves(stage, skips(root, slug), root, slug)
     if auto and result == "fail":  # AC-3, CT-2: a failing draft can't go auto, even with --human
         return 1, output
-    if result == "fail" and human is None:  # FR-13: nothing written, but FR-41's `fail` line in auto mode
-        if state["auto"]:
+    if result == "fail" and human is None:  # FR-13: nothing written, but FR-41's `fail` line in auto mode, and an
+        if state["auto"] or "tail" in ev:  # extension check's `fail` line always (2026-11-15-extensions FR-17)
             with lock(root, slug):
                 state, lines = load(root, slug)
                 fail = {"kind": "fail", "from": stage, "to": stage,
                         "evidence": {**ev, "output": fail_hash(root, output), "output_text": "\n".join(output)}}
                 entries, last = [fail], (lines + [fail])[-3:]
-                if len(last) == 3 and all(x["kind"] == "fail" and (x["from"], x["evidence"]["output"]) == (
+                if state["auto"] and len(last) == 3 and all(x["kind"] == "fail" and (x["from"], x["evidence"]["output"]) == (
                         stage, fail["evidence"]["output"]) for x in last):  # FR-41: stuck
                     entries.append({"kind": "suspend", "from": stage, "to": stage, "reason": "stuck"})
                     state = {**state, "pause": {"kind": "suspended", "why": "stuck"}}
                 write(root, slug, entries, state, w, stage)
         return 1, output
-    line = {"kind": "pass", "from": stage, "to": STAGES[stage][0], "evidence": ev}
+    line = {"kind": "pass", "from": stage, "to": stages[stage][0], "evidence": ev}
     if human is not None:
         line["reason"] = human  # AC-30: a passing guard with --human is a plain pass, with the reason
         if result == "fail":  # FR-24
             line.update(kind="override", evidence={**ev, "output_text": "\n".join(output)})
     if result == "closed":  # FR-27: the human closed the jury gate; the ledger's reason is the override's
-        gate = GATES[stage][0]
+        gate = G[stage][0]
         led = jury.load(root, slug, gate)
-        files = [n for n in jury_files(stage) if (root / ".nio/specs" / slug / n).exists()]
+        files = [n for n in jury_files(stage, root) if (root / ".nio/specs" / slug / n).exists()]
         line.update(kind="override", reason=output[0], evidence={
             **ev, "blobs": {n: judged_blob(root, slug, n) for n in files},
             "round": led["round"]})
-    gated = stage in GATES and result == "pass"
-    if gated and jury.load(root, slug, GATES[stage][0])["round"] in approvals(root, slug)[stage]:
+    gated = stage in G and result == "pass"
+    if gated and jury.load(root, slug, G[stage][0])["round"] in approvals(root, slug)[stage]:
         gated = False  # its approval commit for this round exists already: record the pass, commit nothing (FR-17, FR-47)
     if gated and not (commit or state["auto"]):
         command = f"nio flow done {stage} --commit {slug} --by human"
-        return 0, [f"{slug}: the {GATES[stage][0]} gate passes; nothing is recorded until the human approves it:",
+        return 0, [f"{slug}: the {G[stage][0]} gate passes; nothing is recorded until the human approves it:",
                    command]  # FR-48
     out = [f"moved {slug}: {stage} → {to}"] + [f"skipped {s['from']} ({s['reason'][9:]})" for s in skipl]
     if gated and state["auto"] and w["role"] != "human":  # FR-46: the flow approves it, naming the grant it rests on
         n = grant_line(root, slug)
         line["evidence"] = {**line["evidence"], "auto": {"grant": n}}
-        out.append(f"approved {GATES[stage][0]} under auto (grant, history line {n})")
-    if to in SKILL:
-        out.append(f"next: run {typed(SKILL[to])}")
+        out.append(f"approved {G[stage][0]} under auto (grant, history line {n})")
+    if to in skill:
+        out.append(f"next: run {typed(skill[to])}")
     grant = auto and not gated and not state["auto"]
     if grant:
         w = grant_who()
@@ -1525,7 +1645,7 @@ def approve(root, slug=None):
     return done(root, "pr", slug, commit=True, by="human", terminal=True)
 
 
-def epic_done(root, gate, slug=None, by=None):
+def _epic_done(root, gate, slug=None, by=None):
     """`nio flow done implementation-E-n` (CT-17): when the gate is approved or the human closed it, and that is recorded,
     write the epic's `epic` line with the outcome as its reason and, after the last epic, the `pass` line implementing ->
     done, and make the approval commit. Any other standing refuses, naming the gate. An `epic` line already there, an
@@ -1618,7 +1738,8 @@ def commit_gate(root, slug, stage, entries, state, w, out, gate=None, message=No
         return 1, [err.strip()]
     if entries:
         write(root, slug, entries, state, w, stage)
-    gate, message = gate or GATES[stage][0], message or GATES[stage][1]
+    G = table(root)[1]
+    gate, message = gate or G[stage][0], message or G[stage][1]
     rel = gate_paths(root, slug, gate)
     for args in (["add", "-A", "--", *rel], ["commit", "-q", "-m", message, "--", *rel]):
         code, _, err = records.git(root, *args, full=True)
@@ -1731,7 +1852,7 @@ def fail_hash(root, output):
 def used(root, slug):
     """(juries used, subagent runs used): the rounds summed over the effort's ledgers, and their `collected` keys."""
     from nio import jury
-    leds = [jury.load(root, slug, gate) for gate, _ in GATES.values()]
+    leds = [jury.load(root, slug, gate) for gate, _ in table(root)[1].values()]
     return sum(x["round"] for x in leds), sum(len(x.get("collected") or {}) for x in leds)
 
 
@@ -1742,8 +1863,9 @@ def stops(root, slug, here, state, lines):
     from nio import jury
     if not state["auto"]:
         return None
+    G = table(root)[1]
     if here["gate"]:
-        gate = GATES[here["gate"]][0]
+        gate = G[here["gate"]][0]
         led = jury.load(root, slug, gate)
         n, found = led["round"], led["findings"]
         left = [f["id"] for f in found if f.get("status") == "open"]
@@ -1758,7 +1880,7 @@ def stops(root, slug, here, state, lines):
         if why:
             why += f"; open: {', '.join(left)}" if left else ""
             return {"kind": "pause", "why": why, "waiting": {"why": why, "gate": gate, "round": n}}
-    if here["stage"] in GATES and here["ready"] == "fail":  # its jury must run a round
+    if here["stage"] in G and here["ready"] == "fail":  # its jury must run a round
         caps = records.config(root).get("budgets") or {}
         juries, runs = used(root, slug)
         if caps.get("juries") and caps["juries"] <= juries or caps.get("subagents") and caps["subagents"] <= runs:

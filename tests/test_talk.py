@@ -24,7 +24,7 @@ def problems(root):
     if not source:
         return ["NORTH_STAR.md: no Talking to the human block ending in the self-check line"]
     out = []
-    for skill in sorted(root.glob("skills/*/SKILL.md")):
+    for skill in sorted([*root.glob("skills/*/SKILL.md"), *root.glob("src/nio/shipped/*/skills/*/SKILL.md")]):
         text, name = skill.read_text(), skill.relative_to(root)
         copy = block(text)
         if copy is None:
@@ -36,6 +36,25 @@ def problems(root):
             if re.search(phrase, text):
                 out.append(f"{name}: still says {phrase!r}")
     return out
+
+
+HOST_ONLY = ["TodoWrite", "AskUserQuestion", "SendMessage", "subagent_type", "Task tool", "Agent tool"]
+
+
+def test_extension_skills_carry_the_block():
+    assert problems(ROOT) == [], problems(ROOT)
+    skills = sorted(ROOT.glob("src/nio/shipped/*/skills/*/SKILL.md"))
+    assert skills
+    for s in skills:
+        assert not [w for w in HOST_ONLY if w in s.read_text()], s
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        shutil.copy(ROOT / "NORTH_STAR.md", root)
+        shutil.copytree(ROOT / "skills", root / "skills")
+        shutil.copytree(ROOT / "src/nio/shipped", root / "src/nio/shipped")
+        e = root / "src/nio/shipped/e2e/skills/e2e/SKILL.md"
+        e.write_text(e.read_text().replace(LAST, "Check it."))
+        assert "src/nio/shipped/e2e/skills/e2e/SKILL.md: block missing" in problems(root), problems(root)
 
 
 def check():
@@ -222,4 +241,4 @@ def test_implement_is_per_epic():
 
 
 if __name__ == "__main__":
-    selfcheck.main([check, test_implement_is_per_epic] + [f for n, f in list(globals().items()) if n.startswith("test_drivers") and callable(f)])
+    selfcheck.main([check, test_implement_is_per_epic, test_extension_skills_carry_the_block] + [f for n, f in list(globals().items()) if n.startswith("test_drivers") and callable(f)])

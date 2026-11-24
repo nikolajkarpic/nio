@@ -22,8 +22,10 @@ OUT = {"claude": (".claude/agents", ".md"), "codex": (".codex/agents", ".toml")}
 
 
 def layers(root):
-    """Card folders, lowest priority first: shipped, personal, team."""
-    return [Path(str(resources.files("nio").joinpath("agents"))), records.home() / "agents", root / ".nio/agents"]
+    """Card folders, lowest priority first: shipped, each added extension's (name order), personal, team (CT-10)."""
+    from nio import extensions
+    mine = [Path(m["dir"]) / "agents" for m in extensions.active(root)]
+    return [Path(str(resources.files("nio").joinpath("agents"))), *mine, records.home() / "agents", root / ".nio/agents"]
 
 
 def load(root):

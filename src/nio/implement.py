@@ -3,6 +3,7 @@ full-suite run, and each task's status from history."""
 import datetime
 import os
 import re
+import shlex
 import signal
 import subprocess
 from pathlib import Path
@@ -12,11 +13,13 @@ from nio import flow, pack, plan, records, spec, tasks
 DEFAULT_LIMIT = 600  # FR-44
 
 
-def run(root, command, limit):
+def run(root, command, limit, env=None):
     """(code, output, cause) of a shell command in `root` (CT-1, FR-44): stdin closed, stderr merged into stdout, its own
-    process group so the limit kills every child. `cause` is "", "time limit" or "program not found" (exit 127)."""
+    process group so the limit kills every child. `cause` is "", "time limit" or "program not found" (exit 127). `env`
+    adds variables (an extension check's NIO_SLUG, NIO_STAGE, NIO_EXTENSION_DIR: 2026-11-15-extensions CT-8)."""
     p = subprocess.Popen(command, shell=True, cwd=root, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                         env={k: v for k, v in os.environ.items() if k != "NIO_PERF"}, stderr=subprocess.STDOUT, start_new_session=True)
+                         env={**{k: v for k, v in os.environ.items() if k != "NIO_PERF"}, **(env or {})},
+                         stderr=subprocess.STDOUT, start_new_session=True)
     try:
         out, _ = p.communicate(timeout=limit)
         code, cause = p.returncode, "program not found" if p.returncode == 127 else ""
@@ -44,6 +47,8 @@ RUNNERS = {
     "cargo test": {"match": r"\bcargo test\b", "error": ["error[E", "error: could not compile"], "none": []},
     "rspec": {"match": r"\brspec\b", "error": ["error occurred outside of examples", "errors occurred outside of examples",
               "An error occurred while loading"], "none": ["No examples found", "0 examples, 0 failures"]},
+    "playwright": {"match": r"\bplaywright test\b", "error": ["Process from config.webServer was not able to start", "from config.webServer"],
+                   "none": ["No tests found"]},
     "self-check": {"error": [], "none": ["ran 0 tests"]},  # no "match": found by its `ran N tests` summary line (CT-7)
 }
 
@@ -377,10 +382,14 @@ def epic_tests(root, slug, mine):
     tcs = list(dict.fromkeys(i for t in mine for i in t["own"]))
     words = [t for t in mine if not t["own"] and t["test"].strip().lower() not in ("", "none")]
     known, suite_ = evidence.known_tests(root, slug), (records.config(root).get("tests") or {}).get("suite")
-    one = [evidence.one_test(suite_, *known[c]) if known.get(c) else None for c in tcs]
+    pw = [c for c in tcs if known.get(c) and evidence.playwright(root, known[c][0])]  # one Playwright command (CT-13)
+    one = [evidence.one_test(suite_, *known[c]) if known.get(c) else None for c in tcs if c not in pw]
     command = None
     if tcs and not words and all(one):  # one run of every named test: the runner's command, then each test
-        command = one[0].rsplit(" ", 1)[0] + " " + " ".join(dict.fromkeys(c.rsplit(" ", 1)[1] for c in one))
+        command = (one[0].rsplit(" ", 1)[0] + " " + " ".join(dict.fromkeys(c.rsplit(" ", 1)[1] for c in one))) if one else None
+        if pw:
+            run = "npx playwright test " + " ".join(dict.fromkeys(known[c][0] for c in pw)) + " -g " + shlex.quote("|".join(re.escape(known[c][1]) for c in pw))
+            command = f"{run} && {command}" if command else run
     files = list(dict.fromkeys(f for t in mine for f in test_files(root, slug, t)))
     return command, files, bool(tcs or words)
 
@@ -551,6 +560,10 @@ def test_files(root, slug, task):
 
 
 def finish(root, slug, eid, by=None):
+    return flow.hooked(root, slug, lambda: _finish(root, slug, eid, by))
+
+
+def _finish(root, slug, eid, by=None):
     """`nio flow finish` (CT-2, FR-3, FR-4, FR-10, FR-42, FR-44, NFR-1): the agent handed the epic back; the flow runs
     the tests its tasks name once, itself, on the main tree (a worktree epic's changes landed there first) within
     EPIC_LIMIT. A pass writes the `epic_test` line and commits the epic (CT-3); a failed, broken, empty or hung run keeps

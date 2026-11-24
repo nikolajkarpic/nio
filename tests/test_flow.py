@@ -1781,6 +1781,39 @@ def test_nfr3_status_speed():
     print(f"ok ({time.perf_counter() - start:.2f}s)")
 
 
+def test_status_speed_with_three_extensions():
+    """2026-11-15-extensions TC-46: status_speed's 20 efforts with three added extensions, each a step after plan_jury,
+    a card and a hook, keeps the same 2-second limit (with NIO_PERF=1)."""
+    from nio import extensions
+    global effort
+    plain = effort
+
+    def with_extensions(stage, slug=S, risk="[]", route="full", root=None):
+        made = plain(stage, slug=slug, risk=risk, route=route, root=root)
+        if root is None:
+            for name in ("ea", "eb", "ec"):
+                d = Path(tempfile.mkdtemp()) / name
+                (d / "skills/s").mkdir(parents=True)
+                (d / "skills/s/SKILL.md").write_text("skill\n")
+                (d / "agents").mkdir()
+                (d / f"agents/{name}-card.md").write_text("card\n")
+                (d / "manifest.json").write_text(json.dumps({
+                    "name": name, "version": "1.0.0", "cards": [f"{name}-card"],
+                    "steps": [{"name": f"{name}-s", "after": "plan_jury", "skill": "skills/s/SKILL.md", "check": "true"}],
+                    "hooks": [{"event": "step-passed", "command": "true"}]}))
+                code, out = extensions.add(made, str(d))
+                assert code == 0, out
+            assert len(extensions.active(made)) == 3
+        return made
+    effort = with_extensions
+    try:
+        start = time.perf_counter()
+        status_speed()
+    finally:
+        effort = plain
+    print(f"ok ({time.perf_counter() - start:.2f}s)")
+
+
 def test_ac18_status_speed_gated():
     """TC-15: the 2-second limit is asserted only under NIO_PERF=1; the 20 lines always."""
     global cli

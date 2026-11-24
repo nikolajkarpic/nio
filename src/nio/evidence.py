@@ -108,8 +108,15 @@ def misuse(root, slug):
     return mis, rest
 
 
-def one_test(suite, file, name):
+def playwright(root, file):
+    """Does `file` run under Playwright: a `.spec.ts`, `.spec.js` or `.spec.mjs` file in a project with a playwright config (CT-13)?"""
+    return bool(root) and bool(re.search(r"\.spec\.(ts|js|mjs)$", file)) and any((Path(root) / f"playwright.config.{x}").exists() for x in ("ts", "js", "mjs"))
+
+
+def one_test(suite, file, name, root=None):
     """The command that runs one test through the suite's runner, else None (a runner it can't address)."""
+    if playwright(root, file):
+        return f"npx playwright test {file} -g {shlex.quote(re.escape(name))}"
     if m := re.match(r"(.*\bunittest)\b", suite or ""):
         return f"{m[1]} {shlex.quote(file.removesuffix('.py').replace('/', '.') + '.' + name)}"
     if m := re.match(r"(.*\bpytest)\b", suite or ""):
@@ -551,6 +558,9 @@ def collect(root, slug, epic, run):
     tests = []
     for file, tname in rest:
         short = tname.split(".")[-1]
+        if playwright(root, file):  # its result is its own run, never read from the suite's output (CT-13)
+            tests.append({"name": tname, "file": file, "line": 0, "result": "alone"})
+            continue
         line = defs.setdefault(file, asserts_in(root, commit, file)).get(short, (0,))[0]
         def on(x):  # a `<file>::<name>` entry needs both; any other entry matches by name
             f, _, n = x.partition("::")
@@ -565,7 +575,7 @@ def collect(root, slug, epic, run):
                   else "passed" if code_ok else "alone")
         tests.append({"name": tname, "file": file, "line": line, "result": result})
     alone = [x for x in tests if x["result"] == "alone"]
-    for x, r in zip(alone, runs([one_test(t.get("suite"), x["file"], x["name"]) for x in alone]) if alone else []):
+    for x, r in zip(alone, runs([one_test(t.get("suite"), x["file"], x["name"], root) for x in alone]) if alone else []):
         x["result"] = "passed" if r["result"] == "passed" else "failed"
     attack_cmds = [one_test(t.get("suite"), f, n) for f, n in mis]
     attacks = runs(attack_cmds)

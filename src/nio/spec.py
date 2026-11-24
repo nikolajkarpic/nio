@@ -421,6 +421,14 @@ def check_df(iid, line, section, found, retired, sections_allowed):
     return [] if tag and tag[1] == f"deferred: {iid}" else [f"{iid} comes from {src}, whose line must end with [deferred: {iid}]"]
 
 
+def level(block):
+    """An AC's own level (2026-11-15-extensions CT-17): the last `Level:` after its `Observable:`, so a `Level:` named
+    in its Given doesn't count; with no `Observable:`, the last one in the block. None when it has none."""
+    text = "\n".join(block) if isinstance(block, list) else block
+    found = re.findall(r"Level:\s*([a-z0-9]+)", text[max(text.find("Observable:"), 0):])
+    return found[-1] if found else None
+
+
 def check_ac(iid, block, found, route):
     errs, text, refs = [], "\n".join(block), cites(block[0])
     want = {"full": {"FR"}, "lite": {"EB", "UB"}}.get(route, set())

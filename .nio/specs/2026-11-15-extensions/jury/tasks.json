@@ -1,0 +1,192 @@
+{
+  "gate": "tasks",
+  "subject": "2026-11-15-extensions",
+  "round": 2,
+  "tier": "medium",
+  "expect": [
+    "executability"
+  ],
+  "collected": {
+    "R-261115-karu/tasks-executability.md": "cf671b7ea6fe749328528807a006c913b30a4e696a9185c802ddaaae5aeeb56e",
+    "R-261115-wqsk/tasks-executability.md": "7e950f9cd5d19c3731a8123bb2ad93e5c6f8a393dbe133256e42ad6c1f120ba9"
+  },
+  "jurors": {
+    "tasks-executability": {
+      "attempts": 1,
+      "lens": "executability",
+      "by": "juror / claude-code / claude-haiku-5-5",
+      "context": "sufficient",
+      "valid": true,
+      "errors": [],
+      "round": 2,
+      "version": "bc6b59c9d392821a5669c95f6be2c864af8e7229",
+      "judged": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "J-1",
+      "title": "T-11 cites TC-23, which needs the hook firing that T-14 adds in a later epic",
+      "kind": "inconsistency",
+      "severity": "blocker",
+      "cites": [
+        "T-11",
+        "T-14",
+        "TC-23"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "- Test: TC-23\" (T-11)",
+        "- Depends on: T-10\" (T-11)",
+        "`fire` and `extensions.after(root, slug, n, old_state)` called at the end of `flow.done`, `next_step`, `epic_done` and `implement.finish`, outside the lock\" (T-14)",
+        "`passed.log` is exactly `x.tests.jury\\n` (nothing when the step moved to judging)\" (TC-23)"
+      ],
+      "fix": "move the `passed.log` assertion of TC-23 to T-14's `Test:`, or move the `fire` wiring from T-14 into T-11.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "E-4 (T-11, T-12) closes before E-5 (T-14 hook firing). When the flow runs E-4's tests at its end, TC-23's second half cannot pass: the `step-passed` hook from `y` never fires, so `passed.log` is never written and the assertion that it equals `x.tests.jury\\n` fails. Either E-4 can't close, or the worker must add hook firing from T-14's Files, which T-11 does not name (T-11 Files: `src/nio/jury.py`, `tests/test_jury.py`, `tests/test_extensions.py`).",
+          "severity": "blocker",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-2",
+      "title": "T-15 says \"fix any gap found\" but names no file that holds the timeout code",
+      "kind": "scope",
+      "severity": "major",
+      "cites": [
+        "T-15",
+        "T-7"
+      ],
+      "evidence": "observed",
+      "quotes": [
+        "Verifies the check timeout (T-7), the hook timeout (T-14) and the manifest timeout rule (T-1) together, with no leftover process; fix any gap found.\" (T-15)",
+        "- Files: `src/nio/extensions.py`, `src/nio/flow.py`, `tests/test_extensions.py`\" (T-15)",
+        "`implement.run` gains `env`\" (T-7)"
+      ],
+      "fix": "add `src/nio/implement.py` to T-15's Files, or state that any gap fix stays in `extensions.py` and `flow.py`.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "both the check and the hook run through `implement.run(root, command, timeout, env)`, and T-7 lists `src/nio/implement.py` as the file that changes. If TC-47's `sleep 5` run finds a process left alive or a late kill, the fix goes in `implement.py`, which T-15 doesn't list. A worker that follows \"Files\" leaves the gap open, and one that edits `implement.py` breaks the rule that a task names every file it changes.",
+          "severity": "major",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-3",
+      "title": "E-6 is rated effort low although its tasks change the Playwright command builder and the e2e check's outcome classes",
+      "kind": "risk",
+      "severity": "minor",
+      "cites": [
+        "E-6",
+        "T-17",
+        "T-19"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "- Tier: strong: a manifest, a stdlib check script and a skill with clear contracts and tests\" (E-6)",
+        "`epic_tests` passes `root` and builds one Playwright command joined with ` && `\" (T-17)"
+      ],
+      "fix": "rate E-6 med, or confirm low is intended.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "T-17 changes `implement.epic_tests` to join one Playwright command, with `-g` escaping, to the other commands, and `evidence.collect` to run each e2e test alone. T-19's check has seven outcome classes, including the setup-error split. Those are more than a \"low\" effort's worth of subtle logic. The rating is a judgement and doesn't block the work; it may make the worker take too little care with the quoting and the setup-error split.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    },
+    {
+      "id": "J-4",
+      "title": "T-17 cites TC-34, which only runs with `NIO_E2E=1`, so the epic may not prove it",
+      "kind": "untestable",
+      "severity": "minor",
+      "cites": [
+        "T-17",
+        "TC-34"
+      ],
+      "evidence": "inferred",
+      "quotes": [
+        "Tests run with `NIO_E2E=1` only live in `tests/test_extensions_e2e.py`\" (tests.md header)",
+        "- Test: TC-32, TC-33, TC-34, TC-36\" (T-17)"
+      ],
+      "fix": "say in T-17's note whether TC-34 is run by the epic or by the QS-4 manual scenario, and name the env it needs.",
+      "sources": [
+        {
+          "juror": "tasks-executability",
+          "lens": "executability",
+          "situation": "TC-34 lives in `tests/test_extensions_e2e.py` and needs Node, Chromium and the `e2e-app` fixture from T-20. A normal epic run that doesn't set `NIO_E2E=1` skips it, so E-6 could close with TC-34 never run, or stall on a missing Node install.",
+          "severity": "minor",
+          "round": 1
+        }
+      ],
+      "validation": "ungrounded",
+      "reason": "a cited ID or quote is not in the artefact",
+      "status": "dropped",
+      "disposition": "",
+      "by": "",
+      "note": "",
+      "baseline": "new",
+      "rounds": 0,
+      "first_round": 1,
+      "last_round": 1
+    }
+  ],
+  "outcome": "approved",
+  "recorded": [
+    [
+      1,
+      "human"
+    ],
+    [
+      2,
+      "approved"
+    ]
+  ],
+  "versions": {
+    "1": "9c03a26b808d8afad5c892c1c64aa9c6d7f98812",
+    "2": "bc6b59c9d392821a5669c95f6be2c864af8e7229"
+  },
+  "fixes": {
+    "1": [],
+    "2": []
+  }
+}
