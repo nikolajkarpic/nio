@@ -218,3 +218,7 @@ are the state** (no daemon, no database of record) · **human in the loop by def
 - [GitHub issues](https://github.com/nikolajkarpic/nio/issues): open decisions and the backlog.
 - [CLAUDE.md](CLAUDE.md): instructions for agents working in this repo.
 - [tools/claude-mods](tools/claude-mods/README.md): optional Claude Code mods (background commands, status pane), installed by `@nio:install` or `nio mods install`.
+
+## License
+
+[MIT](LICENSE): free to use, change and share, including commercially.
